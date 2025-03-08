@@ -102,6 +102,7 @@ ScaffoldingReadMe.txt
 
 # VS Code settings
 .vscode/
+.vs/
 
 # Other
 *.suo
