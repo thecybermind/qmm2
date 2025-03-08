@@ -52,4 +52,7 @@ Created By:
  constexpr const char* QVM_EXT = "qvm";
 #endif
 
+const char* get_qmm_modulename();
+void* get_qmm_modulehandle();
+
 #endif //__QMM2_OSDEF_H__
