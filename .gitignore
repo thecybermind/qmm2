@@ -67,6 +67,9 @@
 *.vsixmanifest
 *.vscode/
 .vscode/
+.vs/
+*.aps
+RCa*
 
 # NuGet
 *.nupkg
@@ -99,11 +102,3 @@ obj/
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
-
-# VS Code settings
-.vscode/
-.vs/
-
-# Other
-*.suo
-*.sln.docstates
