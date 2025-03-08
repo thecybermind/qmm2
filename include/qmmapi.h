@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMMAPI_H__
-#define __QMMAPI_H__
+#ifndef __QMM2_QMMAPI_H__
+#define __QMM2_QMMAPI_H__
 
 //plugins and internal use
 #ifdef WIN32
@@ -134,4 +134,4 @@ C_DLLEXPORT int QMM_syscall_Post(int cmd, int arg0, int arg1, int arg2, int arg3
 #define CLIENT_FROM_NUM(index)  ((gclient_t*)((byte*)g_clients + g_clientsize * (index)))
 #define NUM_FROM_CLIENT(ent)    ((int)((byte*)(ent) - (byte*)g_clients) / g_clientsize)
 
-#endif //__QMMAPI_H__
+#endif //__QMM2_QMMAPI_H__

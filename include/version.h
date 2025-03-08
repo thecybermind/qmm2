@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __VERSION_H__
-#define __VERSION_H__
+#ifndef __QMM2_VERSION_H__
+#define __QMM2_VERSION_H__
 
 #define QMM_VERSION_MAJOR	2
 #define QMM_VERSION_MINOR	0
@@ -29,4 +29,4 @@ Created By:
 
 #define QMM_VERSION_DWORD	QMM_VERSION_MAJOR , QMM_VERSION_MINOR , QMM_VERSION_REV , 0
 
-#endif //__VERSION_H__
+#endif //__QMM2_VERSION_H__
