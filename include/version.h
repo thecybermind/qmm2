@@ -1,7 +1,7 @@
 /*
-QMM - Q3 MultiMod
-Copyright 2004-2024
-https://github.com/thecybermind/qmm/
+QMM2 - Q3 MultiMod 2
+Copyright 2025
+https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
 
 Created By:
@@ -20,6 +20,7 @@ Created By:
 
 #define QMM_COMPILE		__TIME__ " " __DATE__
 #define QMM_BUILDER		"cybermind"
+#define QMM_URL         "https://github.com/thecybermind/qmm2/"
 
 #ifdef WIN32
  #define QMM_OS			"Win32"

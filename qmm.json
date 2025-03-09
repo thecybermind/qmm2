@@ -1,0 +1,38 @@
+{
+	/* default = "auto"
+	   valid options:
+	   "Q3A" = Quake 3 Arena
+	   "JK2" = Jedi Knight II: Jedi Outcast
+	   "JA" = Jedi Knight: Jedi Academy
+	   "RTCWMP" = Return to Castle Wolfenstein (Multiplayer)
+	   "RTCWET" = Return to Castle Wolfenstein: Enemy Territory - Must be specifically set, otherwise auto-detected as RTCWMP
+	   "RTCWSP" = Return to Castle Wolfenstein (Singleplayer) - Must be specifically set, otherwise auto-detected as Q3A
+	*/
+	// "game": "auto",
+
+	// mod-specific settings (RTCWSP use ".")
+	"baseq3": {
+		/* Specifies file name of mod to load
+		   default(Q3A) = "vm/qagame.qvm"
+		   default(JK2) = "vm/jk2mpgame.qvm"
+		   default(other) = "qmm_<name>.dll"/"qmm_<name>.dll"
+		*/
+		// "mod": "vm/qagame.qvm",
+
+		/* Specifies size of the QVM stack in megabytes (1048576 bytes), only used with qvm mods
+		   default = 1
+		*/
+		// "qvmstacksize": 1,
+
+		/* Specifies name of config file to execute after load
+		   default = "qmmaddons/qmm/qmmexec.cfg"
+		*/
+		// "execcfg": "qmmaddons/qmm/qmmexec.cfg",
+
+		// List of plugins to load
+		"plugins": [
+			// "qmmaddons/plugin1/dlls/plugin1.dll",
+			// "qmmaddons/plugin2/dlls/plugin2.dll"
+		]
+	}
+}
