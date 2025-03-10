@@ -89,6 +89,11 @@ typedef enum eng_msg_e {
 //generate struct info for the short name, messages arrays, and message name functions
 #define GEN_INFO(game)	#game, game##_qmm_eng_msgs, game##_eng_msg_names, game##_qmm_mod_msgs, game##_mod_msg_names
 
+//generate a case/string line for the message name functions
+#define GEN_CASE(x) \
+		case x: \
+			return #x
+ 
 //macro to easily output game-specific message values to match the qmm_eng_msg_t and qmm_mod_msg_t enums above
 //this macro goes in game_*.cpp
 #define GEN_MSGS(game) \
