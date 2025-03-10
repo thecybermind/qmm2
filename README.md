@@ -27,7 +27,7 @@ The basic concept to operation is for QMM to be loaded as if it were the mod dll
 > You can get rid of the DLL "Security Warning" message by setting the `com_blindlyLoadDLLs` cvar to `1`. You can do this by adding the following to `<mod>/autoexec.cfg` (create it if it does not exist):  
 > `seta com_blindlyLoadDLLs 1`
 
-Each game uses a different filename for the mod. Refer to this list when you are asked to rename the QMM DLL in step X:
+Each game uses a different filename for the mod. Refer to this list when you are asked to rename the QMM DLL in step 2:
 
 | Game | Windows DLL | Linux SO | QVM |
 | ----------- | ----------- | ----------- | ----------- |
