@@ -15,9 +15,7 @@ Created By:
 #include <string>
 #include "osdef.h"
 
-typedef unsigned char byte;
-typedef int (*eng_syscall_t)(int, ...);
-typedef int (*vmsyscall_t)(byte*, int, int*);
+typedef int (*vmsyscall_t)(unsigned char*, int, int*);
 typedef const char* (*msgname_t)(int);
 
 //some information for each game engine supported by QMM
@@ -35,19 +33,6 @@ typedef struct supported_game_s {
 } supported_game_t;
 
 extern supported_game_t g_SupportedGameList[];
-
-// store all currently-loaded game info
-typedef struct game_info_s {
-	eng_syscall_t pfnsyscall = nullptr;
-	supported_game_t* game = nullptr;
-	std::string qmm_path;
-	std::string qmm_dir;
-	std::string qmm_file;
-	std::string moddir;
-	bool isautodetected = false;
-} game_info_t;
-
-extern game_info_t g_GameInfo;
 
 //a list of all the mod messages used by QMM
 typedef enum mod_msg_e {

@@ -21,8 +21,6 @@ GEN_EXTS(JA);
 GEN_EXTS(RTCWSP);
 GEN_EXTS(RTCWET);
 
-game_info_t g_GameInfo;
-
 //add your game's info data here
 supported_game_t g_SupportedGameList[] = {
 

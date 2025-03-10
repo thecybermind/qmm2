@@ -17,11 +17,11 @@ Created By:
 #include "qmmapi.h"
 #include "util.h"
 
-static int plugin_WriteGameLog(const char* text, int len = -1) {
+static int s_plugin_helper_WriteGameLog(const char* text, int len = -1) {
 	return log_write(text, len);
 }
 
-static char* plugin_VarArgs(char* format, ...) {
+static char* s_plugin_helper_VarArgs(char* format, ...) {
 	va_list	argptr;
 	static char str[8][1024];
 	static int index = 0;
@@ -35,35 +35,35 @@ static char* plugin_VarArgs(char* format, ...) {
 	return str[i];
 }
 
-static int plugin_IsVM() {
+static int s_plugin_helper_IsVM() {
 	return g_ModMgr->Mod()->IsVM();
 }
 
-static const char* plugin_EngMsgName(int x) {
+static const char* s_plugin_helper_EngMsgName(int x) {
 	return ENG_MSGNAME(x);
 }
 
-static const char* plugin_ModMsgName(int x) {
+static const char* s_plugin_helper_ModMsgName(int x) {
 	return MOD_MSGNAME(x);
 }
 
-static int plugin_GetIntCvar(const char* cvar) {
+static int s_plugin_helper_GetIntCvar(const char* cvar) {
 	return get_int_cvar(cvar);
 }
 
-static const char* plugin_GetStrCvar(const char* cvar) {
+static const char* s_plugin_helper_GetStrCvar(const char* cvar) {
 	return get_str_cvar(cvar);
 }
 
 pluginfuncs_t* get_pluginfuncs() {
 	static pluginfuncs_t pluginfuncs = {
-		&plugin_WriteGameLog,
-		&plugin_VarArgs,
-		&plugin_IsVM,
-		&plugin_EngMsgName,
-		&plugin_ModMsgName,
-		&plugin_GetIntCvar,
-		&plugin_GetStrCvar,
+		&s_plugin_helper_WriteGameLog,
+		&s_plugin_helper_VarArgs,
+		&s_plugin_helper_IsVM,
+		&s_plugin_helper_EngMsgName,
+		&s_plugin_helper_ModMsgName,
+		&s_plugin_helper_GetIntCvar,
+		&s_plugin_helper_GetStrCvar,
 	};
 	return &pluginfuncs;
 }
