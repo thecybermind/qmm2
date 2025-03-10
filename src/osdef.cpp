@@ -10,11 +10,8 @@ Created By:
 */
 
 #include "osdef.h"
-#include <string>
-#include "version.h"
 
 #ifdef WIN32
-#include <stdlib.h>
 
 char* dlerror() {
     static char buffer[4096 * 2]; // https://stackoverflow.com/a/75644008
@@ -27,30 +24,28 @@ char* dlerror() {
 
 #endif
 
-std::string get_qmm_modulepath() {
-	static std::string path = "";
-	if (!path.empty())
+const char* osdef_get_qmm_modulepath() {
+	static char path[PATH_MAX] = "";
+	if (*path)
 		return path;
 
 #ifdef WIN32
 	MEMORY_BASIC_INFORMATION MBI;
-	static char buffer[PATH_MAX] = "";
 
-	if (!VirtualQuery((void*)&get_qmm_modulepath, &MBI, sizeof(MBI)) || MBI.State != MEM_COMMIT || !MBI.AllocationBase)
+	if (!VirtualQuery((void*)&osdef_get_qmm_modulepath, &MBI, sizeof(MBI)) || MBI.State != MEM_COMMIT || !MBI.AllocationBase)
 		return "";
 
-	if (!GetModuleFileName((HMODULE)MBI.AllocationBase, buffer, sizeof(buffer)))
+	if (!GetModuleFileName((HMODULE)MBI.AllocationBase, path, sizeof(path)))
 		return "";
-	
-	path = buffer;
 #else
 	Dl_info dli;
 	memset(&dli, 0, sizeof(dli));
 
-	if (!dladdr((void*)&get_qmm_modulepath, &dli))
+	if (!dladdr((void*)&osdef_get_qmm_modulepath, &dli))
 		return "";
 
-	path = dli.dli_fname;
+	strncpy(path, dli.dli_fname, sizeof(path) - 1);
+	path[sizeof(path) - 1] = '\0';
 #endif
 	return path;
 }

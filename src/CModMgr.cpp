@@ -93,9 +93,10 @@ CMod* CModMgr::newmod(const char* file) {
 int CModMgr::LoadMod() {
 
 	//load mod file setting from config file
-	//this should be relative to mod directory
-	
-	std::string cfg_modfile = cfg_get_string(g_cfg, "mod", g_GameInfo.game->dllname);
+	//this should be relative to mod directory	
+	std::string cfg_modfile = cfg_get_string(g_cfg, "mod", "auto");
+	if (cfg_modfile == "auto")
+		cfg_modfile = g_GameInfo.game->dllname;
 	
 	const char* cfg_mod = cfg_modfile.c_str();
 

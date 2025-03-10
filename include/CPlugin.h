@@ -12,10 +12,9 @@ Created By:
 #ifndef __QMM2_CPLUGIN_H__
 #define __QMM2_CPLUGIN_H__
 
-#include <string.h>
+#include <string>
 #include "CDLL.h"
 #include "qmmapi.h"
-#include "osdef.h"
 
 class CPlugin {
 	public:

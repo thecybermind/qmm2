@@ -12,7 +12,6 @@ Created By:
 #ifndef __QMM2_CDLLMOD_H__
 #define __QMM2_CDLLMOD_H__
 
-#include "osdef.h"
 #include "CMod.h"
 #include "CDLL.h"
 #include "qmmapi.h"

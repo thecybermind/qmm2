@@ -12,7 +12,7 @@ Created By:
 #ifndef __QMM2_CVMMOD_H__
 #define __QMM2_CVMMOD_H__
 
-#include "osdef.h"
+#include <string>
 #include "CMod.h"
 #include "qmm.h"
 #include "qvm.h"

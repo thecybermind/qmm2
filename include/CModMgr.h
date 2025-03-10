@@ -12,7 +12,6 @@ Created By:
 #ifndef __QMM2_CMODMGR_H__
 #define __QMM2_CMODMGR_H__
 
-#include "osdef.h"
 #include "CMod.h"
 #include "game_api.h"
 #include "qmmapi.h"

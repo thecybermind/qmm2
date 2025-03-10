@@ -464,7 +464,6 @@ const char* Q3A_mod_msg_names(int cmd) {
 	}
 }
 
-//setting *x = 0 means that no matching function was found
 int Q3A_vmsyscall(byte* membase, int cmd, int* args) {
 	register int cmd2 = cmd;
 	switch(cmd2) {

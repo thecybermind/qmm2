@@ -509,7 +509,7 @@ const char* JK2_mod_msg_names(int cmd) {
 	}
 }
 
-//do NOT convert the ghoul pointers, treat them as plain 'int's
+//do NOT convert the ghoul pointers, treat them as plain ints
 //(for double pointers, convert them once with vmptr())
 int JK2_vmsyscall(byte* membase, int cmd, int* args) {
 	register int cmd2 = cmd;

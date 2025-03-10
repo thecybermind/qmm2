@@ -13,7 +13,6 @@ Created By:
 #define __QMM2_GAME_API_H__
 
 #include <string>
-#include "osdef.h"
 
 typedef int (*vmsyscall_t)(unsigned char*, int, int*);
 typedef const char* (*msgname_t)(int);
@@ -43,7 +42,7 @@ typedef enum mod_msg_e {
 	QMM_GAME_CLIENT_COMMAND,
 
 	QMM_GAME_MSG_MAX
-} mod_msg_t;
+} qmm_mod_msg_t;
 
 //a list of all the engine messages used by QMM
 typedef enum eng_msg_e {
@@ -74,7 +73,7 @@ typedef enum eng_msg_e {
 	QMM_CVAR_ARCHIVE,
 
 	QMM_G_MSG_MAX
-} eng_msg_t;
+} qmm_eng_msg_t;
 
 // G_ERROR and GAME_SHUTDOWN appear to be 1 in all supported games. these are used if we couldn't determine an engine
 #define QMM_FAIL_G_ERROR		1
@@ -83,26 +82,26 @@ typedef enum eng_msg_e {
 //macros to make game support a bit easier to do
 //these macros are used in game_api.cpp
 
-//generate externs for the msg arrays/funcs
-#define GEN_EXTS(game)	extern int game##_eng_msgs[], game##_mod_msgs[]; \
-			const char* game##_eng_msg_names(int); \
-			const char* game##_mod_msg_names(int);
+//generate externs for the msg arrays and functions
+#define GEN_EXTS(game)	extern int game##_qmm_eng_msgs[], game##_qmm_mod_msgs[]; \
+						const char* game##_eng_msg_names(int); \
+						const char* game##_mod_msg_names(int);
 //generate extern for the vmsyscall function
 #define GEN_VMEXT(game)	int game##_vmsyscall(unsigned char*, int, int*)
-//generate the struct info
-#define GEN_INFO(game)	#game, game##_eng_msgs, game##_eng_msg_names, game##_mod_msgs, game##_mod_msg_names
+//generate struct info for the short name, messages arrays, and message name functions
+#define GEN_INFO(game)	#game, game##_qmm_eng_msgs, game##_eng_msg_names, game##_qmm_mod_msgs, game##_mod_msg_names
 
-//macro to easily output message values to match the lists above
+//macro to easily output game-specific message values to match the qmm_eng_msg_t and qmm_mod_msg_t enums above
 //this macro goes in game_*.cpp
 #define GEN_MSGS(game) \
-	int game##_eng_msgs[] = { \
+	int game##_qmm_eng_msgs[] = { \
 		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_SEND_SERVER_COMMAND, \
 		G_CVAR_REGISTER, G_CVAR_SET, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, \
 		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, \
 		EXEC_APPEND, FS_READ, FS_APPEND, FS_APPEND_SYNC, \
 		CVAR_SERVERINFO, CVAR_ROM, CVAR_ARCHIVE \
 	}; \
-	int game##_mod_msgs[] = { \
+	int game##_qmm_mod_msgs[] = { \
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, GAME_CLIENT_CONNECT, GAME_CLIENT_COMMAND \
 	}
 

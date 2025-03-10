@@ -19,6 +19,8 @@ std::string my_baseext(const std::string);
 int my_stricmp(const std::string&, const std::string&);
 int my_striequal(const std::string&, const std::string&);
 
+std::string get_qmm_modulepath();
+
 int byteswap(int);
 short byteswap(short);
 char* vaf(const char*, ...);    // this uses a cycling array of strings so the return value does not need to be stored locally

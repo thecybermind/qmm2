@@ -56,7 +56,6 @@ Created By:
  #define my_vsnprintf	vsnprintf
 #endif
 
-#include <string>
-std::string get_qmm_modulepath();
+const char* osdef_get_qmm_modulepath();
 
 #endif //__QMM2_OSDEF_H__

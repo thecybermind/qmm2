@@ -114,7 +114,9 @@
     <ClInclude Include="..\include\CPluginMgr.h" />
     <ClInclude Include="..\include\CVMMod.h" />
     <ClInclude Include="..\include\game_api.h" />
+    <ClInclude Include="..\include\main.h" />
     <ClInclude Include="..\include\osdef.h" />
+    <ClInclude Include="..\include\plugin.h" />
     <ClInclude Include="..\include\qmm.h" />
     <ClInclude Include="..\include\qmmapi.h" />
     <ClInclude Include="..\include\qvm.h" />

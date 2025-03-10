@@ -13,6 +13,7 @@ Created By:
 #define __QMM2_CMOD_H__
 
 #include "osdef.h"
+#include <string>
 
 class CMod {
 	public:

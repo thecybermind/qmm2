@@ -54,6 +54,13 @@ int my_striequal(const std::string& s1, const std::string& s2) {
 	return my_stricmp(s1, s2) == 0;
 }
 
+std::string get_qmm_modulepath() {
+	static std::string path = "";
+	if (path.empty())
+		path = osdef_get_qmm_modulepath();	
+	return path;
+}
+
 int byteswap(int i) {
 	byte b1,b2,b3,b4;
 

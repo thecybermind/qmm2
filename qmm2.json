@@ -8,24 +8,24 @@
 	   "RTCWET" = Return to Castle Wolfenstein: Enemy Territory - Must be specifically set, otherwise auto-detected as RTCWMP
 	   "RTCWSP" = Return to Castle Wolfenstein (Singleplayer) - Must be specifically set, otherwise auto-detected as Q3A
 	*/
-	// "game": "auto",
+	"game": "auto",
 
-	/* Specifies file name of mod to load
-	   default(Q3A) = "vm/qagame.qvm"
-	   default(JK2) = "vm/jk2mpgame.qvm"
-	   default(other) = "qmm_<name>.dll"/"qmm_<name>.dll"
+	/* Specifies mod file name to load
+	   default = "auto"
+	   see table in README.md for the per-game defaults
 	*/
-	// "mod": "vm/qagame.qvm",
+	"mod": "auto",
 
 	/* Specifies size of the QVM stack in megabytes (1048576 bytes), only used with qvm mods
 	   default = 1
 	*/
-	// "qvmstacksize": 1,
+	"qvmstacksize": 1,
 
-	/* Specifies name of config file to execute after load
-	   default = "qmmaddons/qmm/qmmexec.cfg"
+	/* Specifies name of config file to execute after qmm and plugins are loaded
+	   default = "qmmexec.cfg"
+	   specify an empty string to explicitly disable this function
 	*/
-	// "execcfg": "qmmaddons/qmm/qmmexec.cfg",
+	"execcfg": "qmmexec.cfg",
 
 	// List of plugins to load
 	"plugins": [

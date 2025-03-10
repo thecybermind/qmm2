@@ -20,22 +20,6 @@ Created By:
 
 pluginfuncs_t* get_pluginfuncs();
 
-// store all currently-loaded game info
-typedef struct game_info_s {
-	eng_syscall_t pfnsyscall = nullptr;
-	supported_game_t* game = nullptr;
-	std::string qmm_path;
-	std::string qmm_dir;
-	std::string qmm_file;
-	std::string moddir;
-	bool isautodetected = false;
-} game_info_t;
-
-extern game_info_t g_GameInfo;
-
-extern CModMgr* g_ModMgr;
-extern CPluginMgr* g_PluginMgr;
-
 #define ENG_MSG		(g_GameInfo.game->eng_msgs)
 #define ENG_MSGNAME	(g_GameInfo.game->eng_msg_names)
 

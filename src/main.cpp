@@ -9,17 +9,12 @@ Created By:
 
 */
 
-#include <string>
-#include <fstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #define FMT_HEADER_ONLY
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include "config.h"
 #include "CModMgr.h"
-#include "osdef.h"
+#include "main.h"
 #include "game_api.h"
 #include "qmmapi.h"
 #include "qmm.h"
@@ -144,8 +139,8 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], "[QMM] Attempting to load plugins\n");
 		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Successfully loaded {} plugin(s)\n", g_PluginMgr->LoadPlugins()).c_str());
 
-		// exec the qmm exec cfg
-		std::string cfg_execcfg = cfg_get_string(g_cfg, "execcfg", "qmmaddons/qmm/qmmexec.cfg");
+		// exec the qmmexec cfg
+		std::string cfg_execcfg = cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
 		if (!cfg_execcfg.empty()) {
 			ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Executing config file \"{}\"\n", cfg_execcfg).c_str());
 			ENG_SYSCALL(ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
