@@ -12,16 +12,29 @@ Created By:
 #ifndef __QMM2_QMM_H__
 #define __QMM2_QMM_H__
 
-#include "nlohmann/json.hpp"
+#include <string>
 #include "CModMgr.h"
 #include "CPluginMgr.h"
 #include "qmmapi.h"
+#include "config.h"
 
 pluginfuncs_t* get_pluginfuncs();
 
+// store all currently-loaded game info
+typedef struct game_info_s {
+	eng_syscall_t pfnsyscall = nullptr;
+	supported_game_t* game = nullptr;
+	std::string qmm_path;
+	std::string qmm_dir;
+	std::string qmm_file;
+	std::string moddir;
+	bool isautodetected = false;
+} game_info_t;
+
+extern game_info_t g_GameInfo;
+
 extern CModMgr* g_ModMgr;
 extern CPluginMgr* g_PluginMgr;
-extern nlohmann::json g_cfg;
 
 #define ENG_MSG		(g_GameInfo.game->eng_msgs)
 #define ENG_MSGNAME	(g_GameInfo.game->eng_msg_names)

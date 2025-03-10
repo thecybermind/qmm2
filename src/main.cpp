@@ -17,7 +17,7 @@ Created By:
 #define FMT_HEADER_ONLY
 #include "fmt/core.h"
 #include "fmt/format.h"
-#include "nlohmann/json.hpp"
+#include "config.h"
 #include "CModMgr.h"
 #include "osdef.h"
 #include "game_api.h"
@@ -28,7 +28,7 @@ Created By:
 
 CModMgr* g_ModMgr = NULL;
 CPluginMgr* g_PluginMgr = NULL;
-nlohmann::json g_cfg;
+game_info_t g_GameInfo;
 
 // syscall flow for QVM mods:
 //   mod calls <GAME>_vmsyscall (thinks it is the engine's syscall)
@@ -58,22 +58,13 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	fmt::print("[QMM] Detected QMM load from directory \"{}\"\n", g_GameInfo.qmm_dir);
 
 	// load config file
-	std::string cfg_filename = fmt::format("{}/qmm.json", g_GameInfo.qmm_dir);
-	std::ifstream cfg_if(cfg_filename);
-	if (!cfg_if.fail()) {
-		// parse(source, callback_handler, allow_exceptions, ignore_comments)
-		g_cfg = nlohmann::json::parse(cfg_if, nullptr, false, true);
-	}
-
+	g_cfg = cfg_load(fmt::format("{}/qmm2.json", g_GameInfo.qmm_dir));
 	if (g_cfg.empty()) {
 		// a default constructed json object is a blank {}, so in case of load failure, we can still try to read from it and assume defaults
 		fmt::print("[QMM] WARNING: ::dllEntry(): Unable to load config file, all settings will use default values\n");
 	}
 
-	std::string cfg_game = "auto";
-	if (g_cfg.contains("game") && g_cfg["game"].is_string()) {
-		cfg_game = g_cfg["game"];
-	}
+	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
 	
 	// find what game we are loaded in
 	for (int i = 0; g_SupportedGameList[i].dllname; i++) {
@@ -116,9 +107,6 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 	}
 
 	if (cmd == MOD_MSG[QMM_GAME_INIT]) {
-		if (g_cfg.empty())
-			ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], "[QMM] WARNING: ::vmMain(): Unable to load config file, all settings will use default values\n");
-
 		// get mod dir from engine
 		g_GameInfo.moddir = get_str_cvar("fs_game");
 		// RTCWSP returns "" for the mod, and others may too. grab the default mod dir from game info
@@ -156,14 +144,8 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], "[QMM] Attempting to load plugins\n");
 		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Successfully loaded {} plugin(s)\n", g_PluginMgr->LoadPlugins()).c_str());
 
-		// attempt to exec the qmmexec cfg
-		std::string cfg_execcfg = "qmmaddons/qmm/qmmexec.cfg";
-		if (g_cfg.contains(g_GameInfo.moddir)
-			&& g_cfg[g_GameInfo.moddir].is_object()
-			&& g_cfg[g_GameInfo.moddir].contains("execcfg")
-			&& g_cfg[g_GameInfo.moddir]["execcfg"].is_string()) {
-			cfg_execcfg = g_cfg[g_GameInfo.moddir]["execcfg"];
-		}
+		// exec the qmm exec cfg
+		std::string cfg_execcfg = cfg_get_string(g_cfg, "execcfg", "qmmaddons/qmm/qmmexec.cfg");
 		if (!cfg_execcfg.empty()) {
 			ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Executing config file \"{}\"\n", cfg_execcfg).c_str());
 			ENG_SYSCALL(ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
@@ -253,10 +235,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 
 	//if user is connecting for the first time, user is not a bot, and "nogreeting" option is not set
 	if (cmd == MOD_MSG[QMM_GAME_CLIENT_CONNECT] && arg1 && !arg2) {
-		bool cfg_nogreeting = false;
-		if (g_cfg.contains("nogreeting") && g_cfg["nogreeting"].is_boolean()) {
-			cfg_nogreeting = g_cfg["nogreeting"];
-		}
+		bool cfg_nogreeting = cfg_get_bool(g_cfg, "nogreeting", false);
 
 		if (!cfg_nogreeting) {
 			ENG_SYSCALL(ENG_MSG[QMM_G_SEND_SERVER_COMMAND], arg0, "print \"^7This server is running ^4QMM^7 v^4" QMM_VERSION "^7\n\"");

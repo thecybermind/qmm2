@@ -14,6 +14,7 @@ Created By:
 #define FMT_HEADER_ONLY
 #include "fmt/core.h"
 #include "fmt/format.h"
+#include "config.h"
 #include "osdef.h"
 #include "CModMgr.h"
 #include "CMod.h"
@@ -94,14 +95,7 @@ int CModMgr::LoadMod() {
 	//load mod file setting from config file
 	//this should be relative to mod directory
 	
-	std::string cfg_modfile = fmt::format("{}/{}", g_GameInfo.moddir, g_GameInfo.game->dllname);
-	if (g_cfg.contains(g_GameInfo.moddir)
-		&& g_cfg[g_GameInfo.moddir].is_object()	
-		&& g_cfg[g_GameInfo.moddir].contains("mod")
-		&& g_cfg[g_GameInfo.moddir]["mod"].is_string()	
-	) {
-		cfg_modfile = g_cfg[g_GameInfo.moddir]["mod"];
-	}
+	std::string cfg_modfile = cfg_get_string(g_cfg, "mod", g_GameInfo.game->dllname);
 	
 	const char* cfg_mod = cfg_modfile.c_str();
 

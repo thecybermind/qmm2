@@ -89,6 +89,7 @@
     <ClCompile Include="..\src\CDLL.cpp" />
     <ClCompile Include="..\src\CDLLMod.cpp" />
     <ClCompile Include="..\src\CModMgr.cpp" />
+    <ClCompile Include="..\src\config.cpp" />
     <ClCompile Include="..\src\CPlugin.cpp" />
     <ClCompile Include="..\src\CPluginMgr.cpp" />
     <ClCompile Include="..\src\CVMMod.cpp" />

@@ -12,6 +12,7 @@ Created By:
 #include <vector>
 #include <string>
 #include <stdlib.h>
+#include "config.h"
 #include "CPluginMgr.h"
 #include "CPlugin.h"
 #include "CModMgr.h"
@@ -25,15 +26,7 @@ CPluginMgr::~CPluginMgr() {
 }
 
 int CPluginMgr::LoadPlugins() {
-	std::vector<std::string> plugin_files;
-
-	if (g_cfg.contains(g_GameInfo.moddir)
-		&& g_cfg[g_GameInfo.moddir].is_string()
-		&& g_cfg[g_GameInfo.moddir].contains("plugins")
-		&& g_cfg[g_GameInfo.moddir]["plugins"].is_array()
-	) {
-		plugin_files = g_cfg[g_GameInfo.moddir]["plugins"];
-	}
+	std::vector<std::string> plugin_files = cfg_get_array(g_cfg, "plugins");
 	
 	for (auto plugin : plugin_files) {
 		this->LoadPlugin(plugin.c_str());

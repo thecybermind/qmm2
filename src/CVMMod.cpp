@@ -12,6 +12,7 @@ Created By:
 #include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "config.h"
 #include "osdef.h"
 #include "CVMMod.h"
 #include "qmm.h"
@@ -164,14 +165,7 @@ int CVMMod::LoadMod(std::string file) {
 	//just add each data segment up
 	this->dataseglen = this->header.datalen + this->header.litlen + this->header.bsslen;
 	//stack size is from config file (in MB), defaults to 1
-	int cfg_stack = 1;
-	if (g_cfg.contains(g_GameInfo.moddir)
-		&& g_cfg[g_GameInfo.moddir].is_object()
-		&& g_cfg[g_GameInfo.moddir].contains("qvmstacksize")
-		&& g_cfg[g_GameInfo.moddir]["qvmstacksize"].is_number_integer()
-		) {
-		cfg_stack = g_cfg[g_GameInfo.moddir]["qvmstacksize"];
-	}
+	int cfg_stack = cfg_get_int(g_cfg, "qvmstacksize", 1);
 	if (cfg_stack <= 0)
 		cfg_stack = 1;
 	this->stackseglen = cfg_stack * (1<<20);
