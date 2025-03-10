@@ -9,6 +9,7 @@ Created By:
 
 */
 
+#include <stdlib.h>
 #include "game_api.h"
 
 //add your game file's msg arrays here

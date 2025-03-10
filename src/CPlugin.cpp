@@ -15,6 +15,7 @@ Created By:
 #include "fmt/format.h"
 #include "CPlugin.h"
 #include "qmm.h"
+#include "main.h"
 #include "util.h"
 
 CPlugin::CPlugin() {

@@ -9,18 +9,13 @@ Created By:
 
 */
 
-#include <stddef.h>
-#include <string.h>
-#define FMT_HEADER_ONLY
-#include "fmt/core.h"
-#include "fmt/format.h"
+#include <string>
 #include "config.h"
-#include "osdef.h"
 #include "CModMgr.h"
 #include "CMod.h"
 #include "CDLLMod.h"
 #include "CVMMod.h"
-#include "game_api.h"
+#include "main.h"
 #include "util.h"
 
 CModMgr::CModMgr(eng_syscall_t qmm_syscall) {

@@ -12,8 +12,6 @@ Created By:
 #ifndef __QMM2_GAME_API_H__
 #define __QMM2_GAME_API_H__
 
-#include <string>
-
 typedef int (*vmsyscall_t)(unsigned char*, int, int*);
 typedef const char* (*msgname_t)(int);
 

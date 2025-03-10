@@ -11,12 +11,11 @@ Created By:
 
 #include <vector>
 #include <string>
-#include <stdlib.h>
 #include "config.h"
 #include "CPluginMgr.h"
 #include "CPlugin.h"
-#include "CModMgr.h"
 #include "qmm.h"
+#include "main.h"
 #include "util.h"
 
 CPluginMgr::CPluginMgr() {

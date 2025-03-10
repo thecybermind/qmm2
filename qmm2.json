@@ -12,7 +12,7 @@
 
 	/* Specifies mod file name to load
 	   default = "auto"
-	   see table in README.md for the per-game defaults
+	   "auto" will use "qmm_<name>" where <name> is the per-game name from the table in README.md
 	*/
 	"mod": "auto",
 

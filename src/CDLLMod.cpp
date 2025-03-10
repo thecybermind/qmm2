@@ -9,15 +9,14 @@ Created By:
 
 */
 
-#include <string.h>
+#include <string>
 #define FMT_HEADER_ONLY
 #include "fmt/core.h"
 #include "fmt/format.h"
-#include "osdef.h"
 #include "qmm.h"
 #include "CModMgr.h"
 #include "game_api.h"
-#include "qmmapi.h"
+#include "main.h"
 #include "CDLLMod.h"
 #include "util.h"
 

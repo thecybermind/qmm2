@@ -9,13 +9,11 @@ Created By:
 
 */
 
-#include <malloc.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
-#include "osdef.h"
 #include "CVMMod.h"
 #include "qmm.h"
+#include "main.h"
 #include "qvm.h"
 #include "util.h"
 

@@ -15,6 +15,7 @@ Created By:
 #include <stdio.h>
 #include <string.h>
 #include "qmm.h"
+#include "main.h"
 #include "util.h"
 
 std::string my_dirname(const std::string path) {

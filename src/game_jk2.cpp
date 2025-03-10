@@ -9,11 +9,15 @@ Created By:
 
 */
 
-#include "game_api.h"
+// 'typedef ': ignored on left of '<unnamed-enum>' when no variable is declared
+// found in a lot of the game sdks
+#pragma warning(disable:4091)	
+
 #include <jk2/game/q_shared.h>
 #include <jk2/game/g_public.h>
+#include "game_api.h"
+#include "main.h"
 #include "qmm.h"
-#include "util.h"
 
 GEN_MSGS(JK2);
 

@@ -42,10 +42,6 @@ Created By:
  #define dlsym(dll, func)	((void*)GetProcAddress((HMODULE)(dll), (func)))
  #define dlclose(dll)		FreeLibrary((HMODULE)(dll))
  char* dlerror();			// this returns the last error from any win32 function, not just library functions
-
- // 'typedef ': ignored on left of '<unnamed-enum>' when no variable is declared
- // found in a lot of the game sdks
- #pragma warning(disable:4091)	
 #else // linux
  #include <dlfcn.h>
  #include <limits.h>

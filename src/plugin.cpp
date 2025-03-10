@@ -14,7 +14,7 @@ Created By:
 #include <string.h>
 #include "CModMgr.h"
 #include "qmm.h"
-#include "qmmapi.h"
+#include "main.h"
 #include "util.h"
 
 static int s_plugin_helper_WriteGameLog(const char* text, int len = -1) {
