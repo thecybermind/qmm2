@@ -325,16 +325,16 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		// set new max result
 		maxresult = max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: vmMain({}): Plugin \"{}\" did not set result flag\n", ENG_MSGNAME(cmd), p.plugininfo->name).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: vmMain({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name).c_str());
 		if (g_plugin_result == QMM_ERROR)
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: vmMain({}): Plugin \"{}\" resulted in ERROR\n", ENG_MSGNAME(cmd), p.plugininfo->name).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: vmMain({}): Plugin \"{}\" resulted in ERROR\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name).c_str());
 		// if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
 		if (g_plugin_result >= QMM_OVERRIDE)
 			final_ret = ret;
 	}
 	// call real vmMain function (unless a plugin resulted in QMM_SUPERCEDE)
 	if (maxresult < QMM_SUPERCEDE) {
-		ret = MOD_VMMAIN(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+		ret = g_ModMgr->Mod()->vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 		// the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for VMs
 		if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && g_ModMgr->Mod()->IsVM() && ret /* dont bother if its NULL */)
 			ret += g_ModMgr->Mod()->GetBase();
@@ -425,9 +425,9 @@ int syscall(int cmd, ...) {
 		// set new max result
 		maxresult = max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: syscall({}): Plugin \"{}\" did not set result flag\n", ENG_MSGNAME(cmd), p.plugininfo->name).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: syscall({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name).c_str());
 		if (g_plugin_result == QMM_ERROR)
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: syscall({}): Plugin \"{}\" resulted in ERROR\n", ENG_MSGNAME(cmd), p.plugininfo->name).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: syscall({}): Plugin \"{}\" resulted in ERROR\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name).c_str());
 		// if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
 		if (g_plugin_result >= QMM_OVERRIDE)
 			final_ret = ret;

@@ -15,8 +15,6 @@ Created By:
 #include <vector>
 #include "qmmapi.h"
 
-extern pluginfuncs_t* get_pluginfuncs();
-
 typedef struct plugin_s {
 	void* dll = nullptr;
 	std::string path;

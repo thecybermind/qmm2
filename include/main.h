@@ -36,11 +36,7 @@ extern CModMgr* g_ModMgr;
 #define QMM_ENG_MSG	(g_gameinfo.game->qmm_eng_msgs)
 #define QMM_MOD_MSG	(g_gameinfo.game->qmm_mod_msgs)
 
-#define ENG_MSGNAME	(g_gameinfo.game->eng_msg_names)
-#define MOD_MSGNAME	(g_gameinfo.game->mod_msg_names)
-
 #define ENG_SYSCALL	g_gameinfo.pfnsyscall
-#define MOD_VMMAIN	g_ModMgr->Mod()->vmMain
 
 // these are used if we couldn't determine a game engine and we have to fail
 // G_ERROR and GAME_SHUTDOWN appear to be 1 in all supported games

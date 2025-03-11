@@ -98,4 +98,37 @@ typedef struct {
 	int bsslen;
 } qvmheader_t;
 
+// all the info for a single QVM object
+typedef struct {
+	qvmheader_t header;		// header information
+
+	// extra
+	int swapped;			// was this file byteswapped? (is the server big-endian)
+	int filesize;			// .qvm file size
+
+	// memory
+	byte* memory;			// main block of memory
+	int memorysize;			// size of memory block
+
+	// segments
+	qvmop_t* codesegment;	// code segment, each op is 8 bytes (4 op, 4 param)
+	byte* datasegment;		// data segment, partially filled on load
+	byte* stacksegment;		// stack segment
+
+	// segment sizes
+	int codeseglen;			// size of code segment
+	int dataseglen;			// size of data segment
+	int stackseglen;		// size of stack segment
+
+	// "registers"
+	qvmop_t* opptr;			// current op in code segment
+	int* stackptr;			// pointer to current location in stack
+	int argbase;			// lower end of arg heap
+} qvm_t;
+
+
+// entry point for qvms (given to plugins to call for qvm mods)
+int qvm_vmMain(int, int, int, int, int, int, int, int, int, int, int, int, int);
+
+
 #endif // __QMM2_QVM_H__

@@ -62,16 +62,16 @@ CMod* CModMgr::newmod(const char* file) {
 	// if unable to determine file type via header, just check the extension
 	if (!ret) {
 		// get the 3-letter file extension
-		char* qfile = (char*)&file[strlen(file) - strlen(QVM_EXT)];
+		char* qfile = (char*)&file[strlen(file) - strlen(EXT_QVM)];
 		// get the 2/3-letter file extension
-		char* dfile = (char*)&file[strlen(file) - strlen(DLL_EXT)];
+		char* dfile = (char*)&file[strlen(file) - strlen(EXT_DLL)];
 	
 		// if the extension is .dll/.so
-		if (!strcasecmp(dfile, DLL_EXT))
+		if (!strcasecmp(dfile, EXT_DLL))
 			ret = new CDLLMod;
 		
 		// if the extension is .qvm, only allow if this game supports it
-		else if (!strcasecmp(qfile, QVM_EXT) && g_gameinfo.game->vmsyscall)
+		else if (!strcasecmp(qfile, EXT_QVM) && g_gameinfo.game->vmsyscall)
 			ret = new CVMMod;
 	}
 	

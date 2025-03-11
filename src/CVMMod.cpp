@@ -596,8 +596,8 @@ int CVMMod::vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, in
 			
 			// anything else
 			default:
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::vmMain(%s): Unhandled opcode %s (%d)\n", ENG_MSGNAME(cmd), opcodename[op], op));
-				log_write(vaf("[QMM] ERROR: CVMMod::vmMain(%s): Unhandled opcode %s (%d)\n", ENG_MSGNAME(cmd), opcodename[op], op));
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::vmMain(%s): Unhandled opcode %s (%d)\n", g_gameinfo.game->eng_msg_names(cmd), opcodename[op], op));
+				log_write(vaf("[QMM] ERROR: CVMMod::vmMain(%s): Unhandled opcode %s (%d)\n", g_gameinfo.game->eng_msg_names(cmd), opcodename[op], op));
 				break;
 
 		// stack
@@ -791,7 +791,7 @@ int CVMMod::vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, in
 				byte* to = this->datasegment + *stack++;
 
 				/*if( param & 3 ) {
-					// ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::vmMain(%s): OP_BLOCK_COPY not DWORD aligned, truncating copy length\n", ENG_MSGNAME(cmd)));
+					// ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::vmMain(%s): OP_BLOCK_COPY not DWORD aligned, truncating copy length\n", g_gameinfo.game->eng_msg_names(cmd)));
 				}
 
 				// convert param from number of bytes -> ints
@@ -799,7 +799,7 @@ int CVMMod::vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, in
 				*/
 
 				if (from == to) {
-					// ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::vmMain(%s): OP_BLOCK_COPY pointers are equal, ignoring\n", ENG_MSGNAME(cmd)));
+					// ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::vmMain(%s): OP_BLOCK_COPY pointers are equal, ignoring\n", g_gameinfo.game->eng_msg_names(cmd)));
 					break;
 				}
 

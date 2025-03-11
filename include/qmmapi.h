@@ -49,7 +49,7 @@ typedef struct {
 
 
 // prototype struct for QMM plugin util funcs
-typedef struct pluginfuncs_s {
+typedef struct {
     int (*pfnWriteGameLog)(const char*, int);
     char* (*pfnVarArgs)(char*, ...);
     int (*pfnIsQVM)();

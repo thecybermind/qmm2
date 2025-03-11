@@ -42,11 +42,11 @@ static int s_plugin_helper_IsQVM() {
 }
 
 static const char* s_plugin_helper_EngMsgName(int x) {
-	return ENG_MSGNAME(x);
+	return g_gameinfo.game->eng_msg_names(x);
 }
 
 static const char* s_plugin_helper_ModMsgName(int x) {
-	return MOD_MSGNAME(x);
+	return g_gameinfo.game->mod_msg_names(x);
 }
 
 static int s_plugin_helper_GetIntCvar(const char* cvar) {
@@ -57,18 +57,15 @@ static const char* s_plugin_helper_GetStrCvar(const char* cvar) {
 	return get_str_cvar(cvar);
 }
 
-pluginfuncs_t* get_pluginfuncs() {
-	static pluginfuncs_t pluginfuncs = {
-		&s_plugin_helper_WriteGameLog,
-		&s_plugin_helper_VarArgs,
-		&s_plugin_helper_IsQVM,
-		&s_plugin_helper_EngMsgName,
-		&s_plugin_helper_ModMsgName,
-		&s_plugin_helper_GetIntCvar,
-		&s_plugin_helper_GetStrCvar,
-	};
-	return &pluginfuncs;
-}
+static pluginfuncs_t s_pluginfuncs = {
+	&s_plugin_helper_WriteGameLog,
+	&s_plugin_helper_VarArgs,
+	&s_plugin_helper_IsQVM,
+	&s_plugin_helper_EngMsgName,
+	&s_plugin_helper_ModMsgName,
+	&s_plugin_helper_GetIntCvar,
+	&s_plugin_helper_GetStrCvar,
+};
 
 pluginres_t g_plugin_result = QMM_UNUSED;
 std::vector<plugin_t> g_plugins;
@@ -78,7 +75,7 @@ static int s_plugin_vmmain(int cmd, int arg0, int arg1, int arg2, int arg3, int 
 	// if no mod loaded (during shutdown)
 	if (!g_ModMgr)
 		return 0;
-	return MOD_VMMAIN(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+	return g_ModMgr->Mod()->vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 }
 
 bool plugin_load(plugin_t* p, std::string file) {
@@ -150,7 +147,7 @@ bool plugin_load(plugin_t* p, std::string file) {
 
 	// call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
 	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, vmbase)
-	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, s_plugin_vmmain, &g_plugin_result, get_pluginfuncs(), g_ModMgr->Mod()->GetBase()))) {
+	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, s_plugin_vmmain, &g_plugin_result, &s_pluginfuncs, g_ModMgr->Mod()->GetBase()))) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): QMM_Attach() returned 0\n", file).c_str());
 		p->QMM_Detach();
 		goto fail;
