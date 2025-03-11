@@ -9,9 +9,9 @@ Created By: Kevin Masterson < cybermind@gmail.com >
 
 ---
 
-**QMM** is a system for games based on the Quake 3 engine. It functions similar to [Metamod](http://metamod.org/) for Half-Life and [Metamod:Source](https://www.sourcemm.net/) for the Source engine (Half-Life 2).
+**QMM** is a plugin manager for games based on the Quake 3 engine. It functions similar to [Metamod](http://metamod.org/) for Half-Life and [Metamod:Source](https://www.sourcemm.net/) for the Source engine (Half-Life 2).
 
-It hooks communication between the server engine and the the game logic (the mod). It allows for plugins to be loaded in-between which can add or change functionality without having to change the mod itself.
+It hooks communication between the server engine and the game logic (the mod). It allows for plugins to be loaded in-between which can add or change functionality without having to change the mod itself.
 
 - [Installation](#installation)
 - [Notes](#notes)
