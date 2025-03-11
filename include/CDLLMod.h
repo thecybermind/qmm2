@@ -32,11 +32,12 @@ class CDLLMod : public CMod {
 
 		void Status();
 
-	private:
+		mod_vmMain_t pfnvmMain;
+
+private:
 		std::string file;
 		CDLL dll;
-		mod_vmMain_t pfnvmMain;
 		mod_dllEntry_t pfndllEntry;
 };
 
-#endif //__QMM2_CDLLMOD_H__
+#endif // __QMM2_CDLLMOD_H__

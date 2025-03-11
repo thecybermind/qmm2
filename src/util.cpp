@@ -14,25 +14,24 @@ Created By:
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include "qmm.h"
 #include "main.h"
 #include "util.h"
 
-std::string my_dirname(const std::string path) {
+std::string my_dirname(std::string path) {
 	auto pos = path.find_last_of('/');
 	if (pos == std::string::npos || !pos)
 		return "./";
 	return path.substr(0, pos + 1);
 }
 
-std::string my_basename(const std::string path) {
+std::string my_basename(std::string path) {
 	auto pos = path.find_last_of('/');
 	if (pos == std::string::npos)
 		return path;
 	return path.substr(pos + 1);
 }
 
-std::string my_baseext(const std::string path) {
+std::string my_baseext(std::string path) {
 	std::string base = my_basename(path);
 	auto pos = base.find_last_of('.');
 	if (pos == std::string::npos)
@@ -40,26 +39,36 @@ std::string my_baseext(const std::string path) {
 	return base.substr(pos + 1);
 }
 
-int my_stricmp(const std::string& s1, const std::string& s2) {
-	std::string s1c = s1;
-	std::string s2c = s2;
-	for (auto& c : s1c)
+int my_stricmp(std::string s1, std::string s2) {
+	for (auto& c : s1)
 		c = std::tolower(c);
-	for (auto& c : s2c)
+	for (auto& c : s2)
 		c = std::tolower(c);
 	
-	return s1c.compare(s2c);
+	return s1.compare(s2);
 }
 
-int my_striequal(const std::string& s1, const std::string& s2) {
+int my_striequal(std::string s1, std::string s2) {
 	return my_stricmp(s1, s2) == 0;
 }
 
+bool is_relative_path(std::string path) {
+	// ./file
+	if (path[0] == '.')
+		return true;
+	// \\dir\file
+	// \dir\file
+	// /dir/file
+	if (path[0] == '/' || path[0] == '\\')
+		return false;
+	// C:\dir\file
+	if (path[1] == ':' && std::isalpha(static_cast<unsigned char>(path[0])))
+		return false;
+	return true;
+}
+
 std::string get_qmm_modulepath() {
-	static std::string path = "";
-	if (path.empty())
-		path = osdef_get_qmm_modulepath();	
-	return path;
+	return osdef_get_qmm_modulepath();
 }
 
 int byteswap(int i) {
@@ -81,7 +90,7 @@ short byteswap(short s) {
 	return (short)(((short)b1<<8) + (short)b2);
 }
 
-//this uses a cycling array of strings so the return value does not need to be stored locally
+// this uses a cycling array of strings so the return value does not need to be stored locally
 char* vaf(const char* format, ...) {
 	va_list	argptr;
 	static char str[8][1024];
@@ -100,10 +109,10 @@ int get_int_cvar(const char* cvar) {
 	if (!cvar || !*cvar)
 		return -1;
 
-	return ENG_SYSCALL(ENG_MSG[QMM_G_CVAR_VARIABLE_INTEGER_VALUE], cvar);
+	return ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_INTEGER_VALUE], cvar);
 }
 
-//this uses a cycling array of strings so the return value does not need to be stored locally
+// this uses a cycling array of strings so the return value does not need to be stored locally
 #define MAX_CVAR_LEN	256
 const char* get_str_cvar(const char* cvar) {
 	if (!cvar || !*cvar)
@@ -113,7 +122,7 @@ const char* get_str_cvar(const char* cvar) {
 	static int index = 0;
 	int i = index;
 
-	ENG_SYSCALL(ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], cvar, temp[i], sizeof(temp[i]));
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], cvar, temp[i], sizeof(temp[i]));
 	index = (index + 1) & 7;
 	return temp[i];
 }
@@ -133,51 +142,51 @@ int log_write(const char* text, int len) {
 		if (len == -1)
 			len = strlen(text);
 
-		return ENG_SYSCALL(ENG_MSG[QMM_G_FS_WRITE], text, len, s_fh);
+		return ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_WRITE], text, len, s_fh);
 	}
 	
 	return -1;
 }
 
 int dump_file(const char* file, const char* outfile) {
-	outfile = vaf("%s/%s", g_GameInfo.qmm_dir, outfile ? outfile : file);
+	outfile = vaf("%s/%s", g_gameinfo.qmm_dir, outfile ? outfile : file);
 	
-	//check if the real file already exists
+	// check if the real file already exists
 	FILE* ffile = fopen(outfile, "r");
 	if (ffile) {
 		fclose(ffile);
 		return 0;
 	}
 
-	//open file from inside pk3
-	int fpk3, fsize = ENG_SYSCALL(ENG_MSG[QMM_G_FS_FOPEN_FILE], file, &fpk3, ENG_MSG[QMM_FS_READ]);
+	// open file from inside pk3
+	int fpk3, fsize = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], file, &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
 	if (fsize <= 0) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 		return 0;
 	}
 
-	//open output file
+	// open output file
 	ffile = fopen(outfile, "wb");
 	if (!ffile) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 		return 0;
 	}
 
-	//read file in blocks of 512
+	// read file in blocks of 512
 	byte buf[512];
 	int left = fsize;
 	while (left >= sizeof(buf)) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], buf, sizeof(buf), fpk3);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], buf, sizeof(buf), fpk3);
 		fwrite(buf, sizeof(buf), 1, ffile);
 		left -= sizeof(buf);
 	}
 	if (left) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], buf, left, fpk3);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], buf, left, fpk3);
 		fwrite(buf, left, 1, ffile);
 	}
 
-	//close file handles
-	ENG_SYSCALL(ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
+	// close file handles
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 	fclose(ffile);
 
 	return fsize;

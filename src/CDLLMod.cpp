@@ -10,10 +10,7 @@ Created By:
 */
 
 #include <string>
-#define FMT_HEADER_ONLY
-#include "fmt/core.h"
-#include "fmt/format.h"
-#include "qmm.h"
+#include "format.h"
 #include "CModMgr.h"
 #include "game_api.h"
 #include "main.h"
@@ -26,33 +23,33 @@ CDLLMod::CDLLMod() {
 CDLLMod::~CDLLMod() {
 }
 
-// - file is either the full path or relative to the install directory
-//homepath stuff is all handled in CModMgr::LoadMod()
+// file is either the full path or relative to the install directory
+// homepath stuff is all handled in CModMgr::LoadMod()
 int CDLLMod::LoadMod(std::string file) {
 	if (file.empty())
 		return 0;
 
 	this->file = file;
 	
-	//file not found
+	// file not found
 	if (!this->dll.Load(this->file)) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: CDLLMod::LoadMod(\"{}\"): Unable to load mod file: {}\n", file, dlerror()).c_str());
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: CDLLMod::LoadMod(\"{}\"): Unable to load mod file: {}\n", file, dlerror()).c_str());
 		return 0;
 	}
 
-	//locate dllEntry() function or fail
+	// locate dllEntry() function or fail
 	if ((this->pfndllEntry = (mod_dllEntry_t)this->dll.GetProc("dllEntry")) == NULL) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: CDLLMod::LoadMod(\"{}\"): Unable to locate dllEntry() mod entry point\n", file).c_str());
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: CDLLMod::LoadMod(\"{}\"): Unable to locate dllEntry() mod entry point\n", file).c_str());
 		return 0;
 	}
 
-	//locate vmMain() function or fail
+	// locate vmMain() function or fail
 	if ((this->pfnvmMain = (mod_vmMain_t)this->dll.GetProc("vmMain")) == NULL) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: CDLLMod::LoadMod(\"{}\"): Unable to locate vmMain() mod entry point\n", file).c_str());
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: CDLLMod::LoadMod(\"{}\"): Unable to locate vmMain() mod entry point\n", file).c_str());
 		return 0;
 	}
 
-	//call mod's dllEntry
+	// call mod's dllEntry
 	this->pfndllEntry(g_ModMgr->QMM_SysCall());
 
 	return 1;
@@ -75,6 +72,6 @@ int CDLLMod::GetBase() {
 }
 
 void CDLLMod::Status() {
-	ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] dllEntry() offset: {}\n", (void*)(this->pfndllEntry)).c_str());
-	ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] vmMain() offset: {}\n", (void*)(this->pfnvmMain)).c_str());
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] dllEntry() offset: {}\n", (void*)(this->pfndllEntry)).c_str());
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] vmMain() offset: {}\n", (void*)(this->pfnvmMain)).c_str());
 }

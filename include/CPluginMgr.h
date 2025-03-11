@@ -37,4 +37,4 @@ class CPluginMgr {
 
 		static CPluginMgr* instance;
 };
-#endif //__QMM2_CPLUGINMGR_H__
+#endif // __QMM2_CPLUGINMGR_H__

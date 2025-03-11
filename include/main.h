@@ -19,7 +19,7 @@ Created By:
 // store all currently-loaded game info
 typedef struct game_info_s {
 	eng_syscall_t pfnsyscall = nullptr;
-	supported_game_t* game = nullptr;
+	supportedgame_t* game = nullptr;
 	std::string qmm_path;
 	std::string qmm_dir;
 	std::string qmm_file;
@@ -27,9 +27,28 @@ typedef struct game_info_s {
 	bool isautodetected = false;
 } game_info_t;
 
-extern game_info_t g_GameInfo;
+extern game_info_t g_gameinfo;
 
 extern CModMgr* g_ModMgr;
 extern CPluginMgr* g_PluginMgr;
 
-#endif //__QMM2_MAIN_H__
+#define QMM_ENG_MSG	(g_gameinfo.game->qmm_eng_msgs)
+#define QMM_MOD_MSG	(g_gameinfo.game->qmm_mod_msgs)
+
+#define ENG_MSGNAME	(g_gameinfo.game->eng_msg_names)
+#define MOD_MSGNAME	(g_gameinfo.game->mod_msg_names)
+
+#define ENG_SYSCALL	g_gameinfo.pfnsyscall
+#define MOD_VMMAIN	g_ModMgr->Mod()->vmMain
+
+// these are used if we couldn't determine a game engine and we have to fail
+// G_ERROR and GAME_SHUTDOWN appear to be 1 in all supported games
+// we hope it is true for all
+constexpr int QMM_FAIL_G_ERROR = 1;
+constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
+
+C_DLLEXPORT void dllEntry(eng_syscall_t);
+C_DLLEXPORT int vmMain(int, int, int, int, int, int, int, int, int, int, int, int, int);
+int syscall(int, ...);
+
+#endif // __QMM2_MAIN_H__

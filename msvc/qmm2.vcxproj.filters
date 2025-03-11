@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Other">
+      <UniqueIdentifier>{bae78054-dd1d-4c24-b371-4778dc0446e7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\qmmapi.h">
@@ -55,9 +58,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\game_api.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\qmm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\main.h">
@@ -127,5 +127,16 @@
     <ResourceCompile Include="qmm2.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Filter>Other</Filter>
+    </None>
+    <None Include="..\qmm2.json">
+      <Filter>Other</Filter>
+    </None>
+    <None Include="..\README.md">
+      <Filter>Other</Filter>
+    </None>
   </ItemGroup>
 </Project>

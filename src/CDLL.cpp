@@ -23,7 +23,7 @@ CDLL::~CDLL() {
 bool CDLL::Load(std::string file) {
 	if (this->hDLL)
 		return 0;
-
+	
 	this->hDLL = dlopen(file.c_str(), RTLD_NOW);
 
 	return !!this->hDLL;

@@ -12,11 +12,13 @@ Created By:
 #ifndef __QMM2_QVM_H__
 #define __QMM2_QVM_H__
 
-//magic number is stored in file as 44 14 72 12
-#define	QVM_MAGIC       0x12721444  //little endian
-#define QVM_MAGIC_BIG   0x44147212  //big endian
+// magic number is stored in file as 44 14 72 12
+#define	QVM_MAGIC       0x12721444  // little endian
+#define QVM_MAGIC_BIG   0x44147212  // big endian
 
-typedef enum qvmopcode_s {
+typedef unsigned char byte;
+
+typedef enum {
 	OP_UNDEF,
 	OP_NOP,
 	OP_BREAK,
@@ -79,13 +81,13 @@ typedef enum qvmopcode_s {
 	OP_CVFI
 } qvmopcode_t;
 
-//a single opcode in memory
-typedef struct qvmop_s {
+// a single opcode in memory
+typedef struct {
 	qvmopcode_t op;
 	int param;
 } qvmop_t;
 
-typedef struct qvmheader_s {
+typedef struct {
 	int magic;
 	int numops;
 	int codeoffset;
@@ -96,4 +98,4 @@ typedef struct qvmheader_s {
 	int bsslen;
 } qvmheader_t;
 
-#endif //__QMM2_QVM_H__
+#endif // __QMM2_QVM_H__

@@ -12,12 +12,14 @@ Created By:
 #ifndef __QMM2_UTIL_H__
 #define __QMM2_UTIL_H__
 
-std::string my_dirname(const std::string);
-std::string my_basename(const std::string);
-std::string my_baseext(const std::string);
+std::string my_dirname(std::string);
+std::string my_basename(std::string);
+std::string my_baseext(std::string);
 
-int my_stricmp(const std::string&, const std::string&);
-int my_striequal(const std::string&, const std::string&);
+int my_stricmp(std::string, std::string);
+int my_striequal(std::string, std::string);
+
+bool is_relative_path(std::string);
 
 std::string get_qmm_modulepath();
 
@@ -31,4 +33,4 @@ int log_get();
 int log_write(const char*, int = -1);
 int dump_file(const char*, const char* = NULL);
 
-#endif //__QMM2_UTIL_H__
+#endif // __QMM2_UTIL_H__

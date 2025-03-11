@@ -12,12 +12,11 @@ Created By:
 #include <stdlib.h>
 #include "config.h"
 #include "CVMMod.h"
-#include "qmm.h"
 #include "main.h"
 #include "qvm.h"
 #include "util.h"
 
-//return a string name for the VM opcode
+// return a string name for the VM opcode
 const char* opcodename[] = {
 	"OP_UNDEF",
 	"OP_NOP",
@@ -107,7 +106,7 @@ CVMMod::~CVMMod() {
 	free(this->memory);
 }
 
-// - file is the path relative to the install directory
+// file is the path relative to the install directory
 int CVMMod::LoadMod(std::string file) {
 	if (file.empty())
 		return 0;
@@ -118,21 +117,21 @@ int CVMMod::LoadMod(std::string file) {
 	byte temp;
 	int k;
 
-	//open QVM file (use engine calls so we can easily read into .pk3)
-	this->filesize = ENG_SYSCALL(ENG_MSG[QMM_G_FS_FOPEN_FILE], this->file.c_str(), &fqvm, ENG_MSG[QMM_FS_READ]);
+	// open QVM file (use engine calls so we can easily read into .pk3)
+	this->filesize = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], this->file.c_str(), &fqvm, QMM_ENG_MSG[QMM_FS_READ]);
 
 	if (this->filesize <= 0) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(\"%s\"): Failed to open QVM file for reading\n", this->file.c_str()));
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(\"%s\"): Failed to open QVM file for reading\n", this->file.c_str()));
 		return 0;
 	}
 
-	//load file as needed, do not load all at once	
-	ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], &this->header, sizeof(this->header), fqvm);
-	ENG_SYSCALL(ENG_MSG[QMM_G_FS_FCLOSE_FILE], fqvm);
+	// load file as needed, do not load all at once	
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], &this->header, sizeof(this->header), fqvm);
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fqvm);
 
-	//if we are a big-endian machine, need to swap everything around
+	// if we are a big-endian machine, need to swap everything around
 	if (this->header.magic == QVM_MAGIC_BIG) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::LoadMod(): Big-endian magic number detected, will byteswap during load.\n", this->file.c_str()));
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::LoadMod(): Big-endian magic number detected, will byteswap during load.\n", this->file.c_str()));
 		this->swapped = 1;
 		this->header.magic = byteswap(this->header.magic);
 		this->header.numops = byteswap(this->header.numops);
@@ -144,7 +143,7 @@ int CVMMod::LoadMod(std::string file) {
 		this->header.bsslen = byteswap(this->header.bsslen);
 	}
 
-	//check file
+	// check file
 	if (this->header.magic != QVM_MAGIC ||
 		this->header.numops <= 0 ||
 		this->header.codelen <= 0 ||
@@ -154,32 +153,32 @@ int CVMMod::LoadMod(std::string file) {
 		this->header.codeoffset > this->filesize ||
 		this->header.dataoffset > this->filesize
 		) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(): QVM file \"%s\" is not the correct format\n", this->file.c_str()));
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(): QVM file \"%s\" is not the correct format\n", this->file.c_str()));
 		return 0;
 	}
 
-	//each opcode is 8 bytes long, calculate total size of opcodes
+	// each opcode is 8 bytes long, calculate total size of opcodes
 	this->codeseglen = this->header.numops * sizeof(qvmop_t);
-	//just add each data segment up
+	// just add each data segment up
 	this->dataseglen = this->header.datalen + this->header.litlen + this->header.bsslen;
-	//stack size is from config file (in MB), defaults to 1
+	// stack size is from config file (in MB), defaults to 1
 	int cfg_stack = cfg_get_int(g_cfg, "qvmstacksize", 1);
 	if (cfg_stack <= 0)
 		cfg_stack = 1;
 	this->stackseglen = cfg_stack * (1<<20);
 
-	//get total memory size
+	// get total memory size
 	this->memorysize = this->codeseglen + this->dataseglen + this->stackseglen;
 
-	//load memory code block (freed in destructor)
+	// load memory code block (freed in destructor)
 	this->memory = (byte*)malloc(this->memorysize);
-	//malloc failed
+	// malloc failed
 	if (!this->memory) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(): Unable to allocate memory chunk (size=%d) to store virtual machine for \"%s\"\n", this->memorysize, this->file.c_str()));
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(): Unable to allocate memory chunk (size=%d) to store virtual machine for \"%s\"\n", this->memorysize, this->file.c_str()));
 		return 0;
 	}
 
-	//clear the memory
+	// clear the memory
 	memset(this->memory, 0, this->memorysize);
 
 	// set pointers
@@ -187,36 +186,36 @@ int CVMMod::LoadMod(std::string file) {
 	this->datasegment = (byte*)(this->memory + this->codeseglen);
 	this->stacksegment = (byte*)(this->datasegment + this->dataseglen);
 
-	//setup registers
-	//op is the code pointer, simple enough
+	// setup registers
+	// op is the code pointer, simple enough
 	this->opptr = NULL;
-	//stack is backwards (starts at end of buffer and goes -4 when pushing)
+	// stack is backwards (starts at end of buffer and goes -4 when pushing)
 	this->stackptr = (int*)(this->stacksegment + this->stackseglen);
-	//the 4 controls the local var and argument heap (also backwards)
+	// the 4 controls the local var and argument heap (also backwards)
 	this->argbase = this->dataseglen + this->stackseglen / 2;
-	//NOTE: OP_LOCAL grabs the offset into the datasegment for an argbase value
-	//for use with OP_LOADx. The actual argstack resides in the first half of
-	//the stack segment
+	// NOTE: OP_LOCAL grabs the offset into the datasegment for an argbase value
+	// for use with OP_LOADx. The actual argstack resides in the first half of
+	// the stack segment
 
-	ENG_SYSCALL(ENG_MSG[QMM_G_FS_FOPEN_FILE], this->file.c_str(), &fqvm, ENG_MSG[QMM_FS_READ]);
-	//move file pointer to the code offset
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], this->file.c_str(), &fqvm, QMM_ENG_MSG[QMM_FS_READ]);
+	// move file pointer to the code offset
 	for (k = 0; k < this->header.codeoffset; ++k) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], &temp, 1, fqvm);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], &temp, 1, fqvm);
 	}
 
-	//start loading ops from file to memory
+	// start loading ops from file to memory
 	int i;
 
-	//loop through each op
+	// loop through each op
 	for (i = 0; i < this->header.numops; ++i) {
-		//get the opcode
-		ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], &temp, 1, fqvm);
+		// get the opcode
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], &temp, 1, fqvm);
 	
-		//write opcode (to qvmop_t)
+		// write opcode (to qvmop_t)
 		this->codesegment[i].op = (qvmopcode_t)temp;
 
 		switch(temp) {
-			//these ops all have full 4-byte 'param's, which may need to be byteswapped
+			// these ops all have full 4-byte 'param's, which may need to be byteswapped
 			case OP_ENTER:
 			case OP_LEAVE:
 			case OP_CONST:
@@ -238,75 +237,75 @@ int CVMMod::LoadMod(std::string file) {
 			case OP_GTF:
 			case OP_GEF:
 			case OP_BLOCK_COPY:
-				ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], &this->codesegment[i].param, 4, fqvm);
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], &this->codesegment[i].param, 4, fqvm);
 				if (this->swapped)
 					this->codesegment[i].param = byteswap(this->codesegment[i].param);
 				break;
-			//this op has a 1-byte 'param'
+			// this op has a 1-byte 'param'
 			case OP_ARG:
-				ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], &temp, 1, fqvm);
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], &temp, 1, fqvm);
 				this->codesegment[i].param = (int)temp;
 				break;
-			//remaining ops require no 'param'
+			// remaining ops require no 'param'
 			default:
 				this->codesegment[i].param = 0;
 				break;
 		}
 	}
-	ENG_SYSCALL(ENG_MSG[QMM_G_FS_FCLOSE_FILE], fqvm);
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fqvm);
 
-	//move file pointer to the data offset
-	ENG_SYSCALL(ENG_MSG[QMM_G_FS_FOPEN_FILE], this->file.c_str(), &fqvm, ENG_MSG[QMM_FS_READ]);
+	// move file pointer to the data offset
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], this->file.c_str(), &fqvm, QMM_ENG_MSG[QMM_FS_READ]);
 	for (k = 0; k < this->header.dataoffset; ++k) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], &temp, 1, fqvm);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], &temp, 1, fqvm);
 	}
 
-	//start loading data segment from file to memory (requires byteswapping if neccesary)
+	// start loading data segment from file to memory (requires byteswapping if neccesary)
 	int* ddst = (int*)(this->datasegment);
 
-	//loop through each 4-byte data block
+	// loop through each 4-byte data block
 	for (i = 0; i < this->header.datalen / (signed int)sizeof(int); ++i) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], ddst, 4, fqvm);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], ddst, 4, fqvm);
 		if (this->swapped)
 			*ddst = byteswap(*ddst);
 		++ddst;
 	}
 
-	//copy remaining data into the lit segment as-is
-	ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], ddst, this->header.litlen, fqvm);
+	// copy remaining data into the lit segment as-is
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], ddst, this->header.litlen, fqvm);
 
-	ENG_SYSCALL(ENG_MSG[QMM_G_FS_FCLOSE_FILE], fqvm);
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fqvm);
 
-	//a winner is us
+	// a winner is us
 	return 1;
 
 
 
 
-/*	//old loading method
-	//reads file all at once into a single malloc block and then parses
+/*	// old loading method
+	// reads file all at once into a single malloc block and then parses
 
-	//allocate memory block the size of the file
+	// allocate memory block the size of the file
 	byte* qvmfile = (byte*)malloc(this->filesize);
 
-	//malloc failed
+	// malloc failed
 	if (!qvmfile) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_FS_FCLOSE_FILE], fqvm);
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(): Failed to allocate memory chunk (size=%d) to store QVM file \"%s\"\n", this->filesize, this->file.c_str()));
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fqvm);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(): Failed to allocate memory chunk (size=%d) to store QVM file \"%s\"\n", this->filesize, this->file.c_str()));
 		return 0;
 	}
 
-	//read VM file into memory block
-	ENG_SYSCALL(ENG_MSG[QMM_G_FS_READ], qvmfile, this->filesize, fqvm);
-	ENG_SYSCALL(ENG_MSG[QMM_G_FS_FCLOSE_FILE], fqvm);
+	// read VM file into memory block
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], qvmfile, this->filesize, fqvm);
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fqvm);
 
-	//file is read entirely into memory at this point
+	// file is read entirely into memory at this point
 	qvmheader_t* header;
 	header = (qvmheader_t*)qvmfile;
 
-	//if we are a big-endian machine, need to swap everything around
+	// if we are a big-endian machine, need to swap everything around
 	if (header->magic == QVM_MAGIC_BIG) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::LoadMod(): Big-endian magic number detected, will byteswap during load.\n", this->file.c_str()));
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::LoadMod(): Big-endian magic number detected, will byteswap during load.\n", this->file.c_str()));
 		this->swapped = 1;
 		header->magic = byteswap(header->magic);
 		header->numops = byteswap(header->numops);
@@ -318,46 +317,46 @@ int CVMMod::LoadMod(std::string file) {
 		header->bsslen = byteswap(header->bsslen);
 	}
 
-	//check file
+	// check file
 	if (header->magic != QVM_MAGIC || header->numops <= 0 || header->codelen <= 0) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(): QVM file \"%s\" is not the correct format\n", this->file.c_str()));
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(): QVM file \"%s\" is not the correct format\n", this->file.c_str()));
 		free(qvmfile);
 		return 0;
 	}
 
-	//save header info
+	// save header info
 	this->header = *header;
 
-	//each opcode is 5 bytes long, calculate total size of opcodes
+	// each opcode is 5 bytes long, calculate total size of opcodes
 	this->codeseglen = header->numops * sizeof(qvmop_t);
-	//just add each data segment up
+	// just add each data segment up
 	this->dataseglen = header->datalen + header->litlen + header->bsslen;
-	//STACK SPACE IS SPLIT BETWEEN STACK AND ARG HEAP
-	//stack size is from config file (in MB), defaults to 1
+	// STACK SPACE IS SPLIT BETWEEN STACK AND ARG HEAP
+	// stack size is from config file (in MB), defaults to 1
 	this->stackseglen = 1;
 	if (g_pdb) {
 		char* qvmstacksize = (char*)pdb_query(g_pdb, vaf("%s/qvmstacksize", g_EngineMgr->GetModDir()));
 		if (qvmstacksize && *qvmstacksize)
 			this->stackseglen = atoi(qvmstacksize);
 		else
-			ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::LoadMod(): Unable to detect \"qvmstacksize\" config option, defaulting to 1MB stack\n", this->file.c_str()));
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::LoadMod(): Unable to detect \"qvmstacksize\" config option, defaulting to 1MB stack\n", this->file.c_str()));
 	}
 
 	this->stackseglen *= 1<<20;
 
-	//get total memory size
+	// get total memory size
 	this->memorysize = this->codeseglen + this->dataseglen + this->stackseglen;
 
-	//load memory code block (freed in destructor)
+	// load memory code block (freed in destructor)
 	this->memory = (byte*)malloc(this->memorysize);
-	//malloc failed
+	// malloc failed
 	if (!this->memory) {
-		ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(): Unable to allocate memory chunk (size=%d) to store virtual machine for \"%s\"\n", this->memorysize, this->file.c_str()));
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::LoadMod(): Unable to allocate memory chunk (size=%d) to store virtual machine for \"%s\"\n", this->memorysize, this->file.c_str()));
 		free(qvmfile);
 		return 0;
 	}
 
-	//clear the memory
+	// clear the memory
 	memset(this->memory, 0, this->memorysize);
 
 	// set pointers
@@ -365,30 +364,30 @@ int CVMMod::LoadMod(std::string file) {
 	this->datasegment = (byte*)(this->memory + this->codeseglen);
 	this->stacksegment = (byte*)(this->datasegment + this->dataseglen);
 
-	//setup registers
-	//op is the code pointer, simple enough
+	// setup registers
+	// op is the code pointer, simple enough
 	this->opptr = NULL;
-	//stack is backwards (starts at end of buffer and goes -4 when pushing)
+	// stack is backwards (starts at end of buffer and goes -4 when pushing)
 	this->stackptr = (int*)(this->stacksegment + this->stackseglen);
-	//the argbase controls the local var and argument heap (also backwards)
+	// the argbase controls the local var and argument heap (also backwards)
 	this->argbase = this->dataseglen + this->stackseglen / 2;
 
 
-	//start loading ops from file to memory
+	// start loading ops from file to memory
 	register byte* src = qvmfile + header->codeoffset;
-	register byte op;	//just to store opcode temporarily for each loop
+	register byte op;	// just to store opcode temporarily for each loop
 
 	register int i;
 
-	//loop through each op
+	// loop through each op
 	for (i = 0; i < header->numops; ++i) {
-		//get its opcode and move src to the parameter field
+		// get its opcode and move src to the parameter field
 		op = *src++;
-		//write opcode (to qvmop_t)
+		// write opcode (to qvmop_t)
 		this->codesegment[i].op = (int)op;
 
 		switch(op) {
-			//these ops all have full 4-byte 'param's, which may need to be byteswapped
+			// these ops all have full 4-byte 'param's, which may need to be byteswapped
 			case OP_ENTER:
 			case OP_LEAVE:
 			case OP_CONST:
@@ -413,34 +412,34 @@ int CVMMod::LoadMod(std::string file) {
 				this->codesegment[i].param = this->swapped ? byteswap(*(int*)src) : *(int*)src;
 				src += 4;
 				break;
-			//this op has a 1-byte 'param'
+			// this op has a 1-byte 'param'
 			case OP_ARG:
 				this->codesegment[i].param = *src++;
 				break;
-			//remaining ops require no 'param'
+			// remaining ops require no 'param'
 			default:
 				this->codesegment[i].param = 0;
 				break;
 		}
 	}
 
-	//start loading data segment from file to memory (requires byteswapping if neccesary)
+	// start loading data segment from file to memory (requires byteswapping if neccesary)
 	register int* lsrc = (int*)(qvmfile + header->dataoffset);
 	register int* ldst = (int*)(this->datasegment);
 
-	//loop through each 4-byte data block (even though data may be single bytes)
+	// loop through each 4-byte data block (even though data may be single bytes)
 	for (i = 0; i < header->datalen/(signed int)sizeof(int); ++i) {
 		*ldst++ = this->swapped ? byteswap(*lsrc) : *lsrc;
 		++lsrc;
 	}
 
-	//copy remaining data into the lit segment as-is
+	// copy remaining data into the lit segment as-is
 	memcpy(ldst, lsrc, header->litlen);
 
-	//free memory space allocated to storing file
+	// free memory space allocated to storing file
 	free(qvmfile);
 
-	//a winner is us
+	// a winner is us
 	return 1;
 */
 }
@@ -449,17 +448,17 @@ int CVMMod::vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, in
 	if (!this->memory)
 		return 0;
 
-	//prepare local stack
+	// prepare local stack
 	this->argbase -= 15 * sizeof(int);
 
 	int* args = (int*)(this->datasegment + this->argbase);
 
-	//push args into the new arg heap space
+	// push args into the new arg heap space
 
-	args[0] = 0;	//blank for now
-	//store the current code offset
+	args[0] = 0;	// blank for now
+	// store the current code offset
 	args[1] = (this->opptr - this->codesegment);
-	//arguments
+	// arguments
 	args[2] = cmd;
 	args[3] = arg0;
 	args[4] = arg1;
@@ -476,23 +475,23 @@ int CVMMod::vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, in
 
 	--this->stackptr;
 
-	//vmMain's OP_ENTER will grab this and store it at the bottom of the arg stack
-	//when it is added to this->codesegment in the final OP_LEAVE, it will result in
-	//opptr being NULL, terminating the execution loop
+	// vmMain's OP_ENTER will grab this and store it at the bottom of the arg stack.
+	// when it is added to this->codesegment in the final OP_LEAVE, it will result in
+	// opptr being NULL, terminating the execution loop
 	this->stackptr[0] = (qvmop_t*)NULL - this->codesegment;
 	
-	//move opptr to start of opcodes
+	// move opptr to start of opcodes
 	this->opptr = this->codesegment;
 
-	//local versions of registers
+	// local versions of registers
 	register qvmop_t* opptr = this->opptr;
 	register int* stack = this->stackptr;
 
 	register qvmopcode_t op;
 	register int param;
 
-//if this is linux, we can use gcc's ability to go to addresses to speed up this process
-//this is just an array to store goto label addresses for all of the opcode labels
+// if this is linux, we can use gcc's ability to go to addresses to speed up this process
+// this is just an array to store goto label addresses for all of the opcode labels
 #ifndef WIN32
 	static void* labelarray[] = {
 		&&goto_OP_UNDEF,
@@ -564,15 +563,15 @@ int CVMMod::vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, in
 
 		++opptr;
 
-//if this is windows, use a regular switch block
+// if this is windows, use a regular switch block
 #ifdef WIN32
 		switch(op) {
 
 
-//if this is linux, we will use goto to speed it up
-//case labels are changed into goto labels (goto_LABEL)
-//breaks are changed to "goto goto_next_op" (which is located at the bottom of the loop)
-//defaults are changed to the label "goto_default" (which is used if the op is invalid)
+// if this is linux, we will use goto to speed it up
+// case labels are changed into goto labels (goto_LABEL)
+// breaks are changed to "goto goto_next_op" (which is located at the bottom of the loop)
+// defaults are changed to the label "goto_default" (which is used if the op is invalid)
 #else
 		if (op < OP_UNDEF || op > OP_CVFI) goto goto_default;
 
@@ -583,68 +582,68 @@ int CVMMod::vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, in
  #define default   goto_default
 #endif
 
-		//miscellaneous
+		// miscellaneous
 
-			//no op - don't raise error
+			// no op - don't raise error
 			case (OP_NOP):
 				break;
 
-			//undefined
+			// undefined
 			case (OP_UNDEF):
 			
-			//break to debugger?
+			// break to debugger?
 			case (OP_BREAK):
 			
-			//anything else
+			// anything else
 			default:
-				ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::vmMain(%s): Unhandled opcode %s (%d)\n", ENG_MSGNAME(cmd), opcodename[op], op));
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::vmMain(%s): Unhandled opcode %s (%d)\n", ENG_MSGNAME(cmd), opcodename[op], op));
 				log_write(vaf("[QMM] ERROR: CVMMod::vmMain(%s): Unhandled opcode %s (%d)\n", ENG_MSGNAME(cmd), opcodename[op], op));
 				break;
 
-		//stack
+		// stack
 
-			//pushes a blank value onto the end of the stack
+			// pushes a blank value onto the end of the stack
 			case (OP_PUSH):
 				--stack;
 				*stack = 0;
 				break;
-			//pops the last value off the end of the stack
+			// pops the last value off the end of the stack
 			case (OP_POP):
 				++stack;
 				break;
-			//pushes a specified value onto the end of the stack
+			// pushes a specified value onto the end of the stack
 			case (OP_CONST):
 				--stack;
 				*stack = param;
 				break;
-			//pushes a specified local variable address onto the stack
+			// pushes a specified local variable address onto the stack
 			case (OP_LOCAL):
 				--stack;
 				*stack = this->argbase + param;
 				break;
-			//set a function-call arg (offset = param) to the value in stack[0]
+			// set a function-call arg (offset = param) to the value in stack[0]
 			case (OP_ARG):
 				*(int*)(this->datasegment + this->argbase + param) = *stack;
 				++stack;
 				break;
 
-		//functions
+		// functions
 
 		#define JUMP(x) opptr = this->codesegment + (x)
 
 			case (OP_CALL):
 				param = *stack;
 
-				//param (really stack[0]) is the function address in number of ops
-				//negative means an engine trap
+				// param (really stack[0]) is the function address in number of ops
+				// negative means an engine trap
 				if (param < 0) {
-					//save local registers for recursive execution
+					// save local registers for recursive execution
 					this->stackptr = stack;
 					this->opptr = opptr;
 
-					int ret = g_GameInfo.game->vmsyscall(this->datasegment, -param - 1, (int*)(this->datasegment + this->argbase) + 2);
+					int ret = g_gameinfo.game->vmsyscall(this->datasegment, -param - 1, (int*)(this->datasegment + this->argbase) + 2);
 
-					//restore local registers
+					// restore local registers
 					stack = this->stackptr;
 					opptr = this->opptr;
 
@@ -652,298 +651,299 @@ int CVMMod::vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, in
 					break;
 				}
 
-				//replace func id (in the stack) with code address to resume at
-				//changed to the actual pointer rather than code segment offset
+				// replace func id (in the stack) with code address to resume at
+				// changed to the actual pointer rather than code segment offset
 				*stack = opptr - this->codesegment;
-				//jump to VM function at address
+				// jump to VM function at address
 				JUMP(param);
 				break;
-			//enter a function, prepare local var heap (length=param)
-			//store the return address (front of stack) in arg heap
+			// enter a function, prepare local var heap (length=param)
+			// store the return address (front of stack) in arg heap
 			case (OP_ENTER):
 				this->argbase -= param;
 				*(int*)(this->datasegment + this->argbase) = 0;
 				*((int*)(this->datasegment + this->argbase) + 1) = *stack++;
 				break;
-			//leave a function, move opcode pointer to previous function
+			// leave a function, move opcode pointer to previous function
 			case (OP_LEAVE):
-				//retrieve the return code address from bottom of the arg heap
+				// retrieve the return code address from bottom of the arg heap
 				opptr = this->codesegment + *((int*)(this->datasegment + this->argbase) + 1);
 
-				//offset arg heap by same as in OP_ENTER
+				// offset arg heap by same as in OP_ENTER
 				this->argbase += param;
 
 				break;
 
-		//branching
+		// branching
 
-		//signed integer comparison
+		// signed integer comparison
 		#define SIF(o) if (stack[1] o *stack) JUMP(param); stack += 2
-		//unsigned integer comparison
+		// unsigned integer comparison
 		#define UIF(o) if (*(unsigned int*)&stack[1] o *(unsigned int*)stack) JUMP(param); stack += 2
-		//floating point comparison
+		// floating point comparison
 		#define FIF(o) if (*(float*)&stack[1] o *(float*)stack) JUMP(param); stack += 2
 
-			//jump to address in stack[0]
+			// jump to address in stack[0]
 			case (OP_JUMP):
 				JUMP(*stack++);
 				break;
-			//if stack[1] == stack[0], goto address in param
+			// if stack[1] == stack[0], goto address in param
 			case (OP_EQ):
 				SIF(==);
 				break;
-			//if stack[1] != stack[0], goto address in param
+			// if stack[1] != stack[0], goto address in param
 			case (OP_NE):
 				SIF(!=);
 				break;
-			//if stack[1] < stack[0], goto address in param
+			// if stack[1] < stack[0], goto address in param
 			case (OP_LTI):
 				SIF(<);
 				break;
-			//if stack[1] <= stack[0], goto address in param
+			// if stack[1] <= stack[0], goto address in param
 			case (OP_LEI):
 				SIF(<=);
 				break;
-			//if stack[1] > stack[0], goto address in param
+			// if stack[1] > stack[0], goto address in param
 			case (OP_GTI):
 				SIF(>);
 				break;
-			//if stack[1] >= stack[0], goto address in param
+			// if stack[1] >= stack[0], goto address in param
 			case (OP_GEI):
 				SIF(>=);
 				break;
-			//if stack[1] < stack[0], goto address in param (unsigned)
+			// if stack[1] < stack[0], goto address in param (unsigned)
 			case (OP_LTU):
 				UIF(<);
 				break;
-			//if stack[1] <= stack[0], goto address in param (unsigned)
+			// if stack[1] <= stack[0], goto address in param (unsigned)
 			case (OP_LEU):
 				UIF(<=);
 				break;
-			//if stack[1] > stack[0], goto address in param (unsigned)
+			// if stack[1] > stack[0], goto address in param (unsigned)
 			case (OP_GTU):
 				UIF(>);
 				break;
-			//if stack[1] >= stack[0], goto address in param (unsigned)
+			// if stack[1] >= stack[0], goto address in param (unsigned)
 			case (OP_GEU):
 				UIF(>=);
 				break;
-			//if stack[1] == stack[0], goto address in param (float)
+			// if stack[1] == stack[0], goto address in param (float)
 			case (OP_EQF):
 				FIF(==);
 				break;
-			//if stack[1] != stack[0], goto address in param (float)
+			// if stack[1] != stack[0], goto address in param (float)
 			case (OP_NEF):
 				FIF(!=);
 				break;
-			//if stack[1] < stack[0], goto address in param (float)
+			// if stack[1] < stack[0], goto address in param (float)
 			case (OP_LTF):
 				FIF(<);
 				break;
-			//if stack[1] <= stack[0], goto address in param (float)
+			// if stack[1] <= stack[0], goto address in param (float)
 			case (OP_LEF):
 				FIF(<=);
 				break;
-			//if stack[1] > stack[0], goto address in param (float)
+			// if stack[1] > stack[0], goto address in param (float)
 			case (OP_GTF):
 				FIF(>);
 				break;
-			//if stack[1] >= stack[0], goto address in param (float)
+			// if stack[1] >= stack[0], goto address in param (float)
 			case (OP_GEF):
 				FIF(>=);
 				break;
 
-		//memory/pointer management
+		// memory/pointer management
 
-			//store 1-byte value from stack[0] into address stored in stack[1]
+			// store 1-byte value from stack[0] into address stored in stack[1]
 			case (OP_STORE1):
 				*(this->datasegment + stack[1]) = (byte)(*stack & 0xFF);
 				stack += 2;
 				break;
-			//2-byte
+			// 2-byte
 			case (OP_STORE2):
 				*(unsigned short*)(this->datasegment + stack[1]) = (unsigned short)(*stack & 0xFFFF);
 				stack += 2;
 				break;
-			//4-byte
+			// 4-byte
 			case (OP_STORE4):
 				*(int*)(this->datasegment + stack[1]) = *stack;
 				stack += 2;
 				break;
 			
-			//get 1-byte value at address stored in stack[0],
-			//and store back in stack[0]
-			//1-byte
+			// get 1-byte value at address stored in stack[0],
+			// and store back in stack[0]
+			// 1-byte
 			case (OP_LOAD1):
 				*stack = *(byte*)(this->datasegment + *stack);
 				break;
-			//2-byte
+			// 2-byte
 			case (OP_LOAD2):
 				*stack = *(unsigned short*)(this->datasegment + *stack);
 				break;
-			//4-byte
+			// 4-byte
 			case (OP_LOAD4):
 				*stack = *(int*)(this->datasegment + *stack);
 				break;
-			//copy mem at address pointed to by stack[0] to address pointed to by stack[1]
-			//for 'param' number of bytes
+			// copy mem at address pointed to by stack[0] to address pointed to by stack[1]
+			// for 'param' number of bytes
 			case (OP_BLOCK_COPY): {
 				byte* from = this->datasegment + *stack++;
 				byte* to = this->datasegment + *stack++;
 
 				/*if( param & 3 ) {
-					//ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::vmMain(%s): OP_BLOCK_COPY not DWORD aligned, truncating copy length\n", ENG_MSGNAME(cmd)));
+					// ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::vmMain(%s): OP_BLOCK_COPY not DWORD aligned, truncating copy length\n", ENG_MSGNAME(cmd)));
 				}
 
-				//convert param from number of bytes -> ints
+				// convert param from number of bytes -> ints
 				param >>= 2;
 				*/
 
 				if (from == to) {
-					//ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::vmMain(%s): OP_BLOCK_COPY pointers are equal, ignoring\n", ENG_MSGNAME(cmd)));
+					// ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] WARNING: CVMMod::vmMain(%s): OP_BLOCK_COPY pointers are equal, ignoring\n", ENG_MSGNAME(cmd)));
 					break;
 				}
 
 				memcpy(to, from, param);
-
-				/*do {
+				/*
+				do {
 					*to++ = *from++;
-				} while(--param);*/
+				} while(--param);
+				*/
 
 				break;
 			}
 
-		//arithmetic/operators
+		// arithmetic/operators
 
-		//signed integer (stack[0] done to stack[1], stored in stack[1])
+		// signed integer (stack[0] done to stack[1], stored in stack[1])
 		#define SOP(o) stack[1] o *stack; stack++
-		//unsigned integer (stack[0] done to stack[1], stored in stack[1])
+		// unsigned integer (stack[0] done to stack[1], stored in stack[1])
 		#define UOP(o) *(unsigned int*)&stack[1] o *(unsigned int*)stack; stack++
-		//floating point (stack[0] done to stack[1], stored in stack[1])
+		// floating point (stack[0] done to stack[1], stored in stack[1])
 		#define FOP(o) *(float*)&stack[1] o *(float*)stack; stack++
-		//signed integer (done to self)
+		// signed integer (done to self)
 		#define SSOP(o) *stack =o *stack
-		//floating point (done to self)
+		// floating point (done to self)
 		#define SFOP(o) *(float*)stack =o *(float*)stack
 
-			//negation
+			// negation
 			case (OP_NEGI):
 				SSOP(-);
 				break;
-			//addition
+			// addition
 			case (OP_ADD):
 				SOP(+=);
 				break;
-			//subtraction
+			// subtraction
 			case (OP_SUB):
 				SOP(-=);
 				break;
-			//multiplication
+			// multiplication
 			case (OP_MULI):
 				SOP(*=);
 				break;
-			//unsigned multiplication
+			// unsigned multiplication
 			case (OP_MULU):
 				UOP(*=);
 				break;
-			//division
+			// division
 			case (OP_DIVI):
 				SOP(/=);
 				break;
-			//unsigned division
+			// unsigned division
 			case (OP_DIVU):
 				UOP(/=);
 				break;
-			//modulation
+			// modulation
 			case (OP_MODI):
 				SOP(%=);
 				break;
-			//unsigned modulation
+			// unsigned modulation
 			case (OP_MODU):
 				UOP(%=);
 				break;
-			//bitwise AND
+			// bitwise AND
 			case (OP_BAND):
 				SOP(&=);
 				break;
-			//bitwise OR
+			// bitwise OR
 			case (OP_BOR):
 				SOP(|=);
 				break;
-			//bitwise XOR
+			// bitwise XOR
 			case (OP_BXOR):
 				SOP(^=);
 				break;
-			//bitwise one's compliment
+			// bitwise one's compliment
 			case (OP_BCOM):
 				SSOP(~);
 				break;
-			//unsigned bitwise LEFTSHIFT
+			// unsigned bitwise LEFTSHIFT
 			case (OP_LSH):
 				UOP(<<=);
 				break;
-			//bitwise RIGHTSHIFT
+			// bitwise RIGHTSHIFT
 			case (OP_RSHI):
 				SOP(>>=);
 				break;
-			//unsigned bitwise RIGHTSHIFT
+			// unsigned bitwise RIGHTSHIFT
 			case (OP_RSHU):
 				UOP(>>=);
 				break;
-			//float negation
+			// float negation
 			case (OP_NEGF):
 				SFOP(-);
 				break;
-			//float addition
+			// float addition
 			case (OP_ADDF):
 				FOP(+=);
 				break;
-			//float subtraction
+			// float subtraction
 			case (OP_SUBF):
 				FOP(-=);
 				break;
-			//float multiplication
+			// float multiplication
 			case (OP_MULF):
 				FOP(*=);
 				break;
-			//float division
+			// float division
 			case (OP_DIVF):
 				FOP(/=);
 				break;
 
-		//sign extensions
+		// sign extensions
 
-			//8-bit
+			// 8-bit
 			case (OP_SEX8):
 				if (*stack & 0x80)
 					*stack |= 0xFFFFFF00;
 				break;
-			//16-bit
+			// 16-bit
 			case (OP_SEX16):
 				if (*stack & 0x8000)
 					*stack |= 0xFFFF0000;
 				break;
 
-		//format conversion
+		// format conversion
 
-			//convert stack[0] int->float
+			// convert stack[0] int->float
 			case (OP_CVIF):
 				*(float*)stack = (float)*stack;
 				break;
-			//convert stack[0] float->int
+			// convert stack[0] float->int
 			case (OP_CVFI):
 				*stack = (int)*(float*)stack;
 				break;
 
-//in windows, just close the switch block
+// in windows, just close the switch block
 #ifdef WIN32
-		} //op switch
-//in linux, make a label that is called after every opcode is executed
+		} // op switch
+// in linux, make a label that is called after every opcode is executed
 #else
 		goto_next_op:
-		;	//satisfy gcc error "label must be followed by statement"
+		;	// satisfy gcc error "label must be followed by statement"
 
- //undefine all the replacements in linux
+ // undefine all the replacements in linux
  #ifdef case
   #undef case
  #endif
@@ -958,12 +958,12 @@ int CVMMod::vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, in
 
 	} while (opptr);
 
-	//restore previous code pointer as well as the arg heap
+	// restore previous code pointer as well as the arg heap
 	this->opptr = this->codesegment + args[1];
 	this->argbase += 15 * sizeof(int);
 	this->stackptr = stack;
 
-	//return value is stored on the top of the stack (pushed just before OP_LEAVE)
+	// return value is stored on the top of the stack (pushed just before OP_LEAVE)
 	return *this->stackptr++;
 }
 
@@ -980,12 +980,12 @@ int CVMMod::GetBase() {
 }
 
 void CVMMod::Status() {
-	ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM byteswapped: %s\n", this->swapped ? "yes" : "no"));
-	ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM file size: %d\n", this->filesize));
-	ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM op count: %d\n", this->header.numops));
-	ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM memory offset: %p\n", this->memory));
-	ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM memory size: %d\n", this->memorysize));
-	ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM codeseg size: %d\n", this->codeseglen));
-	ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM dataseg size: %d\n", this->dataseglen));
-	ENG_SYSCALL(ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM stack size: %d\n", this->stackseglen));
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM byteswapped: %s\n", this->swapped ? "yes" : "no"));
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM file size: %d\n", this->filesize));
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM op count: %d\n", this->header.numops));
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM memory offset: %p\n", this->memory));
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM memory size: %d\n", this->memorysize));
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM codeseg size: %d\n", this->codeseglen));
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM dataseg size: %d\n", this->dataseglen));
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] QVM stack size: %d\n", this->stackseglen));
 }

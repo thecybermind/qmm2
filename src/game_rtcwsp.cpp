@@ -9,15 +9,19 @@ Created By:
 
 */
 
+#pragma warning(push, 0)
 // 'typedef ': ignored on left of '<unnamed-enum>' when no variable is declared
-// found in a lot of the game sdks
-#pragma warning(disable:4091)	
+#pragma warning(disable:4091)
+// Inconsistent annotation for 'X': this instance has no annotations.
+#pragma warning(disable:28251)
 
 #include <rtcwsp/game/q_shared.h>
 #include <rtcwsp/game/g_public.h>
+#pragma warning(pop, 0)
+
 #include "game_api.h"
 
-GEN_MSGS(RTCWSP);
+GEN_QMM_MSGS(RTCWSP);
 
 const char* RTCWSP_eng_msg_names(int cmd) {
 	switch(cmd) {

@@ -38,4 +38,4 @@ class CModMgr {
 		static CModMgr* instance;
 };
 
-#endif //__QMM2_CMODMGR_H__
+#endif // __QMM2_CMODMGR_H__

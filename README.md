@@ -19,14 +19,6 @@ It hooks communication between the server engine and the the game logic (the mod
 #### Getting Started
 The basic concept to operation is for QMM to be loaded as if it were the mod dll, and then it loads the original mod dll file.
 
-> **Quake 3 and Jedi Knight 2 users**:  
-> In the event your mod uses a QVM (Quake Virtual Machine) file (the default mods do), you must set the `vm_game` cvar to `0` in order for the QMM dll to be loaded. You can do this by adding the following to `<mod>/autoexec.cfg` (create it if it does not exist):  
-> `seta vm_game 0`
-
-> **Listen server users**:  
-> You can get rid of the DLL "Security Warning" message by setting the `com_blindlyLoadDLLs` cvar to `1`. You can do this by adding the following to `<mod>/autoexec.cfg` (create it if it does not exist):  
-> `seta com_blindlyLoadDLLs 1`
-
 Each game uses a different filename for the mod. Refer to this list when you are asked to rename the QMM DLL in step 2:
 
 | Game | Windows DLL | Linux SO | QVM |
@@ -38,8 +30,41 @@ Each game uses a different filename for the mod. Refer to this list when you are
 | Jedi Knight 2 | jk2mpgamex86.dll | jk2mpgamei386.so | vm/jk2mpgame.qvm |
 | Jedi Academy | jampgamex86.dll | jampgamei386.so |  |
 
-#### Insallation Steps:
+#### Installation Steps:
 1. Locate the mod file (listed above) in the mod directory and rename it to `qmm_<name>`
 2. Place `qmm2.dll`/`qmm2.so` into the mod directory and rename it to the old mod file name (listed above)
 3. Place `qmm2.json` into the mod directory
 4. Configure `qmm2.json` (see the file for more details)
+
+## Notes
+
+#### File locations
+
+Quake 3 engine games will generally attempt to load game files from 2 locations:
+ - home directory: from `<home>/.q3a/` (i.e. `C:\Users\user\.q3a\` or `/home/user/.q3a/`)
+ - game directory: where the game/server .exe file is (i.e. `C:\Program Files\Quake 3 Arena\` or `/opt/q3server/`)
+
+QMM will attempt to load all QMM files relative to where QMM was loaded from, including:
+ - config file (`qmm2.json`)
+ - plugins (`qmmaddons/plugin1/dlls/plugin1.dll`)
+
+This means that whether QMM is loaded from the home directory (`/home/user/.q3a/baseq3/qagamex86.dll`), or the game directory (`C:\Program Files\Quake 3 Arena\baseq3\qagamex86.dll`), then QMM will try to load all QMM files from the same place.
+
+The assumption is that if the user is using the home directory, they likely cannot write to the game directory, so QMM won't try to find any QMM files there.
+
+When loading the mod DLL, QMM will check the following locations:
+ - home directory, prefixed with `qmm_` (`/home/user/.q3a/baseq3/qmm_qagamex86.dll`)
+ - game directory, prefixed with `qmm_` (`/opt/q3server/baseq3/qmm_qagamex86.dll`)
+ - game directory, normal mod dll name (`/opt/q3server/baseq3/qagamex86.dll`), but only if this isn't the QMM file
+
+You can also utilize the QMM config file to specify an absolute path (instead of a relative one), which will attempt to only load that specific file.
+
+If the mod uses a QVM file, QMM will utilize the built-in file functions, which will find the correct one automatically (even looking into .pk3 pak files). These can remain relative paths.
+
+#### Quake 3 and Jedi Knight 2 
+In the event your mod uses a QVM (Quake Virtual Machine) file (the default mods do), you must set the `vm_game` cvar to `0` in order for the QMM dll to be loaded. You can do this by adding the following to `<mod>/autoexec.cfg` (create it if it does not exist):  
+> `seta vm_game 0`
+
+#### Listen servers
+You can get rid of the DLL "Security Warning" message by setting the `com_blindlyLoadDLLs` cvar to `1`. You can do this by adding the following to `<mod>/autoexec.cfg` (create it if it does not exist):  
+> `seta com_blindlyLoadDLLs 1`

@@ -30,7 +30,7 @@ class CMod {
 		virtual void Status() = 0;
 
 	private:
-		char file[PATH_MAX];
+		std::string file;
 };
 
-#endif //__QMM2_CMOD_H__
+#endif // __QMM2_CMOD_H__

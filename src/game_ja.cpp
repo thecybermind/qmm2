@@ -9,15 +9,19 @@ Created By:
 
 */
 
+#pragma warning(push, 0)
 // 'typedef ': ignored on left of '<unnamed-enum>' when no variable is declared
-// found in a lot of the game sdks
-#pragma warning(disable:4091)	
+#pragma warning(disable:4091)
+// Inconsistent annotation for 'X': this instance has no annotations.
+#pragma warning(disable:28251)
 
 #include <ja/game/q_shared.h>
 #include <ja/game/g_public.h>
+#pragma warning(pop, 0)
+
 #include "game_api.h"
 
-GEN_MSGS(JA);
+GEN_QMM_MSGS(JA);
 
 const char* JA_eng_msg_names(int cmd) {
 	switch(cmd) {
@@ -72,8 +76,7 @@ const char* JA_eng_msg_names(int cmd) {
 		GEN_CASE(G_SNAPVECTOR);
 		GEN_CASE(G_TRACECAPSULE);
 		GEN_CASE(G_ENTITY_CONTACTCAPSULE);
-	//	case SP_REGISTER_SERVER_CMD:
-	//		return "SP_REGISTER_SERVER_CMD";
+		// GEN_CASE(SP_REGISTER_SERVER_CMD); // commented out in SDK
 		GEN_CASE(SP_GETSTRINGTEXTSTRING);
 		GEN_CASE(G_ROFF_CLEAN);
 		GEN_CASE(G_ROFF_UPDATE_ENTITIES);

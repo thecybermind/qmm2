@@ -27,4 +27,4 @@ class CDLL {
 		void* hDLL;
 };
 
-#endif //__QMM2_CDLL_H__
+#endif // __QMM2_CDLL_H__

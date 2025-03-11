@@ -117,7 +117,6 @@
     <ClInclude Include="..\include\main.h" />
     <ClInclude Include="..\include\osdef.h" />
     <ClInclude Include="..\include\plugin.h" />
-    <ClInclude Include="..\include\qmm.h" />
     <ClInclude Include="..\include\qmmapi.h" />
     <ClInclude Include="..\include\qvm.h" />
     <ClInclude Include="..\include\util.h" />
@@ -126,6 +125,11 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="qmm2.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\LICENSE" />
+    <None Include="..\qmm2.json" />
+    <None Include="..\README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

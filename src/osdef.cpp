@@ -16,7 +16,7 @@ Created By:
 char* dlerror() {
     static char buffer[4096 * 2]; // https://stackoverflow.com/a/75644008
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffer, sizeof(buffer), NULL);
-    //remove newlines at the end
+    // remove newlines at the end
     buffer[strlen(buffer) - 2] = '\0';
 
     return buffer;

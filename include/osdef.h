@@ -54,4 +54,4 @@ Created By:
 
 const char* osdef_get_qmm_modulepath();
 
-#endif //__QMM2_OSDEF_H__
+#endif // __QMM2_OSDEF_H__

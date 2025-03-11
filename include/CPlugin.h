@@ -46,4 +46,4 @@ class CPlugin {
 		plugininfo_t* plugininfo;
 		pluginres_t result;
 };
-#endif //__QMM2_CPLUGIN_H__
+#endif // __QMM2_CPLUGIN_H__
