@@ -12,11 +12,14 @@ Created By:
 #ifndef __QMM2_VERSION_H__
 #define __QMM2_VERSION_H__
 
+#define STRINGIFY(x) STRINGIFY2(x)
+#define STRINGIFY2(x) #x
+
 #define QMM_VERSION_MAJOR	2
 #define QMM_VERSION_MINOR	0
 #define QMM_VERSION_REV		0
 
-#define QMM_VERSION		"2.0.0"
+#define QMM_VERSION		STRINGIFY(QMM_VERSION_MAJOR) "." STRINGIFY(QMM_VERSION_MINOR) "." STRINGIFY(QMM_VERSION_REV)
 
 #define QMM_COMPILE		__TIME__ " " __DATE__
 #define QMM_BUILDER		"cybermind"

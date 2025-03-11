@@ -99,6 +99,7 @@
     <ClCompile Include="..\src\game_rtcwmp.cpp" />
     <ClCompile Include="..\src\game_rtcwsp.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\mod.cpp" />
     <ClCompile Include="..\src\osdef.cpp" />
     <ClCompile Include="..\src\plugin.cpp" />
     <ClCompile Include="..\src\util.cpp" />
@@ -112,6 +113,7 @@
     <ClInclude Include="..\include\format.h" />
     <ClInclude Include="..\include\game_api.h" />
     <ClInclude Include="..\include\main.h" />
+    <ClInclude Include="..\include\mod.h" />
     <ClInclude Include="..\include\osdef.h" />
     <ClInclude Include="..\include\plugin.h" />
     <ClInclude Include="..\include\qmmapi.h" />

@@ -24,7 +24,7 @@ char* dlerror() {
 
 #endif
 
-const char* osdef_get_qmm_modulepath() {
+const char* osdef_get_modulepath(void* ptr) {
 	static char path[PATH_MAX] = "";
 	if (*path)
 		return path;
@@ -32,7 +32,7 @@ const char* osdef_get_qmm_modulepath() {
 #ifdef WIN32
 	MEMORY_BASIC_INFORMATION MBI;
 
-	if (!VirtualQuery((void*)&osdef_get_qmm_modulepath, &MBI, sizeof(MBI)) || MBI.State != MEM_COMMIT || !MBI.AllocationBase)
+	if (!VirtualQuery(ptr, &MBI, sizeof(MBI)) || MBI.State != MEM_COMMIT || !MBI.AllocationBase)
 		return "";
 
 	if (!GetModuleFileName((HMODULE)MBI.AllocationBase, path, sizeof(path)))
@@ -41,7 +41,7 @@ const char* osdef_get_qmm_modulepath() {
 	Dl_info dli;
 	memset(&dli, 0, sizeof(dli));
 
-	if (!dladdr((void*)&osdef_get_qmm_modulepath, &dli))
+	if (!dladdr(ptr, &dli))
 		return "";
 
 	strncpy(path, dli.dli_fname, sizeof(path) - 1);

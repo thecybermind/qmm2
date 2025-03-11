@@ -20,10 +20,14 @@ typedef struct game_info_s {
 	eng_syscall_t pfnsyscall = nullptr;
 	supportedgame_t* game = nullptr;
 	bool isautodetected = false;
+	std::string exe_path;
+	std::string exe_dir;
+	std::string exe_file;
 	std::string qmm_path;
 	std::string qmm_dir;
 	std::string qmm_file;
 	std::string moddir;
+	std::string cfg_path;
 } game_info_t;
 
 extern game_info_t g_gameinfo;

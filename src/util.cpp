@@ -64,11 +64,14 @@ bool is_relative_path(std::string path) {
 	// C:\dir\file
 	if (path[1] == ':' && std::isalpha(static_cast<unsigned char>(path[0])))
 		return false;
+	// colon ANYWHERE is probably absolute too?
+	if (path.find_first_of(':') != std::string::npos)
+		return false;
 	return true;
 }
 
-std::string get_qmm_modulepath() {
-	return osdef_get_qmm_modulepath();
+std::string get_modulepath(void* ptr) {
+	return osdef_get_modulepath(ptr);
 }
 
 int byteswap(int i) {

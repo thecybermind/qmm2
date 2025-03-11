@@ -60,24 +60,51 @@ CModMgr* g_ModMgr = NULL;
    This is either determined by the config file, or by getting the filename of the QMM DLL itself.
 */
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
+	// ???
+	if (!syscall) {
+		fmt::print("[QMM] ERROR: ::dllEntry(): syscall is NULL!\n");
+		return;
+	}
+
 	// save syscall pointer
 	g_gameinfo.pfnsyscall = syscall;
+
+	// save exe module path
+	g_gameinfo.exe_path = get_modulepath(syscall);
+	g_gameinfo.exe_dir = my_dirname(g_gameinfo.exe_path);
+	g_gameinfo.exe_file = my_basename(g_gameinfo.exe_path);
+
 	// save qmm module path
-	g_gameinfo.qmm_path = get_qmm_modulepath();
+	g_gameinfo.qmm_path = get_modulepath(dllEntry);
 	g_gameinfo.qmm_dir = my_dirname(g_gameinfo.qmm_path);
 	g_gameinfo.qmm_file = my_basename(g_gameinfo.qmm_path);
-	fmt::print("[QMM] ::dllEntry(): QMM loaded! Path: \"{}\"\n", g_gameinfo.qmm_path);
 
-	// load config file
-	g_cfg = cfg_load(fmt::format("{}/qmm2.json", g_gameinfo.qmm_dir));
+	fmt::print("[QMM] ::dllEntry(): QMM loaded! QMM path: \"{}\". Engine path: \"{}\"\n", g_gameinfo.qmm_path, g_gameinfo.exe_path);
+
+	// load config file, try the following locations in order:
+	// "<qmmdir>/qmm2.json"
+	// "<exedir>/<moddir>/qmm2.json"
+	// "./<moddir>/qmm2.json"
+	std::string try_paths[] = {
+		fmt::format("{}/qmm2.json", g_gameinfo.qmm_dir),
+		fmt::format("{}/{}/qmm2.json", g_gameinfo.exe_dir, g_gameinfo.moddir),
+		fmt::format("./{}/qmm2.json", g_gameinfo.moddir)
+	};
+	for (auto& try_path : try_paths) {
+		g_cfg = cfg_load(try_path);
+		if (!g_cfg.empty()) {
+			g_gameinfo.cfg_path = try_path;
+			fmt::print("[QMM] ::dllEntry(): Config file loaded! Path: \"{}\"\n", g_gameinfo.cfg_path);
+			break;
+		}
+	}
 	if (g_cfg.empty()) {
 		// a default constructed json object is a blank {}, so in case of load failure, we can still try to read from it and assume defaults
 		fmt::print("[QMM] WARNING: ::dllEntry(): Unable to load config file, all settings will use default values\n");
 	}
 
-	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
-	
 	// find what game we are loaded in
+	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
 	for (int i = 0; g_supportedgames[i].dllname; i++) {
 		supportedgame_t& game = g_supportedgames[i];
 		// if short name matches config option, we found it!
@@ -100,7 +127,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	
 	// failed to get engine information
 	if (!g_gameinfo.game) {
-		fmt::print("[QMM] WARNING: ::dllEntry(): Unable to determine game engine, using game=\"{}\"\n", cfg_game);
+		fmt::print("[QMM] WARNING: ::dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_game);
 		return;
 	}
 }
@@ -128,7 +155,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 	if (cmd == QMM_MOD_MSG[QMM_GAME_INIT]) {
 		// get mod dir from engine
 		g_gameinfo.moddir = get_str_cvar("fs_game");
-		// RTCWSP returns "" for the mod, and others may too? grab the default mod dir from game info
+		// RTCWSP returns "" for the mod, and others may too? grab the default mod dir from game info instead
 		if (g_gameinfo.moddir.empty()) {
 			g_gameinfo.moddir = g_gameinfo.game->moddir;
 		}
@@ -162,15 +189,30 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 
 		// load plugins
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Attempting to load plugins\n");
-		std::vector<std::string> plugin_files = cfg_get_array(g_cfg, "plugins");
-		for (auto plugin_file : plugin_files) {
+		std::vector<std::string> plugin_paths = cfg_get_array(g_cfg, "plugins");
+		for (auto plugin_path : plugin_paths) {
 			plugin_t p;
-			// TODO: plugin_file / is_relative_path stuff
-			if (plugin_load(&p, plugin_file)) {
-				g_plugins.push_back(p);
+			// absolute path, just attempt to load it directly
+			if (!is_relative_path(plugin_path)) {
+				if (plugin_load(&p, plugin_path))
+					g_plugins.push_back(p);
 				continue;
 			}
-			// fallback paths
+			// relative path, try the following locations in order:
+			// "<qmmdir>/<plugin>"
+			// "<exedir>/<moddir>/<plugin>"
+			// "./<moddir>/<plugin>"
+			std::string try_paths[] = {
+				fmt::format("{}/{}", g_gameinfo.qmm_dir, plugin_path),
+				fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, plugin_path),
+				fmt::format("./{}/{}", g_gameinfo.moddir, plugin_path)
+			};
+			for (auto& try_path : try_paths) {
+				if (plugin_load(&p, try_path)) {
+					g_plugins.push_back(p);
+					break;
+				}
+			}
 		}
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Successfully loaded {} plugin(s)\n", g_plugins.size()).c_str());
 
@@ -312,22 +354,21 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND], arg0, "print \"^7URL: ^4" QMM_URL "^7\n\"");
 		}
 	}
-	// handle shut down, but after the mod and plugins get called with GAME_SHUTDOWN
+	// handle shut down (this is after the mod and plugins get called with GAME_SHUTDOWN)
 	else if (cmd == QMM_MOD_MSG[QMM_GAME_SHUTDOWN]) {
-		// shutdown plugins first. they still hold the mod's vmMain pointer, which might still fail if called
-		// but i'd rather the function actually exist still instead of immediately causing a segfault
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Shutting down mod\n");
+		delete g_ModMgr;
+		g_ModMgr = nullptr;
+
+		// at this point, if a plugin tries to call vmMain in QMM_Detach, it will hit our plugin.cpp::s_plugin_vmmain function which checks g_ModMgr for nullptr
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Shutting down plugins\n");
 		for (plugin_t& p : g_plugins) {
-			//call QMM_Detach in each plugin, and then dlclose
+			//unload each plugin (call QMM_Detach, and then dlclose)
 			plugin_unload(&p);
 		}
 		g_plugins.clear();
 
-		// mod has already been shutdown, but a plugin might still try to call it. 
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Shutting down mod\n");
-		delete g_ModMgr;
-
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Finished shutting down, prepared for unload.\n");
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Finished shutting down\n");
 	}
 
 	return final_ret;

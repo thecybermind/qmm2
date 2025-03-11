@@ -75,7 +75,9 @@ std::vector<plugin_t> g_plugins;
 
 // this is just a non-MFP stub to pass to plugins
 static int s_plugin_vmmain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {
-	// TODO: return 0 if mod isn't loaded (during GAME_SHUTDOWN handling)
+	// if no mod loaded (during shutdown)
+	if (!g_ModMgr)
+		return 0;
 	return MOD_VMMAIN(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 }
 
@@ -167,5 +169,8 @@ void plugin_unload(plugin_t* p) {
 		return;
 	if (p->QMM_Detach)
 		p->QMM_Detach();
+	p->QMM_Detach = nullptr;
+
 	dlclose(p->dll);
+	p->dll = nullptr;
 }

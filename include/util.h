@@ -21,7 +21,7 @@ int my_striequal(std::string, std::string);
 
 bool is_relative_path(std::string);
 
-std::string get_qmm_modulepath();
+std::string get_modulepath(void*);
 
 int byteswap(int);
 short byteswap(short);
