@@ -261,9 +261,9 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 			}
 			--len;	// get rid of the last space added
 			if (len >= 900) {
-				const char* s = fmt::format("[QMM] NoCrash: Userid {} has attempted to execute a command longer than 900 chars\n", arg0).c_str();
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], s);
-				log_write(s);
+				std::string s = fmt::format("[QMM] NoCrash: Userid {} has attempted to execute a command longer than 900 chars\n", arg0);
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], s.c_str());
+				log_write(s.c_str());
 				return 1;
 			}
 		}

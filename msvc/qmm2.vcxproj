@@ -90,8 +90,6 @@
     <ClCompile Include="..\src\CDLLMod.cpp" />
     <ClCompile Include="..\src\CModMgr.cpp" />
     <ClCompile Include="..\src\config.cpp" />
-    <ClCompile Include="..\src\CPlugin.cpp" />
-    <ClCompile Include="..\src\CPluginMgr.cpp" />
     <ClCompile Include="..\src\CVMMod.cpp" />
     <ClCompile Include="..\src\game_api.cpp" />
     <ClCompile Include="..\src\game_ja.cpp" />
@@ -110,8 +108,6 @@
     <ClInclude Include="..\include\CDLLMod.h" />
     <ClInclude Include="..\include\CMod.h" />
     <ClInclude Include="..\include\CModMgr.h" />
-    <ClInclude Include="..\include\CPlugin.h" />
-    <ClInclude Include="..\include\CPluginMgr.h" />
     <ClInclude Include="..\include\CVMMod.h" />
     <ClInclude Include="..\include\format.h" />
     <ClInclude Include="..\include\game_api.h" />

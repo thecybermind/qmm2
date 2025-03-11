@@ -15,15 +15,15 @@ Created By:
 #include <string>
 #include "CModMgr.h"
 
-// store all currently-loaded game info
+// store all currently-loaded game & game engine info
 typedef struct game_info_s {
 	eng_syscall_t pfnsyscall = nullptr;
 	supportedgame_t* game = nullptr;
+	bool isautodetected = false;
 	std::string qmm_path;
 	std::string qmm_dir;
 	std::string qmm_file;
 	std::string moddir;
-	bool isautodetected = false;
 } game_info_t;
 
 extern game_info_t g_gameinfo;
