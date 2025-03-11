@@ -13,6 +13,9 @@ Created By: Kevin Masterson < cybermind@gmail.com >
 
 It hooks communication between the server engine and the the game logic (the mod). It allows for plugins to be loaded in-between which can add or change functionality without having to change the mod itself.
 
+- [Installation](#installation)
+- [Notes](#notes)
+
 
 ## Installation
 
