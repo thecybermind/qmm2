@@ -28,9 +28,9 @@ typedef struct plugin_s {
 	plugin_syscall QMM_syscall = nullptr;
 	plugin_syscall QMM_syscall_Post = nullptr;
 	plugininfo_t* plugininfo = nullptr;
-	pluginres_t result = QMM_UNUSED;
 } plugin_t;
 
+extern pluginres_t g_plugin_result;
 extern std::vector<plugin_t> g_plugins;
 
 bool plugin_load(plugin_t*, std::string);

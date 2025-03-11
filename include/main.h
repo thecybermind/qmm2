@@ -14,7 +14,6 @@ Created By:
 
 #include <string>
 #include "CModMgr.h"
-#include "CPluginMgr.h"
 
 // store all currently-loaded game info
 typedef struct game_info_s {
@@ -28,9 +27,7 @@ typedef struct game_info_s {
 } game_info_t;
 
 extern game_info_t g_gameinfo;
-
 extern CModMgr* g_ModMgr;
-extern CPluginMgr* g_PluginMgr;
 
 #define QMM_ENG_MSG	(g_gameinfo.game->qmm_eng_msgs)
 #define QMM_MOD_MSG	(g_gameinfo.game->qmm_mod_msgs)

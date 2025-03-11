@@ -70,10 +70,12 @@ pluginfuncs_t* get_pluginfuncs() {
 	return &pluginfuncs;
 }
 
+pluginres_t g_plugin_result = QMM_UNUSED;
 std::vector<plugin_t> g_plugins;
 
 // this is just a non-MFP stub to pass to plugins
 static int s_plugin_vmmain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {
+	// TODO: return 0 if mod isn't loaded (during GAME_SHUTDOWN handling)
 	return MOD_VMMAIN(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 }
 
@@ -146,7 +148,7 @@ bool plugin_load(plugin_t* p, std::string file) {
 
 	// call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
 	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, vmbase)
-	if (!(p->QMM_Attach(ENG_SYSCALL, s_plugin_vmmain, &p->result, get_pluginfuncs(), g_ModMgr->Mod()->GetBase()))) {
+	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, s_plugin_vmmain, &g_plugin_result, get_pluginfuncs(), g_ModMgr->Mod()->GetBase()))) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): QMM_Attach() returned 0\n", file).c_str());
 		p->QMM_Detach();
 		goto fail;

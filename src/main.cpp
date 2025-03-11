@@ -19,9 +19,8 @@ Created By:
 #include "util.h"
 #include "version.h"
 
-CModMgr* g_ModMgr = NULL;
-CPluginMgr* g_PluginMgr = NULL;
 game_info_t g_gameinfo;
+CModMgr* g_ModMgr = NULL;
 
 /* About overall control flow:
    syscall (mod->engine) call flow for QVM mods only:
@@ -104,8 +103,6 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 		fmt::print("[QMM] WARNING: ::dllEntry(): Unable to determine game engine, using game=\"{}\"\n", cfg_game);
 		return;
 	}
-
-	g_PluginMgr = CPluginMgr::GetInstance();
 }
 
 /* Entry point: engine->qmm
@@ -168,9 +165,12 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		std::vector<std::string> plugin_files = cfg_get_array(g_cfg, "plugins");
 		for (auto plugin_file : plugin_files) {
 			plugin_t p;
+			// TODO: plugin_file / is_relative_path stuff
 			if (plugin_load(&p, plugin_file)) {
 				g_plugins.push_back(p);
+				continue;
 			}
+			// fallback paths
 		}
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Successfully loaded {} plugin(s)\n", g_plugins.size()).c_str());
 
@@ -194,17 +194,16 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		if (!strcasecmp("qmm", arg0)) {
 			if (argc > 1)
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], 1, arg1, sizeof(arg1));
-				arg1[sizeof(arg1) - 1] = '\0';
 			if (argc > 2)
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], 2, arg2, sizeof(arg2));
-				arg2[sizeof(arg2) - 1] = '\0';
+			arg1[sizeof(arg1) - 1] = '\0';
+			arg2[sizeof(arg2) - 1] = '\0';
 			if (argc == 1) {
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Usage: qmm <command> [params]\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Available commands:\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] qmm status - displays information about QMM\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] qmm list - displays information about loaded QMM plugins\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] qmm info <id> - outputs info on plugin with id\n");
-				return 1;
 			} else if (!strcasecmp("status", arg1)) {
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] QMM v" QMM_VERSION " (" QMM_OS ") loaded\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file" ).c_str());
@@ -215,23 +214,32 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] NoCrash: {}\n", get_int_cvar("qmm_nocrash") ? "on" : "off").c_str());
 				g_ModMgr->Mod()->Status();
 			} else if (!strcasecmp("list", arg1)) {
-				g_PluginMgr->ListPlugins();
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] id - plugin [version] (path)\n");
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] ------------------------------------------------------------------------\n");
+				for (plugin_t& p : g_plugins) {
+					int num = 0;
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] {:>2} - {} [{}] ({})\n", num, p.plugininfo->name, p.plugininfo->version, p.plugininfo->desc).c_str());
+					++num;
+				}
 			} else if (!strcasecmp("info", arg1)) {
 				if (argc == 2) {
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] qmm info <id> - outputs info on plugin with id\n");
 					return 1;
 				}
-				const plugininfo_t* plugininfo = g_PluginMgr->PluginInfo(atoi(arg2));
-				if (!plugininfo) {
-					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Unable to find plugin # {}\n", arg2).c_str());
-					return 1;
+				unsigned int pid = atoi(arg2);
+				if (pid < g_plugins.size()) {
+					plugin_t& p = g_plugins[pid];
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Plugin info for #{}:\n", arg2).c_str());
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Name: {}\n", p.plugininfo->name).c_str());
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Version: {}\n", p.plugininfo->version).c_str());
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] URL: {}\n", p.plugininfo->url).c_str());
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Author: {}\n", p.plugininfo->author).c_str());
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Desc: {}\n", p.plugininfo->desc).c_str());
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Path: {}\n", p.path).c_str());
 				}
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Plugin info for # {}:\n", arg2).c_str());
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Name: \"{}\"\n", plugininfo->name).c_str());
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Version: \"{}\"\n", plugininfo->version).c_str());
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] URL: \"{}\"\n", plugininfo->url).c_str());
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Author: \"{}\"\n", plugininfo->author).c_str());
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Desc: \"{}\"\n", plugininfo->desc).c_str());
+				else {
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Unable to find plugin #{}\n", arg2).c_str());
+				}
 			}
 
 			return 1;
@@ -240,6 +248,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 
 	else if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_COMMAND]) {
 		if (get_int_cvar("qmm_nocrash")) {
+			// pull all args and count total length of command (including spaces between args)
 			int argc = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
 			int len = 0;
 			static char bigbuf[1024];
@@ -252,38 +261,76 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 			}
 			--len;	// get rid of the last space added
 			if (len >= 900) {
-				char* y = vaf("[QMM] NoCrash: Userid %d has attempted to execute a command longer than 900 chars\n", arg0);
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], y);
-				log_write(y);
+				const char* s = fmt::format("[QMM] NoCrash: Userid {} has attempted to execute a command longer than 900 chars\n", arg0).c_str();
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], s);
+				log_write(s);
 				return 1;
 			}
 		}
 	}
 
-	// pass vmMain call to plugins, allow them to halt
-	int ret = g_PluginMgr->CallvmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+	// store max result
+	pluginres_t maxresult = QMM_UNUSED;
+	// store return value to pass back to the engine (either real vmMain return value, or value given by a QMM_OVERRIDE/QMM_SUPERCEDE plugin)
+	int final_ret = 0;
+	// temp int for return values
+	int ret = 0;
+	// begin passing calls to plugins' QMM_vmMain functions
+	for (plugin_t& p : g_plugins) {
+		g_plugin_result = QMM_UNUSED;
+		// call plugin's vmMain and store return value
+		ret = p.QMM_vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+		// set new max result
+		maxresult = max(g_plugin_result, maxresult);
+		if (g_plugin_result == QMM_UNUSED)
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: vmMain({}): Plugin \"{}\" did not set result flag\n", ENG_MSGNAME(cmd), p.plugininfo->name).c_str());
+		if (g_plugin_result == QMM_ERROR)
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: vmMain({}): Plugin \"{}\" resulted in ERROR\n", ENG_MSGNAME(cmd), p.plugininfo->name).c_str());
+		// if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
+		if (g_plugin_result >= QMM_OVERRIDE)
+			final_ret = ret;
+	}
+	// call real vmMain function (unless a plugin resulted in QMM_SUPERCEDE)
+	if (maxresult < QMM_SUPERCEDE) {
+		ret = MOD_VMMAIN(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+		// the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for VMs
+		if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && g_ModMgr->Mod()->IsVM() && ret /* dont bother if its NULL */)
+			ret += g_ModMgr->Mod()->GetBase();
+	}
+	// if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the actual mod's return value back to the engine
+	if (maxresult < QMM_OVERRIDE) 
+		final_ret = ret;
+	// pass calls to plugins' QMM_vmMain_Post functions (ignore return values and results)
+	for (plugin_t& p : g_plugins) {
+		p.QMM_vmMain_Post(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+	}
 
 	// if user is connecting for the first time, user is not a bot, and "nogreeting" option is not set
 	if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && arg1 && !arg2) {
-		bool cfg_nogreeting = cfg_get_bool(g_cfg, "nogreeting", false);
-
-		if (!cfg_nogreeting) {
+		if (!cfg_get_bool(g_cfg, "nogreeting", false)) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND], arg0, "print \"^7This server is running ^4QMM^7 v^4" QMM_VERSION "^7\n\"");
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND], arg0, "print \"^7URL: ^4" QMM_URL "^7\n\"");
 		}
 	}
+	// handle shut down, but after the mod and plugins get called with GAME_SHUTDOWN
 	else if (cmd == QMM_MOD_MSG[QMM_GAME_SHUTDOWN]) {
+		// shutdown plugins first. they still hold the mod's vmMain pointer, which might still fail if called
+		// but i'd rather the function actually exist still instead of immediately causing a segfault
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Shutting down plugins\n");
-		delete g_PluginMgr;
+		for (plugin_t& p : g_plugins) {
+			//call QMM_Detach in each plugin, and then dlclose
+			plugin_unload(&p);
+		}
+		g_plugins.clear();
 
-		// this is after plugin unload, so plugins can call mod's vmMain while shutting down
+		// mod has already been shutdown, but a plugin might still try to call it. 
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Shutting down mod\n");
 		delete g_ModMgr;
 
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Finished shutting down, prepared for unload.\n");
 	}
 
-	return ret;
+	return final_ret;
 }
 
 /* Entry point: mod->qmm
@@ -323,8 +370,37 @@ int syscall(int cmd, ...) {
 		}
 	}
 
-	// pass syscall to plugins, allow them to halt
-	int ret = g_PluginMgr->Callsyscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]);
+	// store max result
+	pluginres_t maxresult = QMM_UNUSED;
+	// store return value to pass back to the mod (either real syscall return value, or value given by a QMM_OVERRIDE/QMM_SUPERCEDE plugin)
+	int final_ret = 0;
+	// temp int for return values
+	int ret = 0;
+	// begin passing calls to plugins' QMM_syscall functions
+	for (plugin_t& p : g_plugins) {
+		g_plugin_result = QMM_UNUSED;
+		// call plugin's syscall and store return value
+		ret = p.QMM_syscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]);
+		// set new max result
+		maxresult = max(g_plugin_result, maxresult);
+		if (g_plugin_result == QMM_UNUSED)
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: syscall({}): Plugin \"{}\" did not set result flag\n", ENG_MSGNAME(cmd), p.plugininfo->name).c_str());
+		if (g_plugin_result == QMM_ERROR)
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: syscall({}): Plugin \"{}\" resulted in ERROR\n", ENG_MSGNAME(cmd), p.plugininfo->name).c_str());
+		// if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
+		if (g_plugin_result >= QMM_OVERRIDE)
+			final_ret = ret;
+	}
+	// call real syscall function (unless a plugin resulted in QMM_SUPERCEDE)
+	if (maxresult < QMM_SUPERCEDE)
+		ret = g_gameinfo.pfnsyscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]);
+	// if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the actual engine's return value back to the mod
+	if (maxresult < QMM_OVERRIDE)
+		final_ret = ret;
+	// pass calls to plugins' QMM_syscall_Post functions (ignore return values and results)
+	for (plugin_t& p : g_plugins) {
+		p.QMM_syscall_Post(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]);
+	}
 
 	// if this is a call to open a file for APPEND or APPEND_SYNC
 	if (cmd == QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE] && args[1]) {
