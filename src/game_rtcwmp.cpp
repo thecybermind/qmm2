@@ -9,15 +9,13 @@ Created By:
 
 */
 
-#pragma warning(push, 0)
+#ifdef WIN32
 // 'typedef ': ignored on left of '<unnamed-enum>' when no variable is declared
 #pragma warning(disable:4091)
-// Inconsistent annotation for 'X': this instance has no annotations.
-#pragma warning(disable:28251)
+#endif
 
 #include <rtcwmp/game/q_shared.h>
 #include <rtcwmp/game/g_public.h>
-#pragma warning(pop, 0)
 
 #include "game_api.h"
 
