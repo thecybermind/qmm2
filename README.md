@@ -92,6 +92,8 @@ If "auto" is used, the mod file will loaded from the following locations in orde
 
 If QMM is unable to load a mod after checking all the above locations, it will exit with an error.
 
+QMM will not attempt to load a mod or plugin file if it thinks the path is the same as QMM itself.
+
 #### Plugins
 A plugin file can be specified in the config either as an absolute or relative path.
 
