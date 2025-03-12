@@ -14,12 +14,20 @@ Created By: Kevin Masterson < cybermind@gmail.com >
 It hooks communication between the server engine and the game logic (the mod). It allows for plugins to be loaded in-between which can add or change functionality without having to change the mod itself.
 
 - [Installation](#installation)
+    - [Getting Started](#getting-started)
+    - [Installation Steps](#installation-steps)
 - [Notes](#notes)
+    - [File Locations](#file-locations)
+	    - [Config file](#config-file)
+	    - [Mod file](#mod-file)
+	    - [Plugins](#plugins)
+    - [Quake 3 and Jedi Knight 2](#quake-3-and-jedi-knight-2)
+    - [Listen Servers](#listen-servers)
 
 
 ## Installation
 
-#### Getting Started
+### Getting Started
 The basic concept to operation is for QMM to be loaded as if it were the mod dll, and then it loads the original mod dll file.
 
 Each game uses a different filename for the mod. Refer to this list when you are asked to rename the QMM DLL in step 2:
@@ -33,7 +41,7 @@ Each game uses a different filename for the mod. Refer to this list when you are
 | Jedi Knight 2 | jk2mpgamex86.dll | jk2mpgamei386.so | vm/jk2mpgame.qvm |
 | Jedi Academy | jampgamex86.dll | jampgamei386.so |  |
 
-#### Installation Steps:
+### Installation Steps:
 1. Locate the mod file (listed above) in the mod directory and rename it to `qmm_<name>`
 2. Place `qmm2.dll`/`qmm2.so` into the mod directory and rename it to the old mod file name (listed above)
 3. Place `qmm2.json` into the mod directory
@@ -41,33 +49,63 @@ Each game uses a different filename for the mod. Refer to this list when you are
 
 ## Notes
 
-#### File locations
+### File Locations
 
 Quake 3 engine games will generally attempt to load game files from 2 locations:
  - home directory: from `<home>/.q3a/` (i.e. `C:\Users\user\.q3a\` or `/home/user/.q3a/`)
  - game directory: where the game/server .exe file is (i.e. `C:\Program Files\Quake 3 Arena\` or `/opt/q3server/`)
 
-QMM will attempt to load all QMM files relative to where QMM was loaded from, including:
- - config file (`qmm2.json`)
- - plugins (`qmmaddons/plugin1/dlls/plugin1.dll`)
+QMM will attempt to load files from various paths in order to best work with these multiple locations.
 
-This means that whether QMM is loaded from the home directory (`/home/user/.q3a/baseq3/qagamex86.dll`), or the game directory (`C:\Program Files\Quake 3 Arena\baseq3\qagamex86.dll`), then QMM will try to load all QMM files from the same place.
+In the following lists, you will see these placeholders used:
+- `<qmmdir>` - the directory where the QMM DLL is located
+- `<exedir>` - the directory where the game executable is located
+- `<moddir>` - the mod the game is running (i.e. "baseq3", "main", etc)
+- `<mod>` - the "mod" setting in the config file
+- `<qvmname>` - the default name of a QVM mod for the game engine
+- `<dllname>` - the default name of a DLL mod for the game engine
+- `<plugin>` - a plugin file string given in the "plugins" list in the config file
 
-The assumption is that if the user is using the home directory, they likely cannot write to the game directory, so QMM won't try to find any QMM files there.
+#### Config file
+The config file will be loaded from the following locations in order:
+1. `<qmmdir>/qmm2.json`
+2. `<exedir>/<moddir>/qmm2.json`
+2. `./<moddir>/qmm2.json`
 
-When loading the mod DLL, QMM will check the following locations:
- - home directory, prefixed with `qmm_` (`/home/user/.q3a/baseq3/qmm_qagamex86.dll`)
- - game directory, prefixed with `qmm_` (`/opt/q3server/baseq3/qmm_qagamex86.dll`)
- - game directory, normal mod dll name (`/opt/q3server/baseq3/qagamex86.dll`), but only if this isn't the QMM file
+#### Mod file
+The mod file can be specified in the config either as an absolute or relative path, or as "auto" (the default).
 
-You can also utilize the QMM config file to specify an absolute path (instead of a relative one), which will attempt to only load that specific file.
+If an absolute path is given, only that path is loaded.
 
-If the mod uses a QVM file, QMM will utilize the built-in file functions, which will find the correct one automatically (even looking into .pk3 pak files). These can remain relative paths.
+If a relative path is given, the mod file will be loaded from the following locations in order:
+1. `<mod>`
+2. `<qmmdir>/<mod>`
+3. `<exedir>/<moddir>/<mod>`
+4. `./<moddir>/<mod>`
 
-#### Quake 3 and Jedi Knight 2 
+If "auto" is used, the mod file will loaded from the following locations in order:
+1. `<qvmname>` (if the game engine supports QVM mods)
+2. `<qmmdir>/qmm_<dllname>"
+3. `<exedir>/<moddir>/qmm_<dllname>"
+4. `<exedir>/<moddir>/<dllname>"
+5. `./<moddir>/qmm_<dllname>`
+
+If QMM is unable to load a mod after checking all the above locations, it will exit with an error.
+
+#### Plugins
+A plugin file can be specified in the config either as an absolute or relative path.
+
+If an absolute path is given, only that path is loaded.
+
+If a relative path is given, the plugin file will be loaded from the following locations in order:
+1. `<qmmdir>/<plugin>`
+2. `<exedir>/<moddir>/<plugin>`
+3. `./<moddir>/<plugin>`
+
+### Quake 3 and Jedi Knight 2 
 In the event your mod uses a QVM (Quake Virtual Machine) file (the default mods do), you must set the `vm_game` cvar to `0` in order for the QMM dll to be loaded. You can do this by adding the following to `<mod>/autoexec.cfg` (create it if it does not exist):  
 > `seta vm_game 0`
 
-#### Listen servers
+### Listen Servers
 You can get rid of the DLL "Security Warning" message by setting the `com_blindlyLoadDLLs` cvar to `1`. You can do this by adding the following to `<mod>/autoexec.cfg` (create it if it does not exist):  
 > `seta com_blindlyLoadDLLs 1`
