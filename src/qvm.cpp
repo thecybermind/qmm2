@@ -167,6 +167,10 @@ void qvm_unload(qvm_t* qvm) {
 	}
 }
 
+static bool qvm_validate_ptr(qvm_t* qvm, void* ptr) {
+	return (ptr >= qvm->memory && ptr < qvm->memory + qvm->memorysize);
+}
+
 int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 	if (!qvm || !qvm->memory)
 		return 0;
@@ -421,17 +425,11 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 				// skip if src/dst are the same
 				if (from == to)
 					break;
-				// skip if src is outside VM range
-				if (from < qvm->memory || from >= qvm->memory + qvm->memorysize)
+				// skip if from block goes out of VM range
+				if (!qvm_validate_ptr(qvm, from) || !qvm_validate_ptr(qvm, from+param-1))
 					break;
-				// skip if last src byte is outside VM range
-				if (from+param-1 < qvm->memory || from+param-1 >= qvm->memory + qvm->memorysize)
-					break;
-				// skip if dst is outside VM range
-				if (to < qvm->memory || to >= qvm->memory + qvm->memorysize)
-					break;
-				// skip if last dst byte is outside VM range
-				if (to+param-1 < qvm->memory || to+param >= qvm->memory-1 + qvm->memorysize)
+				// skip if to block goes out of VM range
+				if (!qvm_validate_ptr(qvm, to) || !qvm_validate_ptr(qvm, to+param-1))
 					break;
 				
 				memcpy(to, from, param);

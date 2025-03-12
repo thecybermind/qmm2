@@ -319,6 +319,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? " (error)" : "").c_str());
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] URL: " QMM_URL "\n");
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Plugin interface: {}:{}\n", QMM_PIFV_MAJOR, QMM_PIFV_MINOR).c_str());
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] NoCrash: {}\n", util_get_int_cvar("qmm_nocrash") ? "on" : "off").c_str());
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Loaded mod file: {}\n", g_mod.path).c_str());
 				if (g_mod.vmbase) {
@@ -335,11 +336,11 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Mod vmMain() offset: {}\n", (void*)g_mod.pfnvmMain).c_str());
 				}
 			} else if (str_striequal("list", arg1)) {
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] id - plugin [version] (path)\n");
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] ------------------------------------------------------------------------\n");
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] id - plugin [version]\n");
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] ---------------------\n");
 				for (plugin_t& p : g_plugins) {
-					int num = 0;
-					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] {:>2} - {} [{}] ({})\n", num, p.plugininfo->name, p.plugininfo->version, p.plugininfo->desc).c_str());
+					int num = 1;
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] {:>2} - {} [{}] ({}) - {}\n", num, p.plugininfo->name, p.plugininfo->version).c_str());
 					++num;
 				}
 			} else if (str_striequal("info", arg1)) {
@@ -348,14 +349,15 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 					return 1;
 				}
 				unsigned int pid = atoi(arg2);
-				if (pid < g_plugins.size()) {
-					plugin_t& p = g_plugins[pid];
+				if (pid > 0 && pid <= g_plugins.size()) {
+					plugin_t& p = g_plugins[pid-1];
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Plugin info for #{}:\n", arg2).c_str());
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Name: {}\n", p.plugininfo->name).c_str());
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Version: {}\n", p.plugininfo->version).c_str());
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] URL: {}\n", p.plugininfo->url).c_str());
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Author: {}\n", p.plugininfo->author).c_str());
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Desc: {}\n", p.plugininfo->desc).c_str());
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Interface version: {}:{}\n", p.plugininfo->pifv_major, p.plugininfo->pifv_minor).c_str());
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Path: {}\n", p.path).c_str());
 				}
 				else {

@@ -31,9 +31,9 @@ typedef int (*mod_vmMain_t)(int, int, int, int, int, int, int, int, int, int, in
 typedef void (*mod_dllEntry_t)(eng_syscall_t);
 
 // major interface version increases with change to QMM_Query, QMM_Attach or a pluginfunc_t signature
-#define QMM_PIFV_MAJOR  2
+#define QMM_PIFV_MAJOR  1
 // minor interface version increases with trailing addition to pluginfunc_t struct
-#define QMM_PIFV_MINOR  0
+#define QMM_PIFV_MINOR  1
 
 // holds plugin info to pass back to QMM
 typedef struct {
@@ -42,7 +42,9 @@ typedef struct {
     char* desc;     // description of plugin
     char* author;   // author of plugin
     char* url;      // website of plugin
-
+    int reserved1;	// unused (old - can this plugin be paused?)
+    int reserved2;	// unused (old - can this plugin be loaded via cmd)
+    int reserved3;  // unused (old - can this plugin be unloaded via cmd)
     int pifv_major; // major plugin interface version
     int pifv_minor; // minor plugin interface version
 } plugininfo_t;
@@ -57,6 +59,7 @@ typedef struct {
     const char* (*pfnModMsgName)(int);
     int (*pfnGetIntCvar)(const char*);
     const char* (*pfnGetStrCvar)(const char*);
+    const char* (*pfnGetGameEngine)();
 } pluginfuncs_t;
 // macros for QMM plugin util funcs
 #define QMM_WRITEGAMELOG    (g_pluginfuncs->pfnWriteGameLog)
@@ -66,6 +69,7 @@ typedef struct {
 #define QMM_MODMSGNAME      (g_pluginfuncs->pfnModMsgName)
 #define QMM_GETINTCVAR      (g_pluginfuncs->pfnGetIntCvar)
 #define QMM_GETSTRCVAR      (g_pluginfuncs->pfnGetStrCvar)
+#define QMM_GETGAMEENGINE   (g_pluginfuncs->pfnGetGameEngine)
 
 // only set IGNORED, OVERRIDE, and SUPERCEDE
 // UNUSED and ERROR are for internal use only
@@ -78,11 +82,11 @@ typedef enum pluginres_e {
 } pluginres_t;
 
 // QMM_Query
-typedef void (*plugin_query)(plugininfo_t**, const char*);
+typedef void (*plugin_query)(plugininfo_t**);
 // QMM_Attach
-typedef int (*plugin_attach)(eng_syscall_t, mod_vmMain_t, pluginres_t*, pluginfuncs_t*, int);
+typedef int (*plugin_attach)(eng_syscall_t, mod_vmMain_t, pluginres_t*, pluginfuncs_t*, int, int);
 // QMM_Detach
-typedef void (*plugin_detach)();
+typedef void (*plugin_detach)(int);
 // QMM_syscall
 typedef int (*plugin_syscall)(int, int, int, int, int, int, int, int, int, int, int, int, int, int);
 // QMM_vmMain
@@ -106,9 +110,9 @@ extern int g_vmbase;                    // set to 'vmbase' in QMM_Attach
         } while(0)
 
 // prototypes for required entry points in the plugin
-C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo, const char* game_engine);
-C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, int vmbase);
-C_DLLEXPORT void QMM_Detach();
+C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
+C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, int vmbase, int reserved);
+C_DLLEXPORT void QMM_Detach(int reserved);
 C_DLLEXPORT int QMM_vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
 C_DLLEXPORT int QMM_syscall(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12);
 C_DLLEXPORT int QMM_vmMain_Post(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
