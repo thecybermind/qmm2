@@ -85,9 +85,9 @@ If a relative path is given, the mod file will be loaded from the following loca
 
 If "auto" is used, the mod file will loaded from the following locations in order:
 1. `<qvmname>` (if the game engine supports QVM mods)
-2. `<qmmdir>/qmm_<dllname>"
-3. `<exedir>/<moddir>/qmm_<dllname>"
-4. `<exedir>/<moddir>/<dllname>"
+2. `<qmmdir>/qmm_<dllname>`
+3. `<exedir>/<moddir>/qmm_<dllname>`
+4. `<exedir>/<moddir>/<dllname>`
 5. `./<moddir>/qmm_<dllname>`
 
 If QMM is unable to load a mod after checking all the above locations, it will exit with an error.
