@@ -17,28 +17,25 @@ bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int
 	if (!qvm || !filemem || !filelen || qvm->memory || !vmsyscall)
 		return false;
 
-	qvmheader_t* header = (qvmheader_t*)filemem;
 	byte* codeoffset = nullptr;
-	int* dataoffset = nullptr;
-	int* ddst = nullptr;
 
 	qvm->vmsyscall = vmsyscall;
 	qvm->filesize = filelen;
 
 	// grab a copy of the header
-	memcpy(&qvm->header, header, sizeof(qvmheader_t));
+	memcpy(&qvm->header, filemem, sizeof(qvmheader_t));
 
 	// if we are a big-endian machine, need to swap everything around
-	if (header->magic == QVM_MAGIC_BIG) {
+	if (qvm->header.magic == QVM_MAGIC_BIG) {
 		qvm->swapped = 1;
-		qvm->header.magic = byteswap(header->magic);
-		qvm->header.numops = byteswap(header->numops);
-		qvm->header.codeoffset = byteswap(header->codeoffset);
-		qvm->header.codelen = byteswap(header->codelen);
-		qvm->header.dataoffset = byteswap(header->dataoffset);
-		qvm->header.datalen = byteswap(header->datalen);
-		qvm->header.litlen = byteswap(header->litlen);
-		qvm->header.bsslen = byteswap(header->bsslen);
+		qvm->header.magic = byteswap(qvm->header.magic);
+		qvm->header.numops = byteswap(qvm->header.numops);
+		qvm->header.codeoffset = byteswap(qvm->header.codeoffset);
+		qvm->header.codelen = byteswap(qvm->header.codelen);
+		qvm->header.dataoffset = byteswap(qvm->header.dataoffset);
+		qvm->header.datalen = byteswap(qvm->header.datalen);
+		qvm->header.litlen = byteswap(qvm->header.litlen);
+		qvm->header.bsslen = byteswap(qvm->header.bsslen);
 	}
 
 	// check header
@@ -88,7 +85,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int
 	// | CODE | DATA | STACK |
 	// OP_LOCAL stores argbase+param into *stack
 	// OP_LOADx loads address at datasegment+*stack
-	// this means that the argstack needs to be located just after the data segment
+	// this means that the argstack needs to be located just after the data segment, with the stack to follow
 
 	// start loading ops from the code offset to VM
 	codeoffset = filemem + qvm->header.codeoffset;
@@ -96,8 +93,10 @@ bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int
 	// loop through each op
 	for (int i = 0; i < qvm->header.numops; ++i) {
 		// get the opcode
-		byte opcode = *codeoffset++;
-		
+		byte opcode = *codeoffset;
+
+		codeoffset++;
+
 		// write opcode (to qvmop_t)
 		qvm->codesegment[i].op = (qvmopcode_t)opcode;
 
@@ -132,6 +131,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int
 			// this op has a 1-byte 'param'
 			case OP_ARG:
 				qvm->codesegment[i].param = (int)*codeoffset;
+				codeoffset++;
 				break;
 				// remaining ops require no 'param'
 			default:
@@ -140,20 +140,17 @@ bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int
 		}
 	}
 
-	// start loading data segment from data offset to VM (requires byteswapping if neccesary)
-	dataoffset = (int*)(filemem + qvm->header.dataoffset);
-	ddst = (int*)(qvm->datasegment);
+	// copy data segment (including literals) to VM
+	memcpy(qvm->datasegment, filemem + qvm->header.dataoffset, qvm->header.datalen + qvm->header.litlen);
+
+	// byteswap the non-lit data segment if necessary
 
 	// loop through each 4-byte data block
-	for (int i = 0; i < qvm->header.datalen / (signed int)sizeof(int); ++i) {
-		int dword = *dataoffset++;
-		if (qvm->swapped)
-			dword = byteswap(dword);
-		*ddst++ = dword;
+	if (qvm->swapped) {
+		for (int* data = (int*)qvm->datasegment; data < (int*)(qvm->datasegment + qvm->header.datalen); data++) {
+			*data = byteswap(*data);
+		}
 	}
-
-	// copy remaining data into the lit segment as-is
-	memcpy(ddst, dataoffset, qvm->header.litlen);
 
 	// a winner is us
 	return true;

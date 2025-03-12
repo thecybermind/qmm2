@@ -53,11 +53,13 @@ bool mod_load(mod_t* mod, std::string file) {
 		// attempt to load mod
 		if (!qvm_load(&mod->qvm, filemem, filelen, g_gameinfo.game->vmsyscall, stacksize)) {
 			qvm_unload(&mod->qvm);
+			free(filemem);
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): QVM load failed\n", file).c_str());
 			return false;
 		}
 		mod->pfnvmMain = s_mod_vmmain;
 		mod->vmbase = (int)mod->qvm.datasegment;
+		free(filemem);
 
 		return true;
 	}

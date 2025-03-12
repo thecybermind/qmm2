@@ -26,8 +26,7 @@ char* dlerror() {
 
 const char* osdef_path_get_modulepath(void* ptr) {
 	static char path[PATH_MAX] = "";
-	if (*path)
-		return path;
+	memset(path, 0, sizeof(path));
 
 #ifdef WIN32
 	MEMORY_BASIC_INFORMATION MBI;
@@ -52,8 +51,7 @@ const char* osdef_path_get_modulepath(void* ptr) {
 
 const char* osdef_path_get_procpath() {
 	static char path[PATH_MAX] = "";
-	if (*path)
-		return path;
+	memset(path, 0, sizeof(path));
 
 #ifdef WIN32
 	if (!GetModuleFileName(NULL, path, sizeof(path)))

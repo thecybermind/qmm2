@@ -72,7 +72,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	g_gameinfo.pfnsyscall = syscall;
 
 	// save exe module path
-	g_gameinfo.exe_path = path_get_modulepath(syscall);
+	g_gameinfo.exe_path = path_get_modulepath(nullptr);
 	g_gameinfo.exe_dir = path_dirname(g_gameinfo.exe_path);
 	g_gameinfo.exe_file = path_basename(g_gameinfo.exe_path);
 
@@ -85,9 +85,9 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	// attempt to get the mod directory from the qmm path. this will be used only for config loading
 	g_gameinfo.moddir = path_basename(g_gameinfo.qmm_dir);
 
-	fmt::print("[QMM] QMM path: \"{}\"", g_gameinfo.qmm_path);
-	fmt::print("[QMM] Engine path: \"{}\"", g_gameinfo.exe_path);
-	fmt::print("[QMM] Mod directory (?): \"{}\"", g_gameinfo.moddir);
+	fmt::print("[QMM] QMM path: \"{}\"\n", g_gameinfo.qmm_path);
+	fmt::print("[QMM] Engine path: \"{}\"\n", g_gameinfo.exe_path);
+	fmt::print("[QMM] Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
 
 	// load config file, try the following locations in order:
 	// "<qmmdir>/qmm2.json"
@@ -169,6 +169,8 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] QMM v" QMM_VERSION " (" QMM_OS ")\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file" ).c_str());
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ModDir: {}\n", g_gameinfo.moddir).c_str());
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Config file: \"{}\"\n", g_gameinfo.cfg_path).c_str());
+
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] URL: " QMM_URL "\n");
 
@@ -187,8 +189,8 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		// don't set this, in case it is set in autoexec.cfg
 
 		// load mod
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Attempting to load mod\n");
 		std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Attempting to find mod using \"{}\"\n", cfg_mod).c_str());
 		// if config setting is an absolute path, just attempt to load it directly
 		if (!path_is_relative(cfg_mod)) {
 			if (!mod_load(&g_mod, cfg_mod)) {
@@ -212,6 +214,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 			};
 			// try paths
 			for (auto& try_path : try_paths) {
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Attempting to auto-load mod \"{}\"\n", try_path).c_str());
 				// if this matches qmm's path, skip it
 				if (str_striequal(try_path, g_gameinfo.qmm_path))
 					continue;
@@ -221,19 +224,20 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 			}
 		}
 		// if config setting is a relative path, try the following locations in order:
-		// "<qvmname>" (if the game engine supports it)
+		// "<mod>"
 		// "<qmmdir>/<mod>"
 		// "<exedir>/<moddir>/<mod>"
 		// "./<moddir>/<mod>"
 		else {
 			std::string try_paths[] = {
-				g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "",	// (only if game engine supports it)
+				cfg_mod,
 				fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod),
 				fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, cfg_mod),
 				fmt::format("./{}/{}", g_gameinfo.moddir, cfg_mod)
 			};
 			// try paths
 			for (auto& try_path : try_paths) {
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Attempting to load mod \"{}\"\n", try_path).c_str());
 				// if this matches qmm's path, skip it
 				if (str_striequal(try_path, g_gameinfo.qmm_path))
 					continue;
@@ -243,7 +247,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 			}
 		}
 		if (!mod_is_loaded(&g_mod)) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], fmt::format("[QMM] FATAL ERROR: Unable to load mod, using path \"{}\"\n", cfg_mod).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "[QMM] FATAL ERROR: Unable to load mod\n");
 			return 0;
 		}
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Successfully loaded {} mod \"{}\"\n", g_mod.vmbase ? "VM" : "DLL", g_mod.path).c_str());
@@ -252,6 +256,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Attempting to load plugins\n");
 		std::vector<std::string> plugin_paths = cfg_get_array(g_cfg, "plugins");
 		for (auto plugin_path : plugin_paths) {
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Attempting to load plugin \"{}\"\n", plugin_path).c_str());
 			plugin_t p;
 			// absolute path, just attempt to load it directly
 			if (!path_is_relative(plugin_path)) {
