@@ -102,11 +102,11 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 		g_cfg = cfg_load(try_path);
 		if (!g_cfg.empty()) {
 			g_gameinfo.cfg_path = try_path;
-			fmt::print("[QMM] Config file loaded! Path: \"{}\"\n", g_gameinfo.cfg_path);
+			fmt::print("[QMM] Config file found! Path: \"{}\"\n", g_gameinfo.cfg_path);
 			break;
 		}
 	}
-	if (g_cfg.empty()) {
+	if (g_cfg.empty() || g_cfg.is_discarded()) {
 		// a default constructed json object is a blank {}, so in case of load failure, we can still try to read from it and assume defaults
 		fmt::print("[QMM] WARNING: Unable to load config file, all settings will use default values\n");
 	}
@@ -116,14 +116,14 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	for (int i = 0; g_supportedgames[i].dllname; i++) {
 		supportedgame_t& game = g_supportedgames[i];
 		// if short name matches config option, we found it!
-		if (cfg_game == game.gamename_short) {
+		if (str_striequal(cfg_game, game.gamename_short)) {
 			g_gameinfo.game = &game;
 			g_gameinfo.isautodetected = false;
 			break;
 		}
 		// otherwise, if auto, we need to check matching dll names
-		if (cfg_game == "auto") {
-			if (g_gameinfo.qmm_file == game.dllname) {
+		if (str_striequal(cfg_game, "auto")) {
+			if (str_striequal(g_gameinfo.qmm_file, game.dllname)) {
 				g_gameinfo.game = &game;
 				g_gameinfo.isautodetected = true;
 				break;
@@ -169,7 +169,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] QMM v" QMM_VERSION " (" QMM_OS ")\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file" ).c_str());
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ModDir: {}\n", g_gameinfo.moddir).c_str());
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Config file: \"{}\"\n", g_gameinfo.cfg_path).c_str());
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? "(error)": "").c_str());
 
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] URL: " QMM_URL "\n");
@@ -315,7 +315,8 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 			} else if (str_striequal("status", arg1)) {
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] QMM v" QMM_VERSION " (" QMM_OS ") loaded\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file" ).c_str());
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Mod: {}\n", g_gameinfo.moddir).c_str());
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ModDir: {}\n", g_gameinfo.moddir).c_str());
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? " (error)" : "").c_str());
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "[QMM] URL: " QMM_URL "\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] NoCrash: {}\n", util_get_int_cvar("qmm_nocrash") ? "on" : "off").c_str());

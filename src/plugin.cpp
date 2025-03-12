@@ -94,19 +94,21 @@ bool plugin_load(plugin_t* p, std::string file) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Plugin's major interface version ({}) is greater than QMM's ({}), suggest upgrading QMM.\n", file, p->plugininfo->pifv_major, QMM_PIFV_MAJOR).c_str());
 		goto fail;
 	}
-	// if the plugin's major version is lower, don't load and suggest to upgrade plugin
-	if (p->plugininfo->pifv_major < QMM_PIFV_MAJOR) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Plugin's major interface version ({}) is less than QMM's ({}), suggest upgrading plugin.\n", file, p->plugininfo->pifv_major, QMM_PIFV_MAJOR).c_str());
-		goto fail;
+	// if the plugin's major version is lower, load, but suggest to upgrade plugin
+	else if (p->plugininfo->pifv_major < QMM_PIFV_MAJOR) {
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: plugin_load(\"{}\"): Plugin's major interface version ({}) is less than QMM's ({}), suggest upgrading plugin.\n", file, p->plugininfo->pifv_major, QMM_PIFV_MAJOR).c_str());
 	}
-	// if the plugin's minor version is higher, don't load and suggest to upgrade QMM
-	if (p->plugininfo->pifv_minor > QMM_PIFV_MINOR) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Plugin's minor interface version ({}) is greater than QMM's ({}), suggest upgrading QMM.\n", file, p->plugininfo->pifv_minor, QMM_PIFV_MINOR).c_str());
-		goto fail;
-	}
-	// if the plugin's minor version is lower, load, but suggest to upgrade plugin anyway
-	if (p->plugininfo->pifv_minor < QMM_PIFV_MINOR) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: plugin_load(\"{}\"): Plugin's minor interface version ({}) is less than QMM's ({}), suggest upgrading plugin.\n", file, p->plugininfo->pifv_minor, QMM_PIFV_MINOR).c_str());
+	// same major versions
+	else {
+		// if the plugin's minor version is higher, don't load and suggest to upgrade QMM
+		if (p->plugininfo->pifv_minor > QMM_PIFV_MINOR) {
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Plugin's minor interface version ({}) is greater than QMM's ({}), suggest upgrading QMM.\n", file, p->plugininfo->pifv_minor, QMM_PIFV_MINOR).c_str());
+			goto fail;
+		}
+		// if the plugin's minor version is lower, load, but suggest to upgrade plugin
+		if (p->plugininfo->pifv_minor < QMM_PIFV_MINOR) {
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: plugin_load(\"{}\"): Plugin's minor interface version ({}) is less than QMM's ({}), suggest upgrading plugin.\n", file, p->plugininfo->pifv_minor, QMM_PIFV_MINOR).c_str());
+		}
 	}
 
 	// find remaining neccesary functions or fail
