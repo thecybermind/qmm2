@@ -13,7 +13,8 @@ Created By:
 #define __QMM2_MAIN_H__
 
 #include <string>
-#include "CModMgr.h"
+#include "qmmapi.h"
+#include "game_api.h"
 
 // store all currently-loaded game & game engine info
 typedef struct game_info_s {
@@ -31,7 +32,6 @@ typedef struct game_info_s {
 } game_info_t;
 
 extern game_info_t g_gameinfo;
-extern CModMgr* g_ModMgr;
 
 #define QMM_ENG_MSG	(g_gameinfo.game->qmm_eng_msgs)
 #define QMM_MOD_MSG	(g_gameinfo.game->qmm_mod_msgs)

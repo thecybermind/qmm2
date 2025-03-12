@@ -18,23 +18,18 @@ Created By:
 
 typedef struct mod_s {
 	void* dll = nullptr;
-	qvm_t* qvm = nullptr;
+	qvm_t qvm;
 	mod_vmMain_t pfnvmMain = nullptr;
+	int vmbase = 0;
 	std::string path;
 } mod_t;
 
 extern mod_t g_mod;
 
-typedef enum {
-	HEADER_UNKNOWN = 0,
-	HEADER_DLL = 1,
-	HEADER_SO = 1,
-	HEADER_QVM,
+bool mod_load(mod_t*, std::string);
+void mod_unload(mod_t*);
 
-	HEADER_MAX
-} headertype_t;
-
-headertype_t check_header(std::string);
+bool mod_is_loaded(mod_t*);
 
 #endif // __QMM2_MOD_H__
 

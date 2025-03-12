@@ -24,7 +24,7 @@ char* dlerror() {
 
 #endif
 
-const char* osdef_get_modulepath(void* ptr) {
+const char* osdef_path_get_modulepath(void* ptr) {
 	static char path[PATH_MAX] = "";
 	if (*path)
 		return path;
@@ -45,6 +45,24 @@ const char* osdef_get_modulepath(void* ptr) {
 		return "";
 
 	strncpy(path, dli.dli_fname, sizeof(path) - 1);
+	path[sizeof(path) - 1] = '\0';
+#endif
+	return path;
+}
+
+const char* osdef_path_get_procpath() {
+	static char path[PATH_MAX] = "";
+	if (*path)
+		return path;
+
+#ifdef WIN32
+	if (!GetModuleFileName(NULL, path, sizeof(path)))
+		return "";
+#else
+	ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+	if (len != -1) {
+		path[len] = '\0';
+	}
 	path[sizeof(path) - 1] = '\0';
 #endif
 	return path;

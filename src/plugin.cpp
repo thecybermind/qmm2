@@ -14,8 +14,8 @@ Created By:
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include "CModMgr.h"
 #include "main.h"
+#include "mod.h"
 #include "plugin.h"
 #include "util.h"
 
@@ -38,7 +38,7 @@ static char* s_plugin_helper_VarArgs(char* format, ...) {
 }
 
 static int s_plugin_helper_IsQVM() {
-	return g_ModMgr->Mod()->IsVM();
+	return g_mod.vmbase != 0;
 }
 
 static const char* s_plugin_helper_EngMsgName(int x) {
@@ -50,11 +50,11 @@ static const char* s_plugin_helper_ModMsgName(int x) {
 }
 
 static int s_plugin_helper_GetIntCvar(const char* cvar) {
-	return get_int_cvar(cvar);
+	return util_get_int_cvar(cvar);
 }
 
 static const char* s_plugin_helper_GetStrCvar(const char* cvar) {
-	return get_str_cvar(cvar);
+	return util_get_str_cvar(cvar);
 }
 
 static pluginfuncs_t s_pluginfuncs = {
@@ -70,19 +70,9 @@ static pluginfuncs_t s_pluginfuncs = {
 pluginres_t g_plugin_result = QMM_UNUSED;
 std::vector<plugin_t> g_plugins;
 
-// this is just a non-MFP stub to pass to plugins
-static int s_plugin_vmmain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {
-	// if no mod loaded (during shutdown)
-	if (!g_ModMgr)
-		return 0;
-	return g_ModMgr->Mod()->vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
-}
-
 bool plugin_load(plugin_t* p, std::string file) {
-	if (p->dll) {
-		plugin_unload(p);
-	}
-	p->path = file;
+	if (p->dll)
+		return false;
 
 	if (!(p->dll = dlopen(file.c_str(), RTLD_NOW))) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): DLL load failed for plugin: {}\n", file, dlerror()).c_str());
@@ -147,27 +137,28 @@ bool plugin_load(plugin_t* p, std::string file) {
 
 	// call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
 	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, vmbase)
-	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, s_plugin_vmmain, &g_plugin_result, &s_pluginfuncs, g_ModMgr->Mod()->GetBase()))) {
+	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, g_mod.vmbase))) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): QMM_Attach() returned 0\n", file).c_str());
 		p->QMM_Detach();
 		goto fail;
 	}
 
+	p->path = file;
 	return true;
 
 	fail:
 	if (p->dll)
 		dlclose(p->dll);
+	*p = plugin_t();
 	return false;
 }
 
 void plugin_unload(plugin_t* p) {
-	if (!p->dll)
-		return;
-	if (p->QMM_Detach)
-		p->QMM_Detach();
-	p->QMM_Detach = nullptr;
+	if (p->dll) {
+		if (p->QMM_Detach)
+			p->QMM_Detach();
+		dlclose(p->dll);
+	}
 
-	dlclose(p->dll);
-	p->dll = nullptr;
+	*p = plugin_t();
 }

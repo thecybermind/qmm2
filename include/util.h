@@ -12,25 +12,22 @@ Created By:
 #ifndef __QMM2_UTIL_H__
 #define __QMM2_UTIL_H__
 
-std::string my_dirname(std::string);
-std::string my_basename(std::string);
-std::string my_baseext(std::string);
+std::string path_normalize(std::string);
+std::string path_dirname(std::string);
+std::string path_basename(std::string);
+std::string path_baseext(std::string);
+bool path_is_relative(std::string);
+std::string path_get_modulepath(void*);
 
-int my_stricmp(std::string, std::string);
-int my_striequal(std::string, std::string);
+int str_stricmp(std::string, std::string);
+int str_striequal(std::string, std::string);
 
-bool is_relative_path(std::string);
-
-std::string get_modulepath(void*);
-
-int byteswap(int);
-short byteswap(short);
 char* vaf(const char*, ...);    // this uses a cycling array of strings so the return value does not need to be stored locally
-int get_int_cvar(const char*);
-const char* get_str_cvar(const char*);
+int util_get_int_cvar(const char*);
+const char* util_get_str_cvar(const char*);
 void log_set(int);
 int log_get();
 int log_write(const char*, int = -1);
-int dump_file(const char*, const char* = NULL);
+int util_dump_file(std::string, std::string);
 
 #endif // __QMM2_UTIL_H__

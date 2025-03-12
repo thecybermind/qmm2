@@ -29,42 +29,50 @@ Created By:
 #endif
 
 #ifdef WIN32
- #define WIN32_LEAN_AND_MEAN
- #define _CRT_SECURE_NO_WARNINGS 1
- #include <windows.h>
- constexpr const char* SUF_DLL = "x86";
- constexpr const char* SUF_SO  = "x86";
- constexpr const char* EXT_DLL = "dll";
- constexpr const char* EXT_SO  = "dll";
- constexpr const char* EXT_QVM = "qvm";
 
- constexpr const unsigned char MAGIC_DLL[] = { 'M',  'Z', 0x90, 0x00 };
- constexpr const unsigned char MAGIC_SO[]  = { 'M',  'Z', 0x90, 0x00 };
- constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14,  'r', 0x12 };
+#define WIN32_LEAN_AND_MEAN
+#define _CRT_SECURE_NO_WARNINGS 1
+#include <windows.h>
+#include <limits.h>
+constexpr const char* SUF_DLL = "x86";
+constexpr const char* SUF_SO  = "x86";
+constexpr const char* EXT_DLL = "dll";
+constexpr const char* EXT_SO  = "dll";
+constexpr const char* EXT_QVM = "qvm";
+
+constexpr const unsigned char MAGIC_DLL[] = { 'M',  'Z', 0x90, 0x00 };
+constexpr const unsigned char MAGIC_SO[]  = { 'M',  'Z', 0x90, 0x00 };
+constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14,  'r', 0x12 };
+
 #define PATH_MAX			4096
- #define my_vsnprintf		_vsnprintf
- #define strcasecmp			_stricmp
- #define dlopen(file, x)	((void*)LoadLibrary(file))
- #define dlsym(dll, func)	((void*)GetProcAddress((HMODULE)(dll), (func)))
- #define dlclose(dll)		FreeLibrary((HMODULE)(dll))
- char* dlerror();			// this returns the last error from any win32 function, not just library functions
-#else // linux
- #include <dlfcn.h>
- #include <limits.h>
- #include <ctype.h>
- constexpr const char* SUF_DLL = "i386";
- constexpr const char* SUF_SO  = "i386";
- constexpr const char* EXT_DLL = "so";
- constexpr const char* EXT_SO  = "so";
- constexpr const char* EXT_QVM = "qvm";
+#define my_vsnprintf		_vsnprintf
+#define strcasecmp			_stricmp
+#define dlopen(file, x)		((void*)LoadLibrary(file))
+#define dlsym(dll, func)	((void*)GetProcAddress((HMODULE)(dll), (func)))
+#define dlclose(dll)		FreeLibrary((HMODULE)(dll))
+char* dlerror();			// this will return the last error from any win32 function, not just library functions
 
- constexpr const unsigned char MAGIC_DLL[] = { 0x7F,  'E', 'L',  'F' };
- constexpr const unsigned char MAGIC_SO[]  = { 0x7F,  'E', 'L',  'F' };
- constexpr const unsigned char MAGIC_QVM[] = {  'D', 0x14, 'r', 0x12 };
+#else // WIN32 / linux
 
- #define my_vsnprintf	vsnprintf
-#endif
+#include <dlfcn.h>
+#include <unistd.h> 
+#include <limits.h>
+#include <ctype.h>
+constexpr const char* SUF_DLL = "i386";
+constexpr const char* SUF_SO  = "i386";
+constexpr const char* EXT_DLL = "so";
+constexpr const char* EXT_SO  = "so";
+constexpr const char* EXT_QVM = "qvm";
 
-const char* osdef_get_modulepath(void*);
+constexpr const unsigned char MAGIC_DLL[] = { 0x7F,  'E', 'L',  'F' };
+constexpr const unsigned char MAGIC_SO[]  = { 0x7F,  'E', 'L',  'F' };
+constexpr const unsigned char MAGIC_QVM[] = {  'D', 0x14, 'r', 0x12 };
+
+#define my_vsnprintf	vsnprintf
+
+#endif // linux
+
+const char* osdef_path_get_modulepath(void*);
+const char* osdef_path_get_procpath();
 
 #endif // __QMM2_OSDEF_H__

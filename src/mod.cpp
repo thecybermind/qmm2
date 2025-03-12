@@ -10,60 +10,103 @@ Created By:
 */
 
 #include "osdef.h"
+#include "format.h"
+#include "game_api.h"
 #include "main.h"
+#include "config.h"
 #include "mod.h"
+#include "qvm.h"
 #include "util.h"
 
 mod_t g_mod;
 
-/* todo:
-   * use extension and/or load with engine file functions to determine mod type
-   * if qvm, create a qvm object, set g_mod.pfnvmMain to the qvm entry point function (like qvm_vmMain)
-   * if dll, load normal crap, set g_mod.pfnvmMain to the actual dll vmMain function
-   * when mod should be unloaded, set to nullptr
-   
-   also need to handle code for loading from different directories:
-   if cfg "mod" exists but is not relative path, load it directly with no fallback
-   if cfg "mod" exists but is relative path:
-    * check qmm dir + "<mod>"
-	* check exe dir + "<moddir>/<mod>"
-	* check "./<moddir>/<mod>"
-   if cfg "mod" doesn't exist:
-	* check qmm dir + "qmm_<dllname>"
-	* check exe dir + "<moddir>/qmm_<dllname>"
-	* check exe dir + "<moddir>/<dllname>" (as long as exe dir is not same as qmm dir)
-	* check "./<moddir>/qmm_<dllname>"
+// entry point to store in mod_t->pfnvmMain for qvm mods
+static int s_mod_vmmain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {
+	int args[13] = { cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11 };
+	return qvm_exec(&g_mod.qvm, args, sizeof(args) / sizeof(args[0]));
+}
 
+bool mod_load(mod_t* mod, std::string file) {
+	if (!mod || mod->dll || mod->qvm.memory)
+		return false;
 
-*/
+	mod->path = file;
 
-// load file using engine functions, and check the magic numbers at the beginning of the file
-headertype_t check_header(std::string file) {
-	int fid;
-	unsigned char hdr[4];
+	std::string ext = path_baseext(file);
+	// only allow qvm mods if the game engine supports it
+	if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->vmsyscall) {
+		// load file using engine functions to read into pk3s if necessary
+		int fpk3;
+		int filelen = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], file.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
+		if (filelen <= 0) {
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): Could not open QVM for reading\n", file).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
+			return false;
+		}
+		byte* filemem = (byte*)malloc(filelen);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem, filelen, fpk3);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 
-	// attempt to open the file
-	int filesize = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], file.c_str(), &fid, QMM_ENG_MSG[QMM_FS_READ]);
-	// if it exists and loaded
-	if (filesize > 0) {
-		// read magic numbers and close file handle
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], &hdr, sizeof(hdr), fid);
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fid);
+		// load stack size from config
+		int stacksize = cfg_get_int(g_cfg, "stacksize", 1);
+		
+		// attempt to load mod
+		if (!qvm_load(&mod->qvm, filemem, filelen, g_gameinfo.game->vmsyscall, stacksize)) {
+			qvm_unload(&mod->qvm);
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): QVM load failed\n", file).c_str());
+			return false;
+		}
+		mod->pfnvmMain = s_mod_vmmain;
+		mod->vmbase = (int)mod->qvm.datasegment;
 
-		if (memcmp(hdr, MAGIC_DLL, sizeof(hdr)) == 0)
-			return HEADER_DLL;
-		// only allow it to return a qvm mod if this game supports it
-		if (memcmp(hdr, MAGIC_QVM, sizeof(hdr) && g_gameinfo.game->vmsyscall) == 0)
-			return HEADER_QVM;
+		return true;
+	}
+	// load DLL
+	else if (str_striequal(ext, EXT_DLL)) {
+		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror()).c_str());
+			return false;
+		}
+
+		mod_dllEntry_t dllEntry = nullptr;
+		if (!(dllEntry = (mod_dllEntry_t)dlsym(mod->dll, "dllEntry"))) {
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", file).c_str());
+			goto dll_fail;
+		}
+
+		if (!(mod->pfnvmMain = (mod_vmMain_t)dlsym(mod->dll, "vmMain"))) {
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): Unable to find \"vmMain\" function\n", file).c_str());
+			goto dll_fail;
+		}
+
+		dllEntry(g_gameinfo.pfnsyscall);
+		mod->vmbase = 0;
+
+		return true;
+
+		dll_fail:
+		if (mod->dll)
+			dlclose(mod->dll);
+		return false;
 	}
 
-	// if unable to determine file type via header, just check the extension
-	std::string ext = my_baseext(file);
-	if (my_striequal(ext, EXT_DLL))
-		return HEADER_DLL;
-	// only allow it to return a qvm mod if this game supports it
-	if (my_striequal(ext, EXT_QVM) && g_gameinfo.game->vmsyscall)
-		return HEADER_QVM;
+	return false;
+}
 
-	return HEADER_UNKNOWN;
+void mod_unload(mod_t* mod) {
+	if (mod->qvm.memory) {
+		qvm_unload(&mod->qvm);
+	}
+	else {
+		dlclose(mod->dll);
+	}
+	*mod = mod_t();
+}
+
+bool mod_is_loaded(mod_t* mod) {
+	if (!mod)
+		return false;
+	if (!mod->dll && !mod->qvm.memory)
+		return false;
+	return true;
 }

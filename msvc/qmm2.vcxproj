@@ -86,11 +86,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\CDLL.cpp" />
-    <ClCompile Include="..\src\CDLLMod.cpp" />
-    <ClCompile Include="..\src\CModMgr.cpp" />
     <ClCompile Include="..\src\config.cpp" />
-    <ClCompile Include="..\src\CVMMod.cpp" />
     <ClCompile Include="..\src\game_api.cpp" />
     <ClCompile Include="..\src\game_ja.cpp" />
     <ClCompile Include="..\src\game_jk2.cpp" />
@@ -106,11 +102,7 @@
     <ClCompile Include="..\src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\CDLL.h" />
-    <ClInclude Include="..\include\CDLLMod.h" />
-    <ClInclude Include="..\include\CMod.h" />
-    <ClInclude Include="..\include\CModMgr.h" />
-    <ClInclude Include="..\include\CVMMod.h" />
+    <ClInclude Include="..\include\config.h" />
     <ClInclude Include="..\include\format.h" />
     <ClInclude Include="..\include\game_api.h" />
     <ClInclude Include="..\include\main.h" />
