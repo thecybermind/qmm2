@@ -419,14 +419,21 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 				byte* to = qvm->datasegment + *stack++;
 
 				// skip if src/dst are the same
-				if (from == to) {
+				if (from == to)
 					break;
-				}
-				// skip if dst is inside src+param offset
-				/* if (to > from && to < from + param) {
+				// skip if src is outside VM range
+				if (from < qvm->memory || from >= qvm->memory + qvm->memorysize)
 					break;
-				} */
-
+				// skip if last src byte is outside VM range
+				if (from+param-1 < qvm->memory || from+param-1 >= qvm->memory + qvm->memorysize)
+					break;
+				// skip if dst is outside VM range
+				if (to < qvm->memory || to >= qvm->memory + qvm->memorysize)
+					break;
+				// skip if last dst byte is outside VM range
+				if (to+param-1 < qvm->memory || to+param >= qvm->memory-1 + qvm->memorysize)
+					break;
+				
 				memcpy(to, from, param);
 
 				break;
