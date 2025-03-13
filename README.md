@@ -52,8 +52,6 @@ Each game uses a different filename for the mod. Refer to this list when you are
 
 The configuration for QMM primarily comes from the qmm2.json file. This should be placed in the mod directory, the same place the qmm DLL is located.
 
-> Note: JSON objects and lists must not have a trailing comma after the final entry. 
-
 The QMM config contains several options:
 
 - `game` - valid options:
@@ -71,7 +69,7 @@ The QMM config contains several options:
 
 - `execcfg` - name of Quake config file to execute after QMM and plugins are loaded. specify an empty string to explicitly disable this function. default = "qmmexec.cfg"
 
-- `plugins` - list of plugin filenames to load (remember, the final entry of a json list must not end with a comma)
+- `plugins` - list of plugin filenames to load
 
 ## Notes
 

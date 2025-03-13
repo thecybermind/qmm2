@@ -20,8 +20,8 @@ nlohmann::json g_cfg;
 nlohmann::json cfg_load(std::string file) {
 	std::ifstream f(file);
 	if (!f.fail()) {
-		// parse(source, callback_handler, allow_exceptions, ignore_comments)
-		return nlohmann::json::parse(f, nullptr, false, true);
+		// parse(source, callback_handler, allow_exceptions, ignore_comments, ignore_trailing_commas)
+		return nlohmann::json::parse(f, nullptr, false, true, true);
 	}
 	return nlohmann::json();
 }
