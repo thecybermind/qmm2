@@ -13,6 +13,13 @@ Created By:
 #include <stdlib.h>
 #include "qvm.h"
 
+static bool qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start = nullptr, void* end = nullptr) {
+	start = start ? start : qvm->memory;
+	end = end ? end : (qvm->memory + qvm->memorysize);
+
+	return (ptr >= start || ptr < end);
+}
+
 bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int stacksize) {
 	if (!qvm || !filemem || !filelen || qvm->memory || !vmsyscall)
 		return false;
@@ -167,10 +174,6 @@ void qvm_unload(qvm_t* qvm) {
 	}
 }
 
-static bool qvm_validate_ptr(qvm_t* qvm, void* ptr) {
-	return (ptr >= qvm->memory && ptr < qvm->memory + qvm->memorysize);
-}
-
 int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 	if (!qvm || !qvm->memory)
 		return 0;
@@ -207,6 +210,11 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 	register int param;
 
 	do {
+		// if code pointer is outside the code segment, something really bad happened
+		if (!qvm_validate_ptr(qvm, opptr, qvm->codesegment, qvm->codesegment + qvm->codeseglen)) {
+			qvm_unload(qvm);
+			return INT_MIN;
+		}
 		op = (qvmopcode_t)opptr->op;
 		param = opptr->param;
 
@@ -254,10 +262,13 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 				*stack = qvm->argbase + param;
 				break;
 			// set a function-call arg (offset = param) to the value in stack[0]
-			case OP_ARG:
-				*(int*)(qvm->datasegment + qvm->argbase + param) = *stack;
+			case OP_ARG: {
+				int* dst = (int*)(qvm->datasegment + qvm->argbase + param);
+				if (qvm_validate_ptr(qvm, dst))
+					*dst = *stack;
 				++stack;
 				break;
+			}
 
 			// functions / code flow
 			#define JUMP(x) opptr = qvm->codesegment + (x)
@@ -291,11 +302,16 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 				break;
 			// enter a function, prepare local var heap (length=param)
 			// store the return address (front of stack) in arg heap
-			case OP_ENTER:
+			case OP_ENTER: {
 				qvm->argbase -= param;
-				*(int*)(qvm->datasegment + qvm->argbase) = 0;
-				*((int*)(qvm->datasegment + qvm->argbase) + 1) = *stack++;
+				int* arg = (int*)(qvm->datasegment + qvm->argbase);
+				if (qvm_validate_ptr(qvm, arg))
+					*arg = 0;
+				if (qvm_validate_ptr(qvm, arg + 1))
+					arg[1] = *stack;
+				stack++;
 				break;
+			}
 			// leave a function, move opcode pointer to previous function
 			case OP_LEAVE:
 				// retrieve the return code address from bottom of the arg heap
@@ -387,52 +403,69 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 			// memory/pointer management
 
 			// store 1-byte value from stack[0] into address stored in stack[1]
-			case OP_STORE1:
-				*(qvm->datasegment + stack[1]) = (byte)(*stack & 0xFF);
+			case OP_STORE1: {
+				byte* dst1 = qvm->datasegment + stack[1];
+				if (qvm_validate_ptr(qvm, dst1))
+					*dst1 = (byte)(*stack & 0xFF);
 				stack += 2;
 				break;
+			}
 			// 2-byte
-			case OP_STORE2:
-				*(unsigned short*)(qvm->datasegment + stack[1]) = (unsigned short)(*stack & 0xFFFF);
+			case OP_STORE2: {
+				unsigned short* dst = (unsigned short*)(qvm->datasegment + stack[1]);
+				if (qvm_validate_ptr(qvm, dst))
+					*dst = (unsigned short)(*stack & 0xFFFF);
 				stack += 2;
 				break;
+			}
 			// 4-byte
-			case OP_STORE4:
-				*(int*)(qvm->datasegment + stack[1]) = *stack;
+			case OP_STORE4: {
+				int* dst = (int*)(qvm->datasegment + stack[1]);
+				if (qvm_validate_ptr(qvm, dst))
+					*dst = *stack;
 				stack += 2;
 				break;
-
+			}
 			// get 1-byte value at address stored in stack[0],
 			// and store back in stack[0]
 			// 1-byte
-			case OP_LOAD1:
-				*stack = *(byte*)(qvm->datasegment + *stack);
+			case OP_LOAD1: {
+				byte* src = qvm->datasegment + *stack;
+				if (qvm_validate_ptr(qvm, src))
+					*stack = *src;
 				break;
+			}
 			// 2-byte
-			case OP_LOAD2:
-				*stack = *(unsigned short*)(qvm->datasegment + *stack);
+			case OP_LOAD2: {
+				unsigned short* src = (unsigned short*)(qvm->datasegment + *stack);
+				if (qvm_validate_ptr(qvm, src))
+					*stack = *src;
 				break;
+			}
 			// 4-byte
-			case OP_LOAD4:
-				*stack = *(int*)(qvm->datasegment + *stack);
+			case OP_LOAD4: {
+				int* src = (int*)(qvm->datasegment + *stack);
+				if (qvm_validate_ptr(qvm, src))
+					*stack = *src;
 				break;
+			}
 			// copy mem at address pointed to by stack[0] to address pointed to by stack[1]
 			// for 'param' number of bytes
 			case OP_BLOCK_COPY: {
-				byte* from = qvm->datasegment + *stack++;
-				byte* to = qvm->datasegment + *stack++;
+				byte* src = qvm->datasegment + *stack++;
+				byte* dst = qvm->datasegment + *stack++;
 
 				// skip if src/dst are the same
-				if (from == to)
+				if (src == dst)
 					break;
-				// skip if from block goes out of VM range
-				if (!qvm_validate_ptr(qvm, from) || !qvm_validate_ptr(qvm, from+param-1))
+				// skip if src block goes out of VM range
+				if (!qvm_validate_ptr(qvm, src) || !qvm_validate_ptr(qvm, src+param-1))
 					break;
-				// skip if to block goes out of VM range
-				if (!qvm_validate_ptr(qvm, to) || !qvm_validate_ptr(qvm, to+param-1))
+				// skip if dst block goes out of VM range
+				if (!qvm_validate_ptr(qvm, dst) || !qvm_validate_ptr(qvm, dst+param-1))
 					break;
 				
-				memcpy(to, from, param);
+				memcpy(dst, src, param);
 
 				break;
 			}
