@@ -12,22 +12,23 @@ Created By:
 #ifndef __QMM2_UTIL_H__
 #define __QMM2_UTIL_H__
 
-std::string path_normalize(std::string);
-std::string path_dirname(std::string);
-std::string path_basename(std::string);
-std::string path_baseext(std::string);
-bool path_is_relative(std::string);
-std::string path_get_modulepath(void*);
+std::string path_normalize(std::string path);
+std::string path_dirname(std::string path);
+std::string path_basename(std::string path);
+std::string path_baseext(std::string path);
+bool path_is_relative(std::string path);
+std::string path_get_modulepath(void* ptr);
 
-int str_stricmp(std::string, std::string);
-int str_striequal(std::string, std::string);
+int str_stristr(std::string haystack, std::string needle);
+int str_stricmp(std::string s1, std::string s2);
+int str_striequal(std::string s1, std::string s2);
 
-char* vaf(const char*, ...);    // this uses a cycling array of strings so the return value does not need to be stored locally
-int util_get_int_cvar(const char*);
-const char* util_get_str_cvar(const char*);
-void log_set(int);
+char* vaf(const char* format, ...);    // this uses a cycling array of strings so the return value does not need to be stored locally
+int util_get_int_cvar(const char* cvar);
+const char* util_get_str_cvar(const char* cvar);
+void log_set(int fh);
 int log_get();
-int log_write(const char*, int = -1);
-int util_dump_file(std::string, std::string);
+int log_write(const char* text, int len = -1);
+int util_dump_file(std::string file, std::string outfile);
 
 #endif // __QMM2_UTIL_H__

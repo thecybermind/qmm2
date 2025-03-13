@@ -18,12 +18,12 @@ Created By:
 
 extern nlohmann::json g_cfg;
 
-nlohmann::json cfg_load(std::string);
+nlohmann::json cfg_load(std::string file);
 
-std::string cfg_get_string(nlohmann::json&, std::string, std::string = "");
-int cfg_get_int(nlohmann::json&, std::string, int = -1);
-bool cfg_get_bool(nlohmann::json&, std::string, bool = false);
-std::vector<std::string> cfg_get_array(nlohmann::json&, std::string, std::vector<std::string> = {});
-nlohmann::json cfg_get_object(nlohmann::json&, std::string, nlohmann::json = nlohmann::json());
+std::string cfg_get_string(nlohmann::json& j, std::string key, std::string def = "");
+int cfg_get_int(nlohmann::json& j, std::string key, int def = -1);
+bool cfg_get_bool(nlohmann::json& j, std::string key, bool def = false);
+std::vector<std::string> cfg_get_array(nlohmann::json& j, std::string key, std::vector<std::string> def = {});
+nlohmann::json cfg_get_object(nlohmann::json& j, std::string key, nlohmann::json def = nlohmann::json());
 
 #endif // __QMM2_CONFIG_H__

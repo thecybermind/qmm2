@@ -72,7 +72,7 @@ constexpr const unsigned char MAGIC_QVM[] = {  'D', 0x14, 'r', 0x12 };
 
 #endif // linux
 
-const char* osdef_path_get_modulepath(void*);
+const char* osdef_path_get_modulepath(void* ptr);
 const char* osdef_path_get_procpath();
 
 #endif // __QMM2_OSDEF_H__

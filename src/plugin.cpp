@@ -41,12 +41,12 @@ static int s_plugin_helper_IsQVM() {
 	return g_mod.vmbase != 0;
 }
 
-static const char* s_plugin_helper_EngMsgName(int x) {
-	return g_gameinfo.game->eng_msg_names(x);
+static const char* s_plugin_helper_EngMsgName(int msg) {
+	return g_gameinfo.game->eng_msg_names(msg);
 }
 
-static const char* s_plugin_helper_ModMsgName(int x) {
-	return g_gameinfo.game->mod_msg_names(x);
+static const char* s_plugin_helper_ModMsgName(int msg) {
+	return g_gameinfo.game->mod_msg_names(msg);
 }
 
 static int s_plugin_helper_GetIntCvar(const char* cvar) {

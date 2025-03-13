@@ -17,7 +17,7 @@ Created By:
 #define QVM_MAGIC_BIG   0x44147212  // big endian
 
 typedef unsigned char byte;
-typedef int (*vmsyscall_t)(unsigned char*, int, int*);
+typedef int (*vmsyscall_t)(unsigned char* membase, int cmd, int* args);
 
 typedef enum {
 	OP_UNDEF,
@@ -127,15 +127,15 @@ typedef struct {
 	int argbase;			// lower end of arg heap
 
 	// syscall
-	vmsyscall_t vmsyscall;	// e.g. Q3A_syscall function from game_q3a.cpp
+	vmsyscall_t vmsyscall;	// e.g. Q3A_vmsyscall function from game_q3a.cpp
 } qvm_t;
 
-int byteswap(int);
-short byteswap(short);
+int byteswap(int i);
+short byteswap(short s);
 
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t*, byte*, int, vmsyscall_t, int);
-void qvm_unload(qvm_t*);
-int qvm_exec(qvm_t*, int*, int);
+bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int stacksize);
+void qvm_unload(qvm_t* qvm);
+int qvm_exec(qvm_t* qvm, int* argv, int argc);
 
 #endif // __QMM2_QVM_H__

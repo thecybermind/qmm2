@@ -12,8 +12,8 @@ Created By:
 #ifndef __QMM2_GAME_API_H__
 #define __QMM2_GAME_API_H__
 
-typedef int (*vmsyscall_t)(unsigned char*, int, int*);
-typedef const char* (*msgname_t)(int);
+typedef int (*vmsyscall_t)(unsigned char* membase, int cmd, int* args);
+typedef const char* (*msgname_t)(int msg);
 
 // a list of all the mod messages used by QMM
 typedef enum {
@@ -69,6 +69,7 @@ typedef struct {
 	msgname_t eng_msg_names;		// pointer to a function that returns a string for a given engine message
 	msgname_t mod_msg_names;		// pointer to a function that returns a string for a given mod message
 	vmsyscall_t vmsyscall;			// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
+	const char* exe_hint;			// hint that should appear in the executable filename to be considered this game
 } supportedgame_t;
 
 extern supportedgame_t g_supportedgames[];
@@ -79,10 +80,10 @@ extern supportedgame_t g_supportedgames[];
 // generate externs for the msg arrays and functions
 #define GEN_EXTS(game)	extern int game##_qmm_eng_msgs[]; \
 						extern int game##_qmm_mod_msgs[]; \
-						const char* game##_eng_msg_names(int); \
-						const char* game##_mod_msg_names(int)
+						const char* game##_eng_msg_names(int msg); \
+						const char* game##_mod_msg_names(int msg)
 // generate extern for the vmsyscall function (if game supports it)
-#define GEN_VMEXT(game)	int game##_vmsyscall(unsigned char*, int, int*)
+#define GEN_VMEXT(game)	int game##_vmsyscall(unsigned char* membase, int cmd, int* args)
 // generate struct info for the short name, messages arrays, and message name functions
 #define GEN_INFO(game)	#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names
 

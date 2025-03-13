@@ -44,8 +44,8 @@ extern game_info_t g_gameinfo;
 constexpr int QMM_FAIL_G_ERROR = 1;
 constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
 
-C_DLLEXPORT void dllEntry(eng_syscall_t);
-C_DLLEXPORT int vmMain(int, int, int, int, int, int, int, int, int, int, int, int, int);
-int syscall(int, ...);
+C_DLLEXPORT void dllEntry(eng_syscall_t syscall);
+C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
+int syscall(int cmd, ...);
 
 #endif // __QMM2_MAIN_H__

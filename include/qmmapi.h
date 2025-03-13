@@ -26,9 +26,9 @@ Created By:
 
 typedef unsigned char byte;
 
-typedef int (*eng_syscall_t)(int, ...);
-typedef int (*mod_vmMain_t)(int, int, int, int, int, int, int, int, int, int, int, int, int);
-typedef void (*mod_dllEntry_t)(eng_syscall_t);
+typedef int (*eng_syscall_t)(int cmd, ...);
+typedef int (*mod_vmMain_t)(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
+typedef void (*mod_dllEntry_t)(eng_syscall_t syscall);
 
 // major interface version increases with change to QMM_Query, QMM_Attach or a pluginfunc_t signature
 #define QMM_PIFV_MAJOR  1
@@ -52,13 +52,13 @@ typedef struct {
 
 // prototype struct for QMM plugin util funcs
 typedef struct {
-    int (*pfnWriteGameLog)(const char*, int);
-    char* (*pfnVarArgs)(char*, ...);
+    int (*pfnWriteGameLog)(const char* text, int len);
+    char* (*pfnVarArgs)(char* format, ...);
     int (*pfnIsQVM)();
-    const char* (*pfnEngMsgName)(int);
-    const char* (*pfnModMsgName)(int);
-    int (*pfnGetIntCvar)(const char*);
-    const char* (*pfnGetStrCvar)(const char*);
+    const char* (*pfnEngMsgName)(int msg);
+    const char* (*pfnModMsgName)(int msg);
+    int (*pfnGetIntCvar)(const char* cvar);
+    const char* (*pfnGetStrCvar)(const char* cvar);
     const char* (*pfnGetGameEngine)();
 } pluginfuncs_t;
 // macros for QMM plugin util funcs
@@ -82,15 +82,15 @@ typedef enum pluginres_e {
 } pluginres_t;
 
 // QMM_Query
-typedef void (*plugin_query)(plugininfo_t**);
+typedef void (*plugin_query)(plugininfo_t** pinfo);
 // QMM_Attach
-typedef int (*plugin_attach)(eng_syscall_t, mod_vmMain_t, pluginres_t*, pluginfuncs_t*, int, int);
+typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, int vmbase, int reserved);
 // QMM_Detach
-typedef void (*plugin_detach)(int);
+typedef void (*plugin_detach)(int reserved);
 // QMM_syscall
-typedef int (*plugin_syscall)(int, int, int, int, int, int, int, int, int, int, int, int, int, int);
+typedef int (*plugin_syscall)(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12);
 // QMM_vmMain
-typedef int (*plugin_vmmain)(int, int, int, int, int, int, int, int, int, int, int, int, int);
+typedef int (*plugin_vmmain)(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
 
 // plugin use only
 extern plugininfo_t g_plugininfo;       // set '*pinfo' to &g_plugininfo in QMM_Query
@@ -114,8 +114,8 @@ C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
 C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, int vmbase, int reserved);
 C_DLLEXPORT void QMM_Detach(int reserved);
 C_DLLEXPORT int QMM_vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
-C_DLLEXPORT int QMM_syscall(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12);
 C_DLLEXPORT int QMM_vmMain_Post(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
+C_DLLEXPORT int QMM_syscall(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12);
 C_DLLEXPORT int QMM_syscall_Post(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12);
 
 // macros to help set the plugin result value

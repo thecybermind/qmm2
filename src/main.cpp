@@ -121,12 +121,16 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 			g_gameinfo.isautodetected = false;
 			break;
 		}
-		// otherwise, if auto, we need to check matching dll names
+		// otherwise, if auto, we need to check matching dll names, with optional exe hint
 		if (str_striequal(cfg_game, "auto")) {
+			// dll name matches
 			if (str_striequal(g_gameinfo.qmm_file, game.dllname)) {
-				g_gameinfo.game = &game;
-				g_gameinfo.isautodetected = true;
-				break;
+				// if no hint, or hint exists and matches
+				if (!game.exe_hint || (game.exe_hint && str_stristr(g_gameinfo.exe_file, game.exe_hint))) {
+					g_gameinfo.game = &game;
+					g_gameinfo.isautodetected = true;
+					break;
+				}
 			}
 		}
 	}

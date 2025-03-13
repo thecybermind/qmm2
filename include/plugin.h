@@ -31,7 +31,7 @@ typedef struct plugin_s {
 extern pluginres_t g_plugin_result;
 extern std::vector<plugin_t> g_plugins;
 
-bool plugin_load(plugin_t*, std::string);
-void plugin_unload(plugin_t*);
+bool plugin_load(plugin_t* p, std::string file);
+void plugin_unload(plugin_t* p);
 
 #endif // __QMM2_PLUGIN_H__
