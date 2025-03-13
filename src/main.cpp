@@ -25,11 +25,11 @@ game_info_t g_gameinfo;
 /* About overall control flow:
    syscall (mod->engine) call flow for QVM mods only:
    1. mod calls <GAME>_vmsyscall function
-   2. pointers are converted (if not NULL, the QVM data segment base address is added)
+   2. pointer arguments are converted (if not NULL, the QVM data segment base address is added)
    3. continue with next section as if it were a DLL mod
    
    syscall (mod->engine) call flow for DLL mods:
-   1. call is handled by QMM_syscall
+   1. call is handled by syscall()
    2. call is passed to plugins' QMM_syscall functions
    3. call is passed to engine syscall (unless at least 1 plugin uses the result QMM_SUPERCEDE)
    4. call is passed to plugins' QMM_syscall_Post functions
@@ -37,7 +37,7 @@ game_info_t g_gameinfo;
       is returned to mod
    
    vmMain (engine->mod) call flow:
-   1. call is handled by vmMain
+   1. call is handled by vmMain()
    2. call is passed to plugins' QMM_vmMain functions
    3. call is passed to mod vmMain (unless at least 1 plugin uses the result QMM_SUPERCEDE)
    4. call is passed to plugins' QMM_vmMain_Post functions

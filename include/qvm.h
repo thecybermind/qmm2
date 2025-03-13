@@ -138,5 +138,4 @@ bool qvm_load(qvm_t*, byte*, int, vmsyscall_t, int);
 void qvm_unload(qvm_t*);
 int qvm_exec(qvm_t*, int*, int);
 
-
 #endif // __QMM2_QVM_H__

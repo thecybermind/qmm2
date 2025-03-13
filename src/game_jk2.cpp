@@ -275,6 +275,10 @@ const char* JK2_mod_msg_names(int cmd) {
 	}
 }
 
+/* Entry point: qvm mod->qmm
+   This is the syscall function called by a QVM mod as a way to pass info to or get info from the engine.
+   It modifies pointer arguments (if they are not NULL, the QVM data segment base address is added), and then the call is passed to the normal syscall() function that DLL mods call.
+*/
 // vec3_t are arrays, so convert them as pointers
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
