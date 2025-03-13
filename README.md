@@ -16,6 +16,7 @@ It hooks communication between the server engine and the game logic (the mod). I
 - [Installation](#installation)
     - [Getting Started](#getting-started)
     - [Installation Steps](#installation-steps)
+- [Configuration](#configuration)
 - [Notes](#notes)
     - [File Locations](#file-locations)
 	    - [Config file](#config-file)
@@ -45,7 +46,32 @@ Each game uses a different filename for the mod. Refer to this list when you are
 1. Locate the mod file (listed above) in the mod directory and rename it to `qmm_<name>`
 2. Place `qmm2.dll`/`qmm2.so` into the mod directory and rename it to the old mod file name (listed above)
 3. Place `qmm2.json` into the mod directory
-4. Configure `qmm2.json` (see the file for more details)
+4. Configure `qmm2.json` (see [Configuration](#configuration) section for details)
+
+## Configuration
+
+The configuration for QMM primarily comes from the qmm2.json file. This should be placed in the mod directory, the same place the qmm DLL is located.
+
+> Note: JSON objects and lists must not have a trailing comma after the final entry. 
+
+The QMM config contains several options:
+
+- `game` - valid options:
+	"auto" (default) = attempt to automatically determine engine
+    "Q3A" = Quake 3 Arena
+    "JK2" = Jedi Knight II: Jedi Outcast
+    "JA" = Jedi Knight: Jedi Academy
+    "RTCWMP" = Return to Castle Wolfenstein (Multiplayer)
+    "RTCWET" = Return to Castle Wolfenstein: Enemy Territory **Must be specifically set, otherwise auto-detected as RTCWMP**
+    "RTCWSP" = Return to Castle Wolfenstein (Singleplayer) **Must be specifically set, otherwise auto-detected as Q3A**
+ 
+- `mod` - path to mod file. specify "auto" to attempt to automatically determine mod filename based on the game engine. default = "auto"
+
+- `qvmstacksize` - size (in MiB) of the QVM stack for QVM mods. default = 1
+
+- `execcfg` - name of Quake config file to execute after QMM and plugins are loaded. specify an empty string to explicitly disable this function. default = "qmmexec.cfg"
+
+- `plugins` - list of plugin filenames to load (remember, the final entry of a json list must not end with a comma)
 
 ## Notes
 
