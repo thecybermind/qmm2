@@ -11,7 +11,7 @@ Created By:
 
 #include "osdef.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 
 char* dlerror() {
     static char buffer[4096 * 2]; // https://stackoverflow.com/a/75644008
@@ -28,7 +28,7 @@ const char* osdef_path_get_modulepath(void* ptr) {
 	static char path[PATH_MAX] = "";
 	memset(path, 0, sizeof(path));
 
-#ifdef WIN32
+#ifdef _WIN32
 	MEMORY_BASIC_INFORMATION MBI;
 
 	if (!VirtualQuery(ptr, &MBI, sizeof(MBI)) || MBI.State != MEM_COMMIT || !MBI.AllocationBase)
@@ -36,7 +36,7 @@ const char* osdef_path_get_modulepath(void* ptr) {
 
 	if (!GetModuleFileName((HMODULE)MBI.AllocationBase, path, sizeof(path)))
 		return "";
-#else
+#elif defined(__linux__)
 	Dl_info dli;
 	memset(&dli, 0, sizeof(dli));
 
@@ -45,6 +45,8 @@ const char* osdef_path_get_modulepath(void* ptr) {
 
 	strncpy(path, dli.dli_fname, sizeof(path) - 1);
 	path[sizeof(path) - 1] = '\0';
+#else
+
 #endif
 	return path;
 }
@@ -53,15 +55,17 @@ const char* osdef_path_get_procpath() {
 	static char path[PATH_MAX] = "";
 	memset(path, 0, sizeof(path));
 
-#ifdef WIN32
+#ifdef _WIN32
 	if (!GetModuleFileName(NULL, path, sizeof(path)))
 		return "";
-#else
+#elif defined(__linux__)
 	ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
 	if (len != -1) {
 		path[len] = '\0';
 	}
 	path[sizeof(path) - 1] = '\0';
+#else
+
 #endif
 	return path;
 }

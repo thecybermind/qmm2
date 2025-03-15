@@ -16,6 +16,11 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
+typedef void (*mod_dllEntry_t)(eng_syscall_t syscall);
+#ifdef QMM_MOHAA_SUPPORT
+typedef void* (*mod_GetGameAPI_t)(void* import);
+#endif // QMM_MOHAA_SUPPORT
+
 typedef struct mod_s {
 	void* dll = nullptr;
 	qvm_t qvm;

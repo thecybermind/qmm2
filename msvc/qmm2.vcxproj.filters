@@ -54,6 +54,9 @@
     <ClInclude Include="..\include\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\game_mohaa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -96,6 +99,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\qvm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_mohaa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

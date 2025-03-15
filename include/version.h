@@ -25,10 +25,12 @@ Created By:
 #define QMM_BUILDER		"cybermind"
 #define QMM_URL         "https://github.com/thecybermind/qmm2/"
 
-#ifdef WIN32
+#ifdef _WIN32
  #define QMM_OS			"Win32"
-#elif defined(linux)
+#elif defined(__linux__)
  #define QMM_OS			"Linux"
+#else
+ #define QMM_OS          "?"
 #endif
 
 #define QMM_VERSION_DWORD	QMM_VERSION_MAJOR , QMM_VERSION_MINOR , QMM_VERSION_REV , 0

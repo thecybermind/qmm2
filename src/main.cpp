@@ -9,6 +9,8 @@ Created By:
 
 */
 
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
 #include <stdarg.h>
 #include "format.h"
 #include "config.h"
@@ -71,6 +73,79 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	// save syscall pointer
 	g_gameinfo.pfnsyscall = syscall;
 
+	main_loadconfig();
+
+	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
+
+	main_detectgame(cfg_game);
+
+	// failed to get engine information
+	if (!g_gameinfo.game) {
+		fmt::print("[QMM] ERROR: dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_game);
+		return;
+	}
+}
+
+#ifdef QMM_MOHAA_SUPPORT
+/* Entry point: engine->qmm
+   MOHAA: This is the first function called when the DLL is loaded. MOHAA uses a system closer to HalfLife, where a
+   struct of function pointers is given from the engine to the mod, and the mod returns a struct of function pointers
+   back to the engine.
+   To best integrate this with QMM, game_mohaa.cpp/.h create an enum for each import (syscall) and export (vmMain) function/variable.
+   A game_export_t is given to the engine which has lambdas for each pointer that calls QMM's vmMain(enum, arg0, ...).
+   A game_import_t is given to the mod which has lambdas for each pointer that calls QMM's syscall(enum, arg0, ...).
+
+   The original import/export tables are stored. When QMM and plugins need to call the mod or engine, g_mod.pfnvmMain or
+   g_gameinfo.pfnsyscall point to functions which will take the cmd, and call the proper function pointer out of the struct.
+
+   General flow:
+   * engine->GetGameAPI(import):
+     - load config file
+     - detect game engine
+   * GetGameAPI->MOHAAGetGameAPI(import):
+     - copy import struct
+	 - assign variables from import to qmm_import
+	 - assign default values for variables in qmm_export
+	 - return &qmm_export
+   * GetGameAPI:
+     - return &qmm_export to engine
+
+   * engine:
+     - stores qmm_export pointer, checks qmm_export->apiversion to match GAME_API_VERSION
+	 - called qmm_export->Init
+	 - this eventually hits our vmMain(GAME_INIT) and we load the mod
+	 - store variables from mod's real export struct into our qmm_export
+*/
+C_DLLEXPORT void* GetGameAPI(void* import) {
+	fmt::print("[QMM] QMM v" QMM_VERSION " (" QMM_OS ") loaded!\n");
+
+	// ???
+	if (!import) {
+		fmt::print("[QMM] ERROR: GetGameAPI(): import is NULL!\n");
+		return nullptr;
+	}
+
+	main_loadconfig();
+
+	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
+
+	main_detectgame(cfg_game);
+
+	// failed to get engine information
+	if (!g_gameinfo.game) {
+		fmt::print("[QMM] ERROR: dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_game);
+		return nullptr;
+	}
+
+	// call the game-specific GetGameAPI function (e.g. MOHAA_GetGameAPI) which will set up the exports
+	// for returning here back to the game engine, as well as save the imports in preparation of loading
+	// the mod
+	return g_gameinfo.game->apientry(import);
+}
+#endif // QMM_MOHAA_SUPPORT
+
+// general code to load config file. called from dllEntry() and GetGameAPI()
+void main_loadconfig() {
 	// save exe module path
 	g_gameinfo.exe_path = path_get_modulepath(nullptr);
 	g_gameinfo.exe_dir = path_dirname(g_gameinfo.exe_path);
@@ -110,13 +185,15 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 		// a default constructed json object is a blank {}, so in case of load failure, we can still try to read from it and assume defaults
 		fmt::print("[QMM] WARNING: Unable to load config file, all settings will use default values\n");
 	}
+}
 
+void main_detectgame(std::string cfg_game) {
 	// find what game we are loaded in
-	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
 	for (int i = 0; g_supportedgames[i].dllname; i++) {
 		supportedgame_t& game = g_supportedgames[i];
 		// if short name matches config option, we found it!
 		if (str_striequal(cfg_game, game.gamename_short)) {
+			fmt::print("[QMM] Found match for config option \"{}\"\n", cfg_game);
 			g_gameinfo.game = &game;
 			g_gameinfo.isautodetected = false;
 			break;
@@ -125,20 +202,16 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 		if (str_striequal(cfg_game, "auto")) {
 			// dll name matches
 			if (str_striequal(g_gameinfo.qmm_file, game.dllname)) {
+				fmt::print("[QMM] Found match for dll name \"{}\" - {}\n", game.dllname, game.gamename_short);
 				// if no hint, or hint exists and matches
 				if (!game.exe_hint || (game.exe_hint && str_stristr(g_gameinfo.exe_file, game.exe_hint))) {
+					fmt::print("[QMM] Found match for exe hint name \"{}\"\n", game.exe_hint ? game.exe_hint : "null");
 					g_gameinfo.game = &game;
 					g_gameinfo.isautodetected = true;
 					break;
 				}
 			}
 		}
-	}
-	
-	// failed to get engine information
-	if (!g_gameinfo.game) {
-		fmt::print("[QMM] ERROR: Unable to determine game engine using \"{}\"\n", cfg_game);
-		return;
 	}
 }
 
@@ -158,7 +231,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 	if (!g_gameinfo.game) {
 		// calling G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't send G_ERROR in GAME_SHUTDOWN or it'll just recurse		
 		if (cmd != QMM_FAIL_GAME_SHUTDOWN)
-			g_gameinfo.pfnsyscall(QMM_FAIL_G_ERROR, "\n\n=========\nCritical QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n=========\n");
+			ENG_SYSCALL(QMM_FAIL_G_ERROR, "\n\n=========\nCritical QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n=========\n");
 		return 0;
 	}
 
@@ -250,8 +323,9 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 				}
 			}
 		}
+
 		if (!mod_is_loaded(&g_mod)) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "[QMM] FATAL ERROR: Unable to load mod\n");
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], fmt::format( "[QMM] FATAL ERROR: Unable to load mod using \"{}\"\n", cfg_mod).c_str());
 			return 0;
 		}
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Successfully loaded {} mod \"{}\"\n", g_mod.vmbase ? "VM" : "DLL", g_mod.path).c_str());
@@ -463,9 +537,9 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
    It performs some internal tasks on a few events, and then routes the function call according to the "overall control flow" comment above.
 
    The internal events we track:
-   QMM_G_FS_FCLOSE_FILE (pre): watch for the mod closing the log file handle
-   QMM_G_SEND_SERVER_COMMAND (pre): if "qmm_nocrash" cvar is set to 1, block client commands that are too long (msgboom bug)
-   QMM_G_FS_FOPEN_FILE (post): watch for the mod opening a handle for the log file (based on g_log cvar), and save it for logging
+   G_FS_FCLOSE_FILE (pre): watch for the mod closing the log file handle
+   G_SEND_SERVER_COMMAND (pre): if "qmm_nocrash" cvar is set to 1, block client commands that are too long (msgboom bug)
+   G_FS_FOPEN_FILE (post): watch for the mod opening a handle for the log file (based on g_log cvar), and save it for logging
 */
 int syscall(int cmd, ...) {
 	va_list arglist;

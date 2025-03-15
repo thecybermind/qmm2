@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#ifdef WIN32
+#ifdef _WIN32
 // 'typedef ': ignored on left of '<unnamed-enum>' when no variable is declared
 #pragma warning(disable:4091)
 #endif

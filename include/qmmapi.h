@@ -13,10 +13,12 @@ Created By:
 #define __QMM2_QMMAPI_H__
 
 // plugins and internal use
-#ifdef WIN32
+#ifdef _WIN32
  #define DLLEXPORT __declspec(dllexport)
+#elif defined(__linux__)
+ #define DLLEXPORT __attribute__((visibility("default")))
 #else
- #define DLLEXPORT 
+ #define DLLEXPORT
 #endif
 #ifdef __cplusplus
  #define C_DLLEXPORT extern "C" DLLEXPORT
@@ -28,7 +30,6 @@ typedef unsigned char byte;
 
 typedef int (*eng_syscall_t)(int cmd, ...);
 typedef int (*mod_vmMain_t)(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
-typedef void (*mod_dllEntry_t)(eng_syscall_t syscall);
 
 // major interface version increases with change to QMM_Query, QMM_Attach or a pluginfunc_t signature
 #define QMM_PIFV_MAJOR  1

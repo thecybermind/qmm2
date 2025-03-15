@@ -12,7 +12,7 @@ Created By:
 #ifndef __QMM2_FORMAT_H__
 #define __QMM2_FORMAT_H__
 
-#ifdef WIN32
+#ifdef _WIN32
 // Ill-defined for-loop.  Loop body not executed.
 #pragma warning(disable:6294)
 // The function 'X' is constexpr, mark variable 'X' constexpr if compile-time evaluation is desired (con.5).

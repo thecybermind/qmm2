@@ -13,22 +13,6 @@ Created By:
 #define __QMM2_OSDEF_H__
 
 #ifdef _WIN32
- #ifndef WIN32
-  #define WIN32
- #endif
-#endif
-
-#ifdef WIN32
- #ifdef linux
-  #undef linux
- #endif
-#else
- #ifndef linux
-  #define linux
- #endif
-#endif
-
-#ifdef WIN32
 
 #define WIN32_LEAN_AND_MEAN
 #define _CRT_SECURE_NO_WARNINGS 1
@@ -52,7 +36,7 @@ constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14,  'r', 0x12 };
 #define dlclose(dll)		FreeLibrary((HMODULE)(dll))
 char* dlerror();			// this will return the last error from any win32 function, not just library functions
 
-#else // WIN32 / linux
+#elif defined(__linux__)
 
 #include <dlfcn.h>
 #include <unistd.h> 
@@ -70,7 +54,19 @@ constexpr const unsigned char MAGIC_QVM[] = {  'D', 0x14, 'r', 0x12 };
 
 #define my_vsnprintf	vsnprintf
 
-#endif // linux
+#else // !_WIN32 && !__linux__
+
+constexpr const char* SUF_DLL = "";
+constexpr const char* SUF_SO  = "";
+constexpr const char* EXT_DLL = "";
+constexpr const char* EXT_SO  = "";
+constexpr const char* EXT_QVM = "";
+
+constexpr const unsigned char MAGIC_DLL[] = { 0x00, 0x00, 0x00, 0x00 };
+constexpr const unsigned char MAGIC_SO[]  = { 0x00, 0x00, 0x00, 0x00 };
+constexpr const unsigned char MAGIC_QVM[] = { 0x00, 0x00, 0x00, 0x00 };
+
+#endif
 
 const char* osdef_path_get_modulepath(void* ptr);
 const char* osdef_path_get_procpath();

@@ -90,6 +90,7 @@
     <ClCompile Include="..\src\game_api.cpp" />
     <ClCompile Include="..\src\game_ja.cpp" />
     <ClCompile Include="..\src\game_jk2.cpp" />
+    <ClCompile Include="..\src\game_mohaa.cpp" />
     <ClCompile Include="..\src\game_q3a.cpp" />
     <ClCompile Include="..\src\game_rtcwet.cpp" />
     <ClCompile Include="..\src\game_rtcwmp.cpp" />
@@ -105,6 +106,7 @@
     <ClInclude Include="..\include\config.h" />
     <ClInclude Include="..\include\format.h" />
     <ClInclude Include="..\include\game_api.h" />
+    <ClInclude Include="..\include\game_mohaa.h" />
     <ClInclude Include="..\include\main.h" />
     <ClInclude Include="..\include\mod.h" />
     <ClInclude Include="..\include\osdef.h" />
