@@ -90,13 +90,13 @@ typedef struct {
 
 typedef struct {
 	int magic;
-	unsigned int numops;
-	unsigned int codeoffset;
-	unsigned int codelen;
-	unsigned int dataoffset;
-	unsigned int datalen;
-	unsigned int litlen;
-	unsigned int bsslen;
+	int numops;
+	int codeoffset;
+	int codelen;
+	int dataoffset;
+	int datalen;
+	int litlen;
+	int bsslen;
 } qvmheader_t;
 
 // all the info for a single QVM object
@@ -104,12 +104,11 @@ typedef struct {
 	qvmheader_t header;			// header information
 
 	// extra
-	int swapped;				// was this file byteswapped? (is the server big-endian)
-	unsigned int filesize;		// .qvm file size
+	int filesize;				// .qvm file size
 
 	// memory
 	byte* memory;				// main block of memory
-	unsigned int memorysize;	// size of memory block
+	int memorysize;				// size of memory block
 
 	// segments
 	qvmop_t* codesegment;		// code segment, each op is 8 bytes (4 op, 4 param)
@@ -117,9 +116,9 @@ typedef struct {
 	byte* stacksegment;			// stack segment
 
 	// segment sizes
-	unsigned int codeseglen;	// size of code segment
-	unsigned int dataseglen;	// size of data segment
-	unsigned int stackseglen;	// size of stack segment
+	int codeseglen;				// size of code segment
+	int dataseglen;				// size of data segment
+	int stackseglen;			// size of stack segment
 
 	// "registers"
 	qvmop_t* opptr;				// current op in code segment
@@ -127,14 +126,11 @@ typedef struct {
 	int argbase;				// lower end of arg heap
 
 	// syscall
-	vmsyscall_t vmsyscall;	// e.g. Q3A_vmsyscall function from game_q3a.cpp
+	vmsyscall_t vmsyscall;		// e.g. Q3A_vmsyscall function from game_q3a.cpp
 } qvm_t;
 
-int byteswap(int i);
-short byteswap(short s);
-
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize);
+bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int stacksize);
 void qvm_unload(qvm_t* qvm);
 int qvm_exec(qvm_t* qvm, int* argv, int argc);
 

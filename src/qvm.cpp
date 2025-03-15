@@ -32,19 +32,6 @@ bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int
 	// grab a copy of the header
 	memcpy(&qvm->header, filemem, sizeof(qvmheader_t));
 
-	// if we are a big-endian machine, need to swap everything around
-	if (qvm->header.magic == QVM_MAGIC_BIG) {
-		qvm->swapped = 1;
-		qvm->header.magic = byteswap(qvm->header.magic);
-		qvm->header.numops = byteswap(qvm->header.numops);
-		qvm->header.codeoffset = byteswap(qvm->header.codeoffset);
-		qvm->header.codelen = byteswap(qvm->header.codelen);
-		qvm->header.dataoffset = byteswap(qvm->header.dataoffset);
-		qvm->header.datalen = byteswap(qvm->header.datalen);
-		qvm->header.litlen = byteswap(qvm->header.litlen);
-		qvm->header.bsslen = byteswap(qvm->header.bsslen);
-	}
-
 	// check header
 	if (qvm->header.magic != QVM_MAGIC ||
 		qvm->header.numops <= 0 ||
@@ -132,8 +119,6 @@ bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int
 			case OP_BLOCK_COPY:
 				qvm->codesegment[i].param = *(int*)codeoffset;
 				codeoffset += 4;
-				if (qvm->swapped)
-					qvm->codesegment[i].param = byteswap(qvm->codesegment[i].param);
 				break;
 			// this op has a 1-byte 'param'
 			case OP_ARG:
@@ -149,15 +134,6 @@ bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int
 
 	// copy data segment (including literals) to VM
 	memcpy(qvm->datasegment, filemem + qvm->header.dataoffset, qvm->header.datalen + qvm->header.litlen);
-
-	// byteswap the non-lit data segment if necessary
-
-	// loop through each 4-byte data block
-	if (qvm->swapped) {
-		for (int* data = (int*)qvm->datasegment; data < (int*)(qvm->datasegment + qvm->header.datalen); data++) {
-			*data = byteswap(*data);
-		}
-	}
 
 	// a winner is us
 	return true;
@@ -602,24 +578,4 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 
 	// return value is stored on the top of the stack (pushed just before OP_LEAVE)
 	return *qvm->stackptr++;
-}
-
-int byteswap(int i) {
-	unsigned char b1, b2, b3, b4;
-
-	b1 = (unsigned char)(i & 255);
-	b2 = (unsigned char)((i >> 8) & 255);
-	b3 = (unsigned char)((i >> 16) & 255);
-	b4 = (unsigned char)((i >> 24) & 255);
-
-	return ((int)b1 << 24) + ((int)b2 << 16) + ((int)b3 << 8) + (int)b4;
-}
-
-short byteswap(short s) {
-	unsigned char b1, b2;
-
-	b1 = (unsigned char)(s & 255);
-	b2 = (unsigned char)((s >> 8) & 255);
-
-	return (short)(((short)b1 << 8) + (short)b2);
 }
