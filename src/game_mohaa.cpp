@@ -14,8 +14,13 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
 #include <mohaa/qcommon/q_shared.h>
+// fix for type mismatch of GetGameAPI in g_public.h
+// the actual type should be: game_export_t *GetGameAPI(game_import_t *import)
+// but to avoid having to include game-specific headers in main.cpp, our export is void *GetGameAPI(void *import)
+#define GetGameAPI GetGameAPI2 
 #define GAME_DLL
 #include <mohaa/fgame/g_public.h>
+#undef GetGameAPI
 #undef GAME_DLL
 #include "game_api.h"
 // QMM-specific MOHAA header
