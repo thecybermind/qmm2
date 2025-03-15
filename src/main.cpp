@@ -422,7 +422,6 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] NoCrash: {}\n", util_get_int_cvar("qmm_nocrash") ? "on" : "off").c_str());
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] Loaded mod file: {}\n", g_mod.path).c_str());
 				if (g_mod.vmbase) {
-					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] QVM byteswapped: {}\n", g_mod.qvm.swapped ? "yes" : "no").c_str());
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] QVM file size: {}\n", g_mod.qvm.filesize).c_str());
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] QVM op count: {}\n", g_mod.qvm.header.numops).c_str());
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] QVM memory offset: {}\n", (void*)g_mod.qvm.memory).c_str());

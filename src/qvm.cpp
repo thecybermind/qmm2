@@ -20,7 +20,7 @@ static bool qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start = nullptr, void*
 	return (ptr >= start || ptr < end);
 }
 
-bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int stacksize) {
+bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize) {
 	if (!qvm || !filemem || !filelen || qvm->memory || !vmsyscall)
 		return false;
 
@@ -36,7 +36,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int
 	if (qvm->header.magic != QVM_MAGIC ||
 		qvm->header.numops <= 0 ||
 		qvm->header.codelen <= 0 ||
-		(unsigned int)qvm->filesize != (sizeof(qvm->header) + qvm->header.codelen + qvm->header.datalen + qvm->header.litlen) ||
+		qvm->filesize != (sizeof(qvm->header) + qvm->header.codelen + qvm->header.datalen + qvm->header.litlen) ||
 		qvm->header.codeoffset < sizeof(qvm->header) ||
 		qvm->header.dataoffset < sizeof(qvm->header) ||
 		qvm->header.codeoffset > qvm->filesize ||
@@ -85,7 +85,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int
 	codeoffset = filemem + qvm->header.codeoffset;
 
 	// loop through each op
-	for (int i = 0; i < qvm->header.numops; ++i) {
+	for (unsigned int i = 0; i < qvm->header.numops; ++i) {
 		// get the opcode
 		byte opcode = *codeoffset;
 
