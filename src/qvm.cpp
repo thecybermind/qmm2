@@ -189,7 +189,7 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 		// if code pointer is outside the code segment, something really bad happened
 		if (!qvm_validate_ptr(qvm, opptr, qvm->codesegment, qvm->codesegment + qvm->codeseglen)) {
 			qvm_unload(qvm);
-			return INT_MIN;
+			return 0;
 		}
 		op = (qvmopcode_t)opptr->op;
 		param = opptr->param;
