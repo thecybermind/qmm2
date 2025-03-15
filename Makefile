@@ -1,6 +1,6 @@
 # QMM2 Makefile
 
-CC=g++
+CC := g++
 
 SRC_DIR := src
 OBJ_DIR := obj
@@ -8,8 +8,8 @@ BIN_DIR := bin
 
 SRC := $(wildcard $(SRC_DIR)/*.cpp)
 
-OBJ_DIR_REL = $(OBJ_DIR)/release
-OBJ_DIR_DBG = $(OBJ_DIR)/debug
+OBJ_DIR_REL := $(OBJ_DIR)/release
+OBJ_DIR_DBG := $(OBJ_DIR)/debug
 
 BIN_REL := $(BIN_DIR)/qmm2.so
 BIN_DBG := $(BIN_DIR)/qmm2_d.so
@@ -34,21 +34,21 @@ release: $(BIN_REL)
 all: release debug
 
 $(BIN_REL): $(OBJ_REL) | $(BIN_DIR)
-    $(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 $(BIN_DBG): $(OBJ_DBG) | $(BIN_DIR)
-    $(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 $(BIN_DIR) $(OBJ_DIR) $(OBJ_DIR_REL) $(OBJ_DIR_DBG):
-    mkdir -p $@
+	mkdir -p $@
 
 $(OBJ_DIR_REL)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_REL)
-    $(CC) $(CPPFLAGS) $(REL_CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(REL_CFLAGS) -c $< -o $@
 
 $(OBJ_DIR_DBG)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_DBG)
-    $(CC) $(CPPFLAGS) $(DBG_CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(DBG_CFLAGS) -c $< -o $@
 
 clean:
-    @$(RM) -rv $(BIN_DIR) $(OBJ_DIR)
+	@$(RM) -rv $(BIN_DIR) $(OBJ_DIR)
 
 -include $(OBJ:.o=.d)
