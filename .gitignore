@@ -35,7 +35,9 @@
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
+[Rr]elease/
 [Rr]eleases/
+[Rr]eleasePublic/
 [Rr]eleasesPublic/
 [Oo]utput/
 [Ll]og/

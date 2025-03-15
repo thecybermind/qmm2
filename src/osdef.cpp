@@ -10,6 +10,7 @@ Created By:
 */
 
 #include "osdef.h"
+#include <string.h>
 
 #ifdef _WIN32
 

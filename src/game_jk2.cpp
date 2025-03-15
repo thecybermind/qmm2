@@ -283,8 +283,7 @@ const char* JK2_mod_msg_names(int cmd) {
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
 int JK2_vmsyscall(byte* membase, int cmd, int* args) {
-	register int cmd2 = cmd;
-	switch(cmd2) {
+	switch(cmd) {
 		case G_MILLISECONDS:			// (void)
 		case G_ARGC:				// (void)
 		case G_BOT_ALLOCATE_CLIENT:		// (void)

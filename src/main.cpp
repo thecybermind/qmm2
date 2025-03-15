@@ -171,7 +171,7 @@ void main_detect_env() {
 	g_gameinfo.exe_file = path_basename(g_gameinfo.exe_path);
 
 	// save qmm module path
-	g_gameinfo.qmm_path = path_get_modulepath(dllEntry);
+	g_gameinfo.qmm_path = path_get_modulepath(&g_gameinfo);
 	g_gameinfo.qmm_dir = path_dirname(g_gameinfo.qmm_path);
 	g_gameinfo.qmm_file = path_basename(g_gameinfo.qmm_path);
 

@@ -39,7 +39,7 @@ enum {
 	G_CEIL                  = 111,
 	G_TESTPRINTINT          = 112,
 	G_TESTPRINTFLOAT        = 113
-} qmm_gameImport_t;
+};
 
 const char* Q3A_eng_msg_names(int cmd) {
 	switch(cmd) {
@@ -270,8 +270,7 @@ const char* Q3A_mod_msg_names(int cmd) {
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
 int Q3A_vmsyscall(byte* membase, int cmd, int* args) {
-	register int cmd2 = cmd;
-	switch(cmd2) {
+	switch(cmd) {
 		case G_MILLISECONDS:			// (void)
 		case G_ARGC:				// (void)
 		case G_BOT_ALLOCATE_CLIENT:		// (void)

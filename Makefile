@@ -1,64 +1,54 @@
 # QMM2 Makefile
 
-include Config.mak
-
 CC=g++
 
-BASE_CFLAGS=-pipe -m32 -I ./include/
+SRC_DIR := src
+OBJ_DIR := obj
+BIN_DIR := bin
 
-BROOT=linux
-BR=$(BROOT)/release
-BD=$(BROOT)/debug
+SRC := $(wildcard $(SRC_DIR)/*.cpp)
 
-OBJR=$(SRC_FILES:./src/%.cpp=$(BR)/%.o)
-OBJD=$(SRC_FILES:./src/%.cpp=$(BD)/%.o)
+OBJ_DIR_REL = $(OBJ_DIR)/release
+OBJ_DIR_DBG = $(OBJ_DIR)/debug
 
-DEBUG_CFLAGS=$(BASE_CFLAGS) -g -pg 
-RELEASE_CFLAGS=$(BASE_CFLAGS) -O2 -fPIC -fomit-frame-pointer -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce 
+BIN_REL := $(BIN_DIR)/qmm2.so
+BIN_DBG := $(BIN_DIR)/qmm2_d.so
 
-SHLIBCFLAGS=
-#-fPIC
-SHLIBLDFLAGS=-shared -m32
+OBJ_REL := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL)/%.o)
+OBJ_DBG := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG)/%.o)
 
-help:
-	@echo QMM supports the following make rules:
-	@echo release - builds release version
-	@echo debug - builds debug version
-	@echo clean - cleans all output files
-	
-release:
-	@echo ---
-	@echo --- building qmm2 \(release\)
-	@echo ---
-	$(MAKE) $(BR)/$(BINARY).so
+CPPFLAGS := -MMD -MP -I ./include -I ../qmm_sdks
+CFLAGS   := -Wall -pipe -m32
+LDFLAGS  := -shared -m32
+LDLIBS   :=
 
-	@echo ---
-	@echo --- Release build complete.
-	@echo ---
-	@echo --- Binaries are in linux/release
-	@echo ---
+DBG_CFLAGS=$(CFLAGS) -g -pg 
+REL_CFLAGS=$(CFLAGS) -O2 -fPIC -fomit-frame-pointer -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce 
 
-debug: $(BD)/$(BINARY).so
+.PHONY: all clean
 
-$(BR)/$(BINARY).so: $(BR) $(OBJR)
-	$(CC) $(RELEASE_CFLAGS) $(SHLIBLDFLAGS) -o $@ $(OBJR)
-  
-$(BD)/$(BINARY).so: $(BD) $(OBJD)
-	$(CC) $(DEBUG_CFLAGS) $(SHLIBLDFLAGS) -o $@ $(OBJD)
+debug: $(BIN_DBG)
 
-$(BR)/%.o: ./src/%.cpp $(HDR_FILES)
-	$(CC) $(RELEASE_CFLAGS) $(FLAGS) $(SHLIBCFLAGS) -o $@ -c $<
-  
-$(BD)/%.o: ./src/%.cpp $(HDR_FILES)
-	$(CC) $(DEBUG_CFLAGS) $(FLAGS) $(SHLIBCFLAGS) -o $@ -c $<
+release: $(BIN_REL)
 
-$(BR):
-	# @if [ ! -d $(BROOT) ];then mkdir $(BROOT);fi
-	@if [ ! -d $(@) ];then mkdir -p $@;fi
+all: release debug
 
-$(BD):
-	# @if [ ! -d $(BROOT) ];then mkdir $(BROOT);fi
-	@if [ ! -d $(@) ];then mkdir -p $@;fi
-	
+$(BIN_REL): $(OBJ_REL) | $(BIN_DIR)
+    $(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+$(BIN_DBG): $(OBJ_DBG) | $(BIN_DIR)
+    $(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+$(BIN_DIR) $(OBJ_DIR) $(OBJ_DIR_REL) $(OBJ_DIR_DBG):
+    mkdir -p $@
+
+$(OBJ_DIR_REL)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_REL)
+    $(CC) $(CPPFLAGS) $(REL_CFLAGS) -c $< -o $@
+
+$(OBJ_DIR_DBG)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_DBG)
+    $(CC) $(CPPFLAGS) $(DBG_CFLAGS) -c $< -o $@
+
 clean:
-	@rm -rf $(BD) $(BR) $(BROOT)
+    @$(RM) -rv $(BIN_DIR) $(OBJ_DIR)
+
+-include $(OBJ:.o=.d)
