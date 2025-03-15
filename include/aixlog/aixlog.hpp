@@ -1159,7 +1159,7 @@ static std::ostream& operator<<(std::ostream& os, const Severity& log_severity)
     return os;
 }
 
-static std::ostream& operator<<(std::ostream& os, const Timestamp& timestamp)
+[[maybe_unused]] static std::ostream& operator<<(std::ostream& os, const Timestamp& timestamp)
 {
     Log* log = dynamic_cast<Log*>(os.rdbuf());
     if (log != nullptr)

@@ -566,7 +566,7 @@ int syscall(int cmd, ...) {
 	va_list arglist;
 	int args[13] = {};	// JK2 decided to mess it all up and have a single cmd with 13 args
 	va_start(arglist, cmd);
-	for (int i = 0; i < (sizeof(args)/sizeof(args[0])); ++i)
+	for (unsigned int i = 0; i < (sizeof(args)/sizeof(args[0])); ++i)
 		args[i] = va_arg(arglist, int);
 	va_end(arglist);
 
@@ -640,5 +640,5 @@ int syscall(int cmd, ...) {
 		}
 	}
 
-	return ret;
+	return final_ret;
 }
