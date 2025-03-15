@@ -51,9 +51,10 @@ extern game_info_t g_gameinfo;
 
 #define ENG_SYSCALL	g_gameinfo.pfnsyscall
 
-// these are used if we couldn't determine a game engine and we have to fail
-// G_ERROR and GAME_SHUTDOWN appear to be 1 in all supported games
-// we hope it is true for all
+// these are used if we couldn't determine a game engine and we have to fail.
+// G_ERROR and GAME_SHUTDOWN appear to be 1 in all supported dllEntry games.
+// they are different in MOHAA, so we set these to the proper assumed values
+// in GetGameAPI
 constexpr int QMM_FAIL_G_ERROR = 1;
 constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
 
@@ -64,7 +65,8 @@ C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for MOHAA
 C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
 int syscall(int cmd, ...);
 
-void main_loadconfig();
-void main_detectgame(std::string cfg_game);
+void main_detect_env();
+void main_load_config();
+void main_detect_game();
 
 #endif // __QMM2_MAIN_H__

@@ -31,9 +31,9 @@ typedef unsigned char byte;
 typedef int (*eng_syscall_t)(int cmd, ...);
 typedef int (*mod_vmMain_t)(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
 
-// major interface version increases with change to QMM_Query, QMM_Attach or a pluginfunc_t signature
+// major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, pluginfunc_t, or plugininfo_t
 #define QMM_PIFV_MAJOR  1
-// minor interface version increases with trailing addition to pluginfunc_t struct
+// minor interface version increases with trailing addition to pluginfunc_t or plugininfo_t structs
 #define QMM_PIFV_MINOR  1
 
 // holds plugin info to pass back to QMM

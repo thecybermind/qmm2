@@ -13,6 +13,7 @@ Created By:
 #include <stdio.h>
 #include <stdarg.h>
 #include "format.h"
+#include "log.h"	 // brings in windows.h -_-
 #include "config.h"
 #include "main.h"
 #include "game_api.h"
@@ -62,26 +63,33 @@ game_info_t g_gameinfo;
    This is either determined by the config file, or by getting the filename of the QMM DLL itself.
 */
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
-	fmt::print("[QMM] QMM v" QMM_VERSION " (" QMM_OS ") loaded!\n");
+	main_detect_env();
+
+	log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
+
+	LOG(INFO, "dllEntry") << "QMM v" QMM_VERSION " (" QMM_OS ") loaded!\n";
+	LOG(INFO, "dllEntry") << fmt::format("QMM path: \"{}\"\n", g_gameinfo.qmm_path);
+	LOG(INFO, "dllEntry") << fmt::format("Engine path: \"{}\"\n", g_gameinfo.exe_path);
+	LOG(INFO, "dllEntry") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
+
+	//todo figure out logging standard and if i want to use logging for all the normal G_PRINTs once we're out of dllEntry
 
 	// ???
 	if (!syscall) {
-		fmt::print("[QMM] ERROR: dllEntry(): syscall is NULL!\n");
+		LOG(FATAL, "QMM") << "dllEntry(): syscall is NULL!\n";
 		return;
 	}
 
 	// save syscall pointer
 	g_gameinfo.pfnsyscall = syscall;
 
-	main_loadconfig();
+	main_load_config();
 
-	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
-
-	main_detectgame(cfg_game);
+	main_detect_game();
 
 	// failed to get engine information
 	if (!g_gameinfo.game) {
-		fmt::print("[QMM] ERROR: dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_game);
+		LOG(FATAL, "QMM") << fmt::format("dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_get_string(g_cfg, "game", "auto"));
 		return;
 	}
 }
@@ -117,7 +125,14 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	 - store variables from mod's real export struct into our qmm_export
 */
 C_DLLEXPORT void* GetGameAPI(void* import) {
-	fmt::print("[QMM] QMM v" QMM_VERSION " (" QMM_OS ") loaded!\n");
+	log_init("qmm2.log");
+
+	main_detect_env();
+
+	LOG(INFO, "init") << "[QMM] QMM v" QMM_VERSION " (" QMM_OS ") loaded!\n";
+	LOG(INFO, "init") << fmt::format("[QMM] QMM path: \"{}\"\n", g_gameinfo.qmm_path);
+	LOG(INFO, "init") << fmt::format("[QMM] Engine path: \"{}\"\n", g_gameinfo.exe_path);
+	LOG(INFO, "init") << fmt::format("[QMM] Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
 
 	// ???
 	if (!import) {
@@ -125,15 +140,20 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 		return nullptr;
 	}
 
-	main_loadconfig();
+	main_load_config();
 
-	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
+	// main_detect_game();
+	// for now we'll just assume it's MOHAA because it's the only supported GetGameAPI game
+	g_gameinfo.game = &g_supportedgames[6];
+	g_gameinfo.isautodetected = false;
 
-	main_detectgame(cfg_game);
+	// we won't need these since we know what the game engine is at this point, but fix these anyway
+	QMM_FAIL_G_ERROR = 4;
+	QMM_FAIL_GAME_SHUTDOWN = 2;
 
 	// failed to get engine information
 	if (!g_gameinfo.game) {
-		fmt::print("[QMM] ERROR: dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_game);
+		fmt::print("[QMM] ERROR: dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_get_string(g_cfg, "game", "auto"));
 		return nullptr;
 	}
 
@@ -144,8 +164,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 }
 #endif // QMM_MOHAA_SUPPORT
 
-// general code to load config file. called from dllEntry() and GetGameAPI()
-void main_loadconfig() {
+void main_detect_env() {
 	// save exe module path
 	g_gameinfo.exe_path = path_get_modulepath(nullptr);
 	g_gameinfo.exe_dir = path_dirname(g_gameinfo.exe_path);
@@ -159,11 +178,10 @@ void main_loadconfig() {
 	// since we don't have the mod directory yet (can only officially get it using engine functions), we can
 	// attempt to get the mod directory from the qmm path. this will be used only for config loading
 	g_gameinfo.moddir = path_basename(g_gameinfo.qmm_dir);
+}
 
-	fmt::print("[QMM] QMM path: \"{}\"\n", g_gameinfo.qmm_path);
-	fmt::print("[QMM] Engine path: \"{}\"\n", g_gameinfo.exe_path);
-	fmt::print("[QMM] Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
-
+// general code to load config file. called from dllEntry() and GetGameAPI()
+void main_load_config() {
 	// load config file, try the following locations in order:
 	// "<qmmdir>/qmm2.json"
 	// "<exedir>/<moddir>/qmm2.json"
@@ -187,7 +205,9 @@ void main_loadconfig() {
 	}
 }
 
-void main_detectgame(std::string cfg_game) {
+void main_detect_game() {
+	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
+
 	// find what game we are loaded in
 	for (int i = 0; g_supportedgames[i].dllname; i++) {
 		supportedgame_t& game = g_supportedgames[i];
@@ -236,6 +256,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 	}
 
 	if (cmd == QMM_MOD_MSG[QMM_GAME_INIT]) {
+		LOG(INFO, "QMM") << "test\n";
 		// get mod dir from engine
 		g_gameinfo.moddir = util_get_str_cvar("fs_game");
 		// RTCWSP returns "" for the mod, and others may too? grab the default mod dir from game info instead
@@ -482,7 +503,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		// call plugin's vmMain and store return value
 		ret = p.QMM_vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 		// set new max result
-		maxresult = std::max(g_plugin_result, maxresult);
+		maxresult = util_max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: vmMain({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name).c_str());
 		if (g_plugin_result == QMM_ERROR)
@@ -581,7 +602,7 @@ int syscall(int cmd, ...) {
 		// call plugin's syscall and store return value
 		ret = p.QMM_syscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]);
 		// set new max result
-		maxresult = std::max(g_plugin_result, maxresult);
+		maxresult = util_max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: syscall({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name).c_str());
 		if (g_plugin_result == QMM_ERROR)
