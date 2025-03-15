@@ -90,41 +90,41 @@ typedef struct {
 
 typedef struct {
 	int magic;
-	int numops;
-	int codeoffset;
-	int codelen;
-	int dataoffset;
-	int datalen;
-	int litlen;
-	int bsslen;
+	unsigned int numops;
+	unsigned int codeoffset;
+	unsigned int codelen;
+	unsigned int dataoffset;
+	unsigned int datalen;
+	unsigned int litlen;
+	unsigned int bsslen;
 } qvmheader_t;
 
 // all the info for a single QVM object
 typedef struct {
-	qvmheader_t header;		// header information
+	qvmheader_t header;			// header information
 
 	// extra
-	int swapped;			// was this file byteswapped? (is the server big-endian)
-	int filesize;			// .qvm file size
+	int swapped;				// was this file byteswapped? (is the server big-endian)
+	unsigned int filesize;		// .qvm file size
 
 	// memory
-	byte* memory;			// main block of memory
-	int memorysize;			// size of memory block
+	byte* memory;				// main block of memory
+	unsigned int memorysize;	// size of memory block
 
 	// segments
-	qvmop_t* codesegment;	// code segment, each op is 8 bytes (4 op, 4 param)
-	byte* datasegment;		// data segment, partially filled on load
-	byte* stacksegment;		// stack segment
+	qvmop_t* codesegment;		// code segment, each op is 8 bytes (4 op, 4 param)
+	byte* datasegment;			// data segment, partially filled on load
+	byte* stacksegment;			// stack segment
 
 	// segment sizes
-	int codeseglen;			// size of code segment
-	int dataseglen;			// size of data segment
-	int stackseglen;		// size of stack segment
+	unsigned int codeseglen;	// size of code segment
+	unsigned int dataseglen;	// size of data segment
+	unsigned int stackseglen;	// size of stack segment
 
 	// "registers"
-	qvmop_t* opptr;			// current op in code segment
-	int* stackptr;			// pointer to current location in stack
-	int argbase;			// lower end of arg heap
+	qvmop_t* opptr;				// current op in code segment
+	int* stackptr;				// pointer to current location in stack
+	int argbase;				// lower end of arg heap
 
 	// syscall
 	vmsyscall_t vmsyscall;	// e.g. Q3A_vmsyscall function from game_q3a.cpp
@@ -134,7 +134,7 @@ int byteswap(int i);
 short byteswap(short s);
 
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t* qvm, byte* filemem, int filelen, vmsyscall_t vmsyscall, int stacksize);
+bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize);
 void qvm_unload(qvm_t* qvm);
 int qvm_exec(qvm_t* qvm, int* argv, int argc);
 

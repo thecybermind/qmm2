@@ -203,11 +203,11 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 	qvm->opptr = qvm->codesegment;
 
 	// local versions of registers
-	register qvmop_t* opptr = qvm->opptr;
-	register int* stack = qvm->stackptr;
+	qvmop_t* opptr = qvm->opptr;
+	int* stack = qvm->stackptr;
 
-	register qvmopcode_t op;
-	register int param;
+	qvmopcode_t op;
+	int param;
 
 	do {
 		// if code pointer is outside the code segment, something really bad happened
