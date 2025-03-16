@@ -14,6 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
+
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest'
         run: ./.github/build/linux/init.sh
@@ -25,9 +26,10 @@ jobs:
       - name: Package Linux binaries
         if: matrix.os == 'ubuntu-latest'
         run: ./.github/build/linux/package.sh
+
       - name: Setup MSBuild path
         if: matrix.os == 'windows-latest'
-        uses: microsoft/setup-msbuild@v1.0.1
+        uses: microsoft/setup-msbuild@v2
       - name: Install Windows dependencies
         if: matrix.os == 'windows-latest'
         run: .\.github\build\windows\init.bat
@@ -40,6 +42,7 @@ jobs:
       - name: Package Windows binaries
         if: matrix.os == 'windows-latest'
         run: .\.github\build\windows\package.bat
+
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
