@@ -53,8 +53,7 @@ extern game_info_t g_gameinfo;
 
 // these are used if we couldn't determine a game engine and we have to fail.
 // G_ERROR and GAME_SHUTDOWN appear to be 1 in all supported dllEntry games.
-// they are different in MOHAA, so we set these to the proper assumed values
-// in GetGameAPI
+// they are different in MOHAA, but returning nullptr from GetGameAPI causes the engine to exit anyway
 constexpr int QMM_FAIL_G_ERROR = 1;
 constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
 
