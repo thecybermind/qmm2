@@ -62,7 +62,6 @@ jobs:
           path: package/qmm2-${{ github.ref_name }}-debug.*
           retention-days: 1
           if-no-files-found: error
-			
   tagged-release:
     name: "Release"
     needs: build
