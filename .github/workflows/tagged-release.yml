@@ -27,16 +27,16 @@ jobs:
         run: ./.github/build/linux/package.sh
       - name: Install Windows dependencies
         if: matrix.os == 'windows-latest'
-        run: echo .\.github\build\windows\init.bat
+        run: .\.github\build\windows\init.bat
       - name: Build for Windows
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: |
-             echo .\.github\build\windows\release.bat
-             echo .\.github\build\windows\debug.bat
+             .\.github\build\windows\release.bat
+             .\.github\build\windows\debug.bat
       - name: Package Windows binaries
         if: matrix.os == 'windows-latest'
-             echo .\.github\build\windows\package.bat
+        run: .\.github\build\windows\package.bat
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         if: matrix.os == 'ubuntu-latest'
