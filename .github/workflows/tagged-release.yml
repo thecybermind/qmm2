@@ -37,31 +37,31 @@ jobs:
              vcvarsamd64_x86.bat && msbuild qmm2.vcxproj /p:Configuration=Release
              vcvarsamd64_x86.bat && msbuild qmm2.vcxproj /p:Configuration=Debug
              echo test
-        - name: Make Windows packages
-          if: matrix.os == 'windows-latest'
-          run: |
-               cd ..
-               mkdir package && cd package
-               copy ..\README.md . && copy ..\LICENSE .
-               copy ..\msvc\Release\qmm2.dll .
-               Compress-Archive -Path * -Destination ..\qmm2-${{ github.ref_name }}.zip
-               del qmm2.dll
-               copy ..\msvc\Debug\qmm2.dll .\qmm2_d.dll
-               Compress-Archive -Path * -Destination ..\qmm2-${{ github.ref_name }}-debug.zip
-        - name: Upload release artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: qmm2-${{ matrix.os }}
-            path: package/qmm2-${{ github.ref_name }}.*
-            retention-days: 1
-            if-no-files-found: error
-        - name: Upload debug artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: qmm2-${{ matrix.os }}-debug
-            path: package/qmm2-${{ github.ref_name }}-debug.*
-            retention-days: 1
-            if-no-files-found: error
+      - name: Make Windows packages
+        if: matrix.os == 'windows-latest'
+        run: |
+             cd ..
+             mkdir package && cd package
+             copy ..\README.md . && copy ..\LICENSE .
+             copy ..\msvc\Release\qmm2.dll .
+             Compress-Archive -Path * -Destination ..\qmm2-${{ github.ref_name }}.zip
+             del qmm2.dll
+             copy ..\msvc\Debug\qmm2.dll .\qmm2_d.dll
+             Compress-Archive -Path * -Destination ..\qmm2-${{ github.ref_name }}-debug.zip
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qmm2-${{ matrix.os }}
+          path: package/qmm2-${{ github.ref_name }}.*
+          retention-days: 1
+          if-no-files-found: error
+      - name: Upload debug artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qmm2-${{ matrix.os }}-debug
+          path: package/qmm2-${{ github.ref_name }}-debug.*
+          retention-days: 1
+          if-no-files-found: error
 			
   tagged-release:
     name: "Release"
