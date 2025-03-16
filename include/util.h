@@ -31,6 +31,5 @@ const char* util_get_str_cvar(const char* cvar);
 void log_set(int fh);
 int log_get();
 int log_write(const char* text, int len = -1);
-int util_dump_file(std::string file, std::string outfile);
 
 #endif // __QMM2_UTIL_H__

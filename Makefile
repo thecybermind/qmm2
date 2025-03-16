@@ -1,3 +1,9 @@
+# QMM2 - Q3 MultiMod 2
+# Copyright 2025
+# https://github.com/thecybermind/qmm2/
+# 3-clause BSD license: https://opensource.org/license/bsd-3-clause
+# Created By: Kevin Masterson < cybermind@gmail.com >
+
 # QMM2 Makefile
 
 CC := g++
@@ -17,13 +23,13 @@ BIN_DBG := $(BIN_DIR)/qmm2_d.so
 OBJ_REL := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL)/%.o)
 OBJ_DBG := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG)/%.o)
 
-CPPFLAGS := -MMD -MP -I ./include -I ../qmm_sdks
-CFLAGS   := -Wall -pipe -m32
-LDFLAGS  := -shared -m32
+CPPFLAGS := -MMD -MP -I ./include -isystem ../qmm_sdks
+CFLAGS   := -Wall -pipe -m32 -fno-pie
+LDFLAGS  := -shared -m32 -fno-pie
 LDLIBS   :=
 
-DBG_CFLAGS=$(CFLAGS) -g -pg 
-REL_CFLAGS=$(CFLAGS) -O2 -fPIC -fomit-frame-pointer -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce 
+DBG_CFLAGS := $(CFLAGS) -g -pg 
+REL_CFLAGS := $(CFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce 
 
 .PHONY: all clean
 

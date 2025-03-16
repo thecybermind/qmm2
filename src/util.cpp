@@ -152,39 +152,3 @@ int log_write(const char* text, int len) {
 	
 	return -1;
 }
-
-int util_dump_file(std::string file, std::string outfile) {
-	// open file from inside pk3
-	int fpk3;
-	int fsize = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], file.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
-	if (fsize <= 0) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
-		return 0;
-	}
-
-	// open output file
-	FILE* ffile = fopen(outfile.c_str(), "wbx");
-	if (!ffile) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
-		return 0;
-	}
-
-	// read file in blocks of 512
-	byte buf[512];
-	int left = fsize;
-	while (left >= sizeof(buf)) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], buf, sizeof(buf), fpk3);
-		fwrite(buf, sizeof(buf), 1, ffile);
-		left -= sizeof(buf);
-	}
-	if (left) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], buf, left, fpk3);
-		fwrite(buf, left, 1, ffile);
-	}
-
-	// close file handles
-	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
-	fclose(ffile);
-
-	return fsize;
-}
