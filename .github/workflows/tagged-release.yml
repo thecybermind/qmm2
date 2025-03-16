@@ -1,0 +1,83 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+      steps:
+        - uses: actions/checkout@v3
+        - name: Build for Linux
+          if: matrix.os == 'ubuntu-latest'
+          run: |
+		       sudo apt update && sudo apt install gcc-multilib g++-multilib -y
+               make release && make debug
+			   echo test
+	    - name: Make Linux packages
+		  if: matrix.os == 'ubuntu-latest'
+		  run: |
+		       mkdir package && cd package
+			   cp ../README.md ../LICENSE .
+			   cp ../bin/qmm2.so .
+			   tar zcf ../qmm2-${{ github.ref_name }}.tar.gz *
+			   rm qmm2.so
+			   cp ../bin/qmm2_d.so .
+			   tar zcf ../qmm2-${{ github.ref_name }}-debug.tar.gz *			   
+        - name: Build for Windows
+          if: matrix.os == 'windows-latest'
+          run: |
+               cd msvc
+               vcvarsamd64_x86.bat && msbuild qmm2.vcxproj /p:Configuration=Release
+               vcvarsamd64_x86.bat && msbuild qmm2.vcxproj /p:Configuration=Debug
+			   echo test
+	    - name: Make Windows packages
+		  if: matrix.os == 'windows-latest'
+		  run: |
+               cd ..
+               mkdir package && cd package
+               copy ..\README.md . && copy ..\LICENSE .
+               copy ..\msvc\Release\qmm2.dll .
+               Compress-Archive -Path * -Destination ..\qmm2-${{ github.ref_name }}.zip
+               del qmm2.dll
+               copy ..\msvc\Debug\qmm2.dll .\qmm2_d.dll
+               Compress-Archive -Path * -Destination ..\qmm2-${{ github.ref_name }}-debug.zip
+        - name: Upload release artifact
+		  uses: actions/upload-artifact@v4
+          with:
+            name: qmm2-${{ matrix.os }}
+            path: package/qmm2-${{ github.ref_name }}.*
+            retention-days: 1
+			if-no-files-found: error
+        - name: Upload debug artifact
+		  uses: actions/upload-artifact@v4
+          with:
+            name: qmm2-${{ matrix.os }}-debug
+            path: package/qmm2-${{ github.ref_name }}-debug.*
+            retention-days: 1
+			if-no-files-found: error
+			
+  tagged-release:
+    name: "Release"
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # We don't need the repo, grab all artifacts from the build stage
+      # The plugin puts each artifact in a folder of `artifactname`
+      - uses: actions/download-artifact@v4
+      - name: Show fetched artifacts
+        run: ls -R
+      - name: Create a Github Release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            qmm2-ubuntu-latest/*.zip
+            qmm2-windows-latest/*.zip
