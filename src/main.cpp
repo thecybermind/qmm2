@@ -148,8 +148,8 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	g_gameinfo.isautodetected = false;
 
 	// we won't need these since we know what the game engine is at this point, but fix these anyway
-	QMM_FAIL_G_ERROR = 4;
-	QMM_FAIL_GAME_SHUTDOWN = 2;
+	*(int*)QMM_FAIL_G_ERROR = 4;
+	*(int*)QMM_FAIL_GAME_SHUTDOWN = 2;
 
 	// failed to get engine information
 	if (!g_gameinfo.game) {

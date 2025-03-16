@@ -17,8 +17,11 @@ SRC := $(wildcard $(SRC_DIR)/*.cpp)
 OBJ_DIR_REL := $(OBJ_DIR)/release
 OBJ_DIR_DBG := $(OBJ_DIR)/debug
 
-BIN_REL := $(BIN_DIR)/qmm2.so
-BIN_DBG := $(BIN_DIR)/qmm2_d.so
+BIN_DIR_REL := $(BIN_DIR)/release
+BIN_DIR_DBG := $(BIN_DIR)/debug
+
+BIN_REL := $(BIN_DIR_REL)/qmm2.so
+BIN_DBG := $(BIN_DIR_DBG)/qmm2-dbg.so
 
 OBJ_REL := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL)/%.o)
 OBJ_DBG := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG)/%.o)
@@ -48,13 +51,13 @@ release: $(BIN_REL)
 
 all: release debug
 
-$(BIN_REL): $(OBJ_REL) | $(BIN_DIR)
+$(BIN_REL): $(OBJ_REL) | $(BIN_DIR_REL)
 	$(CC) $(REL_LDFLAGS) -o $@ $(LDLIBS) $^
 
-$(BIN_DBG): $(OBJ_DBG) | $(BIN_DIR)
+$(BIN_DBG): $(OBJ_DBG) | $(BIN_DIR_DBG)
 	$(CC) $(DBG_LDFLAGS) -o $@ $(LDLIBS) $^
 
-$(BIN_DIR) $(OBJ_DIR) $(OBJ_DIR_REL) $(OBJ_DIR_DBG):
+$(BIN_DIR) $(BIN_DIR_REL) $(BIN_DIR_DBG) $(OBJ_DIR) $(OBJ_DIR_REL) $(OBJ_DIR_DBG):
 	mkdir -p $@
 
 $(OBJ_DIR_REL)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_REL)

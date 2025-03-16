@@ -17,9 +17,10 @@ jobs:
       - name: Build for Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-             sudo apt update && sudo apt install gcc-multilib g++-multilib -y
-             git clone https://github.com/thecybermind/qmm_sdks.git ../qmm_sdks
-             make release && make debug
+             ./.github/build/linux/init.sh
+             ./.github/build/linux/release.sh
+             ./.github/build/linux/debug.sh
+             ./.github/build/linux/package.sh
       - name: Make Linux packages
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -28,40 +29,28 @@ jobs:
              cp ../bin/qmm2.so .
              tar zcf ../qmm2-${{ github.ref_name }}.tar.gz *
              rm qmm2.so
-             cp ../bin/qmm2_d.so .
+             cp ../bin/qmm2-dbg.so .
              tar zcf ../qmm2-${{ github.ref_name }}-debug.tar.gz *			   
       - name: Build for Windows
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: |
-             git clone https://github.com/thecybermind/qmm_sdks.git ../qmm_sdks
-             cd msvc
-             call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsamd64_x86.bat"
-             msbuild qmm2.vcxproj /p:Configuration=Release
-             msbuild qmm2.vcxproj /p:Configuration=Debug
-      - name: Make Windows packages
-        if: matrix.os == 'windows-latest'
-        run: |
-             cd ..
-             mkdir package && cd package
-             copy ..\README.md . && copy ..\LICENSE .
-             copy ..\msvc\Release\qmm2.dll .
-             Compress-Archive -Path * -Destination ..\qmm2-${{ github.ref_name }}.zip
-             del qmm2.dll
-             copy ..\msvc\Debug\qmm2.dll .\qmm2_d.dll
-             Compress-Archive -Path * -Destination ..\qmm2-${{ github.ref_name }}-debug.zip
+             .\.github\build\windows\init.bat
+             .\.github\build\windows\release.bat
+             .\.github\build\windows\debug.bat
+             .\.github\build\windows\package.bat
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
           name: qmm2-${{ matrix.os }}
-          path: package/qmm2-${{ github.ref_name }}.*
+          path: qmm2-${{ github.ref_name }}.zip
           retention-days: 1
           if-no-files-found: error
       - name: Upload debug artifact
         uses: actions/upload-artifact@v4
         with:
           name: qmm2-${{ matrix.os }}-debug
-          path: package/qmm2-${{ github.ref_name }}-debug.*
+          path: qmm2-${{ github.ref_name }}-debug.zip
           retention-days: 1
           if-no-files-found: error
   tagged-release:
