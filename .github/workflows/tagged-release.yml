@@ -25,6 +25,9 @@ jobs:
       - name: Package Linux binaries
         if: matrix.os == 'ubuntu-latest'
         run: ./.github/build/linux/package.sh
+      - name: Setup MSBuild path
+        if: matrix.os == 'windows-latest'
+        uses: microsoft/setup-msbuild@v1.0.1
       - name: Install Windows dependencies
         if: matrix.os == 'windows-latest'
         run: .\.github\build\windows\init.bat
@@ -39,18 +42,16 @@ jobs:
         run: .\.github\build\windows\package.bat
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
-        if: matrix.os == 'ubuntu-latest'
         with:
           name: qmm2-${{ matrix.os }}
-          path: qmm2-${{ github.ref_name }}.zip
+          path: qmm2-${{ github.ref_name }}.*
           retention-days: 1
           if-no-files-found: error
       - name: Upload debug artifact
         uses: actions/upload-artifact@v4
-        if: matrix.os == 'ubuntu-latest'
         with:
           name: qmm2-${{ matrix.os }}-debug
-          path: qmm2-${{ github.ref_name }}-debug.zip
+          path: qmm2-${{ github.ref_name }}-debug.*
           retention-days: 1
           if-no-files-found: error
   tagged-release:
