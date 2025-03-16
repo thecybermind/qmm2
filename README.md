@@ -49,7 +49,7 @@ Each game uses a different filename for the mod. Refer to this list when you are
 4. Configure `qmm2.json` (see [Configuration](#configuration) section for details)
 
 > **Note for Jedi Academy on Windows:** You will have to run a server without QMM first to extract the original `jampgamex86.dll` file from the .pk3 files, so that you can rename it to `qmm_jampgamex86.dll` in step 1. JA stores the .dll file inside .pk3s, but it must be outside a .pk3 in order for Windows to load it, so JA will read it from the .pk3 and write it to disk.  
-> Also, for step 2, place the `zzz_qmm_jka.pk3` file in the mod directory instead of the qmm2.dll. This is necessary because Quake 3-based games will load files from .pk3 files BEFORE real files, and the .pk3s are loaded in alphabetical order. This means that the zzz_qmm_jka.pk3 file will be loaded last, ensuring it is the jampgamex86.dll that gets loaded by the server.
+> Also, for step 2, place the `zzz_qmm_ja.pk3` file in the mod directory instead of the qmm2.dll. This is necessary because Quake 3-based games will load files from .pk3 files BEFORE real files, and the .pk3s are loaded in alphabetical order. This means that the zzz_qmm_ja.pk3 file will be loaded last, ensuring it is the jampgamex86.dll that gets loaded by the server.
 
 ## Configuration
 
