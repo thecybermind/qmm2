@@ -18,6 +18,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
              sudo apt update && sudo apt install gcc-multilib g++-multilib -y
+             git clone https://github.com/thecybermind/qmm_sdks.git ../qmm_sdks
              make release && make debug
              echo test
       - name: Make Linux packages
@@ -33,6 +34,7 @@ jobs:
       - name: Build for Windows
         if: matrix.os == 'windows-latest'
         run: |
+             git clone https://github.com/thecybermind/qmm_sdks.git ../qmm_sdks
              cd msvc
              vcvarsamd64_x86.bat && msbuild qmm2.vcxproj /p:Configuration=Release
              vcvarsamd64_x86.bat && msbuild qmm2.vcxproj /p:Configuration=Debug
