@@ -1,0 +1,33 @@
+name: Build for Pull Request
+
+on:
+  pull-request:
+    types: [opened, reopened]
+    
+jobs:
+  build:
+    name: Build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: ./.github/build/linux/init.sh
+      - name: Build for Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: ./.github/build/linux/release.sh
+
+      - name: Setup MSBuild path
+        if: matrix.os == 'windows-latest'
+        uses: microsoft/setup-msbuild@v2
+      - name: Install Windows dependencies
+        if: matrix.os == 'windows-latest'
+        run: .\.github\build\windows\init.bat
+      - name: Build for Windows
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: .\.github\build\windows\release.bat
