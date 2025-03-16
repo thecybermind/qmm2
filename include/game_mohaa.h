@@ -15,7 +15,7 @@ Created By:
 #define __QMM2_GAME_MOHAA_H__
 
 // import ("syscall") codes
-typedef enum {
+enum {
 	G_PRINT,
 	G_DPRINTF,
 	G_DPRINTF2,
@@ -197,10 +197,10 @@ typedef enum {
 	GVP_FSDEBUG,
 
 	NUM_GAME_IMPORTS
-} qmm_game_import_t_msgs;
+};
 
 // export ("vmMain") codes
-typedef enum {
+enum {
 	GAMEV_APIVERSION,
 	GAME_INIT,
 	GAME_SHUTDOWN,
@@ -244,14 +244,14 @@ typedef enum {
 	GAMEVP_ERRORMESSAGE,
 
 	NUM_GAME_EXPORTS,
-} qmm_game_export_t_msgs;
+};
 
 // these import messages do not have an exact analogue in MOHAA
-typedef enum {
+enum {
 	G_CVAR_REGISTER = -100,
 	G_CVAR_VARIABLE_STRING_BUFFER,
 	G_CVAR_VARIABLE_INTEGER_VALUE,
-} qmm_special_import_t;
+};
 
 typedef int(*pfn_import_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8);
 typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6);

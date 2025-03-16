@@ -147,11 +147,8 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	g_gameinfo.game = &g_supportedgames[6];
 	g_gameinfo.isautodetected = false;
 
-	// we won't need these since we know what the game engine is at this point, but fix these anyway
-	*(int*)QMM_FAIL_G_ERROR = 4;
-	*(int*)QMM_FAIL_GAME_SHUTDOWN = 2;
-
 	// failed to get engine information
+	// by returning nullptr, the engine will error out and so we don't have to worry about it ourselves in GAME_INIT
 	if (!g_gameinfo.game) {
 		fmt::print("[QMM] ERROR: dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_get_string(g_cfg, "game", "auto"));
 		return nullptr;

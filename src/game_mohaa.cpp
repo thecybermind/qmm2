@@ -276,7 +276,7 @@ int MOHAA_syscall(int cmd, ...) {
 	va_list arglist;
 	int args[9] = {};	// pull 9 args out of ...
 	va_start(arglist, cmd);
-	for (int i = 0; i < (sizeof(args) / sizeof(args[0])); ++i)
+	for (unsigned int i = 0; i < (sizeof(args) / sizeof(args[0])); ++i)
 		args[i] = va_arg(arglist, int);
 	va_end(arglist);
 
