@@ -1,7 +1,7 @@
 name: Build for Pull Request
 
 on:
-  pull-request:
+  pull_request:
     types: [opened, reopened]
     
 jobs:
