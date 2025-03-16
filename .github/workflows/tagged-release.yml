@@ -20,9 +20,7 @@ jobs:
         run: ./.github/build/linux/init.sh
       - name: Build for Linux
         if: matrix.os == 'ubuntu-latest'
-        run: |
-             ./.github/build/linux/release.sh
-             ./.github/build/linux/debug.sh
+        run: ./.github/build/linux/release.sh
       - name: Package Linux binaries
         if: matrix.os == 'ubuntu-latest'
         run: ./.github/build/linux/package.sh
@@ -36,27 +34,19 @@ jobs:
       - name: Build for Windows
         if: matrix.os == 'windows-latest'
         shell: cmd
-        run: |
-             .\.github\build\windows\release.bat
-             .\.github\build\windows\debug.bat
+        run: .\.github\build\windows\release.bat
       - name: Package Windows binaries
         if: matrix.os == 'windows-latest'
         run: .\.github\build\windows\package.bat
 
-      - name: Upload release artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: qmm2-${{ matrix.os }}
-          path: qmm2-${{ github.ref_name }}.*
+          path: package/*
           retention-days: 1
           if-no-files-found: error
-      - name: Upload debug artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: qmm2-${{ matrix.os }}-debug
-          path: qmm2-${{ github.ref_name }}-debug.*
-          retention-days: 1
-          if-no-files-found: error
+  
   tagged-release:
     name: "Release"
     needs: build
@@ -74,4 +64,4 @@ jobs:
           prerelease: false
           files: |
             qmm2-ubuntu-latest/*
-#            qmm2-windows-latest/*
+            qmm2-windows-latest/*
