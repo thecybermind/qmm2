@@ -20,7 +20,6 @@ jobs:
              sudo apt update && sudo apt install gcc-multilib g++-multilib -y
              git clone https://github.com/thecybermind/qmm_sdks.git ../qmm_sdks
              make release && make debug
-             echo test
       - name: Make Linux packages
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -33,12 +32,13 @@ jobs:
              tar zcf ../qmm2-${{ github.ref_name }}-debug.tar.gz *			   
       - name: Build for Windows
         if: matrix.os == 'windows-latest'
+        shell: cmd
         run: |
              git clone https://github.com/thecybermind/qmm_sdks.git ../qmm_sdks
              cd msvc
-             vcvarsamd64_x86.bat && msbuild qmm2.vcxproj /p:Configuration=Release
-             vcvarsamd64_x86.bat && msbuild qmm2.vcxproj /p:Configuration=Debug
-             echo test
+             call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsamd64_x86.bat"
+             msbuild qmm2.vcxproj /p:Configuration=Release
+             msbuild qmm2.vcxproj /p:Configuration=Debug
       - name: Make Windows packages
         if: matrix.os == 'windows-latest'
         run: |
