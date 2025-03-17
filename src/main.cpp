@@ -575,7 +575,6 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 */
 int syscall(int cmd, ...) {
 	va_list arglist;
-	// JK2 decided to mess it all up and have a single cmd with 13 args
 	int args[13] = {}; // ints pulled from varargs
 	va_start(arglist, cmd);
 	for (unsigned int i = 0; i < (sizeof(args)/sizeof(args[0])); ++i)

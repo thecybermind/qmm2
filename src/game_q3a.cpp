@@ -22,7 +22,7 @@ Created By:
 
 GEN_QMM_MSGS(Q3A);
 
-// these function ids are defined either in the g_syscalls.asm file (or in qcommon.h from q3 source),
+// these function ids are defined either in the g_syscalls.asm file or in qcommon.h from q3 source,
 // but they do not appear in the enum in q3a/game/g_public.h
 enum {
 	G_MEMSET                = 100,
