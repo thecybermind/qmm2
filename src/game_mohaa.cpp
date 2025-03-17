@@ -30,14 +30,14 @@ Created By:
 GEN_QMM_MSGS(MOHAA);
 
 // a copy of the original import struct that comes from the game engine. this is given to plugins
-game_import_t orig_import;
+static game_import_t orig_import;
 
 // a copy of the original export struct pointer that comes from the mod. this is given to plugins
-game_export_t* orig_export = nullptr;
+static game_export_t* orig_export = nullptr;
 
 // struct with lambdas that call QMM's syscall function. this is given to the mod
 #define GEN_IMPORT(field, code) (decltype(qmm_import. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8) { return syscall(code, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
-game_import_t qmm_import = {
+static game_import_t qmm_import = {
 	GEN_IMPORT(Printf, G_PRINT),
 	GEN_IMPORT(DPrintf, G_DPRINTF),
 	GEN_IMPORT(DPrintf2, G_DPRINTF2),
@@ -221,7 +221,7 @@ game_import_t qmm_import = {
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 #define GEN_EXPORT(field, code)	(decltype(qmm_export. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) { return vmMain(code, arg0, arg1, arg2, arg3, arg4, arg5, arg6, 0, 0, 0, 0, 0); }
-game_export_t qmm_export = {
+static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
 	GEN_EXPORT(Init, GAME_INIT),
 	GEN_EXPORT(Shutdown, GAME_SHUTDOWN),

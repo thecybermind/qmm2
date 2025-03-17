@@ -13,7 +13,7 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
-#include <stef2/qcommon/q_shared.h>
+#include <stef2/game/q_shared.h>
 // fix for type mismatch of GetGameAPI in g_public.h
 // the actual type should be: game_export_t *GetGameAPI(game_import_t *import)
 // but to avoid having to include game-specific headers in main.cpp, our export is void *GetGameAPI(void *import)
@@ -30,20 +30,20 @@ Created By:
 GEN_QMM_MSGS(STEF2);
 
 // a copy of the original import struct that comes from the game engine. this is given to plugins
-game_import_t orig_import;
+static game_import_t orig_import;
 
 // a copy of the original export struct pointer that comes from the mod. this is given to plugins
-game_export_t* orig_export = nullptr;
+static game_export_t* orig_export = nullptr;
 
 // struct with lambdas that call QMM's syscall function. this is given to the mod
 #define GEN_IMPORT(field, code) (decltype(qmm_import. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8) { return syscall(code, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
-game_import_t qmm_import = {
+static game_import_t qmm_import = {
 
 };
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 #define GEN_EXPORT(field, code)	(decltype(qmm_export. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) { return vmMain(code, arg0, arg1, arg2, arg3, arg4, arg5, arg6, 0, 0, 0, 0, 0); }
-game_export_t qmm_export = {
+static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
 
 };
@@ -62,7 +62,7 @@ int STEF2_syscall(int cmd, ...) {
 	va_end(arglist);
 
 	switch (cmd) {
-
+		case 0:
 
 		// handle codes for variables, this is how a plugin would get these values if needed
 
@@ -89,15 +89,13 @@ int STEF2_vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int 
 		// handle codes for variables, this is how a plugin would get these values if needed
 		ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
 
-		ROUTE_EXPORT_VAR(errorMessage, GAMEVP_ERRORMESSAGE);
-
 		default:
 			break;
 	};
 
 	// after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_entities and errorMessage in particular)
 	// and these changes need to be available to the engine, so copy those values again now before returning from the mod
-	qmm_export.errorMessage = orig_export->errorMessage;
+	//qmm_export.errorMessage = orig_export->errorMessage;
 
 	return ret;
 }
@@ -110,21 +108,17 @@ void* STEF2_GetGameAPI(void* import) {
 	g_gameinfo.api_info.orig_import = (void*)&orig_import;
 
 	// fill in variables of our hooked import struct to pass to the mod
-	qmm_import.DebugLines = gi->DebugLines;
-	qmm_import.numDebugLines = gi->numDebugLines;
-	qmm_import.DebugStrings = gi->DebugStrings;
-	qmm_import.numDebugStrings = gi->numDebugStrings;
-	qmm_import.fsDebug = gi->fsDebug;
+	//qmm_import.DebugLines = gi->DebugLines;
 
 	// this gets passed to the mod's GetGameAPI() function in mod.cpp:mod_load()
 	g_gameinfo.api_info.qmm_import = &qmm_import;
 
 	// pointer to wrapper vmMain function that calls actual mod func from orig_export
 	// this gets assigned to g_mod->pfnvmMain in mod.cpp:mod_load()
-	g_gameinfo.api_info.orig_vmmain = STVOYSP_vmMain;
+	g_gameinfo.api_info.orig_vmmain = STEF2_vmMain;
 
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
-	g_gameinfo.pfnsyscall = STVOYSP_syscall;
+	g_gameinfo.pfnsyscall = STEF2_syscall;
 
 	// struct full of export lambdas to QMM's vmMain
 	// this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -134,6 +128,7 @@ void* STEF2_GetGameAPI(void* import) {
 
 const char* STEF2_eng_msg_names(int cmd) {
 	switch (cmd) {
+		case 0:
 
 		default:
 			return "unknown";
@@ -142,7 +137,7 @@ const char* STEF2_eng_msg_names(int cmd) {
 
 const char* STEF2_mod_msg_names(int cmd) {
 	switch (cmd) {
-
+		case 0:
 
 		default:
 			return "unknown";
