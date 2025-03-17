@@ -82,6 +82,8 @@ typedef enum {
 	OP_CVFI
 } qvmopcode_t;
 
+extern const char* opcodename[];
+
 // a single opcode in memory
 typedef struct {
 	qvmopcode_t op;
@@ -133,5 +135,8 @@ typedef struct {
 bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize);
 void qvm_unload(qvm_t* qvm);
 int qvm_exec(qvm_t* qvm, int* argv, int argc);
+
+void* qvm_malloc(unsigned int size);
+void qvm_free(void* ptr);
 
 #endif // __QMM2_QVM_H__

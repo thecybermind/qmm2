@@ -10,6 +10,7 @@ Created By:
 */
 
 #include "osdef.h"
+#include "log.h"
 #include "format.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -80,61 +81,61 @@ bool plugin_load(plugin_t* p, std::string file) {
 		return false;
 
 	if (!(p->dll = dlopen(file.c_str(), RTLD_NOW))) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): DLL load failed for plugin: {}\n", file, dlerror()).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL load failed for plugin: {}\n", file, dlerror());
 		return false;
 	}
 	if (!(p->QMM_Query = (plugin_query)dlsym(p->dll, "QMM_Query"))) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Unable to find \"QMM_Query\" function\n", file).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Query\" function\n", file);
 		goto fail;
 	}
 
 	p->QMM_Query(&(p->plugininfo));
 	if (!p->plugininfo) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): QMM_Query() returned NULL Plugininfo\n", file).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Query() returned NULL Plugininfo\n", file);
 		goto fail;
 	}
 
 	// if the plugin's interface version is higher, don't load and suggest to upgrade QMM
 	if (p->plugininfo->pifv_major > QMM_PIFV_MAJOR || p->plugininfo->pifv_minor > QMM_PIFV_MINOR) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Plugin's interface version ({}:{}) is greater than QMM's ({}:{}), suggest upgrading QMM.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is greater than QMM's ({}:{}), suggest upgrading QMM.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
 		goto fail;
 	}
 	// if the plugin's major version is lower, load, but suggest to upgrade plugin
 	if (p->plugininfo->pifv_major < QMM_PIFV_MAJOR) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] WARNING: plugin_load(\"{}\"): Plugin's interface version ({}:{}) is less than QMM's ({}:{}), suggest upgrading plugin.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR).c_str());
+		LOG(WARNING, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is less than QMM's ({}:{}), suggest upgrading plugin.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
 	}
 	// don't care if plugin's minor version is lower
 
 	// find remaining neccesary functions or fail
 	if (!(p->QMM_Attach = (plugin_attach)dlsym(p->dll, "QMM_Attach"))) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Unable to find \"QMM_Attach\" function\n", file).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Attach\" function\n", file);
 		goto fail;
 	}
 	if (!(p->QMM_Detach = (plugin_detach)dlsym(p->dll, "QMM_Detach"))) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Unable to find \"QMM_Detach\" function\n", file).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Detach\" function\n", file);
 		goto fail;
 	}
 	if (!(p->QMM_vmMain = (plugin_vmmain)dlsym(p->dll, "QMM_vmMain"))) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Unable to find \"QMM_vmMain\" function\n", file).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain\" function\n", file);
 		goto fail;
 	}
 	if (!(p->QMM_syscall = (plugin_syscall)dlsym(p->dll, "QMM_syscall"))) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Unable to find \"QMM_syscall\" function\n", file).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_syscall\" function\n", file);
 		goto fail;
 	}
 	if (!(p->QMM_vmMain_Post = (plugin_vmmain)dlsym(p->dll, "QMM_vmMain_Post"))) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Unable to find \"QMM_vmMain_Post\" function\n", file).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain_Post\" function\n", file);
 		goto fail;
 	}
 	if (!(p->QMM_syscall_Post = (plugin_syscall)dlsym(p->dll, "QMM_syscall_Post"))) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): Unable to find \"QMM_syscall_Post\" function\n", file).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_syscall_Post\" function\n", file);
 		goto fail;
 	}
 
 	// call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
 	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, vmbase, reserved)
 	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, g_mod.vmbase, 0))) {
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: plugin_load(\"{}\"): QMM_Attach() returned 0\n", file).c_str());
+		LOG(ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
 		p->QMM_Detach(0); // int arg is reserved, previously iscmd
 		goto fail;
 	}

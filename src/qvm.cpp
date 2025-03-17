@@ -11,6 +11,8 @@ Created By:
 
 #include <string.h>
 #include <stdlib.h>
+#include "log.h"
+#include "format.h"
 #include "qvm.h"
 
 static bool qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start = nullptr, void* end = nullptr) {
@@ -212,8 +214,7 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 			// anything else
 			default:
 				// todo
-				//ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], vaf("[QMM] ERROR: CVMMod::vmMain(%s): Unhandled opcode %s (%d)\n", g_gameinfo.game->eng_msg_names(cmd), opcodename[op], op));
-				//log_write(vaf("[QMM] ERROR: CVMMod::vmMain(%s): Unhandled opcode %s (%d)\n", g_gameinfo.game->eng_msg_names(cmd), opcodename[op], op));
+				LOG(ERROR, "QMM") << fmt::format("qvm_exec({}) Unhandled opcode {}\n", args[2], (int)op);
 				break;
 
 			// stack opcodes
@@ -579,3 +580,67 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 	// return value is stored on the top of the stack (pushed just before OP_LEAVE)
 	return *qvm->stackptr++;
 }
+
+//return a string name for the VM opcode
+const char* opcodename[] = {
+	"OP_UNDEF",
+	"OP_NOP",
+	"OP_BREAK",
+	"OP_ENTER",
+	"OP_LEAVE",
+	"OP_CALL",
+	"OP_PUSH",
+	"OP_POP",
+	"OP_CONST",
+	"OP_LOCAL",
+	"OP_JUMP",
+	"OP_EQ",
+	"OP_NE",
+	"OP_LTI",
+	"OP_LEI",
+	"OP_GTI",
+	"OP_GEI",
+	"OP_LTU",
+	"OP_LEU",
+	"OP_GTU",
+	"OP_GEU",
+	"OP_EQF",
+	"OP_NEF",
+	"OP_LTF",
+	"OP_LEF",
+	"OP_GTF",
+	"OP_GEF",
+	"OP_LOAD1",
+	"OP_LOAD2",
+	"OP_LOAD4",
+	"OP_STORE1",
+	"OP_STORE2",
+	"OP_STORE4",
+	"OP_ARG",
+	"OP_BLOCK_COPY",
+	"OP_SEX8",
+	"OP_SEX16",
+	"OP_NEGI",
+	"OP_ADD",
+	"OP_SUB",
+	"OP_DIVI",
+	"OP_DIVU",
+	"OP_MODI",
+	"OP_MODU",
+	"OP_MULI",
+	"OP_MULU",
+	"OP_BAND",
+	"OP_BOR",
+	"OP_BXOR",
+	"OP_BCOM",
+	"OP_LSH",
+	"OP_RSHI",
+	"OP_RSHU",
+	"OP_NEGF",
+	"OP_ADDF",
+	"OP_SUBF",
+	"OP_DIVF",
+	"OP_MULF",
+	"OP_CVIF",
+	"OP_CVFI"
+};

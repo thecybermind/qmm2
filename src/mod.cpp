@@ -10,6 +10,7 @@ Created By:
 */
 
 #include "osdef.h"
+#include "log.h"
 #include "format.h"
 #include "game_api.h"
 #include "main.h"
@@ -40,7 +41,7 @@ bool mod_load(mod_t* mod, std::string file) {
 		int fpk3;
 		int filelen = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], file.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
 		if (filelen <= 0) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): Could not open QVM for reading\n", file).c_str());
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Could not open QVM for reading\n", file);
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 			return false;
 		}
@@ -55,7 +56,7 @@ bool mod_load(mod_t* mod, std::string file) {
 		if (!qvm_load(&mod->qvm, filemem, filelen, g_gameinfo.game->vmsyscall, stacksize)) {
 			qvm_unload(&mod->qvm);
 			free(filemem);
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): QVM load failed\n", file).c_str());
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", file);
 			return false;
 		}
 		mod->pfnvmMain = s_mod_vmmain;
@@ -68,13 +69,13 @@ bool mod_load(mod_t* mod, std::string file) {
 	// only allow MOHAA-style mod if the game engine supports it
 	else if (str_striequal(ext, EXT_DLL) && g_gameinfo.game->apientry) {
 		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): MOHAA-style DLL load failed: {}\n", file, dlerror()).c_str());
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): MOHAA-style DLL load failed: {}\n", file, dlerror());
 			return false;
 		}
 
 		mod_GetGameAPI_t GetGameAPI = nullptr;
 		if (!(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod->dll, "GetGameAPI"))) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", file).c_str());
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", file);
 			goto mohaa_dll_fail;
 		}
 
@@ -98,18 +99,18 @@ bool mod_load(mod_t* mod, std::string file) {
 	// load DLL
 	else if (str_striequal(ext, EXT_DLL)) {
 		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror()).c_str());
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror());
 			return false;
 		}
 
 		mod_dllEntry_t dllEntry = nullptr;
 		if (!(dllEntry = (mod_dllEntry_t)dlsym(mod->dll, "dllEntry"))) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", file).c_str());
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", file);
 			goto dll_fail;
 		}
 
 		if (!(mod->pfnvmMain = (mod_vmMain_t)dlsym(mod->dll, "vmMain"))) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("[QMM] ERROR: mod_load(\"{}\"): Unable to find \"vmMain\" function\n", file).c_str());
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"vmMain\" function\n", file);
 			goto dll_fail;
 		}
 
