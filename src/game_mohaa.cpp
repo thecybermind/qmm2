@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#ifdef QMM_MOHAA_SUPPORT
+#ifdef QMM_GETGAMEAPI_SUPPORT
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
@@ -838,4 +838,4 @@ const char* MOHAA_mod_msg_names(int cmd) {
 	}
 }
 
-#endif // QMM_MOHAA_SUPPORT
+#endif // QMM_GETGAMEAPI_SUPPORT

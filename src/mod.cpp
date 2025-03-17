@@ -65,7 +65,7 @@ bool mod_load(mod_t* mod, std::string file) {
 
 		return true;
 	}
-#ifdef QMM_MOHAA_SUPPORT
+#ifdef QMM_GETGAMEAPI_SUPPORT
 	// only allow MOHAA-style mod if the game engine supports it
 	else if (str_striequal(ext, EXT_DLL) && g_gameinfo.game->apientry) {
 		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {
@@ -95,7 +95,7 @@ bool mod_load(mod_t* mod, std::string file) {
 		return false;
 
 	}
-#endif // QMM_MOHAA_SUPPORT
+#endif // QMM_GETGAMEAPI_SUPPORT
 	// load DLL
 	else if (str_striequal(ext, EXT_DLL)) {
 		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {

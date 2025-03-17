@@ -16,7 +16,7 @@ Created By:
 #include "qmmapi.h"
 #include "game_api.h"
 
-#ifdef QMM_MOHAA_SUPPORT
+#ifdef QMM_GETGAMEAPI_SUPPORT
 // store pointers for MOHAA-based systems
 typedef struct api_info_s {
 	void* orig_import = nullptr;			// original import struct from engine
@@ -24,7 +24,7 @@ typedef struct api_info_s {
 	void* qmm_import = nullptr;				// import struct that is hooked by QMM given to the mod
 	mod_vmMain_t orig_vmmain = nullptr;		// pointer to wrapper vmMain function that calls actual mod func from orig_export
 } api_info_t;
-#endif // QMM_MOHAA_SUPPORT
+#endif // QMM_GETGAMEAPI_SUPPORT
 
 // store all currently-loaded game & game engine info
 typedef struct game_info_s {
@@ -39,9 +39,9 @@ typedef struct game_info_s {
 	std::string qmm_file;
 	std::string moddir;
 	std::string cfg_path;
-#ifdef QMM_MOHAA_SUPPORT
+#ifdef QMM_GETGAMEAPI_SUPPORT
 	api_info_t api_info;
-#endif // QMM_MOHAA_SUPPORT
+#endif // QMM_GETGAMEAPI_SUPPORT
 } game_info_t;
 
 extern game_info_t g_gameinfo;
@@ -58,14 +58,18 @@ constexpr int QMM_FAIL_G_ERROR = 1;
 constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
 
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall);	// initial entry point for all games but MOHAA
-#ifdef QMM_MOHAA_SUPPORT
+#ifdef QMM_GETGAMEAPI_SUPPORT
 C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for MOHAA
-#endif // QMM_MOHAA_SUPPORT
+#endif // QMM_GETGAMEAPI_SUPPORT
 C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
 int syscall(int cmd, ...);
 
 void main_detect_env();
 void main_load_config();
+#ifdef QMM_GETGAMEAPI_SUPPORT
+void main_detect_game(bool GetGameAPI_mode = false);
+#else
 void main_detect_game();
+#endif
 
 #endif // __QMM2_MAIN_H__

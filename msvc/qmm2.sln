@@ -8,19 +8,19 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
-		Debug-MOHAA|x86 = Debug-MOHAA|x86
+		Debug-GetGameAPI|x86 = Debug-GetGameAPI|x86
 		Release|x86 = Release|x86
-		Release-MOHAA|x86 = Release-MOHAA|x86
+		Release-GetGameAPI|x86 = Release-GetGameAPI|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Debug|x86.ActiveCfg = Debug|Win32
 		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Debug|x86.Build.0 = Debug|Win32
-		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Debug-MOHAA|x86.ActiveCfg = Debug-MOHAA|Win32
-		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Debug-MOHAA|x86.Build.0 = Debug-MOHAA|Win32
+		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Debug-GetGameAPI|x86.ActiveCfg = Debug-GetGameAPI|Win32
+		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Debug-GetGameAPI|x86.Build.0 = Debug-GetGameAPI|Win32
 		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Release|x86.ActiveCfg = Release|Win32
 		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Release|x86.Build.0 = Release|Win32
-		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Release-MOHAA|x86.ActiveCfg = Release-MOHAA|Win32
-		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Release-MOHAA|x86.Build.0 = Release-MOHAA|Win32
+		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Release-GetGameAPI|x86.ActiveCfg = Release-GetGameAPI|Win32
+		{20AB0C70-63B9-4A92-A622-0BB941722A3D}.Release-GetGameAPI|x86.Build.0 = Release-GetGameAPI|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

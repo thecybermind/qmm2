@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#ifdef QMM_MOHAA_SUPPORT
+#ifdef QMM_GETGAMEAPI_SUPPORT
 
 #ifndef __QMM2_GAME_MOHAA_H__
 #define __QMM2_GAME_MOHAA_H__
@@ -258,4 +258,4 @@ typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int
 
 #endif // __QMM2_GAME_MOHAA_H__
 
-#endif // QMM_MOHAA_SUPPORT
+#endif // QMM_GETGAMEAPI_SUPPORT

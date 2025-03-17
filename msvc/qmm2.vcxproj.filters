@@ -60,6 +60,12 @@
     <ClInclude Include="..\include\log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\game_stef2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\game_stvoysp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -108,6 +114,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_stef2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_stvoymp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_stvoysp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -94,7 +94,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	}
 }
 
-#ifdef QMM_MOHAA_SUPPORT
+#ifdef QMM_GETGAMEAPI_SUPPORT
 /* Entry point: engine->qmm
    MOHAA: This is the first function called when the DLL is loaded. MOHAA uses a system closer to HalfLife, where a
    struct of function pointers is given from the engine to the mod, and the mod returns a struct of function pointers
@@ -142,10 +142,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 
 	main_load_config();
 
-	// main_detect_game();
-	// for now we'll just assume it's MOHAA because it's the only supported GetGameAPI game
-	g_gameinfo.game = &g_supportedgames[6];
-	g_gameinfo.isautodetected = false;
+	main_detect_game(true);	// true = GetGameAPI_mode
 
 	// failed to get engine information
 	// by returning nullptr, the engine will error out and so we don't have to worry about it ourselves in GAME_INIT
@@ -159,7 +156,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	// the mod
 	return g_gameinfo.game->apientry(import);
 }
-#endif // QMM_MOHAA_SUPPORT
+#endif // QMM_GETGAMEAPI_SUPPORT
 
 void main_detect_env() {
 	// save exe module path
@@ -202,12 +199,21 @@ void main_load_config() {
 	}
 }
 
+#ifdef QMM_GETGAMEAPI_SUPPORT
+void main_detect_game(bool GetGameAPI_mode) {
+#else
 void main_detect_game() {
+#endif
 	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
 
 	// find what game we are loaded in
 	for (int i = 0; g_supportedgames[i].dllname; i++) {
 		supportedgame_t& game = g_supportedgames[i];
+#ifdef QMM_GETGAMEAPI_SUPPORT
+		// only deal with vmMain/GetGameAPI games as needed
+		if ((GetGameAPI_mode && !game.apientry) || (!GetGameAPI_mode && game.apientry))
+			continue;
+#endif
 		// if short name matches config option, we found it!
 		if (str_striequal(cfg_game, game.gamename_short)) {
 			LOG(NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);

@@ -14,9 +14,9 @@ Created By:
 
 typedef int (*vmsyscall_t)(unsigned char* membase, int cmd, int* args);
 typedef const char* (*msgname_t)(int msg);
-#ifdef QMM_MOHAA_SUPPORT
+#ifdef QMM_GETGAMEAPI_SUPPORT
 typedef void* (*apientry_t)(void* import);
-#endif // QMM_MOHAA_SUPPORT
+#endif // QMM_GETGAMEAPI_SUPPORT
 
 // a list of all the mod messages used by QMM
 typedef enum {
@@ -73,11 +73,11 @@ typedef struct {
 	msgname_t mod_msg_names;		// pointer to a function that returns a string for a given mod message
 	vmsyscall_t vmsyscall;			// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
 	const char* exe_hint;			// hint that should appear in the executable filename to be considered this game
-#ifdef QMM_MOHAA_SUPPORT
+#ifdef QMM_GETGAMEAPI_SUPPORT
 	apientry_t apientry;			// pointer to a function that handles GetGameAPI entry for a game
 #else
 	void* reserved;					// eat nullptr in array
-#endif // QMM_MOHAA_SUPPORT
+#endif // QMM_GETGAMEAPI_SUPPORT
 } supportedgame_t;
 
 extern supportedgame_t g_supportedgames[];
@@ -92,10 +92,10 @@ extern supportedgame_t g_supportedgames[];
 							const char* game##_mod_msg_names(int msg)
 // generate extern for the vmsyscall function (if game supports it)
 #define GEN_VMEXT(game)		int game##_vmsyscall(unsigned char* membase, int cmd, int* args)
-#ifdef QMM_MOHAA_SUPPORT
+#ifdef QMM_GETGAMEAPI_SUPPORT
 // generate extern for the GetGameAPI function (if game supports it)
 #define GEN_APIEXT(game)	void* game##_GetGameAPI(void* import)
-#endif // QMM_MOHAA_SUPPORT
+#endif // QMM_GETGAMEAPI_SUPPORT
 // generate struct info for the short name, messages arrays, and message name functions
 #define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names
 
