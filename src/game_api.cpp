@@ -66,8 +66,8 @@ supportedgame_t g_supportedgames[] = {
 		{ "game.i386.so",		nullptr,			".",				"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	nullptr,			nullptr,	MOHAA_GetGameAPI },
 		{ "efgamei386.dll",		nullptr,			"baseEF",			"Star Trek Voyager: Elite Force (Singleplayer)",GEN_INFO(STVOYSP),	nullptr,			nullptr,	STVOYSP_GetGameAPI },
 		{ "ef2gamei386.so",		nullptr,			"Elite Force II",	"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			nullptr,	STEF2_GetGameAPI },
-
 #endif // QMM_GETGAMEAPI_SUPPORT
+
 #else // !_WIN32 && !__linux__
 
 #endif

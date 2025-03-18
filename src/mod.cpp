@@ -66,17 +66,17 @@ bool mod_load(mod_t* mod, std::string file) {
 		return true;
 	}
 #ifdef QMM_GETGAMEAPI_SUPPORT
-	// only allow MOHAA-style mod if the game engine supports it
+	// only allow GetGameAPI-style mod if the game engine supports it
 	else if (str_striequal(ext, EXT_DLL) && g_gameinfo.game->apientry) {
 		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): MOHAA-style DLL load failed: {}\n", file, dlerror());
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): GetGameAPI-style DLL load failed: {}\n", file, dlerror());
 			return false;
 		}
 
 		mod_GetGameAPI_t GetGameAPI = nullptr;
 		if (!(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod->dll, "GetGameAPI"))) {
 			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", file);
-			goto mohaa_dll_fail;
+			goto api_dll_fail;
 		}
 
 		// pass the QMM-hooked import pointers to the mod
@@ -89,7 +89,7 @@ bool mod_load(mod_t* mod, std::string file) {
 
 		return true;
 
-		mohaa_dll_fail:
+		api_dll_fail:
 		if (mod->dll)
 			dlclose(mod->dll);
 		return false;

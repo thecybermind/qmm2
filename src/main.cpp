@@ -57,7 +57,7 @@ game_info_t g_gameinfo;
 
 
 /* Entry point: engine->qmm
-   This is the first function called when the DLL is loaded. The address of the engine's syscall callback is given,
+   This is the first function called when a vmMain DLL is loaded. The address of the engine's syscall callback is given,
    but it is not guaranteed to be initialized and ready for calling until vmMain() is called later. For now, all
    we can do is store the syscall, load the config file, and attempt to figure out what game engine we are in.
    This is either determined by the config file, or by getting the filename of the QMM DLL itself.
@@ -96,10 +96,10 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 
 #ifdef QMM_GETGAMEAPI_SUPPORT
 /* Entry point: engine->qmm
-   MOHAA: This is the first function called when the DLL is loaded. MOHAA uses a system closer to HalfLife, where a
+   This is the first function called when a GetGameAPI DLL is loaded. This system uses a system closer to HalfLife, where a
    struct of function pointers is given from the engine to the mod, and the mod returns a struct of function pointers
    back to the engine.
-   To best integrate this with QMM, game_mohaa.cpp/.h create an enum for each import (syscall) and export (vmMain) function/variable.
+   To best integrate this with QMM, game_xyz.cpp/.h create an enum for each import (syscall) and export (vmMain) function/variable.
    A game_export_t is given to the engine which has lambdas for each pointer that calls QMM's vmMain(enum, arg0, ...).
    A game_import_t is given to the mod which has lambdas for each pointer that calls QMM's syscall(enum, arg0, ...).
 
@@ -110,7 +110,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
    * engine->GetGameAPI(import):
      - load config file
      - detect game engine
-   * GetGameAPI->MOHAAGetGameAPI(import):
+   * GetGameAPI->XYZ_GetGameAPI(import):
      - copy import struct
 	 - assign variables from import to qmm_import
 	 - assign default values for variables in qmm_export
@@ -120,9 +120,9 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 
    * engine:
      - stores qmm_export pointer, checks qmm_export->apiversion to match GAME_API_VERSION
-	 - called qmm_export->Init
+	 - calls qmm_export->Init
 	 - this eventually hits our vmMain(GAME_INIT) and we load the mod
-	 - store variables from mod's real export struct into our qmm_export
+	 - store variables from mod's real export struct into our qmm_export before returning out of mod
 */
 C_DLLEXPORT void* GetGameAPI(void* import) {
 	log_init("qmm2.log");

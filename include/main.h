@@ -17,7 +17,7 @@ Created By:
 #include "game_api.h"
 
 #ifdef QMM_GETGAMEAPI_SUPPORT
-// store pointers for MOHAA-based systems
+// store pointers for GetGameAPI-based systems
 typedef struct api_info_s {
 	void* orig_import = nullptr;			// original import struct from engine
 	void* orig_export = nullptr;			// original export struct from mod
@@ -53,13 +53,13 @@ extern game_info_t g_gameinfo;
 
 // these are used if we couldn't determine a game engine and we have to fail.
 // G_ERROR and GAME_SHUTDOWN appear to be 1 in all supported dllEntry games.
-// they are different in MOHAA, but returning nullptr from GetGameAPI causes the engine to exit anyway
+// they are different in GetGameAPI games, but returning nullptr from GetGameAPI causes the engine to exit anyway
 constexpr int QMM_FAIL_G_ERROR = 1;
 constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
 
-C_DLLEXPORT void dllEntry(eng_syscall_t syscall);	// initial entry point for all games but MOHAA
+C_DLLEXPORT void dllEntry(eng_syscall_t syscall);	// initial entry point for non-GetGameAPI games
 #ifdef QMM_GETGAMEAPI_SUPPORT
-C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for MOHAA
+C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for GetGameAPI games
 #endif // QMM_GETGAMEAPI_SUPPORT
 C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
 int syscall(int cmd, ...);
