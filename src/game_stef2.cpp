@@ -13,6 +13,9 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
+#include "main.h"
+
+// fix for q_shared making min/max macros in #ifndef blocks that end up affecting st
 #include <stef2/game/q_shared.h>
 // fix for type mismatch of GetGameAPI in g_public.h
 // the actual type should be: game_export_t *GetGameAPI(game_import_t *import)
@@ -25,7 +28,6 @@ Created By:
 #include "game_api.h"
 // QMM-specific STEF2 header
 #include "game_stef2.h"
-#include "main.h"
 
 GEN_QMM_MSGS(STEF2);
 
