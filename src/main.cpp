@@ -575,7 +575,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 */
 int syscall(int cmd, ...) {
 	va_list arglist;
-	int args[13] = {}; // ints pulled from varargs
+	int args[17] = {}; // ints pulled from varargs. STEF2 has Tag_OrientationEx which takes 17 args :(
 	va_start(arglist, cmd);
 	for (unsigned int i = 0; i < (sizeof(args)/sizeof(args[0])); ++i)
 		args[i] = va_arg(arglist, int);
@@ -609,7 +609,7 @@ int syscall(int cmd, ...) {
 	for (plugin_t& p : g_plugins) {
 		g_plugin_result = QMM_UNUSED;
 		// call plugin's syscall and store return value
-		ret = p.QMM_syscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]);
+		ret = p.QMM_syscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]);
 		// set new max result
 		maxresult = util_max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)
@@ -622,13 +622,13 @@ int syscall(int cmd, ...) {
 	}
 	// call real syscall function (unless a plugin resulted in QMM_SUPERCEDE)
 	if (maxresult < QMM_SUPERCEDE)
-		ret = g_gameinfo.pfnsyscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]);
+		ret = g_gameinfo.pfnsyscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]);
 	// if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the actual engine's return value back to the mod
 	if (maxresult < QMM_OVERRIDE)
 		final_ret = ret;
 	// pass calls to plugins' QMM_syscall_Post functions (ignore return values and results)
 	for (plugin_t& p : g_plugins) {
-		p.QMM_syscall_Post(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]);
+		p.QMM_syscall_Post(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]);
 	}
 
 	// if this is a call to open a file for APPEND or APPEND_SYNC

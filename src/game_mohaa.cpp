@@ -189,7 +189,7 @@ static game_import_t qmm_import = {
 	nullptr,	// numDebugLines
 	nullptr,	// DebugStrings
 	nullptr,	// numDebugStrings
-	GEN_IMPORT(LocateGameData, G_LOCATEGAMEDATA),
+	GEN_IMPORT(LocateGameData, G_LOCATE_GAME_DATA),
 	GEN_IMPORT(SetFarPlane, G_SETFARPLANE),
 	GEN_IMPORT(SetSkyPortal, G_SETSKYPORTAL),
 	GEN_IMPORT(Popmenu, G_POPMENU),
@@ -230,7 +230,7 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(SetMap, GAME_SETMAP),
 	GEN_EXPORT(Restart, GAME_RESTART),
 	GEN_EXPORT(SetTime, GAME_SETTIME),
-	GEN_EXPORT(SpawnEntities, GAME_SPAWNENTITIES),
+	GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
 	GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
 	GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
 	GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFOCHANGED),
@@ -239,24 +239,24 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
 	GEN_EXPORT(BotBegin, GAME_BOTBEGIN),
 	GEN_EXPORT(BotThink, GAME_BOTTHINK),
-	GEN_EXPORT(PrepFrame, GAME_PREPFRAME),
-	GEN_EXPORT(RunFrame, GAME_RUNFRAME),
-	GEN_EXPORT(ServerSpawned, GAME_SERVERSPAWNED),
-	GEN_EXPORT(RegisterSounds, GAME_REGISTERSOUNDS),
-	GEN_EXPORT(AllowPaused, GAME_ALLOWPAUSED),
+	GEN_EXPORT(PrepFrame, GAME_PREP_FRAME),
+	GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
+	GEN_EXPORT(ServerSpawned, GAME_SERVER_SPAWNED),
+	GEN_EXPORT(RegisterSounds, GAME_REGISTER_SOUNDS),
+	GEN_EXPORT(AllowPaused, GAME_ALLOW_PAUSED),
 	GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
-	GEN_EXPORT(ArchivePersistant, GAME_ARCHIVEPERSISTANT),
-	GEN_EXPORT(WriteLevel, GAME_WRITELEVEL),
-	GEN_EXPORT(ReadLevel, GAME_READLEVEL),
-	GEN_EXPORT(LevelArchiveValid, GAME_LEVELARCHIVEVALID),
-	GEN_EXPORT(ArchiveInteger, GAME_ARCHIVEINTEGER),
-	GEN_EXPORT(ArchiveFloat, GAME_ARCHIVEFLOAT),
-	GEN_EXPORT(ArchiveString, GAME_ARCHIVESTRING),
-	GEN_EXPORT(ArchiveSvsTime, GAME_ARCHIVESVSTIME),
+	GEN_EXPORT(ArchivePersistant, GAME_ARCHIVE_PERSISTANT),
+	GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
+	GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
+	GEN_EXPORT(LevelArchiveValid, GAME_LEVEL_ARCHIVE_VALID),
+	GEN_EXPORT(ArchiveInteger, GAME_ARCHIVE_INTEGER),
+	GEN_EXPORT(ArchiveFloat, GAME_ARCHIVE_FLOAT),
+	GEN_EXPORT(ArchiveString, GAME_ARCHIVE_STRING),
+	GEN_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME),
 	GEN_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION),
-	GEN_EXPORT(DebugCircle, GAME_DEBUGCIRCLE),
-	GEN_EXPORT(SetFrameNumber, GAME_SETFRAMENUMBER),
-	GEN_EXPORT(SoundCallback, GAME_SOUNDCALLBACK),
+	GEN_EXPORT(DebugCircle, GAME_DEBUG_CIRCLE),
+	GEN_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER),
+	GEN_EXPORT(SoundCallback, GAME_SOUND_CALLBACK),
 
 	// the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
 	nullptr,	// profStruct
@@ -269,12 +269,13 @@ static game_export_t qmm_export = {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-#define ROUTE_IMPORT(field, code)		case code: ret = ((pfn_import_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
+typedef int(*pfn_import_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6);
+#define ROUTE_IMPORT(field, code)		case code: ret = ((pfn_import_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break
 #define ROUTE_IMPORT_VAR(field, code)	case code: ret = (int)(orig_import. field); break
 int MOHAA_syscall(int cmd, ...) {
 	int ret = 0;
 	va_list arglist;
-	int args[9] = {};	// pull 9 args out of ...
+	int args[9] = {};	// pull 9 args out of varargs for trace and Sound
 	va_start(arglist, cmd);
 	for (unsigned int i = 0; i < (sizeof(args) / sizeof(args[0])); ++i)
 		args[i] = va_arg(arglist, int);
@@ -428,7 +429,7 @@ int MOHAA_syscall(int cmd, ...) {
 		ROUTE_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES);
 		ROUTE_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING);
 		ROUTE_IMPORT(CalcCRC, G_CALCCRC);
-		ROUTE_IMPORT(LocateGameData, G_LOCATEGAMEDATA);
+		ROUTE_IMPORT(LocateGameData, G_LOCATE_GAME_DATA);
 		ROUTE_IMPORT(SetFarPlane, G_SETFARPLANE);
 		ROUTE_IMPORT(SetSkyPortal, G_SETSKYPORTAL);
 		ROUTE_IMPORT(Popmenu, G_POPMENU);
@@ -504,9 +505,10 @@ int MOHAA_syscall(int cmd, ...) {
 	return ret;
 }
 
+typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8);
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-#define ROUTE_EXPORT(field, code)		case code: ret = ((pfn_export_t)(orig_export-> field))(arg0, arg1, arg2, arg3, arg4, arg5, arg6); break
+#define ROUTE_EXPORT(field, code)		case code: ret = ((pfn_export_t)(orig_export-> field))(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); break
 #define ROUTE_EXPORT_VAR(field, code)	case code: ret = (int)(orig_export-> field); break
 int MOHAA_vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {
 	// store return value since we do some stuff after the function call is over
@@ -519,7 +521,7 @@ int MOHAA_vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int 
 		ROUTE_EXPORT(SetMap, GAME_SETMAP);
 		ROUTE_EXPORT(Restart, GAME_RESTART);
 		ROUTE_EXPORT(SetTime, GAME_SETTIME);
-		ROUTE_EXPORT(SpawnEntities, GAME_SPAWNENTITIES);
+		ROUTE_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES);
 		ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
 		ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
 		ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFOCHANGED);
@@ -528,24 +530,24 @@ int MOHAA_vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int 
 		ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
 		ROUTE_EXPORT(BotBegin, GAME_BOTBEGIN);
 		ROUTE_EXPORT(BotThink, GAME_BOTTHINK);
-		ROUTE_EXPORT(PrepFrame, GAME_PREPFRAME);
-		ROUTE_EXPORT(RunFrame, GAME_RUNFRAME);
-		ROUTE_EXPORT(ServerSpawned, GAME_SERVERSPAWNED);
-		ROUTE_EXPORT(RegisterSounds, GAME_REGISTERSOUNDS);
-		ROUTE_EXPORT(AllowPaused, GAME_ALLOWPAUSED);
+		ROUTE_EXPORT(PrepFrame, GAME_PREP_FRAME);
+		ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
+		ROUTE_EXPORT(ServerSpawned, GAME_SERVER_SPAWNED);
+		ROUTE_EXPORT(RegisterSounds, GAME_REGISTER_SOUNDS);
+		ROUTE_EXPORT(AllowPaused, GAME_ALLOW_PAUSED);
 		ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
-		ROUTE_EXPORT(ArchivePersistant, GAME_ARCHIVEPERSISTANT);
-		ROUTE_EXPORT(WriteLevel, GAME_WRITELEVEL);
-		ROUTE_EXPORT(ReadLevel, GAME_READLEVEL);
-		ROUTE_EXPORT(LevelArchiveValid, GAME_LEVELARCHIVEVALID);
-		ROUTE_EXPORT(ArchiveInteger, GAME_ARCHIVEINTEGER);
-		ROUTE_EXPORT(ArchiveFloat, GAME_ARCHIVEFLOAT);
-		ROUTE_EXPORT(ArchiveString, GAME_ARCHIVESTRING);
-		ROUTE_EXPORT(ArchiveSvsTime, GAME_ARCHIVESVSTIME);
+		ROUTE_EXPORT(ArchivePersistant, GAME_ARCHIVE_PERSISTANT);
+		ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
+		ROUTE_EXPORT(ReadLevel, GAME_READ_LEVEL);
+		ROUTE_EXPORT(LevelArchiveValid, GAME_LEVEL_ARCHIVE_VALID);
+		ROUTE_EXPORT(ArchiveInteger, GAME_ARCHIVE_INTEGER);
+		ROUTE_EXPORT(ArchiveFloat, GAME_ARCHIVE_FLOAT);
+		ROUTE_EXPORT(ArchiveString, GAME_ARCHIVE_STRING);
+		ROUTE_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME);
 		ROUTE_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION);
-		ROUTE_EXPORT(DebugCircle, GAME_DEBUGCIRCLE);
-		ROUTE_EXPORT(SetFrameNumber, GAME_SETFRAMENUMBER);
-		ROUTE_EXPORT(SoundCallback, GAME_SOUNDCALLBACK);
+		ROUTE_EXPORT(DebugCircle, GAME_DEBUG_CIRCLE);
+		ROUTE_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER);
+		ROUTE_EXPORT(SoundCallback, GAME_SOUND_CALLBACK);
 
 		// handle codes for variables, this is how a plugin would get these values if needed
 		ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
@@ -751,7 +753,7 @@ const char* MOHAA_eng_msg_names(int cmd) {
 		GEN_CASE(GVP_NUMDEBUGLINES);
 		GEN_CASE(GVP_DEBUGSTRINGS);
 		GEN_CASE(GVP_NUMDEBUGSTRINGS);
-		GEN_CASE(G_LOCATEGAMEDATA);
+		GEN_CASE(G_LOCATE_GAME_DATA);
 		GEN_CASE(G_SETFARPLANE);
 		GEN_CASE(G_SETSKYPORTAL);
 		GEN_CASE(G_POPMENU);
@@ -800,7 +802,7 @@ const char* MOHAA_mod_msg_names(int cmd) {
 		GEN_CASE(GAME_SETMAP);
 		GEN_CASE(GAME_RESTART);
 		GEN_CASE(GAME_SETTIME);
-		GEN_CASE(GAME_SPAWNENTITIES);
+		GEN_CASE(GAME_SPAWN_ENTITIES);
 		GEN_CASE(GAME_CLIENT_CONNECT);
 		GEN_CASE(GAME_CLIENT_BEGIN);
 		GEN_CASE(GAME_CLIENT_USERINFOCHANGED);
@@ -809,24 +811,24 @@ const char* MOHAA_mod_msg_names(int cmd) {
 		GEN_CASE(GAME_CLIENT_THINK);
 		GEN_CASE(GAME_BOTBEGIN);
 		GEN_CASE(GAME_BOTTHINK);
-		GEN_CASE(GAME_PREPFRAME);
-		GEN_CASE(GAME_RUNFRAME);
-		GEN_CASE(GAME_SERVERSPAWNED);
-		GEN_CASE(GAME_REGISTERSOUNDS);
-		GEN_CASE(GAME_ALLOWPAUSED);
+		GEN_CASE(GAME_PREP_FRAME);
+		GEN_CASE(GAME_RUN_FRAME);
+		GEN_CASE(GAME_SERVER_SPAWNED);
+		GEN_CASE(GAME_REGISTER_SOUNDS);
+		GEN_CASE(GAME_ALLOW_PAUSED);
 		GEN_CASE(GAME_CONSOLE_COMMAND);
-		GEN_CASE(GAME_ARCHIVEPERSISTANT);
-		GEN_CASE(GAME_WRITELEVEL);
-		GEN_CASE(GAME_READLEVEL);
-		GEN_CASE(GAME_LEVELARCHIVEVALID);
-		GEN_CASE(GAME_ARCHIVEINTEGER);
-		GEN_CASE(GAME_ARCHIVEFLOAT);
-		GEN_CASE(GAME_ARCHIVESTRING);
-		GEN_CASE(GAME_ARCHIVESVSTIME);
+		GEN_CASE(GAME_ARCHIVE_PERSISTANT);
+		GEN_CASE(GAME_WRITE_LEVEL);
+		GEN_CASE(GAME_READ_LEVEL);
+		GEN_CASE(GAME_LEVEL_ARCHIVE_VALID);
+		GEN_CASE(GAME_ARCHIVE_INTEGER);
+		GEN_CASE(GAME_ARCHIVE_FLOAT);
+		GEN_CASE(GAME_ARCHIVE_STRING);
+		GEN_CASE(GAME_ARCHIVE_SVSTIME);
 		GEN_CASE(GAME_TIKI_ORIENTATION);
-		GEN_CASE(GAME_DEBUGCIRCLE);
-		GEN_CASE(GAME_SETFRAMENUMBER);
-		GEN_CASE(GAME_SOUNDCALLBACK);
+		GEN_CASE(GAME_DEBUG_CIRCLE);
+		GEN_CASE(GAME_SET_FRAME_NUMBER);
+		GEN_CASE(GAME_SOUND_CALLBACK);
 		GEN_CASE(GAMEVP_PROFSTRUCT);
 		GEN_CASE(GAMEVP_GENTITIES);
 		GEN_CASE(GAMEV_GENTITYSIZE);
