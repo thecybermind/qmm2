@@ -14,14 +14,15 @@ Created By:
 #pragma warning(disable:4091)
 #endif
 
-#include <ja/game/q_shared.h>
-#include <ja/game/g_public.h>
+#include <jamp/game/q_shared.h>
+#include <jamp/game/g_public.h>
 
 #include "game_api.h"
 
-GEN_QMM_MSGS(JA);
+GEN_QMM_MSGS(JAMP);
+GEN_EXE_HINTS(JAMP) = { "ja", nullptr};
 
-const char* JA_eng_msg_names(int cmd) {
+const char* JAMP_eng_msg_names(int cmd) {
 	switch(cmd) {
 		GEN_CASE(G_PRINT);
 		GEN_CASE(G_ERROR);
@@ -358,7 +359,7 @@ const char* JA_eng_msg_names(int cmd) {
 	}
 }
 
-const char* JA_mod_msg_names(int cmd) {
+const char* JAMP_mod_msg_names(int cmd) {
 	switch(cmd) {
 		GEN_CASE(GAME_INIT);
 		GEN_CASE(GAME_SHUTDOWN);

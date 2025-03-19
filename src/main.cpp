@@ -100,8 +100,8 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
    struct of function pointers is given from the engine to the mod, and the mod returns a struct of function pointers
    back to the engine.
    To best integrate this with QMM, game_xyz.cpp/.h create an enum for each import (syscall) and export (vmMain) function/variable.
-   A game_export_t is given to the engine which has lambdas for each pointer that calls QMM's vmMain(enum, arg0, ...).
-   A game_import_t is given to the mod which has lambdas for each pointer that calls QMM's syscall(enum, arg0, ...).
+   A game_export_t is given to the engine which has lambdas for each pointer that calls QMM's vmMain(enum, ...).
+   A game_import_t is given to the mod which has lambdas for each pointer that calls QMM's syscall(enum, ...).
 
    The original import/export tables are stored. When QMM and plugins need to call the mod or engine, g_mod.pfnvmMain or
    g_gameinfo.pfnsyscall point to functions which will take the cmd, and call the proper function pointer out of the struct.
@@ -142,7 +142,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 
 	main_load_config();
 
-	main_detect_game(true);	// true = GetGameAPI_mode
+	main_detect_game(true);
 
 	// failed to get engine information
 	// by returning nullptr, the engine will error out and so we don't have to worry about it ourselves in GAME_INIT
@@ -203,36 +203,47 @@ void main_load_config() {
 void main_detect_game(bool GetGameAPI_mode) {
 #else
 void main_detect_game() {
-#endif
+#endif // QMM_GETGAMEAPI_SUPPORT
 	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
 
 	// find what game we are loaded in
 	for (int i = 0; g_supportedgames[i].dllname; i++) {
 		supportedgame_t& game = g_supportedgames[i];
 #ifdef QMM_GETGAMEAPI_SUPPORT
-		// only deal with vmMain/GetGameAPI games as needed
-		if ((GetGameAPI_mode && !game.apientry) || (!GetGameAPI_mode && game.apientry))
+		// only check games with apientry based on GetGameAPI_mode
+		if (GetGameAPI_mode != !!game.apientry)
 			continue;
-#endif
+#endif // QMM_GETGAMEAPI_SUPPORT
+
 		// if short name matches config option, we found it!
 		if (str_striequal(cfg_game, game.gamename_short)) {
 			LOG(NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);
 			g_gameinfo.game = &game;
 			g_gameinfo.isautodetected = false;
-			break;
+			return;
 		}
 		// otherwise, if auto, we need to check matching dll names, with optional exe hint
 		if (str_striequal(cfg_game, "auto")) {
 			// dll name matches
 			if (str_striequal(g_gameinfo.qmm_file, game.dllname)) {
 				LOG(NOTICE, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", game.dllname, game.gamename_short);
-				// if no hint, or hint exists and matches
-				if (!game.exe_hint || (game.exe_hint && str_stristr(g_gameinfo.exe_file, game.exe_hint))) {
-					if (game.exe_hint)
-						LOG(NOTICE, "QMM") << fmt::format("Found game match for exe hint name \"{}\"\n", game.exe_hint);
+				// if no hint array exists, assume we match
+				if (!game.exe_hints || !game.exe_hints[0]) {
 					g_gameinfo.game = &game;
 					g_gameinfo.isautodetected = true;
-					break;
+					return;
+				}
+				// if a hint array exists, check each for an exe file match
+				if (game.exe_hints) {
+					for (int j = 0; game.exe_hints[j]; j++) {
+						const char* hint = game.exe_hints[j];
+						if (str_stristr(g_gameinfo.exe_file, hint)) {
+							LOG(NOTICE, "QMM") << fmt::format("Found game match for exe hint name \"{}\"\n", hint);
+							g_gameinfo.game = &game;
+							g_gameinfo.isautodetected = true;
+							return;
+						}
+					}
 				}
 			}
 		}
@@ -250,7 +261,9 @@ void main_detect_game() {
    GAME_CLIENT_COMMAND (pre): if "qmm_nocrash" cvar is set to 1, block client commands that are too long (msgboom bug)
    GAME_CLIENT_CONNECT (post): if "nogreeting" config option is not set to "true", post a simple QMM greeting message to clients
 */
-C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {
+C_DLLEXPORT int vmMain(int cmd, ...) {
+	QMM_GET_VMMAIN_ARGS();
+
 	// couldn't load engine info, so we will just call syscall(G_ERROR) to exit
 	if (!g_gameinfo.game) {
 		// calling G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't send G_ERROR in GAME_SHUTDOWN or it'll just recurse		
@@ -495,7 +508,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 			}
 			--len;	// get rid of the last space added
 			if (len >= 900) {
-				LOG(WARNING, "QMM") << fmt::format("NoCrash: Userid {} has attempted to execute a command longer than 900 chars\n", arg0);
+				LOG(WARNING, "QMM") << fmt::format("NoCrash: Userid {} has attempted to execute a command longer than 900 chars\n", args[0]);
 				return 1;
 			}
 		}
@@ -511,7 +524,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 	for (plugin_t& p : g_plugins) {
 		g_plugin_result = QMM_UNUSED;
 		// call plugin's vmMain and store return value
-		ret = p.QMM_vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+		ret = p.QMM_vmMain(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
 		// set new max result
 		maxresult = util_max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)
@@ -524,7 +537,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 	}
 	// call real vmMain function (unless a plugin resulted in QMM_SUPERCEDE)
 	if (maxresult < QMM_SUPERCEDE) {
-		ret = g_mod.pfnvmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+		ret = g_mod.pfnvmMain(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
 		// the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for VMs. the
 		// char* is a string to print if the client should not be allowed to connect, so only bother if it's not NULL
 		if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && ret && g_mod.vmbase) {
@@ -536,14 +549,14 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
 		final_ret = ret;
 	// pass calls to plugins' QMM_vmMain_Post functions (ignore return values and results)
 	for (plugin_t& p : g_plugins) {
-		p.QMM_vmMain_Post(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+		p.QMM_vmMain_Post(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
 	}
 
 	// if user is connecting for the first time, user is not a bot, and "nogreeting" option is not set
-	if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && arg1 && !arg2) {
+	if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && args[1] && !args[2]) {
 		if (!cfg_get_bool(g_cfg, "nogreeting", false)) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND], arg0, "print \"^7This server is running ^4QMM^7 v^4" QMM_VERSION "^7\n\"");
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND], arg0, "print \"^7URL: ^4" QMM_URL "^7\n\"");
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND], args[0], "print \"^7This server is running ^4QMM^7 v^4" QMM_VERSION "^7\n\"");
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND], args[0], "print \"^7URL: ^4" QMM_URL "^7\n\"");
 		}
 	}
 	// handle shut down (this is after the mod and plugins get called with GAME_SHUTDOWN)
@@ -574,12 +587,7 @@ C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4
    G_FS_FOPEN_FILE (post): watch for the mod opening a handle for the log file (based on g_log cvar), and save it for logging
 */
 int syscall(int cmd, ...) {
-	va_list arglist;
-	int args[17] = {}; // ints pulled from varargs. STEF2 has Tag_OrientationEx which takes 17 args :(
-	va_start(arglist, cmd);
-	for (unsigned int i = 0; i < (sizeof(args)/sizeof(args[0])); ++i)
-		args[i] = va_arg(arglist, int);
-	va_end(arglist);
+	QMM_GET_SYSCALL_ARGS();
 
 	// if this is a call to close a file, check the handle to see if it matches our existing log handle
 	if (cmd == QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE]) {
@@ -593,7 +601,7 @@ int syscall(int cmd, ...) {
 	// integrated nocrash protection
 	// vsay fix
 	else if (cmd == QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND]) {
-		if (util_get_int_cvar("qmm_nocrash") && args[1] && strlen((char*)args[1]) >= 1022) {
+		if (util_get_int_cvar("qmm_nocrash") && args[1] && strlen((char*)(args[1])) >= 1022) {
 			LOG(WARNING, "QMM") << "NoCrash: A user has attempted to use the vsay exploit\n";
 			return 1;
 		}
@@ -609,7 +617,7 @@ int syscall(int cmd, ...) {
 	for (plugin_t& p : g_plugins) {
 		g_plugin_result = QMM_UNUSED;
 		// call plugin's syscall and store return value
-		ret = p.QMM_syscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]);
+		ret = p.QMM_syscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); // update with QMM_MAX_SYSCALL_ARGS
 		// set new max result
 		maxresult = util_max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)
@@ -622,13 +630,13 @@ int syscall(int cmd, ...) {
 	}
 	// call real syscall function (unless a plugin resulted in QMM_SUPERCEDE)
 	if (maxresult < QMM_SUPERCEDE)
-		ret = g_gameinfo.pfnsyscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]);
+		ret = g_gameinfo.pfnsyscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); // update with QMM_MAX_SYSCALL_ARGS
 	// if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the actual engine's return value back to the mod
 	if (maxresult < QMM_OVERRIDE)
 		final_ret = ret;
 	// pass calls to plugins' QMM_syscall_Post functions (ignore return values and results)
 	for (plugin_t& p : g_plugins) {
-		p.QMM_syscall_Post(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]);
+		p.QMM_syscall_Post(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); // update with QMM_MAX_SYSCALL_ARGS
 	}
 
 	// if this is a call to open a file for APPEND or APPEND_SYNC

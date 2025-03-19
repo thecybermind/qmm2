@@ -61,7 +61,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall);	// initial entry point for non
 #ifdef QMM_GETGAMEAPI_SUPPORT
 C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for GetGameAPI games
 #endif // QMM_GETGAMEAPI_SUPPORT
-C_DLLEXPORT int vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
+C_DLLEXPORT int vmMain(int cmd, ...);
 int syscall(int cmd, ...);
 
 void main_detect_env();

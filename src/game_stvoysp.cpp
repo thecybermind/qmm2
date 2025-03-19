@@ -28,6 +28,7 @@ Created By:
 #include "main.h"
 
 GEN_QMM_MSGS(STVOYSP);
+GEN_EXE_HINTS(STVOYSP) = { "stvoy", nullptr};
 
 // a copy of the original import struct that comes from the game engine. this is given to plugins
 static game_import_t orig_import;
@@ -83,7 +84,7 @@ static game_import_t qmm_import = {
 };
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
-#define GEN_EXPORT(field, code)	(decltype(qmm_export. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) { return vmMain(code, arg0, arg1, arg2, arg3, arg4, arg5, arg6, 0, 0, 0, 0, 0); }
+#define GEN_EXPORT(field, code)	(decltype(qmm_export. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8) { return vmMain(code, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
 static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
 	GEN_EXPORT(Init, GAME_INIT),
@@ -112,13 +113,10 @@ typedef int(*pfn_import_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int
 #define ROUTE_IMPORT(field, code)		case code: ret = ((pfn_import_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break
 #define ROUTE_IMPORT_VAR(field, code)	case code: ret = (int)(orig_import. field); break
 int STVOYSP_syscall(int cmd, ...) {
+	QMM_GET_SYSCALL_ARGS();
+
+	// store return value in case we need do some stuff after the function call is over
 	int ret = 0;
-	va_list arglist;
-	int args[7] = {};	// pull 7 args out of varargs for trace
-	va_start(arglist, cmd);
-	for (unsigned int i = 0; i < (sizeof(args) / sizeof(args[0])); ++i)
-		args[i] = va_arg(arglist, int);
-	va_end(arglist);
 
 	switch (cmd) {
 		ROUTE_IMPORT(Printf, G_PRINTF);
@@ -187,12 +185,15 @@ int STVOYSP_syscall(int cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6);
-#define ROUTE_EXPORT(field, code)		case code: ret = ((pfn_export_t)(orig_export-> field))(arg0, arg1, arg2, arg3, arg4, arg5, arg6); break
+typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8);
+#define ROUTE_EXPORT(field, code)		case code: ret = ((pfn_export_t)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
 #define ROUTE_EXPORT_VAR(field, code)	case code: ret = (int)(orig_export-> field); break
-int STVOYSP_vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {
+int STVOYSP_vmMain(int cmd, ...) {
+	QMM_GET_VMMAIN_ARGS();
+
 	// store return value since we do some stuff after the function call is over
 	int ret = 0;
+
 	switch (cmd) {
 		ROUTE_EXPORT(Init, GAME_INIT);
 		ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);

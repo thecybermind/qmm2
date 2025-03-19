@@ -172,16 +172,16 @@
   <ItemGroup>
     <ClCompile Include="..\src\config.cpp" />
     <ClCompile Include="..\src\game_api.cpp" />
-    <ClCompile Include="..\src\game_ja.cpp" />
-    <ClCompile Include="..\src\game_jk2.cpp" />
+    <ClCompile Include="..\src\game_jamp.cpp" />
+    <ClCompile Include="..\src\game_jk2mp.cpp" />
     <ClCompile Include="..\src\game_mohaa.cpp" />
     <ClCompile Include="..\src\game_q3a.cpp" />
-    <ClCompile Include="..\src\game_rtcwet.cpp" />
     <ClCompile Include="..\src\game_rtcwmp.cpp" />
     <ClCompile Include="..\src\game_rtcwsp.cpp" />
     <ClCompile Include="..\src\game_stef2.cpp" />
     <ClCompile Include="..\src\game_stvoymp.cpp" />
     <ClCompile Include="..\src\game_stvoysp.cpp" />
+    <ClCompile Include="..\src\game_wet.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\mod.cpp" />

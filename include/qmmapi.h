@@ -29,7 +29,7 @@ Created By:
 typedef unsigned char byte;
 
 typedef int (*eng_syscall_t)(int cmd, ...);
-typedef int (*mod_vmMain_t)(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
+typedef int (*mod_vmMain_t)(int cmd, ...);
 
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, pluginfunc_t, or plugininfo_t
 #define QMM_PIFV_MAJOR  1
@@ -89,9 +89,9 @@ typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, plugin
 // QMM_Detach
 typedef void (*plugin_detach)(int reserved);
 // QMM_syscall
-typedef int (*plugin_syscall)(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12, ...);
+typedef int (*plugin_syscall)(int cmd, ...);
 // QMM_vmMain
-typedef int (*plugin_vmmain)(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
+typedef int (*plugin_vmmain)(int cmd, ...);
 
 // plugin use only
 extern plugininfo_t g_plugininfo;       // set '*pinfo' to &g_plugininfo in QMM_Query
@@ -110,14 +110,32 @@ extern int g_vmbase;                    // set to 'vmbase' in QMM_Attach
             g_vmbase = vmbase; \
         } while(0)
 
+#define QMM_MAX_VMMAIN_ARGS     9
+
+#define QMM_GET_VMMAIN_ARGS()   va_list arglist; \
+                                int args[QMM_MAX_VMMAIN_ARGS] = {}; \
+                                va_start(arglist, cmd); \
+                                for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; ++i) \
+                                    args[i] = va_arg(arglist, int); \
+                                va_end(arglist)
+
+#define QMM_MAX_SYSCALL_ARGS    17
+
+#define QMM_GET_SYSCALL_ARGS()  va_list arglist; \
+                                int args[QMM_MAX_SYSCALL_ARGS] = {}; \
+                                va_start(arglist, cmd); \
+                                for (int i = 0; i < QMM_MAX_SYSCALL_ARGS; ++i) \
+                                    args[i] = va_arg(arglist, int); \
+                                va_end(arglist)
+
 // prototypes for required entry points in the plugin
 C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
 C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, int vmbase, int reserved);
 C_DLLEXPORT void QMM_Detach(int reserved);
-C_DLLEXPORT int QMM_vmMain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
-C_DLLEXPORT int QMM_vmMain_Post(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
-C_DLLEXPORT int QMM_syscall(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12, ...);
-C_DLLEXPORT int QMM_syscall_Post(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12, ...);
+C_DLLEXPORT int QMM_vmMain(int cmd, ...);
+C_DLLEXPORT int QMM_vmMain_Post(int cmd, ...);
+C_DLLEXPORT int QMM_syscall(int cmd, ...);
+C_DLLEXPORT int QMM_syscall_Post(int cmd, ...);
 
 // macros to help set the plugin result value
 #define QMM_RETURN(x, y)        return (*g_result = (pluginres_t)(x), (y))

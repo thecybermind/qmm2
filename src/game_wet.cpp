@@ -14,14 +14,15 @@ Created By:
 #pragma warning(disable:4091)
 #endif
 
-#include <rtcwet/game/q_shared.h>
-#include <rtcwet/game/g_public.h>
+#include <wet/game/q_shared.h>
+#include <wet/game/g_public.h>
 
 #include "game_api.h"
 
-GEN_QMM_MSGS(RTCWET);
+GEN_QMM_MSGS(WET);
+GEN_EXE_HINTS(WET) = { "et", nullptr };
 
-const char* RTCWET_eng_msg_names(int cmd) {
+const char* WET_eng_msg_names(int cmd) {
 	switch(cmd) {
 		GEN_CASE(G_PRINT);
 		GEN_CASE(G_ERROR);
@@ -240,7 +241,7 @@ const char* RTCWET_eng_msg_names(int cmd) {
 	}
 }
 
-const char* RTCWET_mod_msg_names(int cmd) {
+const char* WET_mod_msg_names(int cmd) {
 	switch(cmd) {
 		GEN_CASE(GAME_INIT);
 		GEN_CASE(GAME_SHUTDOWN);

@@ -21,6 +21,7 @@ Created By:
 #include "main.h"
 
 GEN_QMM_MSGS(STVOYMP);
+GEN_EXE_HINTS(STVOYMP) = { "stvoy", nullptr };
 
 // these function ids are defined either in the g_syscalls.asm file or in qcommon.h from ioef source,
 // but they do not appear in the enum in stvoymp/game/g_public.h

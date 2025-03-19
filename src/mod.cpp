@@ -22,9 +22,15 @@ Created By:
 mod_t g_mod;
 
 // entry point to store in mod_t->pfnvmMain for qvm mods
-static int s_mod_vmmain(int cmd, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {
-	int args[13] = { cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11 };
-	return qvm_exec(&g_mod.qvm, args, sizeof(args) / sizeof(args[0]));
+static int s_mod_vmmain(int cmd, ...) {
+	QMM_GET_VMMAIN_ARGS();
+
+	// generate new array to also include cmd at the front
+	int qvmargs[QMM_MAX_VMMAIN_ARGS + 1] = { cmd };
+	memcpy(&qvmargs[1], args, sizeof(args));
+
+	// pass array and size to qvm
+	return qvm_exec(&g_mod.qvm, qvmargs, QMM_MAX_VMMAIN_ARGS + 1);
 }
 
 bool mod_load(mod_t* mod, std::string file) {

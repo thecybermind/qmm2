@@ -80,9 +80,6 @@
     <ClCompile Include="..\src\game_q3a.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game_rtcwet.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\game_rtcwmp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -93,12 +90,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\game_api.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\game_jk2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\game_ja.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\config.cpp">
@@ -123,6 +114,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\game_stvoysp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_jamp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_jk2mp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_wet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

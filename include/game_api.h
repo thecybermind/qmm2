@@ -60,7 +60,7 @@ typedef enum {
 	QMM_G_MSG_MAX
 } qmm_eng_msg_t;
 
-// some information for each game engine supported by QMM
+// some information for each dllEntry-based game engine supported by QMM
 typedef struct {
 	const char* dllname;			// default dll mod filename
 	const char* qvmname;			// default qvm mod filename (NULL = qmm_<dllname>)
@@ -71,33 +71,39 @@ typedef struct {
 	int* qmm_mod_msgs;				// array of mod messages used by QMM
 	msgname_t eng_msg_names;		// pointer to a function that returns a string for a given engine message
 	msgname_t mod_msg_names;		// pointer to a function that returns a string for a given mod message
+	const char** exe_hints;			// array of hints that should appear in the executable filename to be considered a game match
 	vmsyscall_t vmsyscall;			// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
-	const char* exe_hint;			// hint that should appear in the executable filename to be considered this game
 #ifdef QMM_GETGAMEAPI_SUPPORT
 	apientry_t apientry;			// pointer to a function that handles GetGameAPI entry for a game
 #else
-	void* reserved;					// eat nullptr in array
-#endif // QMM_GETGAMEAPI_SUPPORT
+	void* reserved;					// eat the pointer in the struct
+#endif
+	int max_syscall_args;			// max number of syscall args that this game needs
+	int max_vmmain_args;			// max number of vmmain args that this game needs
 } supportedgame_t;
 
 extern supportedgame_t g_supportedgames[];
 
 // macros to make game support a bit easier to do
-// these macros are used in game_api.cpp
+// these macros are used in game_api.cpp and game_xyz.cpp
 
 // generate externs for the msg arrays and functions
 #define GEN_EXTS(game)		extern int game##_qmm_eng_msgs[]; \
 							extern int game##_qmm_mod_msgs[]; \
 							const char* game##_eng_msg_names(int msg); \
-							const char* game##_mod_msg_names(int msg)
+							const char* game##_mod_msg_names(int msg); \
+							const char* game##_exe_hints[]
+
 // generate extern for the vmsyscall function (if game supports it)
 #define GEN_VMEXT(game)		int game##_vmsyscall(unsigned char* membase, int cmd, int* args)
+
 #ifdef QMM_GETGAMEAPI_SUPPORT
 // generate extern for the GetGameAPI function (if game supports it)
 #define GEN_APIEXT(game)	void* game##_GetGameAPI(void* import)
 #endif // QMM_GETGAMEAPI_SUPPORT
+
 // generate struct info for the short name, messages arrays, and message name functions
-#define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names
+#define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names, game##_exe_hints
 
 // generate a case/string line for the message name functions
 #define GEN_CASE(x)			case x: return #x
@@ -116,6 +122,9 @@ extern supportedgame_t g_supportedgames[];
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, GAME_CLIENT_CONNECT, GAME_CLIENT_COMMAND \
 	}
 
+// macro to create an exe hint array
+#define GEN_EXE_HINTS(game)		const char* game##_exe_hints[]
+ 
 // these macros handle qvm syscall arguments in GAME_vmsyscall functions in game_*.cpp
 // this gets an argument value
 #define vmarg(x)	(args[(x)])

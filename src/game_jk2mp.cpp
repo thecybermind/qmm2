@@ -14,15 +14,16 @@ Created By:
 #pragma warning(disable:4091)
 #endif
 
-#include <jk2/game/q_shared.h>
-#include <jk2/game/g_public.h>
+#include <jk2mp/game/q_shared.h>
+#include <jk2mp/game/g_public.h>
 
 #include "game_api.h"
 #include "main.h"
 
-GEN_QMM_MSGS(JK2);
+GEN_QMM_MSGS(JK2MP);
+GEN_EXE_HINTS(JK2MP) = { "jk2", nullptr};
 
-const char* JK2_eng_msg_names(int cmd) {
+const char* JK2MP_eng_msg_names(int cmd) {
 	switch(cmd) {
 		GEN_CASE(G_PRINT);
 		GEN_CASE(G_ERROR);
@@ -256,7 +257,7 @@ const char* JK2_eng_msg_names(int cmd) {
 	}
 }
 
-const char* JK2_mod_msg_names(int cmd) {
+const char* JK2MP_mod_msg_names(int cmd) {
 	switch(cmd) {
 		GEN_CASE(GAME_INIT);
 		GEN_CASE(GAME_SHUTDOWN);
@@ -282,7 +283,7 @@ const char* JK2_mod_msg_names(int cmd) {
 // vec3_t are arrays, so convert them as pointers
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
-int JK2_vmsyscall(byte* membase, int cmd, int* args) {
+int JK2MP_vmsyscall(byte* membase, int cmd, int* args) {
 	switch(cmd) {
 		case G_MILLISECONDS:			// (void)
 		case G_ARGC:				// (void)
