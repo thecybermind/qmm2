@@ -60,7 +60,7 @@ typedef enum {
 	QMM_G_MSG_MAX
 } qmm_eng_msg_t;
 
-// some information for each dllEntry-based game engine supported by QMM
+// some information for each game engine supported by QMM
 typedef struct {
 	const char* dllname;			// default dll mod filename
 	const char* qvmname;			// default qvm mod filename (NULL = qmm_<dllname>)
@@ -78,8 +78,8 @@ typedef struct {
 #else
 	void* reserved;					// eat the pointer in the struct
 #endif
-	int max_syscall_args;			// max number of syscall args that this game needs
-	int max_vmmain_args;			// max number of vmmain args that this game needs
+	int max_syscall_args;			// max number of syscall args that this game needs (unused for now, but nice to have easily available)
+	int max_vmmain_args;			// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
 } supportedgame_t;
 
 extern supportedgame_t g_supportedgames[];
