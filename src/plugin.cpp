@@ -24,7 +24,7 @@ static int s_plugin_helper_WriteGameLog(const char* text, int len = -1) {
 	return log_write(text, len);
 }
 
-static char* s_plugin_helper_VarArgs(char* format, ...) {
+static char* s_plugin_helper_VarArgs(const char* format, ...) {
 	va_list	argptr;
 	static char str[8][1024];
 	static int index = 0;

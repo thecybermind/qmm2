@@ -12,6 +12,8 @@ Created By:
 #ifndef __QMM2_QMMAPI_H__
 #define __QMM2_QMMAPI_H__
 
+#include <stdarg.h>
+
 // plugins and internal use
 #ifdef _WIN32
  #define DLLEXPORT __declspec(dllexport)
@@ -26,8 +28,6 @@ Created By:
  #define C_DLLEXPORT DLLEXPORT
 #endif
 
-typedef unsigned char byte;
-
 typedef int (*eng_syscall_t)(int cmd, ...);
 typedef int (*mod_vmMain_t)(int cmd, ...);
 
@@ -38,23 +38,23 @@ typedef int (*mod_vmMain_t)(int cmd, ...);
 
 // holds plugin info to pass back to QMM
 typedef struct {
-    char* name;     // name of plugin
-    char* version;  // version of plugin
-    char* desc;     // description of plugin
-    char* author;   // author of plugin
-    char* url;      // website of plugin
-    int reserved1;	// unused (old - can this plugin be paused?)
-    int reserved2;	// unused (old - can this plugin be loaded via cmd)
-    int reserved3;  // unused (old - can this plugin be unloaded via cmd)
-    int pifv_major; // major plugin interface version
-    int pifv_minor; // minor plugin interface version
+    const char* name;		// name of plugin
+    const char* version;	// version of plugin
+    const char* desc;		// description of plugin
+    const char* author;		// author of plugin
+    const char* url;		// website of plugin
+    int reserved1;			// unused (old - can this plugin be paused?)
+    int reserved2;			// unused (old - can this plugin be loaded via cmd)
+    int reserved3;			// unused (old - can this plugin be unloaded via cmd)
+    int pifv_major;			// major plugin interface version
+    int pifv_minor;			// minor plugin interface version
 } plugininfo_t;
 
 
 // prototype struct for QMM plugin util funcs
 typedef struct {
     int (*pfnWriteGameLog)(const char* text, int len);
-    char* (*pfnVarArgs)(char* format, ...);
+    char* (*pfnVarArgs)(const char* format, ...);
     int (*pfnIsQVM)();
     const char* (*pfnEngMsgName)(int msg);
     const char* (*pfnModMsgName)(int msg);
@@ -151,9 +151,9 @@ C_DLLEXPORT int QMM_syscall_Post(int cmd, ...);
 #define SETPTR(x,y)     (x ? (y)((int)(x) - g_vmbase) : NULL)
 
 // some helpful macros
-#define ENT_FROM_NUM(index)     ((gentity_t*)((byte*)g_gents + g_gentsize * (index)))
-#define NUM_FROM_ENT(ent)       ((int)((byte*)(ent) - (byte*)g_gents) / g_gentsize)
-#define CLIENT_FROM_NUM(index)  ((gclient_t*)((byte*)g_clients + g_clientsize * (index)))
-#define NUM_FROM_CLIENT(ent)    ((int)((byte*)(ent) - (byte*)g_clients) / g_clientsize)
+#define ENT_FROM_NUM(index)     ((gentity_t*)((unsigned char*)g_gents + g_gentsize * (index)))
+#define NUM_FROM_ENT(ent)       ((int)((unsigned char*)(ent) - (unsigned char*)g_gents) / g_gentsize)
+#define CLIENT_FROM_NUM(index)  ((gclient_t*)((unsigned char*)g_clients + g_clientsize * (index)))
+#define NUM_FROM_CLIENT(ent)    ((int)((unsigned char*)(ent) - (unsigned char*)g_clients) / g_clientsize)
 
 #endif // __QMM2_QMMAPI_H__
