@@ -85,11 +85,12 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 
 	main_load_config();
 
-	main_detect_game();
+	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
+	main_detect_game(cfg_game);
 
 	// failed to get engine information
 	if (!g_gameinfo.game) {
-		LOG(FATAL, "QMM") << fmt::format("dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_get_string(g_cfg, "game", "auto"));
+		LOG(FATAL, "QMM") << fmt::format("dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_game);
 		return;
 	}
 }
@@ -142,12 +143,13 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 
 	main_load_config();
 
-	main_detect_game(true);
+	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
+	main_detect_game(cfg_game, true);
 
 	// failed to get engine information
 	// by returning nullptr, the engine will error out and so we don't have to worry about it ourselves in GAME_INIT
 	if (!g_gameinfo.game) {
-		LOG(FATAL, "QMM") << fmt::format("GetGameAPI(): Unable to determine game engine using \"{}\"\n", cfg_get_string(g_cfg, "game", "auto"));
+		LOG(FATAL, "QMM") << fmt::format("GetGameAPI(): Unable to determine game engine using \"{}\"\n", cfg_game);
 		return nullptr;
 	}
 
@@ -158,6 +160,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 }
 #endif // QMM_GETGAMEAPI_SUPPORT
 
+// general code to get path/module/binary/etc information
 void main_detect_env() {
 	// save exe module path
 	g_gameinfo.exe_path = path_get_modulepath(nullptr);
@@ -168,6 +171,9 @@ void main_detect_env() {
 	g_gameinfo.qmm_path = path_get_modulepath(&g_gameinfo);
 	g_gameinfo.qmm_dir = path_dirname(g_gameinfo.qmm_path);
 	g_gameinfo.qmm_file = path_basename(g_gameinfo.qmm_path);
+
+	// save qmm module pointer
+	g_gameinfo.qmm_module_ptr = path_get_modulehandle(&g_gameinfo);
 
 	// since we don't have the mod directory yet (can only officially get it using engine functions), we can
 	// attempt to get the mod directory from the qmm path. this will be used only for config loading
@@ -199,13 +205,12 @@ void main_load_config() {
 	}
 }
 
+// general code to auto-detect what game engine loaded us
 #ifdef QMM_GETGAMEAPI_SUPPORT
-void main_detect_game(bool GetGameAPI_mode) {
+void main_detect_game(std::string cfg_game, bool GetGameAPI_mode) {
 #else
-void main_detect_game() {
+void main_detect_game(std::string cfg_game) {
 #endif // QMM_GETGAMEAPI_SUPPORT
-	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
-
 	// find what game we are loaded in
 	for (int i = 0; g_supportedgames[i].dllname; i++) {
 		supportedgame_t& game = g_supportedgames[i];
@@ -246,6 +251,90 @@ void main_detect_game() {
 					}
 				}
 			}
+		}
+	}
+}
+
+// general code to find a mod file to load
+bool main_load_mod(std::string cfg_mod) {
+	LOG(INFO, "QMM") << fmt::format("Attempting to find mod using \"{}\"\n", cfg_mod);
+	// if config setting is an absolute path, just attempt to load it directly
+	if (!path_is_relative(cfg_mod)) {
+		if (!mod_load(&g_mod, cfg_mod))
+			return false;
+	}
+	// if config setting is "auto", try the following locations in order:
+	// "<qvmname>" (if the game engine supports it)
+	// "<qmmdir>/qmm_<dllname>"
+	// "<exedir>/<moddir>/qmm_<dllname>"
+	// "<exedir>/<moddir>/<dllname>" (as long as this isn't same as qmm path)
+	// "./<moddir>/qmm_<dllname>"
+	else if (str_striequal(cfg_mod, "auto")) {
+		std::string try_paths[] = {
+			g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "",	// (only if game engine supports it)
+			fmt::format("{}/qmm_{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname),
+			fmt::format("{}/{}/qmm_{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname),
+			fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname),
+			fmt::format("./{}/qmm_{}", g_gameinfo.moddir, g_gameinfo.game->dllname)
+		};
+		// try paths
+		for (auto& try_path : try_paths) {
+			LOG(INFO, "QMM") << fmt::format("Attempting to auto-load mod \"{}\"\n", try_path);
+			// if this matches qmm's path, skip it
+			if (str_striequal(try_path, g_gameinfo.qmm_path))
+				continue;
+			if (mod_load(&g_mod, try_path))
+				return true;
+		}
+	}
+	// if config setting is a relative path, try the following locations in order:
+	// "<mod>"
+	// "<qmmdir>/<mod>"
+	// "<exedir>/<moddir>/<mod>"
+	// "./<moddir>/<mod>"
+	else {
+		std::string try_paths[] = {
+			cfg_mod,
+			fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod),
+			fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, cfg_mod),
+			fmt::format("./{}/{}", g_gameinfo.moddir, cfg_mod)
+		};
+		// try paths
+		for (auto& try_path : try_paths) {
+			LOG(INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
+			// if this matches qmm's path, skip it
+			if (str_striequal(try_path, g_gameinfo.qmm_path))
+				continue;
+			if (mod_load(&g_mod, try_path))
+				return true;
+		}
+	}
+
+	return false;
+}
+
+// general code to find a plugin file to load
+void main_load_plugin(std::string plugin_path) {
+	plugin_t p;
+	// absolute path, just attempt to load it directly
+	if (!path_is_relative(plugin_path)) {
+		if (plugin_load(&p, plugin_path))
+			g_plugins.push_back(p);
+		return;
+	}
+	// relative path, try the following locations in order:
+	// "<qmmdir>/<plugin>"
+	// "<exedir>/<moddir>/<plugin>"
+	// "./<moddir>/<plugin>"
+	std::string try_paths[] = {
+		fmt::format("{}/{}", g_gameinfo.qmm_dir, plugin_path),
+		fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, plugin_path),
+		fmt::format("./{}/{}", g_gameinfo.moddir, plugin_path)
+	};
+	for (auto& try_path : try_paths) {
+		if (plugin_load(&p, try_path)) {
+			g_plugins.push_back(p);
+			return;
 		}
 	}
 }
@@ -314,64 +403,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 
 		// load mod
 		std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
-		LOG(INFO, "QMM") << fmt::format("Attempting to find mod using \"{}\"\n", cfg_mod);
-		// if config setting is an absolute path, just attempt to load it directly
-		if (!path_is_relative(cfg_mod)) {
-			if (!mod_load(&g_mod, cfg_mod)) {
-				LOG(FATAL, "QMM") << fmt::format("vmMain(GAME_INIT): Unable to load mod \"{}\"\n", cfg_mod);
-				return 0;
-			}
-		}
-		// if config setting is "auto", try the following locations in order:
-		// "<qvmname>" (if the game engine supports it)
-		// "<qmmdir>/qmm_<dllname>"
-		// "<exedir>/<moddir>/qmm_<dllname>"
-		// "<exedir>/<moddir>/<dllname>" (as long as this isn't same as qmm path)
-		// "./<moddir>/qmm_<dllname>"
-		else if (str_striequal(cfg_mod, "auto")) {
-			std::string try_paths[] = {
-				g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "",	// (only if game engine supports it)
-				fmt::format("{}/qmm_{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname),
-				fmt::format("{}/{}/qmm_{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname),
-				fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname),
-				fmt::format("./{}/qmm_{}", g_gameinfo.moddir, g_gameinfo.game->dllname)
-			};
-			// try paths
-			for (auto& try_path : try_paths) {
-				LOG(INFO, "QMM") << fmt::format("Attempting to auto-load mod \"{}\"\n", try_path);
-				// if this matches qmm's path, skip it
-				if (str_striequal(try_path, g_gameinfo.qmm_path))
-					continue;
-				if (mod_load(&g_mod, try_path)) {
-					break;
-				}
-			}
-		}
-		// if config setting is a relative path, try the following locations in order:
-		// "<mod>"
-		// "<qmmdir>/<mod>"
-		// "<exedir>/<moddir>/<mod>"
-		// "./<moddir>/<mod>"
-		else {
-			std::string try_paths[] = {
-				cfg_mod,
-				fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod),
-				fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, cfg_mod),
-				fmt::format("./{}/{}", g_gameinfo.moddir, cfg_mod)
-			};
-			// try paths
-			for (auto& try_path : try_paths) {
-				LOG(INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
-				// if this matches qmm's path, skip it
-				if (str_striequal(try_path, g_gameinfo.qmm_path))
-					continue;
-				if (mod_load(&g_mod, try_path)) {
-					break;
-				}
-			}
-		}
-
-		if (!mod_is_loaded(&g_mod)) {
+		if (!main_load_mod(cfg_mod)) {
 			LOG(FATAL, "QMM") << fmt::format("vmMain({}): Unable to load mod using \"{}\"\n", g_gameinfo.game->mod_msg_names(cmd), cfg_mod);
 			return 0;
 		}
@@ -379,31 +411,9 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 
 		// load plugins
 		LOG(INFO, "QMM") << "Attempting to load plugins\n";
-		std::vector<std::string> plugin_paths = cfg_get_array(g_cfg, "plugins");
-		for (auto plugin_path : plugin_paths) {
+		for (auto plugin_path : cfg_get_array(g_cfg, "plugins")) {
 			LOG(INFO, "QMM") << fmt::format("Attempting to load plugin \"{}\"\n", plugin_path);
-			plugin_t p;
-			// absolute path, just attempt to load it directly
-			if (!path_is_relative(plugin_path)) {
-				if (plugin_load(&p, plugin_path))
-					g_plugins.push_back(p);
-				continue;
-			}
-			// relative path, try the following locations in order:
-			// "<qmmdir>/<plugin>"
-			// "<exedir>/<moddir>/<plugin>"
-			// "./<moddir>/<plugin>"
-			std::string try_paths[] = {
-				fmt::format("{}/{}", g_gameinfo.qmm_dir, plugin_path),
-				fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, plugin_path),
-				fmt::format("./{}/{}", g_gameinfo.moddir, plugin_path)
-			};
-			for (auto& try_path : try_paths) {
-				if (plugin_load(&p, try_path)) {
-					g_plugins.push_back(p);
-					break;
-				}
-			}
+			main_load_plugin(plugin_path);
 		}
 		LOG(NOTICE, "QMM") << fmt::format("Successfully loaded {} plugin(s)\n", g_plugins.size());
 

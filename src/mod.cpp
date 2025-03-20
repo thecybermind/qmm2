@@ -80,6 +80,14 @@ bool mod_load(mod_t* mod, std::string file) {
 		}
 
 		mod_GetGameAPI_t GetGameAPI = nullptr;
+
+		// if this DLL is the same as QMM, cancel
+		if ((void*)mod->dll == g_gameinfo.qmm_module_ptr) {
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): GetGameAPI-style DLL is actually QMM?\n", file);
+			goto api_dll_fail;
+		}
+
+		// look for GetGameAPI function
 		if (!(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod->dll, "GetGameAPI"))) {
 			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", file);
 			goto api_dll_fail;
@@ -110,11 +118,20 @@ bool mod_load(mod_t* mod, std::string file) {
 		}
 
 		mod_dllEntry_t dllEntry = nullptr;
+
+		// if this DLL is the same as QMM, cancel
+		if ((void*)mod->dll == g_gameinfo.qmm_module_ptr) {
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL is actually QMM?\n", file);
+			goto dll_fail;
+		}
+
+		// look for dllEntry function
 		if (!(dllEntry = (mod_dllEntry_t)dlsym(mod->dll, "dllEntry"))) {
 			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", file);
 			goto dll_fail;
 		}
 
+		// look for vmMain function
 		if (!(mod->pfnvmMain = (mod_vmMain_t)dlsym(mod->dll, "vmMain"))) {
 			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"vmMain\" function\n", file);
 			goto dll_fail;

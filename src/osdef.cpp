@@ -25,6 +25,30 @@ char* dlerror() {
 
 #endif
 
+void* osdef_path_get_modulehandle(void* ptr) {
+	void* handle = nullptr;
+
+#ifdef _WIN32
+	MEMORY_BASIC_INFORMATION MBI;
+
+	if (!VirtualQuery(ptr, &MBI, sizeof(MBI)) || MBI.State != MEM_COMMIT || !MBI.AllocationBase)
+		return nullptr;
+
+	handle = (void*)MBI.AllocationBase;
+#elif defined(__linux__)
+	Dl_info dli;
+	memset(&dli, 0, sizeof(dli));
+
+	if (!dladdr(ptr, &dli))
+		return NULL;
+
+	handle = dli.dli_fbase;
+#else
+
+#endif
+	return handle;
+}
+
 const char* osdef_path_get_modulepath(void* ptr) {
 	static char path[PATH_MAX] = "";
 	memset(path, 0, sizeof(path));

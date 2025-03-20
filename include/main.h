@@ -37,6 +37,7 @@ typedef struct game_info_s {
 	std::string qmm_path;
 	std::string qmm_dir;
 	std::string qmm_file;
+	void* qmm_module_ptr = nullptr;
 	std::string moddir;
 	std::string cfg_path;
 #ifdef QMM_GETGAMEAPI_SUPPORT
@@ -67,9 +68,11 @@ int syscall(int cmd, ...);
 void main_detect_env();
 void main_load_config();
 #ifdef QMM_GETGAMEAPI_SUPPORT
-void main_detect_game(bool GetGameAPI_mode = false);
+void main_detect_game(std::string cfg_game, bool GetGameAPI_mode = false);
 #else
-void main_detect_game();
+void main_detect_game(std::string cfg_game);
 #endif
+bool main_load_mod(std::string cfg_mod);
+void main_load_plugin(std::string plugin_path);
 
 #endif // __QMM2_MAIN_H__

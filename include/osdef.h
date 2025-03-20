@@ -68,6 +68,7 @@ constexpr const unsigned char MAGIC_QVM[] = { 0x00, 0x00, 0x00, 0x00 };
 
 #endif
 
+void* osdef_path_get_modulehandle(void* ptr);
 const char* osdef_path_get_modulepath(void* ptr);
 const char* osdef_path_get_procpath();
 
