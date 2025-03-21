@@ -136,4 +136,8 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 void qvm_unload(qvm_t* qvm);
 int qvm_exec(qvm_t* qvm, int* argv, int argc);
 
+// easier to change allocation later
+void* qvm_malloc(size_t len);
+void qvm_free(void*);
+
 #endif // __QMM2_QVM_H__

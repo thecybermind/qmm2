@@ -357,7 +357,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 	if (!g_gameinfo.game) {
 		// calling G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't send G_ERROR in GAME_SHUTDOWN or it'll just recurse		
 		if (cmd != QMM_FAIL_GAME_SHUTDOWN)
-			ENG_SYSCALL(QMM_FAIL_G_ERROR, "\n\n=========\nCritical QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n=========\n");
+			ENG_SYSCALL(QMM_FAIL_G_ERROR, "\n\n=========\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n=========\n");
 		return 0;
 	}
 

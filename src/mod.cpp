@@ -23,6 +23,13 @@ mod_t g_mod;
 
 // entry point to store in mod_t->pfnvmMain for qvm mods
 static int s_mod_vmmain(int cmd, ...) {
+	// if qvm isn't loaded (and this isn't GAME_SHUTDOWN), we need to error
+	if (!g_mod.qvm.memory && cmd != QMM_GAME_SHUTDOWN) {
+		LOG(FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", cmd);
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded due to a run-time error.\n=========\n");
+		return 0;
+	}
+
 	QMM_GET_VMMAIN_ARGS();
 
 	// generate new array to also include cmd at the front
@@ -51,7 +58,7 @@ bool mod_load(mod_t* mod, std::string file) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 			return false;
 		}
-		byte* filemem = (byte*)malloc(filelen);
+		byte* filemem = (byte*)qvm_malloc(filelen);
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem, filelen, fpk3);
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 
@@ -61,13 +68,13 @@ bool mod_load(mod_t* mod, std::string file) {
 		// attempt to load mod
 		if (!qvm_load(&mod->qvm, filemem, filelen, g_gameinfo.game->vmsyscall, stacksize)) {
 			qvm_unload(&mod->qvm);
-			free(filemem);
+			qvm_free(filemem);
 			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", file);
 			return false;
 		}
 		mod->pfnvmMain = s_mod_vmmain;
 		mod->vmbase = (int)mod->qvm.datasegment;
-		free(filemem);
+		qvm_free(filemem);
 
 		return true;
 	}
@@ -159,12 +166,4 @@ void mod_unload(mod_t* mod) {
 		dlclose(mod->dll);
 	}
 	*mod = mod_t();
-}
-
-bool mod_is_loaded(mod_t* mod) {
-	if (!mod)
-		return false;
-	if (!mod->dll && !mod->qvm.memory)
-		return false;
-	return true;
 }

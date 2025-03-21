@@ -111,18 +111,16 @@ extern int g_vmbase;                    // set to 'vmbase' in QMM_Attach
         } while(0)
 
 #define QMM_MAX_VMMAIN_ARGS     9
-
-#define QMM_GET_VMMAIN_ARGS()   va_list arglist; \
-                                int args[QMM_MAX_VMMAIN_ARGS] = {}; \
+#define QMM_GET_VMMAIN_ARGS()   int args[QMM_MAX_VMMAIN_ARGS] = {}; \
+                                va_list arglist; \
                                 va_start(arglist, cmd); \
                                 for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; ++i) \
                                     args[i] = va_arg(arglist, int); \
                                 va_end(arglist)
 
 #define QMM_MAX_SYSCALL_ARGS    17
-
-#define QMM_GET_SYSCALL_ARGS()  va_list arglist; \
-                                int args[QMM_MAX_SYSCALL_ARGS] = {}; \
+#define QMM_GET_SYSCALL_ARGS()  int args[QMM_MAX_SYSCALL_ARGS] = {}; \
+                                va_list arglist; \
                                 va_start(arglist, cmd); \
                                 for (int i = 0; i < QMM_MAX_SYSCALL_ARGS; ++i) \
                                     args[i] = va_arg(arglist, int); \
@@ -145,12 +143,14 @@ C_DLLEXPORT int QMM_syscall_Post(int cmd, ...);
 #define QMM_RET_OVERRIDE(x)     QMM_RETURN(QMM_OVERRIDE, (x))
 #define QMM_RET_SUPERCEDE(x)	QMM_RETURN(QMM_SUPERCEDE, (x))
 
-// macros to convert between VM pointers and real pointers 
-// modified to not add/subtract g_vmbase if x is NULL
+// These are macros to convert between VM pointers and real pointers.
+// These are generally only needed for pointers inside objects, like gent->parent.
+// As the object are generally tracked through syscall arguments, which are already
+// converted in plugin QMM_syscall functions.
 #define GETPTR(x,y)     (x ? (y)((int)(x) + g_vmbase) : NULL)
 #define SETPTR(x,y)     (x ? (y)((int)(x) - g_vmbase) : NULL)
 
-// some helpful macros
+// Some helpful macros assuming you've stored these in G_LOCATE_GAME_DATA
 #define ENT_FROM_NUM(index)     ((gentity_t*)((unsigned char*)g_gents + g_gentsize * (index)))
 #define NUM_FROM_ENT(ent)       ((int)((unsigned char*)(ent) - (unsigned char*)g_gents) / g_gentsize)
 #define CLIENT_FROM_NUM(index)  ((gclient_t*)((unsigned char*)g_clients + g_clientsize * (index)))

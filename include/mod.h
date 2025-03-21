@@ -34,7 +34,5 @@ extern mod_t g_mod;
 bool mod_load(mod_t* mod, std::string file);
 void mod_unload(mod_t* mod);
 
-bool mod_is_loaded(mod_t* mod);
-
 #endif // __QMM2_MOD_H__
 
