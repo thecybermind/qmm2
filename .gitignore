@@ -101,6 +101,7 @@ project.fragment.lock.json
 # Exclude folder for build output
 bin/
 obj/
+package/
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
