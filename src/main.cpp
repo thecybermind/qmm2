@@ -144,7 +144,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	main_load_config();
 
 	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
-	main_detect_game(cfg_game, true);
+	main_detect_game(cfg_game, QMM_DETECT_GETGAMEAPI);
 
 	// failed to get engine information
 	// by returning nullptr, the engine will error out and so we don't have to worry about it ourselves in GAME_INIT
@@ -207,7 +207,7 @@ void main_load_config() {
 
 // general code to auto-detect what game engine loaded us
 #ifdef QMM_GETGAMEAPI_SUPPORT
-void main_detect_game(std::string cfg_game, bool GetGameAPI_mode) {
+void main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 #else
 void main_detect_game(std::string cfg_game) {
 #endif // QMM_GETGAMEAPI_SUPPORT
@@ -216,7 +216,7 @@ void main_detect_game(std::string cfg_game) {
 		supportedgame_t& game = g_supportedgames[i];
 #ifdef QMM_GETGAMEAPI_SUPPORT
 		// only check games with apientry based on GetGameAPI_mode
-		if (GetGameAPI_mode != !!game.apientry)
+		if (is_GetGameAPI_mode != !!game.apientry)
 			continue;
 #endif // QMM_GETGAMEAPI_SUPPORT
 
@@ -279,10 +279,10 @@ bool main_load_mod(std::string cfg_mod) {
 		};
 		// try paths
 		for (auto& try_path : try_paths) {
-			LOG(INFO, "QMM") << fmt::format("Attempting to auto-load mod \"{}\"\n", try_path);
-			// if this matches qmm's path, skip it
-			if (str_striequal(try_path, g_gameinfo.qmm_path))
+			// if this is empty or matches qmm's path, skip it
+			if (try_path.empty() || str_striequal(try_path, g_gameinfo.qmm_path))
 				continue;
+			LOG(INFO, "QMM") << fmt::format("Attempting to auto-load mod \"{}\"\n", try_path);
 			if (mod_load(&g_mod, try_path))
 				return true;
 		}
@@ -301,10 +301,10 @@ bool main_load_mod(std::string cfg_mod) {
 		};
 		// try paths
 		for (auto& try_path : try_paths) {
-			LOG(INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
-			// if this matches qmm's path, skip it
-			if (str_striequal(try_path, g_gameinfo.qmm_path))
+			// if this is empty or matches qmm's path, skip it
+			if (try_path.empty() || str_striequal(try_path, g_gameinfo.qmm_path))
 				continue;
+			LOG(INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
 			if (mod_load(&g_mod, try_path))
 				return true;
 		}
@@ -354,6 +354,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
 	// couldn't load engine info, so we will just call syscall(G_ERROR) to exit
+	// this is only used by dllEntry engines, as failure in GetGameAPI is handled in there by returning nullptr
 	if (!g_gameinfo.game) {
 		// calling G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't send G_ERROR in GAME_SHUTDOWN or it'll just recurse		
 		if (cmd != QMM_FAIL_GAME_SHUTDOWN)
@@ -379,7 +380,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 			g_gameinfo.moddir = g_gameinfo.game->moddir;
 		}
 
-		LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS ")\n";
+		LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS ") initializing\n";
 		LOG(INFO, "QMM") << fmt::format("Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file" );
 		LOG(INFO, "QMM") << fmt::format("ModDir: {}\n", g_gameinfo.moddir);
 		LOG(INFO, "QMM") << fmt::format("Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? "(error)": "");
@@ -388,7 +389,6 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		LOG(INFO, "QMM") << "URL: " QMM_URL "\n";
 
 		LOG(INFO, "QMM") << "Registering CVARs\n";
-
 		// make version cvar
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_REGISTER], NULL, "qmm_version", QMM_VERSION, QMM_ENG_MSG[QMM_CVAR_ROM] | QMM_ENG_MSG[QMM_CVAR_SERVERINFO]);
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_SET], "qmm_version", QMM_VERSION);
@@ -400,6 +400,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		// make nocrash cvar
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_REGISTER], NULL, "qmm_nocrash", "1", QMM_ENG_MSG[QMM_CVAR_ARCHIVE]);
 		// don't set this, in case it is set in autoexec.cfg
+		LOG(INFO, "QMM") << "Successfully registered CVARs\n";
 
 		// load mod
 		std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");

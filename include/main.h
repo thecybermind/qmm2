@@ -68,7 +68,9 @@ int syscall(int cmd, ...);
 void main_detect_env();
 void main_load_config();
 #ifdef QMM_GETGAMEAPI_SUPPORT
-void main_detect_game(std::string cfg_game, bool GetGameAPI_mode = false);
+constexpr bool QMM_DETECT_GETGAMEAPI = true;
+constexpr bool QMM_DETECT_DLLENTRY = false;
+void main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode = false);
 #else
 void main_detect_game(std::string cfg_game);
 #endif

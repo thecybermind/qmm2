@@ -65,8 +65,8 @@ The QMM config contains several options:
     "JK2" = Jedi Knight II: Jedi Outcast
     "JA" = Jedi Knight: Jedi Academy
     "RTCWMP" = Return to Castle Wolfenstein (Multiplayer)
-    "RTCWET" = Return to Castle Wolfenstein: Enemy Territory **Must be specifically set, otherwise auto-detected as RTCWMP**
-    "RTCWSP" = Return to Castle Wolfenstein (Singleplayer) **Must be specifically set, otherwise auto-detected as Q3A**
+    "RTCWET" = Return to Castle Wolfenstein: Enemy Territory
+    "RTCWSP" = Return to Castle Wolfenstein (Singleplayer)
  
 - `mod` - path to mod file. specify "auto" to attempt to automatically determine mod filename based on the game engine. default = "auto"
 
