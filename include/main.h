@@ -70,7 +70,7 @@ void main_load_config();
 #ifdef QMM_GETGAMEAPI_SUPPORT
 constexpr bool QMM_DETECT_GETGAMEAPI = true;
 constexpr bool QMM_DETECT_DLLENTRY = false;
-void main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode = false);
+void main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode = QMM_DETECT_DLLENTRY);
 #else
 void main_detect_game(std::string cfg_game);
 #endif

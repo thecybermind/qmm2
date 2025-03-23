@@ -14,17 +14,17 @@ Created By:
 #pragma warning(disable:4091)
 #endif
 
-#include <stvoymp/game/q_shared.h>
-#include <stvoymp/game/g_public.h>
+#include <stvoyhm/game/q_shared.h>
+#include <stvoyhm/game/g_public.h>
 
 #include "game_api.h"
 #include "main.h"
 
-GEN_QMM_MSGS(STVOYMP);
-GEN_EXE_HINTS(STVOYMP) = { "stvoy", nullptr };
+GEN_QMM_MSGS(STVOYHM);
+GEN_EXE_HINTS(STVOYHM) = { "stvoy", nullptr };
 
 // these function ids are defined either in the g_syscalls.asm file or in qcommon.h from ioef source,
-// but they do not appear in the enum in stvoymp/game/g_public.h
+// but they do not appear in the enum in stvoyhm/game/g_public.h
 enum {
 	G_MEMSET = 100,
 	G_MEMCPY = 101,
@@ -42,7 +42,7 @@ enum {
 	G_TESTPRINTFLOAT = 113
 };
 
-const char* STVOYMP_eng_msg_names(int cmd) {
+const char* STVOYHM_eng_msg_names(int cmd) {
 	switch(cmd) {
 		GEN_CASE(G_PRINT);
 		GEN_CASE(G_ERROR);
@@ -237,7 +237,7 @@ const char* STVOYMP_eng_msg_names(int cmd) {
 	}
 }
 
-const char* STVOYMP_mod_msg_names(int cmd) {
+const char* STVOYHM_mod_msg_names(int cmd) {
 	switch(cmd) {
 		GEN_CASE(GAME_INIT);
 		GEN_CASE(GAME_SHUTDOWN);
@@ -261,7 +261,7 @@ const char* STVOYMP_mod_msg_names(int cmd) {
 */
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
-int STVOYMP_vmsyscall(byte* membase, int cmd, int* args) {
+int STVOYHM_vmsyscall(byte* membase, int cmd, int* args) {
 	switch(cmd) {
 		case G_MILLISECONDS:			// (void)
 		case G_ARGC:				// (void)

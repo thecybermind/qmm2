@@ -12,7 +12,7 @@ Created By:
 #ifndef __QMM2_GAME_STEF2_H__
 #define __QMM2_GAME_STEF2_H__
 
-// import ("syscall") codes
+// import ("syscall") cmds
 enum {
 	G_PRINTF,
 	G_DPRINTF,
@@ -359,7 +359,7 @@ enum {
 	G_PRINT = G_PRINTF
 };
 
-// export ("vmMain") codes
+// export ("vmMain") cmds
 enum {
 	GAMEV_APIVERSION,
 	GAME_INIT,

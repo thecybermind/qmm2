@@ -67,12 +67,10 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 
 	log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
 
-	LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS ") loaded!\n";
+	LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS ") (dllEntry) loaded!\n";
 	LOG(INFO, "QMM") << fmt::format("QMM path: \"{}\"\n", g_gameinfo.qmm_path);
 	LOG(INFO, "QMM") << fmt::format("Engine path: \"{}\"\n", g_gameinfo.exe_path);
 	LOG(INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
-
-	//todo figure out logging standard and if i want to use logging for all the normal G_PRINTs once we're out of dllEntry
 
 	// ???
 	if (!syscall) {
@@ -126,11 +124,11 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	 - store variables from mod's real export struct into our qmm_export before returning out of mod
 */
 C_DLLEXPORT void* GetGameAPI(void* import) {
-	log_init("qmm2.log");
-
 	main_detect_env();
 
-	LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS ") loaded!\n";
+	log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
+
+	LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS ") (GetGameAPI) loaded!\n";
 	LOG(INFO, "QMM") << fmt::format("QMM path: \"{}\"\n", g_gameinfo.qmm_path);
 	LOG(INFO, "QMM") << fmt::format("Engine path: \"{}\"\n", g_gameinfo.exe_path);
 	LOG(INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
@@ -361,7 +359,6 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
 	// couldn't load engine info, so we will just call syscall(G_ERROR) to exit
-	// this is only used by dllEntry engines, as failure in GetGameAPI is handled in there by returning nullptr
 	if (!g_gameinfo.game) {
 		// calling G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't send G_ERROR in GAME_SHUTDOWN or it'll just recurse		
 		if (cmd != QMM_FAIL_GAME_SHUTDOWN)
@@ -429,7 +426,10 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		std::string cfg_execcfg = cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
 		if (!cfg_execcfg.empty()) {
 			LOG(NOTICE, "QMM") << fmt::format("Executing config file \"{}\"\n", cfg_execcfg);
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], QMM_ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
+			if (!strcmp(g_gameinfo.game->gamename_short, "STEF2"))
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], fmt::format("exec {}\n", cfg_execcfg).c_str());
+			else
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], QMM_ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
 		}
 
 		// we're done!

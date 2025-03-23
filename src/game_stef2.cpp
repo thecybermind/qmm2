@@ -37,7 +37,7 @@ static game_import_t orig_import;
 static game_export_t* orig_export = nullptr;
 
 // struct with lambdas that call QMM's syscall function. this is given to the mod
-#define GEN_IMPORT(field, code) (decltype(qmm_import. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12, int arg13, int arg14, int arg15, int arg16) { return syscall(code, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
+#define GEN_IMPORT(field, cmd) (decltype(qmm_import. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12, int arg13, int arg14, int arg15, int arg16) { return syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
 static game_import_t qmm_import = {
 	GEN_IMPORT(Printf, G_PRINTF),
 	GEN_IMPORT(DPrintf, G_DPRINTF),
@@ -383,7 +383,7 @@ static game_import_t qmm_import = {
 };
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
-#define GEN_EXPORT(field, code)	(decltype(qmm_export. field)) +[](int arg0, int arg1, int arg2, int arg3) { return vmMain(code, arg0, arg1, arg2, arg3); }
+#define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](int arg0, int arg1, int arg2, int arg3) { return vmMain(cmd, arg0, arg1, arg2, arg3); }
 static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
 	GEN_EXPORT(Init, GAME_INIT),
@@ -428,8 +428,8 @@ static game_export_t qmm_export = {
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 typedef int(*pfn_import_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11, int arg12, int arg13, int arg14, int arg15, int arg16);
-#define ROUTE_IMPORT(field, code)		case code: ret = ((pfn_import_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break
-#define ROUTE_IMPORT_VAR(field, code)	case code: ret = (int)(orig_import. field); break
+#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((pfn_import_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break
+#define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (int)(orig_import. field); break
 int STEF2_syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
@@ -777,7 +777,7 @@ int STEF2_syscall(int cmd, ...) {
 		ROUTE_IMPORT(Test, G_TEST);
 		ROUTE_IMPORT(BotUserCommand, G_BOTUSERCOMMAND);
 
-		// handle codes for variables, this is how a plugin would get these values if needed
+		// handle cmds for variables, this is how a plugin would get these values if needed
 		ROUTE_IMPORT_VAR(DebugLines, GVP_DEBUGLINES);
 		ROUTE_IMPORT_VAR(numDebugLines, GVP_NUMDEBUGLINES);
 
@@ -793,10 +793,14 @@ int STEF2_syscall(int cmd, ...) {
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3);
-#define ROUTE_EXPORT(field, code)		case code: ret = ((pfn_export_t)(orig_export-> field))(args[0], args[1], args[2], args[3]); break
-#define ROUTE_EXPORT_VAR(field, code)	case code: ret = (int)(orig_export-> field); break
+#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((pfn_export_t)(orig_export-> field))(args[0], args[1], args[2], args[3]); break
+#define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (int)(orig_export-> field); break
 int STEF2_vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
+
+	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	if (!orig_export)
+		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
 	// store return value since we do some stuff after the function call is over
 	int ret = 0;
@@ -834,7 +838,7 @@ int STEF2_vmMain(int cmd, ...) {
 		ROUTE_EXPORT(AddBot_f, GAME_ADDBOT_F);
 		ROUTE_EXPORT(GetTotalGameFrames, GAME_GETTOTALGAMEFRAMES);
 
-		// handle codes for variables, this is how a plugin would get these values if needed
+		// handle cmds for variables, this is how a plugin would get these values if needed
 		ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
 		ROUTE_EXPORT_VAR(gentities, GAMEVP_GENTITIES);
 		ROUTE_EXPORT_VAR(gentitySize, GAMEV_GENTITYSIZE);
@@ -848,7 +852,6 @@ int STEF2_vmMain(int cmd, ...) {
 
 	// after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_entities and errorMessage in particular)
 	// and these changes need to be available to the engine, so copy those values again now before returning from the mod
-	//qmm_export.errorMessage = orig_export->errorMessage;
 	qmm_export.gentities = orig_export->gentities;
 	qmm_export.gentitySize = orig_export->gentitySize;
 	qmm_export.num_entities = orig_export->num_entities;
@@ -863,7 +866,6 @@ void* STEF2_GetGameAPI(void* import) {
 	// the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
 	game_import_t* gi = (game_import_t*)import;
 	orig_import = *gi;
-	g_gameinfo.api_info.orig_import = (void*)&orig_import;
 
 	// fill in variables of our hooked import struct to pass to the mod
 	qmm_import.DebugLines = gi->DebugLines;

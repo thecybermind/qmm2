@@ -20,7 +20,7 @@ void log_init(std::string file) {
 }
 
 #if 0
-// just here for visibility
+// actually in log.h, just here for visibility
 template <typename T>
 void log_add_sink(T func) {
 	AixLog::Log::instance().add_logsink<AixLog::SinkCallback>(AixLog::Severity::trace, func);

@@ -37,7 +37,7 @@ static game_import_t orig_import;
 static game_export_t* orig_export = nullptr;
 
 // struct with lambdas that call QMM's syscall function. this is given to the mod
-#define GEN_IMPORT(field, code) (decltype(qmm_import. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8) { return syscall(code, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
+#define GEN_IMPORT(field, cmd) (decltype(qmm_import. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8) { return syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
 static game_import_t qmm_import = {
 	GEN_IMPORT(Printf, G_PRINT),
 	GEN_IMPORT(DPrintf, G_DPRINTF),
@@ -221,7 +221,7 @@ static game_import_t qmm_import = {
 };
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
-#define GEN_EXPORT(field, code)	(decltype(qmm_export. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) { return vmMain(code, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }
+#define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) { return vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }
 static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
 	GEN_EXPORT(Init, GAME_INIT),
@@ -271,8 +271,8 @@ static game_export_t qmm_export = {
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 typedef int(*pfn_import_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6);
-#define ROUTE_IMPORT(field, code)		case code: ret = ((pfn_import_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break
-#define ROUTE_IMPORT_VAR(field, code)	case code: ret = (int)(orig_import. field); break
+#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((pfn_import_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break
+#define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (int)(orig_import. field); break
 int MOHAA_syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
@@ -455,13 +455,13 @@ int MOHAA_syscall(int cmd, ...) {
 		ROUTE_IMPORT(SanitizeName, G_SANITIZENAME);
 		ROUTE_IMPORT(pvssoundindex, G_PVSSOUNDINDEX);
 
-		// handle codes for variables, this is how a plugin would get these values if needed
+		// handle cmds for variables, this is how a plugin would get these values if needed
 		ROUTE_IMPORT_VAR(DebugLines, GVP_DEBUGLINES);
 		ROUTE_IMPORT_VAR(numDebugLines, GVP_NUMDEBUGLINES);
 		ROUTE_IMPORT_VAR(DebugStrings, GVP_DEBUGSTRINGS);
 		ROUTE_IMPORT_VAR(numDebugStrings, GVP_NUMDEBUGSTRINGS);
 
-		// handle special codes which QMM uses but MOHAA doesn't have an analogue for
+		// handle special cmds which QMM uses but MOHAA doesn't have an analogue for
 		case G_CVAR_REGISTER: {
 			// mohaa: cvar_t* (*Cvar_Get)(const char* varName, const char* varValue, int varFlags)
 			// q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
@@ -506,10 +506,14 @@ int MOHAA_syscall(int cmd, ...) {
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8);
-#define ROUTE_EXPORT(field, code)		case code: ret = ((pfn_export_t)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
-#define ROUTE_EXPORT_VAR(field, code)	case code: ret = (int)(orig_export-> field); break
+#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((pfn_export_t)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
+#define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (int)(orig_export-> field); break
 int MOHAA_vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
+
+	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	if (!orig_export)
+		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
 	// store return value since we do some stuff after the function call is over
 	int ret = 0;
@@ -550,7 +554,7 @@ int MOHAA_vmMain(int cmd, ...) {
 		ROUTE_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER);
 		ROUTE_EXPORT(SoundCallback, GAME_SOUND_CALLBACK);
 
-		// handle codes for variables, this is how a plugin would get these values if needed
+		// handle cmds for variables, this is how a plugin would get these values if needed
 		ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
 		ROUTE_EXPORT_VAR(profStruct, GAMEVP_PROFSTRUCT);
 		ROUTE_EXPORT_VAR(gentities, GAMEVP_GENTITIES);
@@ -580,7 +584,6 @@ void* MOHAA_GetGameAPI(void* import) {
 	// the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
 	game_import_t* gi = (game_import_t*)import;
 	orig_import = *gi;
-	g_gameinfo.api_info.orig_import = (void*)&orig_import;
 
 	// fill in variables of our hooked import struct to pass to the mod
 	qmm_import.DebugLines = gi->DebugLines;
@@ -783,7 +786,7 @@ const char* MOHAA_eng_msg_names(int cmd) {
 		GEN_CASE(G_PVSSOUNDINDEX);
 		GEN_CASE(GVP_FSDEBUG);
 
-		// special codes
+		// special cmds
 		GEN_CASE(G_CVAR_REGISTER);
 		GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
 		GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);

@@ -43,6 +43,8 @@ Each game uses a different filename for the mod. Refer to this list when you are
 | Return to Castle Wolfenstein (Singleplayer | qagamex86.dll | qagamei386.so |   |
 | Jedi Knight 2 | jk2mpgamex86.dll | jk2mpgamei386.so | vm/jk2mpgame.qvm |
 | Jedi Academy | jampgamex86.dll | jampgamei386.so |  |
+| Star Trek Voyager: Elite Force (Holomatch) | qagamex86.dll | qagamei386.so | vm/qagame.qvm |
+| Star Trek: Elite Force II | gamex86.dll | gamei386.so |  |
 
 ### Installation Steps:
 1. Locate the mod file (listed above) in the mod directory and rename it to `qmm_<name>`
@@ -62,11 +64,13 @@ The QMM config contains several options:
 - `game` - valid options:
 	"auto" (default) = attempt to automatically determine engine
     "Q3A" = Quake 3 Arena
-    "JK2" = Jedi Knight II: Jedi Outcast
-    "JA" = Jedi Knight: Jedi Academy
-    "RTCWMP" = Return to Castle Wolfenstein (Multiplayer)
-    "RTCWET" = Return to Castle Wolfenstein: Enemy Territory
     "RTCWSP" = Return to Castle Wolfenstein (Singleplayer)
+    "RTCWMP" = Return to Castle Wolfenstein (Multiplayer)
+    "WET" = Wolfenstein: Enemy Territory
+    "JK2MP" = Jedi Knight II: Jedi Outcast
+    "JAMP" = Jedi Knight: Jedi Academy
+	"STVOYHM" = Star Trek Voyager: Elite Force (Holomatch)
+	"STEF2" = Star Trek: Elite Force II
  
 - `mod` - path to mod file. specify "auto" to attempt to automatically determine mod filename based on the game engine. default = "auto"
 
