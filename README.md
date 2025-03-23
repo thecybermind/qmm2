@@ -21,9 +21,9 @@ It hooks communication between the server engine and the game logic (the mod). I
 - [Configuration](#configuration)
 - [Notes](#notes)
     - [File Locations](#file-locations)
-	    - [Config file](#config-file)
-	    - [Mod file](#mod-file)
-	    - [Plugins](#plugins)
+        - [Config file](#config-file)
+        - [Mod file](#mod-file)
+        - [Plugins](#plugins)
     - [Quake 3 and Jedi Knight 2](#quake-3-and-jedi-knight-2)
     - [Listen Servers](#listen-servers)
 
@@ -62,15 +62,15 @@ The configuration for QMM primarily comes from the qmm2.json file. This should b
 The QMM config contains several options:
 
 - `game` - valid options:
-	"auto" (default) = attempt to automatically determine engine
+    "auto" (default) = attempt to automatically determine engine
     "Q3A" = Quake 3 Arena
     "RTCWSP" = Return to Castle Wolfenstein (Singleplayer)
     "RTCWMP" = Return to Castle Wolfenstein (Multiplayer)
     "WET" = Wolfenstein: Enemy Territory
     "JK2MP" = Jedi Knight II: Jedi Outcast
     "JAMP" = Jedi Knight: Jedi Academy
-	"STVOYHM" = Star Trek Voyager: Elite Force (Holomatch)
-	"STEF2" = Star Trek: Elite Force II
+    "STVOYHM" = Star Trek Voyager: Elite Force (Holomatch)
+    "STEF2" = Star Trek: Elite Force II
  
 - `mod` - path to mod file. specify "auto" to attempt to automatically determine mod filename based on the game engine. default = "auto"
 
