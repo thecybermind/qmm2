@@ -176,8 +176,15 @@ void main_detect_env() {
 	g_gameinfo.qmm_module_ptr = path_get_modulehandle(&g_gameinfo);
 
 	// since we don't have the mod directory yet (can only officially get it using engine functions), we can
-	// attempt to get the mod directory from the qmm path. this will be used only for config loading
-	g_gameinfo.moddir = path_basename(g_gameinfo.qmm_dir);
+	// attempt to get the mod directory from the qmm path. if the qmm dir is the same as the exe dir, it's
+	// likely that this is a singleplayer game, so just set the temporary moddir to ".".
+	// this doesn't have to be exact, since it will only be used only for config loading.
+	if (str_striequal(g_gameinfo.qmm_dir, g_gameinfo.exe_dir)) {
+		g_gameinfo.moddir = ".";
+	}
+	else {
+		g_gameinfo.moddir = path_basename(g_gameinfo.qmm_dir);
+	}
 }
 
 // general code to load config file. called from dllEntry() and GetGameAPI()
@@ -375,7 +382,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 
 		// get mod dir from engine
 		g_gameinfo.moddir = util_get_str_cvar("fs_game");
-		// RTCWSP returns "" for the mod, and others may too? grab the default mod dir from game info instead
+		// the default mod (including all singleplayer games) return "" for the fs_game, so grab the default mod dir from game info instead
 		if (g_gameinfo.moddir.empty()) {
 			g_gameinfo.moddir = g_gameinfo.game->moddir;
 		}
