@@ -17,9 +17,7 @@ Created By:
 #include "qvm.h"
 
 typedef void (*mod_dllEntry_t)(eng_syscall_t syscall);
-#ifdef QMM_GETGAMEAPI_SUPPORT
 typedef void* (*mod_GetGameAPI_t)(void* import);
-#endif // QMM_GETGAMEAPI_SUPPORT
 
 typedef struct mod_s {
 	void* dll = nullptr;

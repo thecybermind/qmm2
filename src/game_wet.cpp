@@ -9,18 +9,12 @@ Created By:
 
 */
 
-#ifdef _WIN32
-// 'typedef ': ignored on left of '<unnamed-enum>' when no variable is declared
-#pragma warning(disable:4091)
-#endif
-
 #include <wet/game/q_shared.h>
 #include <wet/game/g_public.h>
 
 #include "game_api.h"
 
 GEN_QMM_MSGS(WET);
-GEN_EXE_HINTS(WET) = { "et", nullptr };
 
 const char* WET_eng_msg_names(int cmd) {
 	switch(cmd) {

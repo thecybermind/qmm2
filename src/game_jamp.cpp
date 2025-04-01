@@ -20,7 +20,6 @@ Created By:
 #include "game_api.h"
 
 GEN_QMM_MSGS(JAMP);
-GEN_EXE_HINTS(JAMP) = { "ja", nullptr};
 
 const char* JAMP_eng_msg_names(int cmd) {
 	switch(cmd) {

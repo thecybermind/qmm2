@@ -9,8 +9,6 @@ Created By:
 
 */
 
-#ifdef QMM_GETGAMEAPI_SUPPORT
-
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
 #include <stef2/game/q_shared.h>
@@ -28,7 +26,6 @@ Created By:
 #include "main.h"
 
 GEN_QMM_MSGS(STEF2);
-GEN_EXE_HINTS(STEF2) = { "ef", nullptr};
 
 // a copy of the original import struct that comes from the game engine. this is given to plugins
 static game_import_t orig_import;
@@ -1279,5 +1276,3 @@ const char* STEF2_mod_msg_names(int cmd) {
 			return "unknown";
 	}
 }
-
-#endif // QMM_GETGAMEAPI_SUPPORT

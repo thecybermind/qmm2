@@ -21,7 +21,6 @@ Created By:
 #include "main.h"
 
 GEN_QMM_MSGS(STVOYHM);
-GEN_EXE_HINTS(STVOYHM) = { "stvoy", nullptr };
 
 // these function ids are defined either in the g_syscalls.asm file or in qcommon.h from ioef source,
 // but they do not appear in the enum in stvoyhm/game/g_public.h
@@ -341,8 +340,8 @@ int STVOYHM_vmsyscall(byte* membase, int cmd, int* args) {
 		case G_IN_PVS:				// (const vec3_t p1, const vec3_t p2);
 		case G_IN_PVS_IGNORE_PORTALS:		// (const vec3_t p1, const vec3_t p2);
 		case BOTLIB_LIBVAR_SET:			// (char* var_name, char* value)
-		case BOTLIB_AI_TOUCHING_GOAL:		// (vec3_t origin, void /* struct bot_goal_s* /* goal)
-		case BOTLIB_AI_GET_MAP_LOCATION_GOAL:	// (char* name, void /* struct bot_goal_s* /* goal)
+		case BOTLIB_AI_TOUCHING_GOAL:		// (vec3_t origin, void /* struct bot_goal_s*/* goal)
+		case BOTLIB_AI_GET_MAP_LOCATION_GOAL:	// (char* name, void /* struct bot_goal_s*/* goal)
 		case G_PERPENDICULARVECTOR:		// (vec3_t dst, const vec3_t src)
 			return syscall(cmd, vmptr(0), vmptr(1));
 		case G_AREAS_CONNECTED:			// (int area1, int area2);
@@ -364,9 +363,9 @@ int STVOYHM_vmsyscall(byte* membase, int cmd, int* args) {
 		case G_SET_CONFIGSTRING:		// (int num, const char* string);
 		case G_SET_USERINFO:			// (int num, const char* buffer);
 		case G_GET_USERCMD:			// (int clientNum, usercmd_t* cmd)
-		case BOTLIB_UPDATENTITY:		// (int ent, void /* struct bot_updateentity_s* /* bue)
+		case BOTLIB_UPDATENTITY:		// (int ent, void /* struct bot_updateentity_s*/* bue)
 		case BOTLIB_USER_COMMAND:		// (int clientNum, usercmd_t* ucmd)
-		case BOTLIB_AAS_ENTITY_INFO:		// (int entnum, void /* struct aas_entityinfo_s* /* info)
+		case BOTLIB_AAS_ENTITY_INFO:		// (int entnum, void /* struct aas_entityinfo_s*/* info)
 		case BOTLIB_EA_SAY:			// (int client, char* str)
 		case BOTLIB_EA_SAY_TEAM:		// (int client, char* str)
 		case BOTLIB_EA_USE_ITEM:		// (int client, char *it)
@@ -375,12 +374,12 @@ int STVOYHM_vmsyscall(byte* membase, int cmd, int* args) {
 		case BOTLIB_EA_DROP_INV:		// (int client, char *inv)
 		case BOTLIB_EA_COMMAND:			// (int client, char* command)
 		case BOTLIB_EA_VIEW:			// (int client, vec3_t viewangles)
-		case BOTLIB_AI_NEXT_CONSOLE_MESSAGE:	// (int chatstate, void /* struct bot_consolemessage_s* /* cm)
+		case BOTLIB_AI_NEXT_CONSOLE_MESSAGE:	// (int chatstate, void /* struct bot_consolemessage_s*/* cm)
 		case BOTLIB_AI_NUM_INITIAL_CHATS:	// (int chatstate, char* type)
 		case BOTLIB_AI_PUSH_GOAL:		// (int goalstate, void* goal)
-		case BOTLIB_AI_GET_TOP_GOAL:		// (int goalstate, void /* struct bot_goal_s* /* goal)
-		case BOTLIB_AI_GET_SECOND_GOAL:		// (int goalstate, void /* struct bot_goal_s* /* goal)
-		case BOTLIB_AI_GET_NEXT_CAMP_SPOT_GOAL:	// (int num, void /* struct bot_goal_s* /* goal)
+		case BOTLIB_AI_GET_TOP_GOAL:		// (int goalstate, void /* struct bot_goal_s*/* goal)
+		case BOTLIB_AI_GET_SECOND_GOAL:		// (int goalstate, void /* struct bot_goal_s*/* goal)
+		case BOTLIB_AI_GET_NEXT_CAMP_SPOT_GOAL:	// (int num, void /* struct bot_goal_s*/* goal)
 		case BOTLIB_AI_LOAD_ITEM_WEIGHTS:	// (int, char*)
 		case BOTLIB_AI_SAVE_GOAL_FUZZY_LOGIC:	// (int, char*)
 		case BOTLIB_AI_INIT_MOVE_STATE:		// (int handle, void* initmove)
@@ -410,7 +409,7 @@ int STVOYHM_vmsyscall(byte* membase, int cmd, int* args) {
 		case G_FS_FOPEN_FILE:			// (const char* qpath, fileHandle_t* file, fsMode_t mode);
 		case BOTLIB_LIBVAR_GET:			// (char* var_name, char* value, int size)
 		case BOTLIB_AI_STRING_CONTAINS:		// (char* str1, char* str2, int casesensitive)
-		case BOTLIB_AI_FIND_MATCH:		// (char* str, void /* struct bot_match_s* /* match, unsigned long int context)
+		case BOTLIB_AI_FIND_MATCH:		// (char* str, void /* struct bot_match_s*/* match, unsigned long int context)
 		case G_MEMCPY:				// (void* dest, const void* src, size_t count)
 		case G_STRNCPY:				// (char* strDest, const char* strSource, size_t count)
 			return syscall(cmd, vmptr(0), vmptr(1), vmarg(2));
@@ -425,23 +424,23 @@ int STVOYHM_vmsyscall(byte* membase, int cmd, int* args) {
 		case BOTLIB_AI_INTERBREED_GOAL_FUZZY_LOGIC:	// (int,int,int)
 			return syscall(cmd, vmarg(0), vmarg(1), vmarg(2));
 		case G_DEBUG_POLYGON_CREATE:		// (int color, int numPoints, vec3_t* points)
-		case BOTLIB_EA_GET_INPUT:		// (int client, float thinktime, void /* struct bot_input_s* /* input)
+		case BOTLIB_EA_GET_INPUT:		// (int client, float thinktime, void /* struct bot_input_s*/* input)
 		case BOTLIB_AI_QUEUE_CONSOLE_MESSAGE:	// (int chatstate, int type, char* message)
-		case BOTLIB_AI_GET_WEAPON_INFO:		// (int weaponstate, int weapon, void /* struct weaponinfo_s* /* weaponinfo)
+		case BOTLIB_AI_GET_WEAPON_INFO:		// (int weaponstate, int weapon, void /* struct weaponinfo_s*/* weaponinfo)
 			return syscall(cmd, vmarg(0), vmarg(1), vmptr(2));
 		case BOTLIB_AAS_PRESENCE_TYPE_BOUNDING_BOX:	// (int presencetype, vec3_t mins, vec3_t maxs)
 		case BOTLIB_AAS_VECTOR_FOR_BSP_EPAIR_KEY:	// (int ent, char* key, vec3_t v)
 		case BOTLIB_AAS_FLOAT_FOR_BSP_EPAIR_KEY:	// (int ent, char* key, float* value)
 		case BOTLIB_AAS_INT_FOR_BSP_EPAIR_KEY:	// (int ent, char* key, int* value)
 		case BOTLIB_AI_LOAD_CHAT_FILE:		// (int chatstate, char* chatfile, char* chatname)
-		case BOTLIB_AI_GET_LEVEL_ITEM_GOAL:	// (int index, char* classname, void /* struct bot_goal_s* /* goal)
+		case BOTLIB_AI_GET_LEVEL_ITEM_GOAL:	// (int index, char* classname, void /* struct bot_goal_s*/* goal)
 			return syscall(cmd, vmarg(0), vmptr(1), vmptr(2));
 		case G_CVAR_REGISTER:			// (vmCvar_t* vmCvar, const char* varName, const char* defaultValue, int flags);
 		case G_ENTITIES_IN_BOX:			// (const vec3_t mins, const vec3_t maxs, gentity_t* *list, int maxcount);
 		case G_FS_GETFILELIST:			// ( const char* path, const char* extension, char* listbuf, int bufsize) {
 			return syscall(cmd, vmptr(0), vmptr(1), vmptr(2), vmarg(3));
 		case BOTLIB_TEST:			// (int parm0, char* parm1, vec3_t parm2, vec3_t parm3)
-		case BOTLIB_AI_ITEM_GOAL_IN_VIS_BUT_NOT_VISIBLE:	// (int viewer, vec3_t eye, vec3_t viewangles, void /* struct bot_goal_s* /* goal)
+		case BOTLIB_AI_ITEM_GOAL_IN_VIS_BUT_NOT_VISIBLE:	// (int viewer, vec3_t eye, vec3_t viewangles, void /* struct bot_goal_s*/* goal)
 			return syscall(cmd, vmarg(0), vmptr(1), vmptr(2), vmptr(3));
 		case BOTLIB_AAS_VALUE_FOR_BSP_EPAIR_KEY:	// (int ent, char* key, char* value, int size)
 		case BOTLIB_AI_CHOOSE_LTG_ITEM:		// (int goalstate, vec3_t origin, int* inventory, int travelflags)
@@ -454,8 +453,8 @@ int STVOYHM_vmsyscall(byte* membase, int cmd, int* args) {
 		case BOTLIB_AI_CHARACTERISTIC_BFLOAT:	// (int character, int index, float min, float max)
 		case BOTLIB_AI_CHARACTERISTIC_BINTEGER:	// (int character, int index, int min, int max)
 			return syscall(cmd, vmarg(0), vmarg(1), vmarg(2), vmarg(3));
-		case BOTLIB_AI_MATCH_VARIABLE:		// (void /* struct bot_match_s* /* match, int variable, char* buf, int size)
-		case BOTLIB_AI_MOVE_TO_GOAL:		// (void /* struct bot_moveresult_s* /* result, int movestate, void /* struct bot_goal_s* /* goal, int travelflags)
+		case BOTLIB_AI_MATCH_VARIABLE:		// (void /* struct bot_match_s*/* match, int variable, char* buf, int size)
+		case BOTLIB_AI_MOVE_TO_GOAL:		// (void /* struct bot_moveresult_s*/* result, int movestate, void /* struct bot_goal_s*/* goal, int travelflags)
 			return syscall(cmd, vmptr(0), vmarg(1), vmptr(2), vmarg(3));
 		case BOTLIB_AI_CHARACTERISTIC_STRING:	// (int character, int index, char* buf, int size)
 			return syscall(cmd, vmarg(0), vmarg(1), vmptr(2), vmarg(3));
@@ -463,13 +462,13 @@ int STVOYHM_vmsyscall(byte* membase, int cmd, int* args) {
 			return syscall(cmd, vmptr(0), vmarg(1), vmarg(2), vmptr(3), vmarg(4));
 		case BOTLIB_AAS_TRACE_AREAS:		// (vec3_t start, vec3_t end, int* areas, vec3_t* points, int maxareas)
 			return syscall(cmd, vmptr(0), vmptr(1), vmptr(2), vmptr(3), vmarg(4));
-		case BOTLIB_AI_MOVEMENT_VIEW_TARGET:	// (int movestate, void /* struct bot_goal_s* /* goal, int travelflags, float lookahead, vec3_t tvmarget)
+		case BOTLIB_AI_MOVEMENT_VIEW_TARGET:	// (int movestate, void /* struct bot_goal_s*/* goal, int travelflags, float lookahead, vec3_t tvmarget)
 			return syscall(cmd, vmarg(0), vmptr(1), vmarg(2), vmarg(3), vmptr(4));
-		case BOTLIB_AI_PREDICT_VISIBLE_POSITION:	// (vec3_t origin, int areanum, void /* struct bot_goal_s* /* goal, int travelflags, vec3_t tvmarget)
+		case BOTLIB_AI_PREDICT_VISIBLE_POSITION:	// (vec3_t origin, int areanum, void /* struct bot_goal_s*/* goal, int travelflags, vec3_t tvmarget)
 			return syscall(cmd, vmptr(0), vmarg(1), vmptr(2), vmarg(3), vmptr(4));
 		case BOTLIB_AI_GENETIC_PARENTS_AND_CHILD_SELECTION:	// (int numranks, float* ranks, int* parent1, int* parent2, int* child)
 			return syscall(cmd, vmarg(0), vmptr(1), vmptr(2), vmptr(3), vmptr(4));
-		case BOTLIB_AI_CHOOSE_NBG_ITEM:		// (int goalstate, vec3_t origin, int* inventory, int travelflags, void /* struct bot_goal_s* /* ltg, float maxtime)
+		case BOTLIB_AI_CHOOSE_NBG_ITEM:		// (int goalstate, vec3_t origin, int* inventory, int travelflags, void /* struct bot_goal_s*/* ltg, float maxtime)
 			return syscall(cmd, vmarg(0), vmptr(1), vmptr(2), vmarg(3), vmptr(4), vmarg(5));
 		case G_TRACE:				// (trace_t* results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask);
 			return syscall(cmd, vmptr(0), vmptr(1), vmptr(2), vmptr(3), vmptr(4), vmarg(5), vmarg(6));
@@ -477,7 +476,7 @@ int STVOYHM_vmsyscall(byte* membase, int cmd, int* args) {
 			return syscall(cmd, vmarg(0), vmptr(1), vmarg(2), vmptr(3), vmptr(4), vmptr(5), vmptr(6), vmptr(7), vmptr(8), vmptr(9), vmptr(10));
 		case BOTLIB_AI_REPLY_CHAT:		// (int chatstate, char* message, int mcontext, int vcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7)
 			return syscall(cmd, vmarg(0), vmptr(1), vmarg(2), vmarg(3), vmptr(4), vmptr(5), vmptr(6), vmptr(7), vmptr(8), vmptr(9), vmptr(10), vmptr(11));
-		case BOTLIB_AAS_PREDICT_CLIENT_MOVEMENT:	// (void /* struct aas_clientmove_s* /* move, int entnum, vec3_t origin, int presencetype, int onground, vec3_t velocity, vec3_t cmdmove, int cmdframes, int maxframes, float frametime, int stopevent, int stopareanum, int visualize)
+		case BOTLIB_AAS_PREDICT_CLIENT_MOVEMENT:	// (void /* struct aas_clientmove_s*/* move, int entnum, vec3_t origin, int presencetype, int onground, vec3_t velocity, vec3_t cmdmove, int cmdframes, int maxframes, float frametime, int stopevent, int stopareanum, int visualize)
 			return syscall(cmd, vmptr(0), vmarg(1), vmptr(2), vmarg(3), vmarg(4), vmptr(5), vmptr(6), vmarg(7), vmarg(8), vmarg(9), vmarg(10), vmarg(11), vmarg(12));
 		default:
 			return 0;

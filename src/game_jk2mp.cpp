@@ -21,7 +21,6 @@ Created By:
 #include "main.h"
 
 GEN_QMM_MSGS(JK2MP);
-GEN_EXE_HINTS(JK2MP) = { "jk2", nullptr};
 
 const char* JK2MP_eng_msg_names(int cmd) {
 	switch(cmd) {

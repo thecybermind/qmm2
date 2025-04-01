@@ -20,7 +20,6 @@ Created By:
 #include "game_api.h"
 
 GEN_QMM_MSGS(RTCWMP);
-GEN_EXE_HINTS(RTCWMP) = { "mp", nullptr};
 
 const char* RTCWMP_eng_msg_names(int cmd) {
 	switch(cmd) {

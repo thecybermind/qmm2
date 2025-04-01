@@ -16,7 +16,6 @@ Created By:
 #include "qmmapi.h"
 #include "game_api.h"
 
-#ifdef QMM_GETGAMEAPI_SUPPORT
 // store pointers for GetGameAPI-based systems
 typedef struct api_info_s {
 	void* orig_import = nullptr;			// original import struct from engine
@@ -24,7 +23,6 @@ typedef struct api_info_s {
 	void* qmm_import = nullptr;				// import struct that is hooked by QMM given to the mod
 	mod_vmMain_t orig_vmmain = nullptr;		// pointer to wrapper vmMain function that calls actual mod func from orig_export
 } api_info_t;
-#endif // QMM_GETGAMEAPI_SUPPORT
 
 // store all currently-loaded game & game engine info
 typedef struct game_info_s {
@@ -40,9 +38,7 @@ typedef struct game_info_s {
 	void* qmm_module_ptr = nullptr;
 	std::string moddir;
 	std::string cfg_path;
-#ifdef QMM_GETGAMEAPI_SUPPORT
 	api_info_t api_info;
-#endif // QMM_GETGAMEAPI_SUPPORT
 } game_info_t;
 
 extern game_info_t g_gameinfo;
@@ -59,21 +55,15 @@ constexpr int QMM_FAIL_G_ERROR = 1;
 constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
 
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall);	// initial entry point for non-GetGameAPI games
-#ifdef QMM_GETGAMEAPI_SUPPORT
 C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for GetGameAPI games
-#endif // QMM_GETGAMEAPI_SUPPORT
 C_DLLEXPORT int vmMain(int cmd, ...);
 int syscall(int cmd, ...);
 
 void main_detect_env();
 void main_load_config();
-#ifdef QMM_GETGAMEAPI_SUPPORT
 constexpr bool QMM_DETECT_GETGAMEAPI = true;
 constexpr bool QMM_DETECT_DLLENTRY = false;
 void main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode = QMM_DETECT_DLLENTRY);
-#else
-void main_detect_game(std::string cfg_game);
-#endif
 bool main_load_mod(std::string cfg_mod);
 void main_load_plugin(std::string plugin_path);
 

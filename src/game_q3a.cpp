@@ -21,7 +21,6 @@ Created By:
 #include "main.h"
 
 GEN_QMM_MSGS(Q3A);
-GEN_EXE_HINTS(Q3A) = { "q3ded", "quake3", nullptr };
 
 // these function ids are defined either in the g_syscalls.asm file or in qcommon.h from q3 source,
 // but they do not appear in the enum in q3a/game/g_public.h

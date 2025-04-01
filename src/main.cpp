@@ -84,7 +84,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	main_load_config();
 
 	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
-	main_detect_game(cfg_game);
+	main_detect_game(cfg_game, QMM_DETECT_DLLENTRY);
 
 	// failed to get engine information
 	if (!g_gameinfo.game) {
@@ -93,7 +93,6 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	}
 }
 
-#ifdef QMM_GETGAMEAPI_SUPPORT
 /* Entry point: engine->qmm
    This is the first function called when a GetGameAPI DLL is loaded. This system uses a system closer to HalfLife, where a
    struct of function pointers is given from the engine to the mod, and the mod returns a struct of function pointers
@@ -156,7 +155,6 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	// the mod
 	return g_gameinfo.game->apientry(import);
 }
-#endif // QMM_GETGAMEAPI_SUPPORT
 
 // general code to get path/module/binary/etc information
 void main_detect_env() {
@@ -211,19 +209,13 @@ void main_load_config() {
 }
 
 // general code to auto-detect what game engine loaded us
-#ifdef QMM_GETGAMEAPI_SUPPORT
 void main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
-#else
-void main_detect_game(std::string cfg_game) {
-#endif // QMM_GETGAMEAPI_SUPPORT
 	// find what game we are loaded in
 	for (int i = 0; g_supportedgames[i].dllname; i++) {
 		supportedgame_t& game = g_supportedgames[i];
-#ifdef QMM_GETGAMEAPI_SUPPORT
 		// only check games with apientry based on GetGameAPI_mode
 		if (is_GetGameAPI_mode != !!game.apientry)
 			continue;
-#endif // QMM_GETGAMEAPI_SUPPORT
 
 		// if short name matches config option, we found it!
 		if (str_striequal(cfg_game, game.gamename_short)) {
@@ -238,15 +230,14 @@ void main_detect_game(std::string cfg_game) {
 			if (str_striequal(g_gameinfo.qmm_file, game.dllname)) {
 				LOG(NOTICE, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", game.dllname, game.gamename_short);
 				// if no hint array exists, assume we match
-				if (!game.exe_hints || !game.exe_hints[0]) {
+				if (!game.exe_hints.size()) {
 					g_gameinfo.game = &game;
 					g_gameinfo.isautodetected = true;
 					return;
 				}
 				// if a hint array exists, check each for an exe file match
-				if (game.exe_hints) {
-					for (int j = 0; game.exe_hints[j]; j++) {
-						const char* hint = game.exe_hints[j];
+				if (game.exe_hints.size()) {
+					for (auto hint : game.exe_hints) {
 						if (str_stristr(g_gameinfo.exe_file, hint)) {
 							LOG(NOTICE, "QMM") << fmt::format("Found game match for exe hint name \"{}\"\n", hint);
 							g_gameinfo.game = &game;
@@ -344,6 +335,17 @@ void main_load_plugin(std::string plugin_path) {
 	}
 }
 
+// get a given argument with G_ARGV, based on game engine type
+void main_g_argv(int argn, char* buf, int buflen) {
+	// syscall-based games don't return pointers because of QVM interaction, so if this returns anything but
+	// null (or true?), we probably are in an api game, and need to get the arg from the return value instead
+	int ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn, buf, buflen);
+	if (ret > 1)
+		strncpy(buf, (char*)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn), buflen);
+	
+	buf[buflen - 1] = '\0';
+}
+
 /* Entry point: engine->qmm
    This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the game info is not stored.
    This means that the engine could not be determined, so we fail with G_ERROR and tell the user to set the game in the config file.
@@ -426,7 +428,10 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		std::string cfg_execcfg = cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
 		if (!cfg_execcfg.empty()) {
 			LOG(NOTICE, "QMM") << fmt::format("Executing config file \"{}\"\n", cfg_execcfg);
-			if (!strcmp(g_gameinfo.game->gamename_short, "STEF2"))
+			
+			// some games don't support a "when" argument
+			if (!strcmp(g_gameinfo.game->gamename_short, "STEF2")
+				|| !strcmp(g_gameinfo.game->gamename_short, "MOHAA"))
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], fmt::format("exec {}\n", cfg_execcfg).c_str());
 			else
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], QMM_ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
@@ -438,17 +443,15 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 
 	else if (cmd == QMM_MOD_MSG[QMM_GAME_CONSOLE_COMMAND]) {
 		char arg0[5], arg1[8], arg2[10];
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], 0, arg0, sizeof(arg0));
-		arg0[sizeof(arg0) - 1] = '\0';
-		int argc = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
+
+		main_g_argv(0, arg0, sizeof(arg0));
 
 		if (str_striequal("qmm", arg0)) {
+			int argc = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
 			if (argc > 1)
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], 1, arg1, sizeof(arg1));
+				main_g_argv(1, arg1, sizeof(arg1));
 			if (argc > 2)
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], 2, arg2, sizeof(arg2));
-			arg1[sizeof(arg1) - 1] = '\0';
-			arg2[sizeof(arg2) - 1] = '\0';
+				main_g_argv(2, arg2, sizeof(arg2));
 			if (argc == 1) {
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) Usage: qmm <command> [params]\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) Available commands:\n");
@@ -607,6 +610,8 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 int syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
+	// LOG(INFO, "QMM") << "syscall(" << g_gameinfo.game->eng_msg_names(cmd) << ") called\n";
+
 	// if this is a call to close a file, check the handle to see if it matches our existing log handle
 	if (cmd == QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE]) {
 		if (args[0] == log_get()) {
@@ -674,6 +679,8 @@ int syscall(int cmd, ...) {
 			}
 		}
 	}
+
+	// LOG(INFO, "QMM") << "syscall(" << g_gameinfo.game->eng_msg_names(cmd) << ") returning " << final_ret << "\n";
 
 	return final_ret;
 }
