@@ -478,8 +478,8 @@ int MOHAA_syscall(int cmd, ...) {
 			int bufsize = args[2];
 			cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
 			if (cvar)
-				strncpy(buffer, cvar->string, bufsize - 1);
-			buffer[bufsize - 2] = '\0';
+				strncpy(buffer, cvar->string, bufsize);
+			buffer[bufsize - 1] = '\0';
 			break;
 		}
 		case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -491,6 +491,12 @@ int MOHAA_syscall(int cmd, ...) {
 				ret = cvar->integer;
 			break;
 		}
+		case G_FS_FOPEN_FILE:
+			// this doesn't get called by QMM in MOHAA (only in engines with QVM mods), and MOHAA doesn't open a log file
+			// so the cmd == QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE] check in syscall will simply fail at this negative number
+			// this is included here only for completeness, really
+			ret = 0;
+			break;
 		default:
 			break;
 	};
