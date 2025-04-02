@@ -51,7 +51,7 @@ supportedgame_t g_supportedgames[] = {
 	{ "jampgamex86.dll",	nullptr,			"base",				"Jedi Knight: Jedi Academy (Multiplayer)",		GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
 	{ "gamex86.dll",		nullptr,			"main",				"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	nullptr,			MOHAA_GetGameAPI,	9,		7,		{ "mohaa" }},
 	{ "gamex86.dll",		nullptr,			"mainta",			"Medal of Honor: Spearhead",					GEN_INFO(MOHSH),	nullptr,			MOHSH_GetGameAPI,	9,		7,		{ "spear" }},
-	//{ "gamex86.dll",		nullptr,			"maintt",			"Medal of Honor: Breakthrough",					GEN_INFO(MOHBT),	nullptr,			MOHBT_GetGameAPI,	9,		7,		{ "break" }},
+	{ "gamex86.dll",		nullptr,			"maintt",			"Medal of Honor: Breakthrough",					GEN_INFO(MOHBT),	nullptr,			MOHBT_GetGameAPI,	9,		7,		{ "break" }},
 	{ "gamex86.dll",		nullptr,			"base",				"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			STEF2_GetGameAPI,	17,		4,		{ "ef" } },
 
 #elif defined(__linux__)
@@ -65,7 +65,7 @@ supportedgame_t g_supportedgames[] = {
 	{ "jampgamei386.so",	nullptr,			"base",				"Jedi Knight: Jedi Academy (Multiplayer)",		GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
 	{ "gamei386.so",		nullptr,			"main",				"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	nullptr,			MOHAA_GetGameAPI,	9,		7,		{ "mohaa" } },
 	{ "gamei386.so",		nullptr,			"mainta",			"Medal of Honor: Spearhead",					GEN_INFO(MOHSH),	nullptr,			MOHSH_GetGameAPI,	9,		7,		{ "spear" }},
-	//{ "gamei386.so",		nullptr,			"maintt",			"Medal of Honor: Breakthrough",					GEN_INFO(MOHBT),	nullptr,			MOHBT_GetGameAPI,	9,		7,		{ "break" }},
+	{ "gamei386.so",		nullptr,			"maintt",			"Medal of Honor: Breakthrough",					GEN_INFO(MOHBT),	nullptr,			MOHBT_GetGameAPI,	9,		7,		{ "break" }},
 	{ "gamei386.so",		nullptr,			"base",				"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			STEF2_GetGameAPI,	17,		4,		{ "ef" } },
 
 #else // !_WIN32 && !__linux__

@@ -11,23 +11,23 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
-#include <mohsh/qcommon/q_shared.h>
+#include <mohbt/qcommon/q_shared.h>
 // fix for type mismatch of GetGameAPI in g_public.h
 // the actual type should be: game_export_t *GetGameAPI(game_import_t *import)
 // but to avoid having to include game-specific headers in main.cpp, our export is void *GetGameAPI(void *import)
 #define GetGameAPI GetGameAPI2 
 #define GAME_DLL
-#include <mohsh/fgame/g_public.h>
+#include <mohbt/fgame/g_public.h>
 #undef GetGameAPI
 #undef GAME_DLL
 #include "game_api.h"
 #include "log.h"
-// QMM-specific MOHSH header
+// QMM-specific MOHBT header
 #include "game_mohsh.h"
 #include "main.h"
 
-GEN_QMM_MSGS(MOHSH);
-GEN_EXTS(MOHSH);
+GEN_QMM_MSGS(MOHBT);
+GEN_EXTS(MOHBT);
 
 // a copy of the original import struct that comes from the game engine. this is given to plugins
 static game_import_t orig_import;
@@ -272,11 +272,11 @@ static game_export_t qmm_export = {
 typedef int(*pfn_import_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6);
 #define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((pfn_import_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break
 #define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (int)(orig_import. field); break
-int MOHSH_syscall(int cmd, ...) {
+int MOHBT_syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
 	if (cmd != G_PRINT)
-		LOG(TRACE, "QMM") << "MOHSH_syscall(" << MOHSH_eng_msg_names(cmd) << ") called\n";
+		LOG(TRACE, "QMM") << "MOHBT_syscall(" << MOHBT_eng_msg_names(cmd) << ") called\n";
 
 	// store return value in case we do some stuff after the function call is over
 	int ret = 0;
@@ -503,7 +503,7 @@ int MOHSH_syscall(int cmd, ...) {
 	// do anything that needs to be done after function call here
 
 	if (cmd != G_PRINT)
-		LOG(TRACE, "QMM") << "MOHSH_syscall(" << MOHSH_eng_msg_names(cmd) << ") returning " << ret << "\n";
+		LOG(TRACE, "QMM") << "MOHBT_syscall(" << MOHBT_eng_msg_names(cmd) << ") returning " << ret << "\n";
 
 	return ret;
 }
@@ -513,11 +513,11 @@ int MOHSH_syscall(int cmd, ...) {
 typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8);
 #define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((pfn_export_t)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (int)(orig_export-> field); break
-int MOHSH_vmMain(int cmd, ...) {
+int MOHBT_vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	int loglevel = MOHSH_is_mod_trace_msg(cmd) ? TRACE : DEBUG;
-	LOG(loglevel, "QMM") << "MOHSH_vmMain(" << MOHSH_mod_msg_names(cmd) << ") called\n";
+	int loglevel = MOHBT_is_mod_trace_msg(cmd) ? TRACE : DEBUG;
+	LOG(loglevel, "QMM") << "MOHBT_vmMain(" << MOHBT_mod_msg_names(cmd) << ") called\n";
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
 	if (!orig_export)
@@ -584,13 +584,13 @@ int MOHSH_vmMain(int cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.errorMessage = orig_export->errorMessage;
 
-	LOG(loglevel, "QMM") << "MOHSH_vmMain(" << MOHSH_mod_msg_names(cmd) << ") returning " << ret << "\n";
+	LOG(loglevel, "QMM") << "MOHBT_vmMain(" << MOHBT_mod_msg_names(cmd) << ") returning " << ret << "\n";
 
 	return ret;
 }
 
-void* MOHSH_GetGameAPI(void* import) {
-	LOG(TRACE, "QMM") << "MOHSH_GetGameAPI(" << import << ") called\n";
+void* MOHBT_GetGameAPI(void* import) {
+	LOG(TRACE, "QMM") << "MOHBT_GetGameAPI(" << import << ") called\n";
 
 	// original import struct from engine
 	// the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -609,12 +609,12 @@ void* MOHSH_GetGameAPI(void* import) {
 
 	// pointer to wrapper vmMain function that calls actual mod func from orig_export
 	// this gets assigned to g_mod->pfnvmMain in mod.cpp:mod_load()
-	g_gameinfo.api_info.orig_vmmain = MOHSH_vmMain;
+	g_gameinfo.api_info.orig_vmmain = MOHBT_vmMain;
 
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
-	g_gameinfo.pfnsyscall = MOHSH_syscall;
+	g_gameinfo.pfnsyscall = MOHBT_syscall;
 
-	LOG(TRACE, "QMM") << "MOHSH_GetGameAPI(" << import << ") returning" << (void*)&qmm_export << "\n";
+	LOG(TRACE, "QMM") << "MOHBT_GetGameAPI(" << import << ") returning" << (void*)&qmm_export << "\n";
 
 	// struct full of export lambdas to QMM's vmMain
 	// this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -622,7 +622,7 @@ void* MOHSH_GetGameAPI(void* import) {
 	return &qmm_export;
 }
 
-const char* MOHSH_eng_msg_names(int cmd) {
+const char* MOHBT_eng_msg_names(int cmd) {
 	switch (cmd) {
 		GEN_CASE(G_PRINT);
 		GEN_CASE(G_DPRINTF);
@@ -810,7 +810,7 @@ const char* MOHSH_eng_msg_names(int cmd) {
 	}
 }
 
-const char* MOHSH_mod_msg_names(int cmd) {
+const char* MOHBT_mod_msg_names(int cmd) {
 	switch (cmd) {
 		GEN_CASE(GAMEV_APIVERSION);
 		GEN_CASE(GAME_INIT);
@@ -858,7 +858,7 @@ const char* MOHSH_mod_msg_names(int cmd) {
 	}
 }
 
-bool MOHSH_is_mod_trace_msg(int cmd) {
+bool MOHBT_is_mod_trace_msg(int cmd) {
 	switch (cmd) {
 	case GAME_CLIENT_THINK:
 	case GAME_BOTTHINK:
