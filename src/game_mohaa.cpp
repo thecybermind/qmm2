@@ -38,7 +38,7 @@ static game_export_t* orig_export = nullptr;
 // struct with lambdas that call QMM's syscall function. this is given to the mod
 #define GEN_IMPORT(field, cmd) (decltype(qmm_import. field)) +[](int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8) { return syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
 static game_import_t qmm_import = {
-	GEN_IMPORT(Printf, G_PRINT),
+	GEN_IMPORT(Printf, G_PRINTF),
 	GEN_IMPORT(DPrintf, G_DPRINTF),
 	GEN_IMPORT(DPrintf2, G_DPRINTF2),
 	GEN_IMPORT(DebugPrintf, G_DEBUGPRINTF),
@@ -630,7 +630,7 @@ void* MOHAA_GetGameAPI(void* import) {
 
 const char* MOHAA_eng_msg_names(int cmd) {
 	switch (cmd) {
-		GEN_CASE(G_PRINT);
+		GEN_CASE(G_PRINTF);
 		GEN_CASE(G_DPRINTF);
 		GEN_CASE(G_DPRINTF2);
 		GEN_CASE(G_DEBUGPRINTF);
