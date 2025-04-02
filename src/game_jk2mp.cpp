@@ -18,6 +18,7 @@ Created By:
 #include <jk2mp/game/g_public.h>
 
 #include "game_api.h"
+#include "log.h"
 #include "main.h"
 
 GEN_QMM_MSGS(JK2MP);
@@ -275,6 +276,18 @@ const char* JK2MP_mod_msg_names(int cmd) {
 	}
 }
 
+bool JK2MP_is_mod_trace_msg(int cmd) {
+	switch (cmd) {
+	case GAME_CLIENT_THINK:
+	case GAME_RUN_FRAME:
+	case BOTAI_START_FRAME:
+		return true;
+	default:
+		return false;
+	}
+}
+
+
 /* Entry point: qvm mod->qmm
    This is the syscall function called by a QVM mod as a way to pass info to or get info from the engine.
    It modifies pointer arguments (if they are not NULL, the QVM data segment base address is added), and then the call is passed to the normal syscall() function that DLL mods call.
@@ -283,6 +296,8 @@ const char* JK2MP_mod_msg_names(int cmd) {
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
 int JK2MP_vmsyscall(byte* membase, int cmd, int* args) {
+	LOG(TRACE, "QMM") << "JK2MP_vmsyscall(" << JK2MP_eng_msg_names(cmd) << ") called\n";
+
 	switch(cmd) {
 		case G_MILLISECONDS:			// (void)
 		case G_ARGC:				// (void)

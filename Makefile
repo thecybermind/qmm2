@@ -32,10 +32,10 @@ LDFLAGS  := -m32 -shared -fPIC
 LDLIBS   :=
 
 REL_CPPFLAGS := $(CPPFLAGS)
-DBG_CPPFLAGS := $(CPPFLAGS)
+DBG_CPPFLAGS := $(CPPFLAGS) -D_DEBUG
 
 REL_CFLAGS := $(CFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce 
-DBG_CFLAGS := $(CFLAGS) -g -pg 
+DBG_CFLAGS := $(CFLAGS) -g -pg
 
 REL_LDFLAGS := $(LDFLAGS)
 DBG_LDFLAGS := $(LDFLAGS) -g -pg

@@ -63,6 +63,9 @@
     <ClInclude Include="..\include\game_stef2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\game_mohsh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -117,6 +120,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\game_stvoyhm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_mohsh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

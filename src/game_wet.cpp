@@ -255,3 +255,16 @@ const char* WET_mod_msg_names(int cmd) {
 			return "unknown";
 	}
 }
+
+bool WET_is_mod_trace_msg(int cmd) {
+	switch (cmd) {
+	case GAME_CLIENT_THINK:
+	case GAME_RUN_FRAME:
+	case BOTAI_START_FRAME:
+	case BOT_VISIBLEFROMPOS:
+	case BOT_CHECKATTACKATPOS:
+		return true;
+	default:
+		return false;
+	}
+}

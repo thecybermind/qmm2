@@ -98,6 +98,7 @@
     <ClCompile Include="..\src\game_jamp.cpp" />
     <ClCompile Include="..\src\game_jk2mp.cpp" />
     <ClCompile Include="..\src\game_mohaa.cpp" />
+    <ClCompile Include="..\src\game_mohsh.cpp" />
     <ClCompile Include="..\src\game_q3a.cpp" />
     <ClCompile Include="..\src\game_rtcwmp.cpp" />
     <ClCompile Include="..\src\game_rtcwsp.cpp" />
@@ -117,6 +118,7 @@
     <ClInclude Include="..\include\format.h" />
     <ClInclude Include="..\include\game_api.h" />
     <ClInclude Include="..\include\game_mohaa.h" />
+    <ClInclude Include="..\include\game_mohsh.h" />
     <ClInclude Include="..\include\game_stef2.h" />
     <ClInclude Include="..\include\log.h" />
     <ClInclude Include="..\include\main.h" />

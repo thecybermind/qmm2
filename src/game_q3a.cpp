@@ -18,6 +18,7 @@ Created By:
 #include <q3a/game/g_public.h>
 
 #include "game_api.h"
+#include "log.h"
 #include "main.h"
 
 GEN_QMM_MSGS(Q3A);
@@ -263,6 +264,18 @@ const char* Q3A_mod_msg_names(int cmd) {
 	}
 }
 
+
+bool Q3A_is_mod_trace_msg(int cmd) {
+	switch (cmd) {
+		case GAME_CLIENT_THINK:
+		case GAME_RUN_FRAME:
+		case BOTAI_START_FRAME:
+			return true;
+		default:
+			return false;
+	}
+}
+
 /* Entry point: qvm mod->qmm
    This is the syscall function called by a QVM mod as a way to pass info to or get info from the engine.
    It modifies pointer arguments (if they are not NULL, the QVM data segment base address is added), and then
@@ -271,6 +284,8 @@ const char* Q3A_mod_msg_names(int cmd) {
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
 int Q3A_vmsyscall(byte* membase, int cmd, int* args) {
+	LOG(TRACE, "QMM") << "Q3A_vmsyscall(" << Q3A_eng_msg_names(cmd) << ") called\n";
+
 	switch(cmd) {
 		case G_MILLISECONDS:			// (void)
 		case G_ARGC:				// (void)

@@ -14,16 +14,26 @@ Created By:
 #include "log.h"
 
 void log_init(std::string file) {
-	auto sink_cout = std::make_shared<AixLog::SinkCout>(AixLog::Severity::trace);
-	auto sink_file = std::make_shared<AixLog::SinkFile>(AixLog::Severity::trace, file);
+	auto sink_cout = std::make_shared<AixLog::SinkCout>(AixLog::Severity::info);
+	auto sink_file = std::make_shared<AixLog::SinkFile>(
+#ifdef _DEBUG
+ #ifdef LOG_TRACE
+		AixLog::Severity::trace
+ #else
+		AixLog::Severity::debug
+ #endif
+#else
+		AixLog::Severity::info
+#endif
+		, file);
 	AixLog::Log::init({ sink_cout, sink_file });
 }
 
 #if 0
 // actually in log.h, just here for visibility
 template <typename T>
-void log_add_sink(T func) {
-	AixLog::Log::instance().add_logsink<AixLog::SinkCallback>(AixLog::Severity::trace, func);
+void log_add_sink(T func, AixLog::Severity level = AixLog::Severity::notice) {
+	AixLog::Log::instance().add_logsink<AixLog::SinkCallback>(level, func);
 }
 #endif
 

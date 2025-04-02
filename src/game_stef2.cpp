@@ -21,11 +21,13 @@ Created By:
 #undef GetGameAPI
 #undef GAME_DLL
 #include "game_api.h"
+#include "log.h"
 // QMM-specific STEF2 header
 #include "game_stef2.h"
 #include "main.h"
 
 GEN_QMM_MSGS(STEF2);
+GEN_EXTS(STEF2);
 
 // a copy of the original import struct that comes from the game engine. this is given to plugins
 static game_import_t orig_import;
@@ -430,6 +432,9 @@ typedef int(*pfn_import_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int
 int STEF2_syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
+	if (cmd != G_PRINT)
+		LOG(TRACE, "QMM") << "STEF2_syscall(" << STEF2_eng_msg_names(cmd) << ") called\n";
+
 	// store return value in case we do some stuff after the function call is over
 	int ret = 0;
 
@@ -784,6 +789,9 @@ int STEF2_syscall(int cmd, ...) {
 
 	// do anything that needs to be done after function call here
 
+	if (cmd != G_PRINT)
+		LOG(TRACE, "QMM") << "STEF2_syscall(" << STEF2_eng_msg_names(cmd) << ") returning " << ret << "\n";
+
 	return ret;
 }
 
@@ -794,6 +802,8 @@ typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3);
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (int)(orig_export-> field); break
 int STEF2_vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
+
+	LOG(TRACE, "QMM") << "STEF2_vmMain(" << STEF2_mod_msg_names(cmd) << ") called\n";
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
 	if (!orig_export)
@@ -855,10 +865,14 @@ int STEF2_vmMain(int cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.error_message = orig_export->error_message;
 
+	LOG(TRACE, "QMM") << "STEF2_vmMain(" << STEF2_mod_msg_names(cmd) << ") returning " << ret << "\n";
+
 	return ret;
 }
 
 void* STEF2_GetGameAPI(void* import) {
+	LOG(TRACE, "QMM") << "STEF2_GetGameAPI(" << import << ") called\n";
+
 	// original import struct from engine
 	// the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
 	game_import_t* gi = (game_import_t*)import;
@@ -877,6 +891,8 @@ void* STEF2_GetGameAPI(void* import) {
 
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
 	g_gameinfo.pfnsyscall = STEF2_syscall;
+
+	LOG(TRACE, "QMM") << "STEF2_GetGameAPI(" << import << ") returning" << (void*)&qmm_export << "\n";
 
 	// struct full of export lambdas to QMM's vmMain
 	// this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -1274,5 +1290,18 @@ const char* STEF2_mod_msg_names(int cmd) {
 		GEN_CASE(GAMEVP_ERRORMESSAGE);
 		default:
 			return "unknown";
+	}
+}
+
+bool STEF2_is_mod_trace_msg(int cmd) {
+	switch (cmd) {
+	case GAME_CLIENT_THINK:
+	case GAME_PREP_FRAME:
+	case GAME_RUN_FRAME:
+	case GAME_BOTAISTARTFRAME:
+	case GAME_GETENTITY_CURRENT_ANIMFRAME:
+		return true;
+	default:
+		return false;
 	}
 }

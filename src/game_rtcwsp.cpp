@@ -246,3 +246,16 @@ const char* RTCWSP_mod_msg_names(int cmd) {
 			return "unknown";
 	}
 }
+
+bool RTCWSP_is_mod_trace_msg(int cmd) {
+	switch (cmd) {
+	case GAME_CLIENT_THINK:
+	case GAME_RUN_FRAME:
+	case BOTAI_START_FRAME:
+	case AICAST_VISIBLEFROMPOS:
+	case AICAST_CHECKATTACKATPOS:
+		return true;
+	default:
+		return false;
+	}
+}

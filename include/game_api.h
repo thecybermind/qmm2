@@ -17,6 +17,7 @@ Created By:
 
 typedef int (*vmsyscall_t)(unsigned char* membase, int cmd, int* args);
 typedef const char* (*msgname_t)(int msg);
+typedef bool (*tracemsg_t)(int msg);
 typedef void* (*apientry_t)(void* import);
 
 // a list of all the mod messages used by QMM
@@ -72,6 +73,7 @@ typedef struct {
 	int* qmm_mod_msgs;					// array of mod messages used by QMM
 	msgname_t eng_msg_names;			// pointer to a function that returns a string for a given engine message
 	msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
+	tracemsg_t is_mod_trace_msg;		// pointer to a function that returns true for functions that should be trace logged instead of debug
 	vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
 	apientry_t apientry;				// pointer to a function that handles GetGameAPI entry for a game
 	int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
@@ -89,6 +91,7 @@ extern supportedgame_t g_supportedgames[];
 							extern int game##_qmm_mod_msgs[]; \
 							const char* game##_eng_msg_names(int msg); \
 							const char* game##_mod_msg_names(int msg); \
+							bool game##_is_mod_trace_msg(int msg)
 
 // generate extern for the vmsyscall function (if game supports it)
 #define GEN_VMEXT(game)		int game##_vmsyscall(unsigned char* membase, int cmd, int* args)
@@ -97,7 +100,7 @@ extern supportedgame_t g_supportedgames[];
 #define GEN_APIEXT(game)	void* game##_GetGameAPI(void* import)
 
 // generate struct info for the short name, messages arrays, and message name functions
-#define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names
+#define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names, game##_is_mod_trace_msg
 
 // generate a case/string line for the message name functions
 #define GEN_CASE(x)			case x: return #x

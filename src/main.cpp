@@ -360,6 +360,9 @@ void main_g_argv(int argn, char* buf, int buflen) {
 C_DLLEXPORT int vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
+	int loglevel = g_gameinfo.game->is_mod_trace_msg(cmd) ? TRACE : DEBUG;
+	LOG(loglevel, "QMM") << "vmMain(" << g_gameinfo.game->mod_msg_names(cmd) << ") called\n";
+
 	// couldn't load engine info, so we will just call syscall(G_ERROR) to exit
 	if (!g_gameinfo.game) {
 		// calling G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't send G_ERROR in GAME_SHUTDOWN or it'll just recurse		
@@ -369,22 +372,21 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 	}
 
 	if (cmd == QMM_MOD_MSG[QMM_GAME_INIT]) {
-		// add engine G_PRINT logger
+		// add engine G_PRINT logger (info level)
 		log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], log_format(metadata, message, false).c_str());
-		});
-		// add g_log file to logger
+		}, AixLog::Severity::info);
+		// add g_log file to logger (notice level)
 		// log_write will silently no-op until it has the file handle from syscall(G_FS_FOPEN_FILE)
 		log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
 			log_write(log_format(metadata, message, false).c_str());
-		});
+		}, AixLog::Severity::notice);
 
 		// get mod dir from engine
 		g_gameinfo.moddir = util_get_str_cvar("fs_game");
 		// the default mod (including all singleplayer games) return "" for the fs_game, so grab the default mod dir from game info instead
-		if (g_gameinfo.moddir.empty()) {
+		if (g_gameinfo.moddir.empty())
 			g_gameinfo.moddir = g_gameinfo.game->moddir;
-		}
 
 		LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS ") initializing\n";
 		LOG(INFO, "QMM") << fmt::format("Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file" );
@@ -521,8 +523,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 			int len = 0;
 			static char bigbuf[1024];
 			for (int i = 0; i < argc; ++i) {
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], i, bigbuf, sizeof(bigbuf));
-				bigbuf[sizeof(bigbuf) - 1] = '\0';
+				main_g_argv(i, bigbuf, sizeof(bigbuf));
 				len += (strlen(bigbuf) + 1);	// 1 for space
 				if (len > 900)
 					break;
@@ -595,6 +596,8 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		LOG(INFO, "QMM") << "Finished shutting down\n";
 	}
 
+	LOG(loglevel, "QMM") << "vmMain(" << g_gameinfo.game->mod_msg_names(cmd) << ") returning " << final_ret << "\n";
+	
 	return final_ret;
 }
 
@@ -610,7 +613,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 int syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
-	// LOG(INFO, "QMM") << "syscall(" << g_gameinfo.game->eng_msg_names(cmd) << ") called\n";
+	LOG(DEBUG, "QMM") << "syscall(" << g_gameinfo.game->eng_msg_names(cmd) << ") called\n";
 
 	// if this is a call to close a file, check the handle to see if it matches our existing log handle
 	if (cmd == QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE]) {
@@ -665,10 +668,12 @@ int syscall(int cmd, ...) {
 	// if this is a call to open a file for APPEND or APPEND_SYNC
 	if (cmd == QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE] && args[1]) {
 		if (args[2] == QMM_ENG_MSG[QMM_FS_APPEND] || args[2] == QMM_ENG_MSG[QMM_FS_APPEND_SYNC]) {
+			char* file = (char*)(args[0]);
 			// compare filename against g_log cvar
-			if (str_striequal(util_get_str_cvar("g_log"), (char*)(args[0]))) {
+			if (str_striequal(util_get_str_cvar("g_log"), file)) {
 				// we have it, save log file handle
-				log_set(*(int*)(args[1]));
+				int handle = *(int*)(args[1]);
+				log_set(handle);
 				LOG(NOTICE, "QMM") << "Successfully hooked g_log file\n";
 				// directly write these to the g_log file but not to other logs since g_log just got hooked
 				log_write("(QMM) QMM v" QMM_VERSION " (" QMM_OS ") loaded\n");
@@ -680,7 +685,7 @@ int syscall(int cmd, ...) {
 		}
 	}
 
-	// LOG(INFO, "QMM") << "syscall(" << g_gameinfo.game->eng_msg_names(cmd) << ") returning " << final_ret << "\n";
+	LOG(DEBUG, "QMM") << "syscall(" << g_gameinfo.game->eng_msg_names(cmd) << ") returning " << final_ret << "\n";
 
 	return final_ret;
 }

@@ -11,23 +11,24 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
-#include <mohaa/qcommon/q_shared.h>
+#include <mohsh/qcommon/q_shared.h>
 // fix for type mismatch of GetGameAPI in g_public.h
 // the actual type should be: game_export_t *GetGameAPI(game_import_t *import)
 // but to avoid having to include game-specific headers in main.cpp, our export is void *GetGameAPI(void *import)
 #define GetGameAPI GetGameAPI2 
 #define GAME_DLL
-#include <mohaa/fgame/g_public.h>
+#include <mohsh/fgame/g_public.h>
 #undef GetGameAPI
 #undef GAME_DLL
 #include "game_api.h"
 #include "log.h"
-// QMM-specific MOHAA header
-#include "game_mohaa.h"
+// QMM-specific MOHSH header
+#include "game_mohsh.h"
 #include "main.h"
 
-GEN_QMM_MSGS(MOHAA);
-GEN_EXTS(MOHAA);
+GEN_EXTS(MOHSH); 
+
+GEN_QMM_MSGS(MOHSH);
 
 // a copy of the original import struct that comes from the game engine. this is given to plugins
 static game_import_t orig_import;
@@ -45,7 +46,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Error, G_ERROR),
 	GEN_IMPORT(Milliseconds, G_MILLISECONDS),
 	GEN_IMPORT(LV_ConvertString, G_LV_CONVERTSTRING),
-	// GEN_IMPORT(CL_LV_ConvertString, G_CL_LV_CONVERTSTRING),
+	GEN_IMPORT(CL_LV_ConvertString, G_CL_LV_CONVERTSTRING),
 	GEN_IMPORT(Malloc, G_MALLOC),
 	GEN_IMPORT(Free, G_FREE),
 	GEN_IMPORT(Cvar_Get, G_CVAR_GET),
@@ -62,7 +63,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(FS_WriteFile, G_FS_WRITEFILE),
 	GEN_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE),
 	GEN_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND),
-	// GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
+	GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
 	GEN_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE),
 	GEN_IMPORT(FS_Write, G_FS_WRITE),
 	GEN_IMPORT(FS_Read, G_FS_READ),
@@ -75,8 +76,8 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(FS_ListFiles, G_FS_LISTFILES),
 	GEN_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST),
 	GEN_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME),
-	GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
-	// GEN_IMPORT(ExecuteConsoleCommand, G_EXECUTECONSOLECOMMAND),
+	GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_2),
+	GEN_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND),
 	GEN_IMPORT(DebugGraph, G_DEBUGGRAPH),
 	GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
 	GEN_IMPORT(DropClient, G_DROPCLIENT),
@@ -107,7 +108,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(SightTraceEntity, G_SIGHTTRACEENTITY),
 	GEN_IMPORT(SightTrace, G_SIGHTTRACE),
 	GEN_IMPORT(trace, G_TRACE),
-	// GEN_IMPORT(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION),
+	GEN_IMPORT(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION),
 	GEN_IMPORT(GetShader, G_GETSHADER),
 	GEN_IMPORT(pointcontents, G_POINTCONTENTS),
 	GEN_IMPORT(PointBrushnum, G_POINTBRUSHNUM),
@@ -119,7 +120,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
 	GEN_IMPORT(AreaEntities, G_AREAENTITIES),
 	GEN_IMPORT(ClipToEntity, G_CLIPTOENTITY),
-	// GEN_IMPORT(HitEntity, G_HITENTITY),
+	GEN_IMPORT(HitEntity, G_HITENTITY),
 	GEN_IMPORT(imageindex, G_IMAGEINDEX),
 	GEN_IMPORT(itemindex, G_ITEMINDEX),
 	GEN_IMPORT(soundindex, G_SOUNDINDEX),
@@ -143,10 +144,10 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Anim_Frametime, G_ANIM_FRAMETIME),
 	GEN_IMPORT(Anim_CrossTime, G_ANIM_CROSSTIME),
 	GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
-	// GEN_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA),
+	GEN_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA),
 	GEN_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA),
 	GEN_IMPORT(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME),
-	// GEN_IMPORT(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME),
+	GEN_IMPORT(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME),
 	GEN_IMPORT(Anim_Flags, G_ANIM_FLAGS),
 	GEN_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL),
 	GEN_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS),
@@ -215,7 +216,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(HudDrawString, G_HUDDRAWSTRING),
 	GEN_IMPORT(HudDrawFont, G_HUDDRAWFONT),
 	GEN_IMPORT(SanitizeName, G_SANITIZENAME),
-	// GEN_IMPORT(pvssoundindex, G_PVSSOUNDINDEX),
+	GEN_IMPORT(pvssoundindex, G_PVSSOUNDINDEX),
 	nullptr	//fsDebug
 };
 
@@ -272,11 +273,11 @@ static game_export_t qmm_export = {
 typedef int(*pfn_import_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6);
 #define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((pfn_import_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break
 #define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (int)(orig_import. field); break
-int MOHAA_syscall(int cmd, ...) {
+int MOHSH_syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
 	if (cmd != G_PRINT)
-		LOG(TRACE, "QMM") << "MOHAA_syscall(" << MOHAA_eng_msg_names(cmd) << ") called\n";
+		LOG(TRACE, "QMM") << "MOHSH_syscall(" << MOHSH_eng_msg_names(cmd) << ") called\n";
 
 	// store return value in case we do some stuff after the function call is over
 	int ret = 0;
@@ -289,7 +290,7 @@ int MOHAA_syscall(int cmd, ...) {
 		ROUTE_IMPORT(Error, G_ERROR);
 		ROUTE_IMPORT(Milliseconds, G_MILLISECONDS);
 		ROUTE_IMPORT(LV_ConvertString, G_LV_CONVERTSTRING);
-		// ROUTE_IMPORT(CL_LV_ConvertString, G_CL_LV_CONVERTSTRING);
+		ROUTE_IMPORT(CL_LV_ConvertString, G_CL_LV_CONVERTSTRING);
 		ROUTE_IMPORT(Malloc, G_MALLOC);
 		ROUTE_IMPORT(Free, G_FREE);
 		ROUTE_IMPORT(Cvar_Get, G_CVAR_GET);
@@ -306,7 +307,7 @@ int MOHAA_syscall(int cmd, ...) {
 		ROUTE_IMPORT(FS_WriteFile, G_FS_WRITEFILE);
 		ROUTE_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE);
 		ROUTE_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND);
-		// ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
+		ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
 		ROUTE_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE);
 		ROUTE_IMPORT(FS_Write, G_FS_WRITE);
 		ROUTE_IMPORT(FS_Read, G_FS_READ);
@@ -319,8 +320,8 @@ int MOHAA_syscall(int cmd, ...) {
 		ROUTE_IMPORT(FS_ListFiles, G_FS_LISTFILES);
 		ROUTE_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST);
 		ROUTE_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME);
-		ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
-		// ROUTE_IMPORT(ExecuteConsoleCommand, G_EXECUTECONSOLECOMMAND);
+		ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_2);
+		ROUTE_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND);
 		ROUTE_IMPORT(DebugGraph, G_DEBUGGRAPH);
 		ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
 		ROUTE_IMPORT(DropClient, G_DROPCLIENT);
@@ -351,7 +352,7 @@ int MOHAA_syscall(int cmd, ...) {
 		ROUTE_IMPORT(SightTraceEntity, G_SIGHTTRACEENTITY);
 		ROUTE_IMPORT(SightTrace, G_SIGHTTRACE);
 		ROUTE_IMPORT(trace, G_TRACE);
-		// ROUTE_IMPORT(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION);
+		ROUTE_IMPORT(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION);
 		ROUTE_IMPORT(GetShader, G_GETSHADER);
 		ROUTE_IMPORT(pointcontents, G_POINTCONTENTS);
 		ROUTE_IMPORT(PointBrushnum, G_POINTBRUSHNUM);
@@ -363,7 +364,7 @@ int MOHAA_syscall(int cmd, ...) {
 		ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
 		ROUTE_IMPORT(AreaEntities, G_AREAENTITIES);
 		ROUTE_IMPORT(ClipToEntity, G_CLIPTOENTITY);
-		// ROUTE_IMPORT(HitEntity, G_HITENTITY);
+		ROUTE_IMPORT(HitEntity, G_HITENTITY);
 		ROUTE_IMPORT(imageindex, G_IMAGEINDEX);
 		ROUTE_IMPORT(itemindex, G_ITEMINDEX);
 		ROUTE_IMPORT(soundindex, G_SOUNDINDEX);
@@ -387,10 +388,10 @@ int MOHAA_syscall(int cmd, ...) {
 		ROUTE_IMPORT(Anim_Frametime, G_ANIM_FRAMETIME);
 		ROUTE_IMPORT(Anim_CrossTime, G_ANIM_CROSSTIME);
 		ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
-		// ROUTE_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA);
+		ROUTE_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA);
 		ROUTE_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA);
 		ROUTE_IMPORT(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME);
-		// ROUTE_IMPORT(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME);
+		ROUTE_IMPORT(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME);
 		ROUTE_IMPORT(Anim_Flags, G_ANIM_FLAGS);
 		ROUTE_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL);
 		ROUTE_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS);
@@ -455,7 +456,7 @@ int MOHAA_syscall(int cmd, ...) {
 		ROUTE_IMPORT(HudDrawString, G_HUDDRAWSTRING);
 		ROUTE_IMPORT(HudDrawFont, G_HUDDRAWFONT);
 		ROUTE_IMPORT(SanitizeName, G_SANITIZENAME);
-		// ROUTE_IMPORT(pvssoundindex, G_PVSSOUNDINDEX);
+		ROUTE_IMPORT(pvssoundindex, G_PVSSOUNDINDEX);
 
 		// handle cmds for variables, this is how a plugin would get these values if needed
 		ROUTE_IMPORT_VAR(DebugLines, GVP_DEBUGLINES);
@@ -483,8 +484,8 @@ int MOHAA_syscall(int cmd, ...) {
 			int bufsize = args[2];
 			cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
 			if (cvar)
-				strncpy(buffer, cvar->string, bufsize);
-			buffer[bufsize - 1] = '\0';
+				strncpy(buffer, cvar->string, bufsize - 1);
+			buffer[bufsize - 2] = '\0';
 			break;
 		}
 		case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -496,12 +497,6 @@ int MOHAA_syscall(int cmd, ...) {
 				ret = cvar->integer;
 			break;
 		}
-		case G_FS_FOPEN_FILE:
-			// this doesn't get called by QMM in MOHAA (only in engines with QVM mods), and MOHAA doesn't open a log file
-			// so the cmd == QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE] check in syscall will simply fail at this negative number
-			// this is included here only for completeness, really
-			ret = 0;
-			break;
 		default:
 			break;
 	};
@@ -509,7 +504,7 @@ int MOHAA_syscall(int cmd, ...) {
 	// do anything that needs to be done after function call here
 
 	if (cmd != G_PRINT)
-		LOG(TRACE, "QMM") << "MOHAA_syscall(" << MOHAA_eng_msg_names(cmd) << ") returning " << ret << "\n";
+		LOG(TRACE, "QMM") << "MOHSH_syscall(" << MOHSH_eng_msg_names(cmd) << ") returning " << ret << "\n";
 
 	return ret;
 }
@@ -519,10 +514,10 @@ int MOHAA_syscall(int cmd, ...) {
 typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8);
 #define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((pfn_export_t)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (int)(orig_export-> field); break
-int MOHAA_vmMain(int cmd, ...) {
+int MOHSH_vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(TRACE, "QMM") << "MOHAA_vmMain(" << MOHAA_mod_msg_names(cmd) << ") called\n";
+	LOG(TRACE, "QMM") << "MOHSH_vmMain(" << MOHSH_mod_msg_names(cmd) << ") called\n";
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
 	if (!orig_export)
@@ -589,13 +584,13 @@ int MOHAA_vmMain(int cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.errorMessage = orig_export->errorMessage;
 
-	LOG(TRACE, "QMM") << "MOHAA_vmMain(" << MOHAA_mod_msg_names(cmd) << ") returning " << ret << "\n";
+	LOG(TRACE, "QMM") << "MOHSH_vmMain(" << MOHSH_mod_msg_names(cmd) << ") returning " << ret << "\n";
 
 	return ret;
 }
 
-void* MOHAA_GetGameAPI(void* import) {
-	LOG(TRACE, "QMM") << "MOHAA_GetGameAPI(" << import << ") called\n";
+void* MOHSH_GetGameAPI(void* import) {
+	LOG(TRACE, "QMM") << "MOHSH_GetGameAPI(" << import << ") called\n";
 
 	// original import struct from engine
 	// the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -614,12 +609,12 @@ void* MOHAA_GetGameAPI(void* import) {
 
 	// pointer to wrapper vmMain function that calls actual mod func from orig_export
 	// this gets assigned to g_mod->pfnvmMain in mod.cpp:mod_load()
-	g_gameinfo.api_info.orig_vmmain = MOHAA_vmMain;
+	g_gameinfo.api_info.orig_vmmain = MOHSH_vmMain;
 
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
-	g_gameinfo.pfnsyscall = MOHAA_syscall;
+	g_gameinfo.pfnsyscall = MOHSH_syscall;
 
-	LOG(TRACE, "QMM") << "MOHAA_GetGameAPI(" << import << ") returning" << (void*)&qmm_export << "\n";
+	LOG(TRACE, "QMM") << "MOHSH_GetGameAPI(" << import << ") returning" << (void*)&qmm_export << "\n";
 
 	// struct full of export lambdas to QMM's vmMain
 	// this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -627,7 +622,7 @@ void* MOHAA_GetGameAPI(void* import) {
 	return &qmm_export;
 }
 
-const char* MOHAA_eng_msg_names(int cmd) {
+const char* MOHSH_eng_msg_names(int cmd) {
 	switch (cmd) {
 		GEN_CASE(G_PRINT);
 		GEN_CASE(G_DPRINTF);
@@ -636,7 +631,7 @@ const char* MOHAA_eng_msg_names(int cmd) {
 		GEN_CASE(G_ERROR);
 		GEN_CASE(G_MILLISECONDS);
 		GEN_CASE(G_LV_CONVERTSTRING);
-		// GEN_CASE(G_CL_LV_CONVERTSTRING);
+		GEN_CASE(G_CL_LV_CONVERTSTRING);
 		GEN_CASE(G_MALLOC);
 		GEN_CASE(G_FREE);
 		GEN_CASE(G_CVAR_GET);
@@ -653,7 +648,7 @@ const char* MOHAA_eng_msg_names(int cmd) {
 		GEN_CASE(G_FS_WRITEFILE);
 		GEN_CASE(G_FS_FOPEN_FILE_WRITE);
 		GEN_CASE(G_FS_FOPEN_FILE_APPEND);
-		// GEN_CASE(G_FS_FOPEN_FILE);
+		GEN_CASE(G_FS_FOPEN_FILE);
 		GEN_CASE(G_FS_PREPFILEWRITE);
 		GEN_CASE(G_FS_WRITE);
 		GEN_CASE(G_FS_READ);
@@ -666,8 +661,8 @@ const char* MOHAA_eng_msg_names(int cmd) {
 		GEN_CASE(G_FS_LISTFILES);
 		GEN_CASE(G_FS_FREEFILELIST);
 		GEN_CASE(G_GETARCHIVEFILENAME);
-		GEN_CASE(G_SEND_CONSOLE_COMMAND);
-		// GEN_CASE(G_EXECUTE_CONSOLE_COMMAND);
+		GEN_CASE(G_SEND_CONSOLE_COMMAND_2);
+		GEN_CASE(G_EXECUTE_CONSOLE_COMMAND);
 		GEN_CASE(G_DEBUGGRAPH);
 		GEN_CASE(G_SEND_SERVER_COMMAND);
 		GEN_CASE(G_DROPCLIENT);
@@ -695,7 +690,7 @@ const char* MOHAA_eng_msg_names(int cmd) {
 		GEN_CASE(G_GET_USERINFO);
 		GEN_CASE(G_SETBRUSHMODEL);
 		GEN_CASE(G_TRACE);
-		// GEN_CASE(G_CM_VISUALOBFUSCATION);
+		GEN_CASE(G_CM_VISUALOBFUSCATION);
 		GEN_CASE(G_GETSHADER);
 		GEN_CASE(G_POINTCONTENTS);
 		GEN_CASE(G_POINTBRUSHNUM);
@@ -707,7 +702,7 @@ const char* MOHAA_eng_msg_names(int cmd) {
 		GEN_CASE(G_UNLINKENTITY);
 		GEN_CASE(G_AREAENTITIES);
 		GEN_CASE(G_CLIPTOENTITY);
-		// GEN_CASE(G_HITENTITY);
+		GEN_CASE(G_HITENTITY);
 		GEN_CASE(G_IMAGEINDEX);
 		GEN_CASE(G_ITEMINDEX);
 		GEN_CASE(G_SOUNDINDEX);
@@ -731,10 +726,10 @@ const char* MOHAA_eng_msg_names(int cmd) {
 		GEN_CASE(G_ANIM_FRAMETIME);
 		GEN_CASE(G_ANIM_CROSSTIME);
 		GEN_CASE(G_ANIM_DELTA);
-		// GEN_CASE(G_ANIM_ANGULARDELTA);
+		GEN_CASE(G_ANIM_ANGULARDELTA);
 		GEN_CASE(G_ANIM_HASDELTA);
 		GEN_CASE(G_ANIM_DELTAOVERTIME);
-		// GEN_CASE(G_ANIM_ANGULARDELTAOVERTIME);
+		GEN_CASE(G_ANIM_ANGULARDELTAOVERTIME);
 		GEN_CASE(G_ANIM_FLAGS);
 		GEN_CASE(G_ANIM_FLAGSSKEL);
 		GEN_CASE(G_ANIM_HASCOMMANDS);
@@ -802,7 +797,7 @@ const char* MOHAA_eng_msg_names(int cmd) {
 		GEN_CASE(G_HUDDRAWSTRING);
 		GEN_CASE(G_HUDDRAWFONT);
 		GEN_CASE(G_SANITIZENAME);
-		// GEN_CASE(G_PVSSOUNDINDEX);
+		GEN_CASE(G_PVSSOUNDINDEX);
 		GEN_CASE(GVP_FSDEBUG);
 
 		// special cmds
@@ -815,7 +810,7 @@ const char* MOHAA_eng_msg_names(int cmd) {
 	}
 }
 
-const char* MOHAA_mod_msg_names(int cmd) {
+const char* MOHSH_mod_msg_names(int cmd) {
 	switch (cmd) {
 		GEN_CASE(GAMEV_APIVERSION);
 		GEN_CASE(GAME_INIT);
@@ -863,7 +858,7 @@ const char* MOHAA_mod_msg_names(int cmd) {
 	}
 }
 
-bool MOHAA_is_mod_trace_msg(int cmd) {
+bool MOHSH_is_mod_trace_msg(int cmd) {
 	switch (cmd) {
 	case GAME_CLIENT_THINK:
 	case GAME_BOTTHINK:

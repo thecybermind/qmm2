@@ -15,11 +15,13 @@ Created By:
 #include "aixlog/aixlog.hpp"
 #include "format.h"
 
+// #define LOG_TRACE
+
 void log_init(std::string file);
 
 template <typename T>
-void log_add_sink(T func) {
-	AixLog::Log::instance().add_logsink<AixLog::SinkCallback>(AixLog::Severity::trace, func);
+void log_add_sink(T func, AixLog::Severity level = AixLog::Severity::notice) {
+	AixLog::Log::instance().add_logsink<AixLog::SinkCallback>(level, func);
 }
 
 std::string log_format(const AixLog::Metadata& metadata, const std::string& message, bool timestamp = true);
