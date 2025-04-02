@@ -14,7 +14,7 @@ Created By:
 #include <stef2/game/q_shared.h>
 // fix for type mismatch of GetGameAPI in g_public.h
 // the actual type should be: game_export_t *GetGameAPI(game_import_t *import)
-// but to avoid having to include game-specific headers in main.cpp, our export is void *GetGameAPI(void *import)
+// but to avoid having to include game-specific headers in main.cpp/main.h, our export is void *GetGameAPI(void *import)
 #define GetGameAPI GetGameAPI2 
 #define GAME_DLL
 #include <stef2/game/g_public.h>
@@ -803,7 +803,8 @@ typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3);
 int STEF2_vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(TRACE, "QMM") << "STEF2_vmMain(" << STEF2_mod_msg_names(cmd) << ") called\n";
+	int loglevel = STEF2_is_mod_trace_msg(cmd) ? TRACE : DEBUG;
+	LOG(loglevel, "QMM") << "STEF2_vmMain(" << STEF2_mod_msg_names(cmd) << ") called\n";
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
 	if (!orig_export)
@@ -865,7 +866,7 @@ int STEF2_vmMain(int cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.error_message = orig_export->error_message;
 
-	LOG(TRACE, "QMM") << "STEF2_vmMain(" << STEF2_mod_msg_names(cmd) << ") returning " << ret << "\n";
+	LOG(loglevel, "QMM") << "STEF2_vmMain(" << STEF2_mod_msg_names(cmd) << ") returning " << ret << "\n";
 
 	return ret;
 }

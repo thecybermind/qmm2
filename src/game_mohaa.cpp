@@ -522,7 +522,8 @@ typedef int(*pfn_export_t)(int arg0, int arg1, int arg2, int arg3, int arg4, int
 int MOHAA_vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(TRACE, "QMM") << "MOHAA_vmMain(" << MOHAA_mod_msg_names(cmd) << ") called\n";
+	int loglevel = MOHAA_is_mod_trace_msg(cmd) ? TRACE : DEBUG;
+	LOG(loglevel, "QMM") << "MOHAA_vmMain(" << MOHAA_mod_msg_names(cmd) << ") called\n";
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
 	if (!orig_export)
@@ -589,7 +590,7 @@ int MOHAA_vmMain(int cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.errorMessage = orig_export->errorMessage;
 
-	LOG(TRACE, "QMM") << "MOHAA_vmMain(" << MOHAA_mod_msg_names(cmd) << ") returning " << ret << "\n";
+	LOG(loglevel, "QMM") << "MOHAA_vmMain(" << MOHAA_mod_msg_names(cmd) << ") returning " << ret << "\n";
 
 	return ret;
 }
