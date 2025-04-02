@@ -12,7 +12,7 @@ Created By:
 #ifndef __QMM2_LOG_H__
 #define __QMM2_LOG_H__
 
-#include "aixlog/aixlog.hpp"
+#include <aixlog/aixlog.hpp>
 #include "format.h"
 
 // #define LOG_TRACE

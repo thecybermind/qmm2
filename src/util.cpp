@@ -79,18 +79,18 @@ void* path_get_modulehandle(void* ptr) {
 
 int str_stristr(std::string haystack, std::string needle) {
 	for (auto& c : haystack)
-		c = std::tolower(c);
+		c = (char)std::tolower((unsigned char)c);
 	for (auto& c : needle)
-		c = std::tolower(c);
+		c = (char)std::tolower((unsigned char)c);
 
 	return haystack.find(needle) != std::string::npos;
 }
 
 int str_stricmp(std::string s1, std::string s2) {
 	for (auto& c : s1)
-		c = std::tolower(c);
+		c = (char)std::tolower((unsigned char)c);
 	for (auto& c : s2)
-		c = std::tolower(c);
+		c = (char)std::tolower((unsigned char)c);
 
 	return s1.compare(s2);
 }

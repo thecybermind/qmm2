@@ -10,7 +10,6 @@ Created By:
 */
 
 #include <string>
-#include "aixlog/aixlog.hpp"
 #include "log.h"
 
 void log_init(std::string file) {

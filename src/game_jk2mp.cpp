@@ -9,11 +9,6 @@ Created By:
 
 */
 
-#ifdef _WIN32
-// 'typedef ': ignored on left of '<unnamed-enum>' when no variable is declared
-#pragma warning(disable:4091)
-#endif
-
 #include <jk2mp/game/q_shared.h>
 #include <jk2mp/game/g_public.h>
 
