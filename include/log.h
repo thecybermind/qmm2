@@ -15,9 +15,17 @@ Created By:
 #include <aixlog/aixlog.hpp>
 #include "format.h"
 
-// #define LOG_TRACE
+#ifdef _DEBUG
+#define QMM2_LOG_DEFAULT_SEVERITY AixLog::Severity::debug
+#else
+#define QMM2_LOG_DEFAULT_SEVERITY AixLog::Severity::info
+#endif
 
-void log_init(std::string file);
+
+void log_init(std::string file, AixLog::Severity severity = QMM2_LOG_DEFAULT_SEVERITY);
+
+AixLog::Severity log_severity_from_name(std::string severity);
+void log_set_severity(AixLog::Severity severity);
 
 template <typename T>
 void log_add_sink(T func, AixLog::Severity level = AixLog::Severity::notice) {

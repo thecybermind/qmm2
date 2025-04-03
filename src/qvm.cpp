@@ -45,6 +45,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 		qvm->header.codeoffset > qvm->filesize ||
 		qvm->header.dataoffset > qvm->filesize
 		) {
+		LOG(ERROR, "QMM") << "qvm_load(): Invalid QVM file\n";
 		goto fail;
 	}
 
@@ -61,6 +62,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 
 	// allocate vm memory
 	if (!(qvm->memory = (byte*)qvm_malloc(qvm->memorysize))) {
+		LOG(ERROR, "QMM") << "qvm_load(): Unable to allocate memory for VM: " << qvm->memorysize << " bytes\n";
 		goto fail;
 	}
 	// init the memory
@@ -188,21 +190,21 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 	do {
 		// verify code pointer is in code segment. this is likely malicious?
 		if (!qvm_validate_ptr(qvm, opptr, qvm->codesegment, qvm->codesegment + qvm->codeseglen)) {
-			LOG(ERROR, "QMM") << fmt::format("qvm_exec({}) Execution outside the VM code segment: {}\n", args[2], (void*)opptr);
+			LOG(FATAL, "QMM") << fmt::format("qvm_exec({}) Execution outside the VM code segment: {}\n", args[2], (void*)opptr);
 			qvm_unload(qvm);
 			return 0;
 		}
 		// verify stack pointer is in top half of stack segment. this could be malicious, or an accidental stack overflow
 		if (!qvm_validate_ptr(qvm, stack, qvm->stacksegment + (qvm->stackseglen / 2), qvm->stacksegment + qvm->stackseglen + 1)) {
 			int stacksize = qvm->stacksegment + qvm->stackseglen - (byte*)stack;
-			LOG(ERROR, "QMM") << fmt::format("qvm_exec({}) Stack overflow! Stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], stacksize, qvm->stackseglen / 2);
+			LOG(FATAL, "QMM") << fmt::format("qvm_exec({}) Stack overflow! Stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], stacksize, qvm->stackseglen / 2);
 			qvm_unload(qvm);
 			return 0;
 		}
 		// verify argstack pointer is in bottom half of stack segment. this could be malicious, or an accidental stack overflow
 		if (!qvm_validate_ptr(qvm, qvm->datasegment + qvm->argbase, qvm->stacksegment, qvm->stacksegment + (qvm->stackseglen / 2) + 1)) {
 			int argstacksize = qvm->stacksegment + (qvm->stackseglen / 2) - (qvm->datasegment + qvm->argbase);
-			LOG(ERROR, "QMM") << fmt::format("qvm_exec({}) Arg stack overflow! Arg stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], argstacksize, qvm->stackseglen / 2);
+			LOG(FATAL, "QMM") << fmt::format("qvm_exec({}) Arg stack overflow! Arg stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], argstacksize, qvm->stackseglen / 2);
 			qvm_unload(qvm);
 			return 0;
 		}
@@ -228,7 +230,7 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 
 			// anything else
 			default:
-				LOG(ERROR, "QMM") << fmt::format("qvm_exec({}) Unhandled opcode {}\n", args[2], (int)op);
+				LOG(FATAL, "QMM") << fmt::format("qvm_exec({}) Unhandled opcode {}\n", args[2], (int)op);
 				qvm_unload(qvm);
 				return 0;
 

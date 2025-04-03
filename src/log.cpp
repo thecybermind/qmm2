@@ -12,20 +12,19 @@ Created By:
 #include <string>
 #include "log.h"
 
-void log_init(std::string file) {
-	auto sink_cout = std::make_shared<AixLog::SinkCout>(AixLog::Severity::info);
-	auto sink_file = std::make_shared<AixLog::SinkFile>(
-#ifdef _DEBUG
- #ifdef LOG_TRACE
-		AixLog::Severity::trace
- #else
-		AixLog::Severity::debug
- #endif
-#else
-		AixLog::Severity::info
-#endif
-		, file);
-	AixLog::Log::init({ sink_cout, sink_file });
+static std::shared_ptr<AixLog::SinkFile> s_log_sink_file = nullptr;
+
+void log_init(std::string file, AixLog::Severity severity) {
+	s_log_sink_file = std::make_shared<AixLog::SinkFile>(severity, file);
+	AixLog::Log::init({ s_log_sink_file });
+}
+
+AixLog::Severity log_severity_from_name(std::string severity) {
+	return AixLog::to_severity(severity, QMM2_LOG_DEFAULT_SEVERITY);
+}
+
+void log_set_severity(AixLog::Severity severity) {
+	(*s_log_sink_file).filter.add_filter(severity);
 }
 
 #if 0

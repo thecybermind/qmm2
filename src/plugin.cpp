@@ -76,6 +76,18 @@ static pluginfuncs_t s_pluginfuncs = {
 pluginres_t g_plugin_result = QMM_UNUSED;
 std::vector<plugin_t> g_plugins;
 
+const char* plugin_result_to_str(pluginres_t res) {
+	switch (res) {
+		GEN_CASE(QMM_UNUSED);
+		GEN_CASE(QMM_ERROR);
+		GEN_CASE(QMM_IGNORED);
+		GEN_CASE(QMM_OVERRIDE);
+		GEN_CASE(QMM_SUPERCEDE);
+		default:
+			return "unknown";
+	};
+}
+
 bool plugin_load(plugin_t* p, std::string file) {
 	if (p->dll)
 		return false;

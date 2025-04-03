@@ -83,6 +83,11 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 
 	main_load_config();
 
+	// update log severity for file output
+	std::string cfg_loglevel = cfg_get_string(g_cfg, "loglevel", "");
+	if (!cfg_loglevel.empty())
+		log_set_severity(log_severity_from_name(cfg_loglevel));
+
 	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
 	main_detect_game(cfg_game, QMM_DETECT_DLLENTRY);
 
@@ -139,6 +144,11 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	}
 
 	main_load_config();
+
+	// update log severity for file output
+	std::string cfg_loglevel = cfg_get_string(g_cfg, "loglevel", "");
+	if (!cfg_loglevel.empty())
+		log_set_severity(log_severity_from_name(cfg_loglevel));
 
 	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
 	main_detect_game(cfg_game, QMM_DETECT_GETGAMEAPI);
@@ -228,9 +238,10 @@ void main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 		if (str_striequal(cfg_game, "auto")) {
 			// dll name matches
 			if (str_striequal(g_gameinfo.qmm_file, game.dllname)) {
-				LOG(NOTICE, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", game.dllname, game.gamename_short);
+				LOG(INFO, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", game.dllname, game.gamename_short);
 				// if no hint array exists, assume we match
 				if (!game.exe_hints.size()) {
+					LOG(NOTICE, "QMM") << fmt::format("No exe hint for game, assuming match\n");
 					g_gameinfo.game = &game;
 					g_gameinfo.isautodetected = true;
 					return;
@@ -562,9 +573,8 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		ret = g_mod.pfnvmMain(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
 		// the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for VMs. the
 		// char* is a string to print if the client should not be allowed to connect, so only bother if it's not NULL
-		if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && ret && g_mod.vmbase) {
+		if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && ret && g_mod.vmbase)
 			ret += g_mod.vmbase;
-		}
 	}
 	// if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the actual mod's return value back to the engine
 	if (maxresult < QMM_OVERRIDE) 
@@ -644,6 +654,7 @@ int syscall(int cmd, ...) {
 		g_plugin_result = QMM_UNUSED;
 		// call plugin's syscall and store return value
 		ret = p.QMM_syscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); // update with QMM_MAX_SYSCALL_ARGS
+
 		// set new max result
 		maxresult = util_max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)

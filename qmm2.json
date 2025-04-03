@@ -3,12 +3,14 @@
 
 	"mod": "auto",
 
-	"qvmstacksize": 1,
-
 	"execcfg": "qmmexec.cfg",
 	
 	"plugins": [
 		"qmmaddons/plugin1/dlls/plugin1_qmm.dll",
 		"qmmaddons/plugin2/dlls/plugin2_qmm.dll"
-	]
+	],
+	
+	"qvmstacksize": 1,
+
+	"loglevel": "",
 }

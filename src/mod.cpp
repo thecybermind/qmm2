@@ -59,6 +59,10 @@ bool mod_load(mod_t* mod, std::string file) {
 			return false;
 		}
 		byte* filemem = (byte*)qvm_malloc(filelen);
+		if (!filemem) {
+			LOG(ERROR, "QMM") << "mod_load(" << file << "): Unable to allocate memory for QVM file: " << filelen << " bytes\n";
+			return false;
+		}
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem, filelen, fpk3);
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 
@@ -86,6 +90,7 @@ bool mod_load(mod_t* mod, std::string file) {
 		}
 
 		mod_GetGameAPI_t GetGameAPI = nullptr;
+		void* orig_export = nullptr;
 
 		// if this DLL is the same as QMM, cancel
 		if ((void*)mod->dll == g_gameinfo.qmm_module_ptr) {
@@ -101,7 +106,17 @@ bool mod_load(mod_t* mod, std::string file) {
 
 		// pass the QMM-hooked import pointers to the mod
 		// get the original export pointers from the mod
-		g_gameinfo.api_info.orig_export = GetGameAPI(g_gameinfo.api_info.qmm_import);
+		orig_export = GetGameAPI(g_gameinfo.api_info.qmm_import);
+
+		// handle unlikely case of export being null
+		if (!orig_export) {
+			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): \"GetGameAPI\" function returned null\n", file);
+			goto api_dll_fail;
+		}
+		// store exports for proper routing
+		else {
+			g_gameinfo.api_info.orig_export = orig_export;
+		}
 
 		// this is a pointer to a wrapper vmMain function that calls actual mod func from orig_export
 		mod->pfnvmMain = g_gameinfo.api_info.orig_vmmain;

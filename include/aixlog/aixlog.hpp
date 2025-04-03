@@ -328,7 +328,7 @@ struct Timestamp
     }
 
     /// strftime format + proprietary "#ms" for milliseconds
-    std::string to_string(const std::string& format = "%Y-%m-%d %H-%M-%S.#ms") const
+    std::string to_string(const std::string& format = "%Y-%m-%d %H:%M:%S.#ms") const
     {
         std::time_t now_c = std::chrono::system_clock::to_time_t(time_point);
         struct ::tm now_tm = localtime_xp(now_c);
@@ -782,7 +782,7 @@ protected:
  */
 struct SinkCout : public SinkFormat
 {
-    SinkCout(const Filter& filter, const std::string& format = "%Y-%m-%d %H-%M-%S.#ms [#severity] (#tag_func)") : SinkFormat(filter, format)
+    SinkCout(const Filter& filter, const std::string& format = "%Y-%m-%d %H:%M:%S.#ms [#severity] (#tag_func)") : SinkFormat(filter, format)
     {
     }
 
@@ -798,7 +798,7 @@ struct SinkCout : public SinkFormat
  */
 struct SinkCerr : public SinkFormat
 {
-    SinkCerr(const Filter& filter, const std::string& format = "%Y-%m-%d %H-%M-%S.#ms [#severity] (#tag_func)") : SinkFormat(filter, format)
+    SinkCerr(const Filter& filter, const std::string& format = "%Y-%m-%d %H:%M:%S.#ms [#severity] (#tag_func)") : SinkFormat(filter, format)
     {
     }
 
@@ -814,7 +814,7 @@ struct SinkCerr : public SinkFormat
  */
 struct SinkFile : public SinkFormat
 {
-    SinkFile(const Filter& filter, const std::string& filename, const std::string& format = "%Y-%m-%d %H-%M-%S.#ms [#severity] (#tag_func)")
+    SinkFile(const Filter& filter, const std::string& filename, const std::string& format = "%Y-%m-%d %H:%M:%S.#ms [#severity] (#tag_func)")
         : SinkFormat(filter, format)
     {
         ofs.open(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
