@@ -20,7 +20,8 @@ Created By:
 typedef struct api_info_s {
 	void* orig_import = nullptr;			// original import struct from engine
 	void* orig_export = nullptr;			// original export struct from mod
-	void* qmm_import = nullptr;				// import struct that is hooked by QMM given to the mod
+	void* qmm_import = nullptr;				// import struct that is hooked by QMM and given to the mod
+	void* qmm_export = nullptr;				// export struct that is hooked by QMM and given to the engine
 	mod_vmMain_t orig_vmmain = nullptr;		// pointer to wrapper vmMain function that calls actual mod func from orig_export
 } api_info_t;
 

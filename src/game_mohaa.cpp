@@ -500,7 +500,6 @@ int MOHAA_syscall(int cmd, ...) {
 			// this doesn't get called by QMM in MOHAA (only in engines with QVM mods), and MOHAA doesn't open a log file
 			// so the cmd == QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE] check in syscall will simply fail at this negative number
 			// this is included here only for completeness, really
-			ret = 0;
 			break;
 		default:
 			break;
@@ -612,6 +611,9 @@ void* MOHAA_GetGameAPI(void* import) {
 
 	// this gets passed to the mod's GetGameAPI() function in mod.cpp:mod_load()
 	g_gameinfo.api_info.qmm_import = &qmm_import;
+
+	// this isn't used anywhere except returning from this function, but store it in g_gameinfo.api_info for consistency
+	g_gameinfo.api_info.qmm_export = &qmm_export;
 
 	// pointer to wrapper vmMain function that calls actual mod func from orig_export
 	// this gets assigned to g_mod->pfnvmMain in mod.cpp:mod_load()
