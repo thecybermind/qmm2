@@ -433,7 +433,7 @@ int STEF2_syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
 	if (cmd != G_PRINT)
-		LOG(TRACE, "QMM") << "STEF2_syscall(" << STEF2_eng_msg_names(cmd) << ") called\n";
+		LOG(TRACE, "QMM") << fmt::format("STEF2_syscall({}) called\n", STEF2_eng_msg_names(cmd));
 
 	// store return value in case we do some stuff after the function call is over
 	int ret = 0;
@@ -790,7 +790,7 @@ int STEF2_syscall(int cmd, ...) {
 	// do anything that needs to be done after function call here
 
 	if (cmd != G_PRINT)
-		LOG(TRACE, "QMM") << "STEF2_syscall(" << STEF2_eng_msg_names(cmd) << ") returning " << ret << "\n";
+		LOG(TRACE, "QMM") << fmt::format("STEF2_syscall({}) returning {}\n", STEF2_eng_msg_names(cmd), ret);
 
 	return ret;
 }
@@ -804,7 +804,7 @@ int STEF2_vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
 	int loglevel = STEF2_is_mod_trace_msg(cmd) ? TRACE : DEBUG;
-	LOG(loglevel, "QMM") << "STEF2_vmMain(" << STEF2_mod_msg_names(cmd) << ") called\n";
+	LOG(loglevel, "QMM") << fmt::format("STEF2_vmMain({}) called\n", STEF2_mod_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
 	if (!orig_export)
@@ -866,13 +866,13 @@ int STEF2_vmMain(int cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.error_message = orig_export->error_message;
 
-	LOG(loglevel, "QMM") << "STEF2_vmMain(" << STEF2_mod_msg_names(cmd) << ") returning " << ret << "\n";
+	LOG(loglevel, "QMM") << fmt::format("STEF2_vmMain({}) returning {}\n", STEF2_mod_msg_names(cmd), ret);
 
 	return ret;
 }
 
 void* STEF2_GetGameAPI(void* import) {
-	LOG(TRACE, "QMM") << "STEF2_GetGameAPI(" << import << ") called\n";
+	LOG(TRACE, "QMM") << fmt::format("STEF2_GetGameAPI({}) called\n", import);
 
 	// original import struct from engine
 	// the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -896,7 +896,7 @@ void* STEF2_GetGameAPI(void* import) {
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
 	g_gameinfo.pfnsyscall = STEF2_syscall;
 
-	LOG(TRACE, "QMM") << "STEF2_GetGameAPI(" << import << ") returning" << (void*)&qmm_export << "\n";
+	LOG(TRACE, "QMM") << fmt::format("STEF2_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
 
 	// struct full of export lambdas to QMM's vmMain
 	// this gets returned to the game engine, but we haven't loaded the mod yet.

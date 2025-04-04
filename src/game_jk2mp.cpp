@@ -291,7 +291,7 @@ bool JK2MP_is_mod_trace_msg(int cmd) {
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
 int JK2MP_vmsyscall(byte* membase, int cmd, int* args) {
-	LOG(TRACE, "QMM") << "JK2MP_vmsyscall(" << JK2MP_eng_msg_names(cmd) << ") called\n";
+	LOG(TRACE, "QMM") << fmt::format("JK2MP_vmsyscall({}) called\n", JK2MP_eng_msg_names(cmd));
 
 	switch(cmd) {
 		case G_MILLISECONDS:			// (void)

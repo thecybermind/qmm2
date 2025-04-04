@@ -372,7 +372,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
 	int loglevel = g_gameinfo.game->is_mod_trace_msg(cmd) ? TRACE : DEBUG;
-	LOG(loglevel, "QMM") << "vmMain(" << g_gameinfo.game->mod_msg_names(cmd) << ") called\n";
+	LOG(loglevel, "QMM") << fmt::format("vmMain({}) called\n", g_gameinfo.game->mod_msg_names(cmd));
 
 	// couldn't load engine info, so we will just call syscall(G_ERROR) to exit
 	if (!g_gameinfo.game) {
@@ -606,7 +606,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		LOG(INFO, "QMM") << "Finished shutting down\n";
 	}
 
-	LOG(loglevel, "QMM") << "vmMain(" << g_gameinfo.game->mod_msg_names(cmd) << ") returning " << final_ret << "\n";
+	LOG(loglevel, "QMM") << fmt::format("vmMain({}) returning {}\n", g_gameinfo.game->mod_msg_names(cmd), final_ret);
 	
 	return final_ret;
 }
@@ -623,7 +623,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 int syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
-	LOG(DEBUG, "QMM") << "syscall(" << g_gameinfo.game->eng_msg_names(cmd) << ") called\n";
+	LOG(DEBUG, "QMM") << fmt::format("syscall({}) called\n", g_gameinfo.game->eng_msg_names(cmd));
 
 	// if this is a call to close a file, check the handle to see if it matches our existing log handle
 	if (cmd == QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE]) {
@@ -696,7 +696,7 @@ int syscall(int cmd, ...) {
 		}
 	}
 
-	LOG(DEBUG, "QMM") << "syscall(" << g_gameinfo.game->eng_msg_names(cmd) << ") returning " << final_ret << "\n";
+	LOG(DEBUG, "QMM") << fmt::format("syscall({}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), final_ret);
 
 	return final_ret;
 }

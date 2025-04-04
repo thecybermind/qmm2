@@ -60,7 +60,7 @@ bool mod_load(mod_t* mod, std::string file) {
 		}
 		byte* filemem = (byte*)qvm_malloc(filelen);
 		if (!filemem) {
-			LOG(ERROR, "QMM") << "mod_load(" << file << "): Unable to allocate memory for QVM file: " << filelen << " bytes\n";
+			LOG(ERROR, "QMM") << fmt::format("mod_load({}): Unable to allocate memory for QVM file: {} bytes\n", file, filelen);
 			return false;
 		}
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem, filelen, fpk3);

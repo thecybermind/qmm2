@@ -62,7 +62,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 
 	// allocate vm memory
 	if (!(qvm->memory = (byte*)qvm_malloc(qvm->memorysize))) {
-		LOG(ERROR, "QMM") << "qvm_load(): Unable to allocate memory for VM: " << qvm->memorysize << " bytes\n";
+		LOG(ERROR, "QMM") << fmt::format("qvm_load(): Unable to allocate memory for VM: {} bytes\n", qvm->memorysize);
 		goto fail;
 	}
 	// init the memory
