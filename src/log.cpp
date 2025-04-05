@@ -23,6 +23,10 @@ AixLog::Severity log_severity_from_name(std::string severity) {
 	return AixLog::to_severity(severity, QMM2_LOG_DEFAULT_SEVERITY);
 }
 
+std::string log_name_from_severity(AixLog::Severity severity) {
+	return AixLog::to_string(severity);
+}
+
 void log_set_severity(AixLog::Severity severity) {
 	(*s_log_sink_file).filter.add_filter(severity);
 }

@@ -12,6 +12,7 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdarg.h>
+#include "osdef.h"
 #include "format.h"
 #include "log.h"
 #include "config.h"
@@ -67,7 +68,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 
 	log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
 
-	LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS ") (dllEntry) loaded!\n";
+	LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " SUF_DLL ") (dllEntry) loaded!\n";
 	LOG(INFO, "QMM") << fmt::format("QMM path: \"{}\"\n", g_gameinfo.qmm_path);
 	LOG(INFO, "QMM") << fmt::format("Engine path: \"{}\"\n", g_gameinfo.exe_path);
 	LOG(INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
@@ -132,7 +133,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 
 	log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
 
-	LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS ") (GetGameAPI) loaded!\n";
+	LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " SUF_DLL ") (GetGameAPI) loaded!\n";
 	LOG(INFO, "QMM") << fmt::format("QMM path: \"{}\"\n", g_gameinfo.qmm_path);
 	LOG(INFO, "QMM") << fmt::format("Engine path: \"{}\"\n", g_gameinfo.exe_path);
 	LOG(INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
@@ -237,8 +238,9 @@ void main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 		// otherwise, if auto, we need to check matching dll names, with optional exe hint
 		if (str_striequal(cfg_game, "auto")) {
 			// dll name matches
-			if (str_striequal(g_gameinfo.qmm_file, game.dllname)) {
-				LOG(INFO, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", game.dllname, game.gamename_short);
+			std::string full_dll_name = fmt::format("{}{}", game.dllname, SUF_DLL "." EXT_DLL);
+			if (str_striequal(g_gameinfo.qmm_file, full_dll_name)) {
+				LOG(INFO, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", full_dll_name, game.gamename_short);
 				// if no hint array exists, assume we match
 				if (!game.exe_hints.size()) {
 					LOG(NOTICE, "QMM") << fmt::format("No exe hint for game, assuming match\n");
@@ -279,10 +281,10 @@ bool main_load_mod(std::string cfg_mod) {
 	else if (str_striequal(cfg_mod, "auto")) {
 		std::string try_paths[] = {
 			g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "",	// (only if game engine supports it)
-			fmt::format("{}/qmm_{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname),
-			fmt::format("{}/{}/qmm_{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname),
-			fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname),
-			fmt::format("./{}/qmm_{}", g_gameinfo.moddir, g_gameinfo.game->dllname)
+			fmt::format("{}/qmm_{}{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname, SUF_DLL "." EXT_DLL),
+			fmt::format("{}/{}/qmm_{}{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, SUF_DLL "." EXT_DLL),
+			fmt::format("{}/{}/{}{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, SUF_DLL "." EXT_DLL),
+			fmt::format("./{}/qmm_{}{}", g_gameinfo.moddir, g_gameinfo.game->dllname, SUF_DLL "." EXT_DLL)
 		};
 		// try paths
 		for (auto& try_path : try_paths) {
@@ -350,7 +352,7 @@ void main_load_plugin(std::string plugin_path) {
 void main_g_argv(int argn, char* buf, int buflen) {
 	// syscall-based games don't return pointers because of QVM interaction, so if this returns anything but
 	// null (or true?), we probably are in an api game, and need to get the arg from the return value instead
-	int ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn, buf, buflen);
+	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn, buf, buflen);
 	if (ret > 1)
 		strncpy(buf, (char*)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn), buflen);
 	
@@ -365,10 +367,8 @@ void main_g_argv(int argn, char* buf, int buflen) {
    The internal events we track:
    GAME_INIT (pre): load mod file, load plugins, and optionally execute a cfg file
    GAME_CONSOLE_COMMAND (pre): handle "qmm" server command
-   GAME_CLIENT_COMMAND (pre): if "qmm_nocrash" cvar is set to 1, block client commands that are too long (msgboom bug)
-   GAME_CLIENT_CONNECT (post): if "nogreeting" config option is not set to "true", post a simple QMM greeting message to clients
 */
-C_DLLEXPORT int vmMain(int cmd, ...) {
+C_DLLEXPORT intptr_t vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
 	int loglevel = g_gameinfo.game->is_mod_trace_msg(cmd) ? TRACE : DEBUG;
@@ -387,11 +387,6 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], log_format(metadata, message, false).c_str());
 		}, AixLog::Severity::info);
-		// add g_log file to logger (notice level)
-		// log_write will silently no-op until it has the file handle from syscall(G_FS_FOPEN_FILE)
-		log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
-			log_write(log_format(metadata, message, false).c_str());
-		}, AixLog::Severity::notice);
 
 		// get mod dir from engine
 		g_gameinfo.moddir = util_get_str_cvar("fs_game");
@@ -399,7 +394,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		if (g_gameinfo.moddir.empty())
 			g_gameinfo.moddir = g_gameinfo.game->moddir;
 
-		LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS ") initializing\n";
+		LOG(NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " SUF_DLL ") initializing\n";
 		LOG(INFO, "QMM") << fmt::format("Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file" );
 		LOG(INFO, "QMM") << fmt::format("ModDir: {}\n", g_gameinfo.moddir);
 		LOG(INFO, "QMM") << fmt::format("Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? "(error)": "");
@@ -408,17 +403,11 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		LOG(INFO, "QMM") << "URL: " QMM_URL "\n";
 
 		LOG(INFO, "QMM") << "Registering CVARs\n";
+
 		// make version cvar
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_REGISTER], NULL, "qmm_version", QMM_VERSION, QMM_ENG_MSG[QMM_CVAR_ROM] | QMM_ENG_MSG[QMM_CVAR_SERVERINFO]);
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_SET], "qmm_version", QMM_VERSION);
 
-		// make game cvar
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_REGISTER], NULL, "qmm_game", g_gameinfo.game->gamename_short, QMM_ENG_MSG[QMM_CVAR_ROM]);
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_SET], "qmm_game", g_gameinfo.game->gamename_short);
-
-		// make nocrash cvar
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_REGISTER], NULL, "qmm_nocrash", "1", QMM_ENG_MSG[QMM_CVAR_ARCHIVE]);
-		// don't set this, in case it is set in autoexec.cfg
 		LOG(INFO, "QMM") << "Successfully registered CVARs\n";
 
 		// load mod
@@ -455,12 +444,12 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 	}
 
 	else if (cmd == QMM_MOD_MSG[QMM_GAME_CONSOLE_COMMAND]) {
-		char arg0[5], arg1[8], arg2[10];
+		char arg0[10], arg1[10], arg2[10];
 
 		main_g_argv(0, arg0, sizeof(arg0));
 
 		if (str_striequal("qmm", arg0)) {
-			int argc = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
+			int argc = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
 			if (argc > 1)
 				main_g_argv(1, arg1, sizeof(arg1));
 			if (argc > 2)
@@ -471,7 +460,9 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm status - displays information about QMM\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm list - displays information about loaded QMM plugins\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm info <id> - outputs info on plugin with id\n");
-			} else if (str_striequal("status", arg1)) {
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
+			}
+			else if (str_striequal("status", arg1)) {
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) QMM v" QMM_VERSION " (" QMM_OS ") loaded\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file" ).c_str());
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) ModDir: {}\n", g_gameinfo.moddir).c_str());
@@ -479,7 +470,6 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) URL: " QMM_URL "\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Plugin interface: {}:{}\n", QMM_PIFV_MAJOR, QMM_PIFV_MINOR).c_str());
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) NoCrash: {}\n", util_get_int_cvar("qmm_nocrash") ? "on" : "off").c_str());
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Loaded mod file: {}\n", g_mod.path).c_str());
 				if (g_mod.vmbase) {
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM file size: {}\n", g_mod.qvm.filesize).c_str());
@@ -493,7 +483,8 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 				else {
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Mod vmMain() offset: {}\n", (void*)g_mod.pfnvmMain).c_str());
 				}
-			} else if (str_striequal("list", arg1)) {
+			}
+			else if (str_striequal("list", arg1)) {
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) id - plugin [version]\n");
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) ---------------------\n");
 				for (plugin_t& p : g_plugins) {
@@ -501,7 +492,8 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) {:>2} - {} [{}] ({}) - {}\n", num, p.plugininfo->name, p.plugininfo->version).c_str());
 					++num;
 				}
-			} else if (str_striequal("info", arg1)) {
+			}
+			else if (str_striequal("info", arg1)) {
 				if (argc == 2) {
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm info <id> - outputs info on plugin with id\n");
 					return 1;
@@ -522,37 +514,26 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Unable to find plugin #{}\n", arg2).c_str());
 				}
 			}
+			else if (str_striequal("loglevel", arg1)) {
+				if (argc == 2) {
+					ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
+					return 1;
+				}
+				AixLog::Severity severity = log_severity_from_name(arg2);
+				log_set_severity(severity);
+				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Log level set to {}\n", log_name_from_severity(severity)).c_str());
+			}
 
 			return 1;
-		}
-	}
-
-	else if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_COMMAND]) {
-		if (util_get_int_cvar("qmm_nocrash")) {
-			// pull all args and count total length of command (including spaces between args)
-			int argc = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
-			int len = 0;
-			static char bigbuf[1024];
-			for (int i = 0; i < argc; ++i) {
-				main_g_argv(i, bigbuf, sizeof(bigbuf));
-				len += (strlen(bigbuf) + 1);	// 1 for space
-				if (len > 900)
-					break;
-			}
-			--len;	// get rid of the last space added
-			if (len >= 900) {
-				LOG(WARNING, "QMM") << fmt::format("NoCrash: Userid {} has attempted to execute a command longer than 900 chars\n", args[0]);
-				return 1;
-			}
 		}
 	}
 
 	// store max result
 	pluginres_t maxresult = QMM_UNUSED;
 	// store return value to pass back to the engine (either real vmMain return value, or value given by a QMM_OVERRIDE/QMM_SUPERCEDE plugin)
-	int final_ret = 0;
+	intptr_t final_ret = 0;
 	// temp int for return values
-	int ret = 0;
+	intptr_t ret = 0;
 	// begin passing calls to plugins' QMM_vmMain functions
 	for (plugin_t& p : g_plugins) {
 		g_plugin_result = QMM_UNUSED;
@@ -571,7 +552,7 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 	// call real vmMain function (unless a plugin resulted in QMM_SUPERCEDE)
 	if (maxresult < QMM_SUPERCEDE) {
 		ret = g_mod.pfnvmMain(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
-		// the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for VMs. the
+		// the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs. the
 		// char* is a string to print if the client should not be allowed to connect, so only bother if it's not NULL
 		if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && ret && g_mod.vmbase)
 			ret += g_mod.vmbase;
@@ -584,15 +565,8 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 		p.QMM_vmMain_Post(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
 	}
 
-	// if user is connecting for the first time, user is not a bot, and "nogreeting" option is not set
-	if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && args[1] && !args[2]) {
-		if (!cfg_get_bool(g_cfg, "nogreeting", false)) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND], args[0], "print \"^7This server is running ^4QMM^7 v^4" QMM_VERSION "^7\n\"");
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND], args[0], "print \"^7URL: ^4" QMM_URL "^7\n\"");
-		}
-	}
 	// handle shut down (this is after the mod and plugins get called with GAME_SHUTDOWN)
-	else if (cmd == QMM_MOD_MSG[QMM_GAME_SHUTDOWN]) {
+	if (cmd == QMM_MOD_MSG[QMM_GAME_SHUTDOWN]) {
 		LOG(NOTICE, "QMM") << "Shutting down mod\n";
 		mod_unload(&g_mod);
 
@@ -613,42 +587,19 @@ C_DLLEXPORT int vmMain(int cmd, ...) {
 
 /* Entry point: mod->qmm
    This is the "syscall" function called by the mod as a way to pass info to or get info from the engine.
-   It performs some internal tasks on a few events, and then routes the function call according to the "overall control flow" comment above.
-
-   The internal events we track:
-   G_FS_FCLOSE_FILE (pre): watch for the mod closing the log file handle
-   G_SEND_SERVER_COMMAND (pre): if "qmm_nocrash" cvar is set to 1, block client commands that are too long (msgboom bug)
-   G_FS_FOPEN_FILE (post): watch for the mod opening a handle for the log file (based on g_log cvar), and save it for logging
+   It routes the function call according to the "overall control flow" comment above.
 */
-int syscall(int cmd, ...) {
+intptr_t syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
 	LOG(DEBUG, "QMM") << fmt::format("syscall({}) called\n", g_gameinfo.game->eng_msg_names(cmd));
 
-	// if this is a call to close a file, check the handle to see if it matches our existing log handle
-	if (cmd == QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE]) {
-		if (args[0] == log_get()) {
-			// we have it, output final line and clear log file handle
-			LOG(INFO, "QMM") << "Detected close operation on g_log file handle, unhooking...\n";
-			log_set(-1);
-		}
-	}
-
-	// integrated nocrash protection
-	// vsay fix
-	else if (cmd == QMM_ENG_MSG[QMM_G_SEND_SERVER_COMMAND]) {
-		if (util_get_int_cvar("qmm_nocrash") && args[1] && strlen((char*)(args[1])) >= 1022) {
-			LOG(WARNING, "QMM") << "NoCrash: A user has attempted to use the vsay exploit\n";
-			return 1;
-		}
-	}
-
 	// store max result
 	pluginres_t maxresult = QMM_UNUSED;
 	// store return value to pass back to the mod (either real syscall return value, or value given by a QMM_OVERRIDE/QMM_SUPERCEDE plugin)
-	int final_ret = 0;
+	intptr_t final_ret = 0;
 	// temp int for return values
-	int ret = 0;
+	intptr_t ret = 0;
 	// begin passing calls to plugins' QMM_syscall functions
 	for (plugin_t& p : g_plugins) {
 		g_plugin_result = QMM_UNUSED;
@@ -674,26 +625,6 @@ int syscall(int cmd, ...) {
 	// pass calls to plugins' QMM_syscall_Post functions (ignore return values and results)
 	for (plugin_t& p : g_plugins) {
 		p.QMM_syscall_Post(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); // update with QMM_MAX_SYSCALL_ARGS
-	}
-
-	// if this is a call to open a file for APPEND or APPEND_SYNC
-	if (cmd == QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE] && args[1]) {
-		if (args[2] == QMM_ENG_MSG[QMM_FS_APPEND] || args[2] == QMM_ENG_MSG[QMM_FS_APPEND_SYNC]) {
-			char* file = (char*)(args[0]);
-			// compare filename against g_log cvar
-			if (str_striequal(util_get_str_cvar("g_log"), file)) {
-				// we have it, save log file handle
-				int handle = *(int*)(args[1]);
-				log_set(handle);
-				LOG(NOTICE, "QMM") << "Successfully hooked g_log file\n";
-				// directly write these to the g_log file but not to other logs since g_log just got hooked
-				log_write("(QMM) QMM v" QMM_VERSION " (" QMM_OS ") loaded\n");
-				log_write(fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file" ).c_str());
-				log_write(fmt::format("(QMM) Mod: {}\n", g_gameinfo.moddir).c_str());
-				log_write("(QMM) Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
-				log_write("(QMM) URL: " QMM_URL "\n");
-			}
-		}
 	}
 
 	LOG(DEBUG, "QMM") << fmt::format("syscall({}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), final_ret);

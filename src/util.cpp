@@ -118,7 +118,7 @@ int util_get_int_cvar(const char* cvar) {
 	if (!cvar || !*cvar)
 		return -1;
 
-	return ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_INTEGER_VALUE], cvar);
+	return (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_INTEGER_VALUE], cvar);
 }
 
 // this uses a cycling array of strings so the return value does not need to be stored locally
@@ -134,25 +134,4 @@ const char* util_get_str_cvar(const char* cvar) {
 	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], cvar, temp[i], sizeof(temp[i]));
 	index = (index + 1) & 7;
 	return temp[i];
-}
-
-static int s_fh = -1;
-
-void log_set(int fh) {
-	s_fh = fh;
-}
-
-int log_get() {
-	return s_fh;
-}
-
-int log_write(const char* text, int len) {
-	if (s_fh != -1 && text && *text) {
-		if (len == -1)
-			len = strlen(text);
-
-		return ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_WRITE], text, len, s_fh);
-	}
-	
-	return -1;
 }

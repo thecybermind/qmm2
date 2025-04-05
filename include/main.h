@@ -57,13 +57,14 @@ constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
 
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall);	// initial entry point for non-GetGameAPI games
 C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for GetGameAPI games
-C_DLLEXPORT int vmMain(int cmd, ...);
-int syscall(int cmd, ...);
+C_DLLEXPORT intptr_t vmMain(int cmd, ...);
+intptr_t syscall(int cmd, ...);
+
+constexpr bool QMM_DETECT_GETGAMEAPI = true;
+constexpr bool QMM_DETECT_DLLENTRY = false;
 
 void main_detect_env();
 void main_load_config();
-constexpr bool QMM_DETECT_GETGAMEAPI = true;
-constexpr bool QMM_DETECT_DLLENTRY = false;
 void main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode = QMM_DETECT_DLLENTRY);
 bool main_load_mod(std::string cfg_mod);
 void main_load_plugin(std::string plugin_path);

@@ -167,7 +167,7 @@ void qvm_unload(qvm_t* qvm) {
 	}
 }
 
-int qvm_exec(qvm_t* qvm, int* argv, int argc) {
+int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 	if (!qvm || !qvm->memory)
 		return 0;
 
@@ -179,7 +179,7 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 
 	// push args into the new argstack space
 	// store the current code offset
-	args[0] = qvm->opptr - qvm->codesegment;
+	args[0] = (int)(qvm->opptr - qvm->codesegment);
 	args[1] = 0;	// blank for now
 	// move qvm_exec arguments onto arg stack starting at args[2]
 	if (argv && argc > 0)
@@ -189,7 +189,7 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 	// when it is added to this->codesegment in vmMain's OP_LEAVE, it will result in
 	// opptr being NULL, terminating the execution loop
 	--qvm->stackptr;
-	qvm->stackptr[0] = (qvmop_t*)NULL - qvm->codesegment;
+	qvm->stackptr[0] = (int)((qvmop_t*)NULL - qvm->codesegment);
 
 	// start at beginning of code segment
 	qvmop_t* opptr = qvm->codesegment;
@@ -208,14 +208,14 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 		}
 		// verify stack pointer is in top half of stack segment. this could be malicious, or an accidental stack overflow
 		if (!qvm_validate_ptr(qvm, stack, qvm->stacksegment + (qvm->stackseglen / 2), qvm->stacksegment + qvm->stackseglen + 1)) {
-			int stacksize = qvm->stacksegment + qvm->stackseglen - (byte*)stack;
+			intptr_t stacksize = qvm->stacksegment + qvm->stackseglen - (byte*)stack;
 			LOG(FATAL, "QMM") << fmt::format("qvm_exec({}) Stack overflow! Stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], stacksize, qvm->stackseglen / 2);
 			qvm_unload(qvm);
 			return 0;
 		}
 		// verify argstack pointer is in bottom half of stack segment. this could be malicious, or an accidental stack overflow
 		if (!qvm_validate_ptr(qvm, qvm->datasegment + qvm->argbase, qvm->stacksegment, qvm->stacksegment + (qvm->stackseglen / 2) + 1)) {
-			int argstacksize = qvm->stacksegment + (qvm->stackseglen / 2) - (qvm->datasegment + qvm->argbase);
+			intptr_t argstacksize = qvm->stacksegment + (qvm->stackseglen / 2) - (qvm->datasegment + qvm->argbase);
 			LOG(FATAL, "QMM") << fmt::format("qvm_exec({}) Arg stack overflow! Arg stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], argstacksize, qvm->stackseglen / 2);
 			qvm_unload(qvm);
 			return 0;
@@ -304,7 +304,7 @@ int qvm_exec(qvm_t* qvm, int* argv, int argc) {
 				}
 
 				// replace top of stack with the current instruction index (number of ops from start of code segment)
-				*stack = opptr - qvm->codesegment;
+				*stack = (int)(opptr - qvm->codesegment);
 				// jump to VM function at address
 				JUMP(jmp_to);
 				break;

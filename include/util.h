@@ -29,8 +29,5 @@ int str_striequal(std::string s1, std::string s2);
 char* vaf(const char* format, ...);    // this uses a cycling array of strings so the return value does not need to be stored locally
 int util_get_int_cvar(const char* cvar);
 const char* util_get_str_cvar(const char* cvar);
-void log_set(int fh);
-int log_get();
-int log_write(const char* text, int len = -1);
 
 #endif // __QMM2_UTIL_H__

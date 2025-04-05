@@ -20,8 +20,8 @@ Created By:
 #include "plugin.h"
 #include "util.h"
 
-static int s_plugin_helper_WriteGameLog(const char* text, int len = -1) {
-	return log_write(text, len);
+static void s_plugin_helper_WriteQMMLog(const char* text, int severity) {
+	LOG(severity, "QMM") << text;
 }
 
 static char* s_plugin_helper_VarArgs(const char* format, ...) {
@@ -63,7 +63,7 @@ static const char* s_plugin_helper_GetGameEngine() {
 }
 
 static pluginfuncs_t s_pluginfuncs = {
-	&s_plugin_helper_WriteGameLog,
+	&s_plugin_helper_WriteQMMLog,
 	&s_plugin_helper_VarArgs,
 	&s_plugin_helper_IsQVM,
 	&s_plugin_helper_EngMsgName,

@@ -13,8 +13,9 @@ Created By:
 #define __QMM2_QVM_H__
 
 // magic number is stored in file as 44 14 72 12
-#define	QVM_MAGIC       0x12721444  // little endian
-#define QVM_MAGIC_BIG   0x44147212  // big endian
+#define	QVM_MAGIC       0x12721444
+
+#define QMM_MAX_SYSCALL_ARGS_QVM	13	// change whenever a QVM mod has a bigger syscall list
 
 typedef unsigned char byte;
 typedef int (*vmsyscall_t)(unsigned char* membase, int cmd, int* args);
@@ -134,7 +135,7 @@ typedef struct {
 // entry point for qvms (given to plugins to call for qvm mods)
 bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize);
 void qvm_unload(qvm_t* qvm);
-int qvm_exec(qvm_t* qvm, int* argv, int argc);
+int qvm_exec(qvm_t* qvm, int argc, int* argv);
 
 // easier to change allocation later
 void* qvm_malloc(size_t len);

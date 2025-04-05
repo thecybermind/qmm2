@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#include "osdef.h"
 #include "log.h"
+#include "osdef.h"
 #include "format.h"
 #include "game_api.h"
 #include "main.h"
@@ -22,7 +22,7 @@ Created By:
 mod_t g_mod;
 
 // entry point to store in mod_t->pfnvmMain for qvm mods
-static int s_mod_vmmain(int cmd, ...) {
+static intptr_t s_mod_vmmain(int cmd, ...) {
 	// if qvm isn't loaded (and this isn't GAME_SHUTDOWN), we need to error
 	if (!g_mod.qvm.memory && cmd != QMM_GAME_SHUTDOWN) {
 		LOG(FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", cmd);
@@ -34,10 +34,12 @@ static int s_mod_vmmain(int cmd, ...) {
 
 	// generate new array to also include cmd at the front
 	int qvmargs[QMM_MAX_VMMAIN_ARGS + 1] = { cmd };
-	memcpy(&qvmargs[1], args, sizeof(args));
+	for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; i++) {
+		qvmargs[i + 1] = (int)args[i];
+	}
 
 	// pass array and size to qvm
-	return qvm_exec(&g_mod.qvm, qvmargs, QMM_MAX_VMMAIN_ARGS + 1);
+	return qvm_exec(&g_mod.qvm, QMM_MAX_VMMAIN_ARGS + 1, qvmargs);
 }
 
 bool mod_load(mod_t* mod, std::string file) {
@@ -52,7 +54,7 @@ bool mod_load(mod_t* mod, std::string file) {
 	if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->vmsyscall) {
 		// load file using engine functions to read into pk3s if necessary
 		int fpk3;
-		int filelen = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], file.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
+		int filelen = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], file.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
 		if (filelen <= 0) {
 			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Could not open QVM for reading\n", file);
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
@@ -77,7 +79,7 @@ bool mod_load(mod_t* mod, std::string file) {
 			return false;
 		}
 		mod->pfnvmMain = s_mod_vmmain;
-		mod->vmbase = (int)mod->qvm.datasegment;
+		mod->vmbase = (intptr_t)mod->qvm.datasegment;
 		qvm_free(filemem);
 
 		return true;
@@ -127,6 +129,7 @@ bool mod_load(mod_t* mod, std::string file) {
 		api_dll_fail:
 		if (mod->dll)
 			dlclose(mod->dll);
+		mod->dll = nullptr;
 		return false;
 
 	}
@@ -165,9 +168,10 @@ bool mod_load(mod_t* mod, std::string file) {
 		dll_fail:
 		if (mod->dll)
 			dlclose(mod->dll);
+		mod->dll = nullptr;
 		return false;
 	}
-
+	LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unknown file format\n", file);	
 	return false;
 }
 

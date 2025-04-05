@@ -28,8 +28,8 @@ Created By:
  #define C_DLLEXPORT DLLEXPORT
 #endif
 
-typedef int (*eng_syscall_t)(int cmd, ...);
-typedef int (*mod_vmMain_t)(int cmd, ...);
+typedef intptr_t (*eng_syscall_t)(int cmd, ...);
+typedef intptr_t (*mod_vmMain_t)(int cmd, ...);
 
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, pluginfunc_t, or plugininfo_t
 #define QMM_PIFV_MAJOR  1
@@ -53,7 +53,7 @@ typedef struct {
 
 // prototype struct for QMM plugin util funcs
 typedef struct {
-    int (*pfnWriteGameLog)(const char* text, int len);
+    void (*pfnWriteQMMLog)(const char* text, int severity);
     char* (*pfnVarArgs)(const char* format, ...);
     int (*pfnIsQVM)();
     const char* (*pfnEngMsgName)(int msg);
@@ -63,7 +63,7 @@ typedef struct {
     const char* (*pfnGetGameEngine)();
 } pluginfuncs_t;
 // macros for QMM plugin util funcs
-#define QMM_WRITEGAMELOG    (g_pluginfuncs->pfnWriteGameLog)
+#define QMM_WRITEQMMLOG     (g_pluginfuncs->pfnWriteQMMLog)
 #define QMM_VARARGS         (g_pluginfuncs->pfnVarArgs)
 #define QMM_ISQVM           (g_pluginfuncs->pfnIsQVM)
 #define QMM_ENGMSGNAME      (g_pluginfuncs->pfnEngMsgName)
@@ -85,13 +85,13 @@ typedef enum pluginres_e {
 // QMM_Query
 typedef void (*plugin_query)(plugininfo_t** pinfo);
 // QMM_Attach
-typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, int vmbase, int reserved);
+typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, int reserved);
 // QMM_Detach
 typedef void (*plugin_detach)(int reserved);
 // QMM_syscall
-typedef int (*plugin_syscall)(int cmd, ...);
+typedef intptr_t (*plugin_syscall)(int cmd, ...);
 // QMM_vmMain
-typedef int (*plugin_vmmain)(int cmd, ...);
+typedef intptr_t (*plugin_vmmain)(int cmd, ...);
 
 // plugin use only
 extern plugininfo_t g_plugininfo;       // set '*pinfo' to &g_plugininfo in QMM_Query
@@ -99,7 +99,7 @@ extern eng_syscall_t g_syscall;         // set to 'engfunc' in QMM_Attach
 extern mod_vmMain_t g_vmMain;           // set to 'modfunc' in QMM_Attach
 extern pluginres_t* g_result;           // set to 'result' in QMM_Attach
 extern pluginfuncs_t* g_pluginfuncs;    // set to 'pluginfuncs' in QMM_Attach
-extern int g_vmbase;                    // set to 'vmbase' in QMM_Attach
+extern intptr_t g_vmbase;               // set to 'vmbase' in QMM_Attach
 
 #define QMM_GIVE_PINFO() *pinfo = &g_plugininfo
 #define QMM_SAVE_VARS() do { \
@@ -111,29 +111,29 @@ extern int g_vmbase;                    // set to 'vmbase' in QMM_Attach
         } while(0)
 
 #define QMM_MAX_VMMAIN_ARGS     9
-#define QMM_GET_VMMAIN_ARGS()   int args[QMM_MAX_VMMAIN_ARGS] = {}; \
+#define QMM_GET_VMMAIN_ARGS()   intptr_t args[QMM_MAX_VMMAIN_ARGS] = {}; \
                                 va_list arglist; \
                                 va_start(arglist, cmd); \
                                 for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; ++i) \
-                                    args[i] = va_arg(arglist, int); \
+                                    args[i] = va_arg(arglist, intptr_t); \
                                 va_end(arglist)
 
 #define QMM_MAX_SYSCALL_ARGS    17
-#define QMM_GET_SYSCALL_ARGS()  int args[QMM_MAX_SYSCALL_ARGS] = {}; \
+#define QMM_GET_SYSCALL_ARGS()  intptr_t args[QMM_MAX_SYSCALL_ARGS] = {}; \
                                 va_list arglist; \
                                 va_start(arglist, cmd); \
                                 for (int i = 0; i < QMM_MAX_SYSCALL_ARGS; ++i) \
-                                    args[i] = va_arg(arglist, int); \
+                                    args[i] = va_arg(arglist, intptr_t); \
                                 va_end(arglist)
 
 // prototypes for required entry points in the plugin
 C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
-C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, int vmbase, int reserved);
+C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, int reserved);
 C_DLLEXPORT void QMM_Detach(int reserved);
-C_DLLEXPORT int QMM_vmMain(int cmd, ...);
-C_DLLEXPORT int QMM_vmMain_Post(int cmd, ...);
-C_DLLEXPORT int QMM_syscall(int cmd, ...);
-C_DLLEXPORT int QMM_syscall_Post(int cmd, ...);
+C_DLLEXPORT intptr_t QMM_vmMain(int cmd, ...);
+C_DLLEXPORT intptr_t QMM_vmMain_Post(int cmd, ...);
+C_DLLEXPORT intptr_t QMM_syscall(int cmd, ...);
+C_DLLEXPORT intptr_t QMM_syscall_Post(int cmd, ...);
 
 // macros to help set the plugin result value
 #define QMM_RETURN(x, y)        return (*g_result = (pluginres_t)(x), (y))
@@ -147,8 +147,8 @@ C_DLLEXPORT int QMM_syscall_Post(int cmd, ...);
 // These are generally only needed for pointers inside objects, like gent->parent.
 // As the object are generally tracked through syscall arguments, which are already
 // converted in plugin QMM_syscall functions.
-#define GETPTR(x,y)     (x ? (y)((int)(x) + g_vmbase) : NULL)
-#define SETPTR(x,y)     (x ? (y)((int)(x) - g_vmbase) : NULL)
+#define GETPTR(x,y)     (x ? (y)((intptr_t)(x) + g_vmbase) : NULL)
+#define SETPTR(x,y)     (x ? (y)((intptr_t)(x) - g_vmbase) : NULL)
 
 // Some helpful macros assuming you've stored these in G_LOCATE_GAME_DATA
 #define ENT_FROM_NUM(index)     ((gentity_t*)((unsigned char*)g_gents + g_gentsize * (index)))

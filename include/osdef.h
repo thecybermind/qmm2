@@ -15,14 +15,22 @@ Created By:
 #ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
-#define _CRT_SECURE_NO_WARNINGS 1
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <windows.h>
 #include <limits.h>
-constexpr const char* SUF_DLL = "x86";
-constexpr const char* SUF_SO  = "x86";
-constexpr const char* EXT_DLL = "dll";
-constexpr const char* EXT_SO  = "dll";
-constexpr const char* EXT_QVM = "qvm";
+
+#ifdef _WIN64
+#define SUF_DLL "x86_64"
+#define SUF_SO  "x86_64"
+#else
+#define SUF_DLL "x86"
+#define SUF_SO  "x86"
+#endif
+#define EXT_DLL "dll"
+#define EXT_SO  "dll"
+#define EXT_QVM "qvm"
 
 constexpr const unsigned char MAGIC_DLL[] = { 'M',  'Z', 0x90, 0x00 };
 constexpr const unsigned char MAGIC_SO[]  = { 'M',  'Z', 0x90, 0x00 };
@@ -42,11 +50,17 @@ char* dlerror();			// this will return the last error from any win32 function, n
 #include <unistd.h> 
 #include <limits.h>
 #include <ctype.h>
-constexpr const char* SUF_DLL = "i386";
-constexpr const char* SUF_SO  = "i386";
-constexpr const char* EXT_DLL = "so";
-constexpr const char* EXT_SO  = "so";
-constexpr const char* EXT_QVM = "qvm";
+
+#ifdef __LP64__
+#define SUF_DLL "x86_64"
+#define SUF_SO  "x86_64"
+#else
+#define SUF_DLL "i386"
+#define SUF_SO  "i386"
+#endif
+#define EXT_DLL "so"
+#define EXT_SO  "so"
+#define EXT_QVM "qvm"
 
 constexpr const unsigned char MAGIC_DLL[] = { 0x7F,  'E', 'L',  'F' };
 constexpr const unsigned char MAGIC_SO[]  = { 0x7F,  'E', 'L',  'F' };
@@ -56,11 +70,11 @@ constexpr const unsigned char MAGIC_QVM[] = {  'D', 0x14, 'r', 0x12 };
 
 #else // !_WIN32 && !__linux__
 
-constexpr const char* SUF_DLL = "";
-constexpr const char* SUF_SO  = "";
-constexpr const char* EXT_DLL = "";
-constexpr const char* EXT_SO  = "";
-constexpr const char* EXT_QVM = "";
+#define SUF_DLL ""
+#define SUF_SO  ""
+#define EXT_DLL ""
+#define EXT_SO  ""
+#define EXT_QVM ""
 
 constexpr const unsigned char MAGIC_DLL[] = { 0x00, 0x00, 0x00, 0x00 };
 constexpr const unsigned char MAGIC_SO[]  = { 0x00, 0x00, 0x00, 0x00 };

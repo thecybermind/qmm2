@@ -25,10 +25,7 @@ typedef enum {
 	QMM_GAME_INIT,
 	QMM_GAME_SHUTDOWN,
 	QMM_GAME_CONSOLE_COMMAND,
-	QMM_GAME_CLIENT_CONNECT,
-	QMM_GAME_CLIENT_COMMAND,
-
-	QMM_GAME_MSG_MAX
+	QMM_GAME_CLIENT_CONNECT
 } qmm_mod_msg_t;
 
 // a list of all the engine messages used by QMM
@@ -52,14 +49,9 @@ typedef enum {
 	
 	QMM_EXEC_APPEND,
 	QMM_FS_READ,
-	QMM_FS_APPEND,
-	QMM_FS_APPEND_SYNC,
 
 	QMM_CVAR_SERVERINFO,
-	QMM_CVAR_ROM,
-	QMM_CVAR_ARCHIVE,
-
-	QMM_G_MSG_MAX
+	QMM_CVAR_ROM
 } qmm_eng_msg_t;
 
 // some information for each game engine supported by QMM
@@ -112,11 +104,11 @@ extern supportedgame_t g_supportedgames[];
 		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_SEND_SERVER_COMMAND, \
 		G_CVAR_REGISTER, G_CVAR_SET, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, \
 		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, \
-		EXEC_APPEND, FS_READ, FS_APPEND, FS_APPEND_SYNC, \
-		CVAR_SERVERINFO, CVAR_ROM, CVAR_ARCHIVE \
+		EXEC_APPEND, FS_READ, \
+		CVAR_SERVERINFO, CVAR_ROM \
 	}; \
 	int game##_qmm_mod_msgs[] = { \
-		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, GAME_CLIENT_CONNECT, GAME_CLIENT_COMMAND \
+		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, GAME_CLIENT_CONNECT \
 	}
 
 // macro to create an exe hint array
@@ -124,11 +116,9 @@ extern supportedgame_t g_supportedgames[];
  
 // these macros handle qvm syscall arguments in GAME_vmsyscall functions in game_*.cpp
 // this gets an argument value
-#define vmarg(x)	(args[(x)])
+#define vmarg(x)	args[(x)]
 // this adds the base VM address to a given value
-#define vmadd(x)	((x) ? (x) + (int)membase : NULL)
-// this subtracts the base VM address from the given value
-#define vmsub(x)	((x) ? (x) - (int)membase : NULL)
+#define vmadd(x)	((x) ? membase + (x) : NULL)
 // this adds the base VM address to an argument value
 #define vmptr(x)	(vmadd(vmarg(x)))
 

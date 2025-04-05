@@ -23,7 +23,7 @@ typedef struct mod_s {
 	void* dll = nullptr;
 	qvm_t qvm = {};
 	mod_vmMain_t pfnvmMain = nullptr;
-	int vmbase = 0;
+	intptr_t vmbase = 0;
 	std::string path;
 } mod_t;
 
