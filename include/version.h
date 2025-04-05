@@ -26,11 +26,23 @@ Created By:
 #define QMM_URL         "https://github.com/thecybermind/qmm2/"
 
 #ifdef _WIN32
- #define QMM_OS			"Win32"
+ #define QMM_OS			"Windows"
+
+ #ifdef _WIN64
+  #define QMM_ARCH      "x86_64"
+ #else
+  #define QMM_ARCH      "x86"
+ #endif
 #elif defined(__linux__)
  #define QMM_OS			"Linux"
+ #ifdef __LP64__
+  #define QMM_ARCH      "x86_64"
+ #else
+  #define QMM_ARCH      "x86"
+ #endif
 #else
- #define QMM_OS          "?"
+ #define QMM_OS         "?"
+ #define QMM_ARCH       "?"
 #endif
 
 #define QMM_VERSION_DWORD	QMM_VERSION_MAJOR , QMM_VERSION_MINOR , QMM_VERSION_REV , 0
