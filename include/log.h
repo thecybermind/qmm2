@@ -35,4 +35,14 @@ void log_add_sink(T func, AixLog::Severity level = AixLog::Severity::notice) {
 
 std::string log_format(const AixLog::Metadata& metadata, const std::string& message, bool timestamp = true);
 
+enum {
+	QMM_LOG_TRACE,
+	QMM_LOG_DEBUG,
+	QMM_LOG_INFO,
+	QMM_LOG_NOTICE,
+	QMM_LOG_WARNING,
+	QMM_LOG_ERROR,
+	QMM_LOG_FATAL
+};
+
 #endif // __QMM2_LOG_H__

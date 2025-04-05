@@ -1242,12 +1242,10 @@ static std::ostream& operator<<(std::ostream& os, const Color& color)
 
 } // namespace AixLog
 
-/*
 #ifdef _WIN32
 // We restore the ERROR Windows macro
 #pragma pop_macro("ERROR")
 #pragma pop_macro("DEBUG")
 #endif
-*/
 
 #endif // AIX_LOG_HPP

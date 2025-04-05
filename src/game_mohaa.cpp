@@ -276,7 +276,7 @@ intptr_t MOHAA_syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
 	if (cmd != G_PRINT)
-		LOG(TRACE, "QMM") << fmt::format("MOHAA_syscall({}) called\n", MOHAA_eng_msg_names(cmd));
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_syscall({}) called\n", MOHAA_eng_msg_names(cmd));
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
@@ -508,7 +508,7 @@ intptr_t MOHAA_syscall(int cmd, ...) {
 	// do anything that needs to be done after function call here
 
 	if (cmd != G_PRINT)
-		LOG(TRACE, "QMM") << fmt::format("MOHAA_syscall({}) returning {}\n", MOHAA_eng_msg_names(cmd), ret);
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_syscall({}) returning {}\n", MOHAA_eng_msg_names(cmd), ret);
 
 	return ret;
 }
@@ -595,7 +595,7 @@ intptr_t MOHAA_vmMain(int cmd, ...) {
 }
 
 void* MOHAA_GetGameAPI(void* import) {
-	LOG(TRACE, "QMM") << fmt::format("MOHAA_GetGameAPI({}) called\n", import);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_GetGameAPI({}) called\n", import);
 
 	// original import struct from engine
 	// the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -622,7 +622,7 @@ void* MOHAA_GetGameAPI(void* import) {
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
 	g_gameinfo.pfnsyscall = MOHAA_syscall;
 
-	LOG(TRACE, "QMM") << fmt::format("MOHAA_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
 
 	// struct full of export lambdas to QMM's vmMain
 	// this gets returned to the game engine, but we haven't loaded the mod yet.

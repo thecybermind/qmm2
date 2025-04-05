@@ -51,7 +51,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 		qvm->header.codeoffset > qvm->filesize ||
 		qvm->header.dataoffset > qvm->filesize
 		) {
-		LOG(ERROR, "QMM") << "qvm_load(): Invalid QVM file\n";
+		LOG(QMM_LOG_ERROR, "QMM") << "qvm_load(): Invalid QVM file\n";
 		goto fail;
 	}
 
@@ -68,7 +68,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 
 	// allocate vm memory
 	if (!(qvm->memory = (byte*)qvm_malloc(qvm->memorysize))) {
-		LOG(ERROR, "QMM") << fmt::format("qvm_load(): Unable to allocate memory for VM: {} bytes\n", qvm->memorysize);
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("qvm_load(): Unable to allocate memory for VM: {} bytes\n", qvm->memorysize);
 		goto fail;
 	}
 	// init the memory
@@ -125,7 +125,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 			case OP_GEF:
 				// these ops all jump to an instruction, just a sanity check to make sure it's within range
 				if (*(unsigned int*)codeoffset > qvm->header.numops) {
-					LOG(ERROR, "QMM") << fmt::format("qvm_load(): Invalid target in jump/branch instruction: {} > {}\n", *(int*)codeoffset, qvm->header.numops);
+					LOG(QMM_LOG_ERROR, "QMM") << fmt::format("qvm_load(): Invalid target in jump/branch instruction: {} > {}\n", *(int*)codeoffset, qvm->header.numops);
 					goto fail;
 				}
 				CASE_FALLTHROUGH; // MSVC C26819: Unannotated fallthrough between switch labels
@@ -202,21 +202,21 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 	do {
 		// verify code pointer is in code segment. this is likely malicious?
 		if (!qvm_validate_ptr(qvm, opptr, qvm->codesegment, qvm->codesegment + qvm->codeseglen)) {
-			LOG(FATAL, "QMM") << fmt::format("qvm_exec({}) Execution outside the VM code segment: {}\n", args[2], (void*)opptr);
+			LOG(QMM_LOG_FATAL, "QMM") << fmt::format("qvm_exec({}) Execution outside the VM code segment: {}\n", args[2], (void*)opptr);
 			qvm_unload(qvm);
 			return 0;
 		}
 		// verify stack pointer is in top half of stack segment. this could be malicious, or an accidental stack overflow
 		if (!qvm_validate_ptr(qvm, stack, qvm->stacksegment + (qvm->stackseglen / 2), qvm->stacksegment + qvm->stackseglen + 1)) {
 			intptr_t stacksize = qvm->stacksegment + qvm->stackseglen - (byte*)stack;
-			LOG(FATAL, "QMM") << fmt::format("qvm_exec({}) Stack overflow! Stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], stacksize, qvm->stackseglen / 2);
+			LOG(QMM_LOG_FATAL, "QMM") << fmt::format("qvm_exec({}) Stack overflow! Stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], stacksize, qvm->stackseglen / 2);
 			qvm_unload(qvm);
 			return 0;
 		}
 		// verify argstack pointer is in bottom half of stack segment. this could be malicious, or an accidental stack overflow
 		if (!qvm_validate_ptr(qvm, qvm->datasegment + qvm->argbase, qvm->stacksegment, qvm->stacksegment + (qvm->stackseglen / 2) + 1)) {
 			intptr_t argstacksize = qvm->stacksegment + (qvm->stackseglen / 2) - (qvm->datasegment + qvm->argbase);
-			LOG(FATAL, "QMM") << fmt::format("qvm_exec({}) Arg stack overflow! Arg stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], argstacksize, qvm->stackseglen / 2);
+			LOG(QMM_LOG_FATAL, "QMM") << fmt::format("qvm_exec({}) Arg stack overflow! Arg stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], argstacksize, qvm->stackseglen / 2);
 			qvm_unload(qvm);
 			return 0;
 		}
@@ -242,7 +242,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
 			// anything else
 			default:
-				LOG(FATAL, "QMM") << fmt::format("qvm_exec({}) Unhandled opcode {}\n", args[2], (int)op);
+				LOG(QMM_LOG_FATAL, "QMM") << fmt::format("qvm_exec({}) Unhandled opcode {}\n", args[2], (int)op);
 				qvm_unload(qvm);
 				return 0;
 

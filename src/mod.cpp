@@ -23,10 +23,9 @@ mod_t g_mod;
 
 // entry point to store in mod_t->pfnvmMain for qvm mods
 static intptr_t s_mod_vmmain(int cmd, ...) {
-	// if qvm isn't loaded anymore, we need to error
-	// calling G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't send if this is a GAME_SHUTDOWN call or it'll just recurse
+	// if qvm isn't loaded (and this isn't GAME_SHUTDOWN), we need to error
 	if (!g_mod.qvm.memory && cmd != QMM_GAME_SHUTDOWN) {
-		LOG(FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", cmd);
+		LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", cmd);
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded due to a run-time error.\n=========\n");
 		return 0;
 	}
@@ -57,13 +56,13 @@ bool mod_load(mod_t* mod, std::string file) {
 		int fpk3;
 		int filelen = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], file.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
 		if (filelen <= 0) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Could not open QVM for reading\n", file);
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Could not open QVM for reading\n", file);
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 			return false;
 		}
 		byte* filemem = (byte*)qvm_malloc(filelen);
 		if (!filemem) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load({}): Unable to allocate memory for QVM file: {} bytes\n", file, filelen);
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load({}): Unable to allocate memory for QVM file: {} bytes\n", file, filelen);
 			return false;
 		}
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem, filelen, fpk3);
@@ -76,7 +75,7 @@ bool mod_load(mod_t* mod, std::string file) {
 		if (!qvm_load(&mod->qvm, filemem, filelen, g_gameinfo.game->vmsyscall, stacksize)) {
 			qvm_unload(&mod->qvm);
 			qvm_free(filemem);
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", file);
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", file);
 			return false;
 		}
 		mod->pfnvmMain = s_mod_vmmain;
@@ -88,7 +87,7 @@ bool mod_load(mod_t* mod, std::string file) {
 	// only allow GetGameAPI-style mod if the game engine supports it
 	else if (str_striequal(ext, EXT_DLL) && g_gameinfo.game->apientry) {
 		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): GetGameAPI-style DLL load failed: {}\n", file, dlerror());
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): GetGameAPI-style DLL load failed: {}\n", file, dlerror());
 			return false;
 		}
 
@@ -97,13 +96,13 @@ bool mod_load(mod_t* mod, std::string file) {
 
 		// if this DLL is the same as QMM, cancel
 		if ((void*)mod->dll == g_gameinfo.qmm_module_ptr) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): GetGameAPI-style DLL is actually QMM?\n", file);
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): GetGameAPI-style DLL is actually QMM?\n", file);
 			goto api_dll_fail;
 		}
 
 		// look for GetGameAPI function
 		if (!(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod->dll, "GetGameAPI"))) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", file);
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", file);
 			goto api_dll_fail;
 		}
 
@@ -113,7 +112,7 @@ bool mod_load(mod_t* mod, std::string file) {
 
 		// handle unlikely case of export being null
 		if (!orig_export) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): \"GetGameAPI\" function returned null\n", file);
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): \"GetGameAPI\" function returned null\n", file);
 			goto api_dll_fail;
 		}
 		// store exports for proper routing
@@ -137,7 +136,7 @@ bool mod_load(mod_t* mod, std::string file) {
 	// load vmMain DLL
 	else if (str_striequal(ext, EXT_DLL)) {
 		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror());
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror());
 			return false;
 		}
 
@@ -145,19 +144,19 @@ bool mod_load(mod_t* mod, std::string file) {
 
 		// if this DLL is the same as QMM, cancel
 		if ((void*)mod->dll == g_gameinfo.qmm_module_ptr) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL is actually QMM?\n", file);
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL is actually QMM?\n", file);
 			goto dll_fail;
 		}
 
 		// look for dllEntry function
 		if (!(dllEntry = (mod_dllEntry_t)dlsym(mod->dll, "dllEntry"))) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", file);
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", file);
 			goto dll_fail;
 		}
 
 		// look for vmMain function
 		if (!(mod->pfnvmMain = (mod_vmMain_t)dlsym(mod->dll, "vmMain"))) {
-			LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"vmMain\" function\n", file);
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"vmMain\" function\n", file);
 			goto dll_fail;
 		}
 
@@ -172,7 +171,7 @@ bool mod_load(mod_t* mod, std::string file) {
 		mod->dll = nullptr;
 		return false;
 	}
-	LOG(ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unknown file format\n", file);	
+	LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unknown file format\n", file);	
 	return false;
 }
 
