@@ -106,7 +106,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 		qvm->codesegment[i].op = (qvmopcode_t)opcode;
 
 		switch (opcode) {
-			// these ops all have full 4-byte 'param's, which may need to be byteswapped			
+			// these ops all have full 4-byte params
 			case OP_EQ:
 			case OP_NE:
 			case OP_LTI:
@@ -137,9 +137,9 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 				qvm->codesegment[i].param = *(int*)codeoffset;
 				codeoffset += 4;
 				break;
-			// this op has a 1-byte 'param'
+			// this op has a 1-byte param
 			case OP_ARG:
-				qvm->codesegment[i].param = (int)*codeoffset;
+				qvm->codesegment[i].param = *codeoffset;
 				codeoffset++;
 				break;
 			// remaining ops require no 'param'
