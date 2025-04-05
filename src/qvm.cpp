@@ -15,6 +15,12 @@ Created By:
 #include "format.h"
 #include "qvm.h"
 
+#ifdef _WIN32
+#define CASE_FALLTHROUGH [[fallthrough]]
+#else
+#define CASE_FALLTHROUGH
+#endif
+
 static bool qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start = nullptr, void* end = nullptr) {
 	// default to validating ptr is inside the data + stack segments
 	start = start ? start : qvm->datasegment;
@@ -100,11 +106,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 		qvm->codesegment[i].op = (qvmopcode_t)opcode;
 
 		switch (opcode) {
-			// these ops all have full 4-byte 'param's, which may need to be byteswapped
-			case OP_ENTER:
-			case OP_LEAVE:
-			case OP_CONST:
-			case OP_LOCAL:
+			// these ops all have full 4-byte 'param's, which may need to be byteswapped			
 			case OP_EQ:
 			case OP_NE:
 			case OP_LTI:
@@ -121,6 +123,16 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 			case OP_LEF:
 			case OP_GTF:
 			case OP_GEF:
+				// these ops all jump to an instruction, just a sanity check to make sure it's within range
+				if (*(unsigned int*)codeoffset > qvm->header.numops) {
+					LOG(ERROR, "QMM") << fmt::format("qvm_load(): Invalid target in jump/branch instruction: {} > {}\n", *(int*)codeoffset, qvm->header.numops);
+					goto fail;
+				}
+				CASE_FALLTHROUGH; // MSVC C26819: Unannotated fallthrough between switch labels
+			case OP_ENTER:
+			case OP_LEAVE:
+			case OP_CONST:
+			case OP_LOCAL:
 			case OP_BLOCK_COPY:
 				qvm->codesegment[i].param = *(int*)codeoffset;
 				codeoffset += 4;
@@ -130,7 +142,7 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 				qvm->codesegment[i].param = (int)*codeoffset;
 				codeoffset++;
 				break;
-				// remaining ops require no 'param'
+			// remaining ops require no 'param'
 			default:
 				qvm->codesegment[i].param = 0;
 				break;
