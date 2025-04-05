@@ -23,7 +23,8 @@ mod_t g_mod;
 
 // entry point to store in mod_t->pfnvmMain for qvm mods
 static intptr_t s_mod_vmmain(int cmd, ...) {
-	// if qvm isn't loaded (and this isn't GAME_SHUTDOWN), we need to error
+	// if qvm isn't loaded anymore, we need to error
+	// calling G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't send if this is a GAME_SHUTDOWN call or it'll just recurse
 	if (!g_mod.qvm.memory && cmd != QMM_GAME_SHUTDOWN) {
 		LOG(FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", cmd);
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded due to a run-time error.\n=========\n");
