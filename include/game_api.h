@@ -115,11 +115,13 @@ extern supportedgame_t g_supportedgames[];
 typedef intptr_t (*pfn_call_t)(intptr_t arg0, ...);
 
 // these macros handle qvm syscall arguments in GAME_vmsyscall functions in game_*.cpp
+// note: these have to return either a pointer or intptr_t so that they get pulled from varargs correctly
+
 // this gets an argument value
-#define vmarg(x)	args[(x)]
+#define vmarg(x)	(intptr_t)args[x]
 // this adds the base VM address to a given value
-#define vmadd(x)	((x) ? membase + (x) : NULL)
+#define vmadd(x)	((x) ? membase + (x) : nullptr)
 // this adds the base VM address to an argument value
-#define vmptr(x)	(vmadd(vmarg(x)))
+#define vmptr(x)	vmadd(args[x])
 
 #endif // __QMM2_GAME_API_H__

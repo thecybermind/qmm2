@@ -105,24 +105,27 @@ bool plugin_load(plugin_t* p, std::string file) {
 		goto fail;
 	}
 
+	// call initial plugin entry point, get interface version
 	p->QMM_Query(&(p->plugininfo));
 	if (!p->plugininfo) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Query() returned NULL Plugininfo\n", file);
 		goto fail;
 	}
 
-	// if the plugin's interface version is higher, don't load and suggest to upgrade QMM
-	if (p->plugininfo->pifv_major > QMM_PIFV_MAJOR || p->plugininfo->pifv_minor > QMM_PIFV_MINOR) {
+	// if the plugin's major interface version is higher, don't load and suggest to upgrade QMM
+	if (p->plugininfo->pifv_major > QMM_PIFV_MAJOR ||
+		(p->plugininfo->pifv_major == QMM_PIFV_MAJOR && p->plugininfo->pifv_minor > QMM_PIFV_MINOR)
+		) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is greater than QMM's ({}:{}), suggest upgrading QMM.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
 		goto fail;
 	}
-	// if the plugin's major version is lower, load, but suggest to upgrade plugin
+	// if the plugin's major interface version is lower, load, but suggest to upgrade plugin
 	if (p->plugininfo->pifv_major < QMM_PIFV_MAJOR) {
 		LOG(QMM_LOG_WARNING, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is less than QMM's ({}:{}), suggest upgrading plugin.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
 	}
-	// don't care if plugin's minor version is lower
+	// don't care if plugin's minor interface version is lower with same major
 
-	// find remaining neccesary functions or fail
+	// find remaining QMM api functions or fail
 	if (!(p->QMM_Attach = (plugin_attach)dlsym(p->dll, "QMM_Attach"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Attach\" function\n", file);
 		goto fail;
@@ -131,6 +134,8 @@ bool plugin_load(plugin_t* p, std::string file) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Detach\" function\n", file);
 		goto fail;
 	}
+
+	// find hook functions
 	if (!(p->QMM_vmMain = (plugin_vmmain)dlsym(p->dll, "QMM_vmMain"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain\" function\n", file);
 		goto fail;

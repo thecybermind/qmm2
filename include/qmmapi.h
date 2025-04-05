@@ -32,9 +32,9 @@ typedef intptr_t (*eng_syscall_t)(int cmd, ...);
 typedef intptr_t (*mod_vmMain_t)(int cmd, ...);
 
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, pluginfunc_t, or plugininfo_t
-#define QMM_PIFV_MAJOR  1
+#define QMM_PIFV_MAJOR  2
 // minor interface version increases with trailing addition to pluginfunc_t or plugininfo_t structs
-#define QMM_PIFV_MINOR  1
+#define QMM_PIFV_MINOR  0
 
 // holds plugin info to pass back to QMM
 typedef struct {
@@ -43,11 +43,11 @@ typedef struct {
     const char* desc;		// description of plugin
     const char* author;		// author of plugin
     const char* url;		// website of plugin
-    int reserved1;			// unused (old - can this plugin be paused?)
-    int reserved2;			// unused (old - can this plugin be loaded via cmd)
-    int reserved3;			// unused (old - can this plugin be unloaded via cmd)
-    int pifv_major;			// major plugin interface version
-    int pifv_minor;			// minor plugin interface version
+    intptr_t reserved1;		// unused (old - can this plugin be paused?)
+    intptr_t reserved2;		// unused (old - can this plugin be loaded via cmd)
+    intptr_t reserved3;		// unused (old - can this plugin be unloaded via cmd)
+    intptr_t pifv_major;	// major plugin interface version
+    intptr_t pifv_minor;	// minor plugin interface version
 } plugininfo_t;
 
 
@@ -62,6 +62,7 @@ typedef struct {
     const char* (*pfnGetStrCvar)(const char* cvar);
     const char* (*pfnGetGameEngine)();
 } pluginfuncs_t;
+
 // macros for QMM plugin util funcs
 #define QMM_WRITEQMMLOG     (g_pluginfuncs->pfnWriteQMMLog)
 #define QMM_VARARGS         (g_pluginfuncs->pfnVarArgs)
@@ -85,13 +86,13 @@ typedef enum pluginres_e {
 // QMM_Query
 typedef void (*plugin_query)(plugininfo_t** pinfo);
 // QMM_Attach
-typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, int reserved);
+typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, intptr_t reserved);
 // QMM_Detach
-typedef void (*plugin_detach)(int reserved);
+typedef void (*plugin_detach)(intptr_t reserved);
 // QMM_syscall
-typedef intptr_t (*plugin_syscall)(int cmd, ...);
+typedef intptr_t (*plugin_syscall)(int cmd, intptr_t* args);
 // QMM_vmMain
-typedef intptr_t (*plugin_vmmain)(int cmd, ...);
+typedef intptr_t (*plugin_vmmain)(int cmd, intptr_t* args);
 
 // plugin use only
 extern plugininfo_t g_plugininfo;       // set '*pinfo' to &g_plugininfo in QMM_Query
@@ -128,12 +129,12 @@ extern intptr_t g_vmbase;               // set to 'vmbase' in QMM_Attach
 
 // prototypes for required entry points in the plugin
 C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
-C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, int reserved);
-C_DLLEXPORT void QMM_Detach(int reserved);
-C_DLLEXPORT intptr_t QMM_vmMain(int cmd, ...);
-C_DLLEXPORT intptr_t QMM_vmMain_Post(int cmd, ...);
-C_DLLEXPORT intptr_t QMM_syscall(int cmd, ...);
-C_DLLEXPORT intptr_t QMM_syscall_Post(int cmd, ...);
+C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, intptr_t reserved);
+C_DLLEXPORT void QMM_Detach(intptr_t reserved);
+C_DLLEXPORT intptr_t QMM_vmMain(int cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_vmMain_Post(int cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_syscall(int cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_syscall_Post(int cmd, intptr_t* args);
 
 // macros to help set the plugin result value
 #define QMM_RETURN(x, y)        return (*g_result = (pluginres_t)(x), (y))
@@ -145,8 +146,9 @@ C_DLLEXPORT intptr_t QMM_syscall_Post(int cmd, ...);
 
 // These are macros to convert between VM pointers and real pointers.
 // These are generally only needed for pointers inside objects, like gent->parent.
-// As the object are generally tracked through syscall arguments, which are already
-// converted in plugin QMM_syscall functions.
+// As the objects are generally tracked through syscall arguments, which are already
+// converted in plugin QMM_syscall functions. SETPTR should only be used to refer to
+// objects that already exist within the QVM, but you have a real pointer to
 #define GETPTR(x,y)     (x ? (y)((intptr_t)(x) + g_vmbase) : NULL)
 #define SETPTR(x,y)     (x ? (y)((intptr_t)(x) - g_vmbase) : NULL)
 

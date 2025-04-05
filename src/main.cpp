@@ -271,14 +271,15 @@ C_DLLEXPORT intptr_t vmMain(int cmd, ...) {
 	// route call to plugins and mod
 	intptr_t ret = s_main_route_vmmain(cmd, args);
 
-	// handle shut down (this is after the mod and plugins get called with GAME_SHUTDOWN)
+	// handle shut down (this is after the plugins and mod get called with GAME_SHUTDOWN)
 	if (cmd == QMM_MOD_MSG[QMM_GAME_SHUTDOWN]) {
+		// unload mod (dlclose)
 		LOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
 		mod_unload(&g_mod);
 
+		// unload each plugin (call QMM_Detach, and then dlclose)
 		LOG(QMM_LOG_INFO, "QMM") << "Shutting down plugins\n";
 		for (plugin_t& p : g_plugins) {
-			//unload each plugin (call QMM_Detach, and then dlclose)
 			plugin_unload(&p);
 		}
 		g_plugins.clear();
@@ -605,7 +606,7 @@ static intptr_t s_main_route_vmmain(int cmd, intptr_t* args) {
 	for (plugin_t& p : g_plugins) {
 		g_plugin_result = QMM_UNUSED;
 		// call plugin's vmMain and store return value
-		ret = p.QMM_vmMain(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
+		ret = p.QMM_vmMain(cmd, args);
 		// set new max result
 		maxresult = util_max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)
@@ -629,7 +630,7 @@ static intptr_t s_main_route_vmmain(int cmd, intptr_t* args) {
 		final_ret = ret;
 	// pass calls to plugins' QMM_vmMain_Post functions (ignore return values and results)
 	for (plugin_t& p : g_plugins) {
-		p.QMM_vmMain_Post(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
+		p.QMM_vmMain_Post(cmd, args);
 	}
 	return final_ret;
 }
@@ -647,7 +648,7 @@ static intptr_t s_main_route_syscall(int cmd, intptr_t* args) {
 	for (plugin_t& p : g_plugins) {
 		g_plugin_result = QMM_UNUSED;
 		// call plugin's syscall and store return value
-		ret = p.QMM_syscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); // update with QMM_MAX_SYSCALL_ARGS
+		ret = p.QMM_syscall(cmd, args);
 
 		// set new max result
 		maxresult = util_max(g_plugin_result, maxresult);
@@ -667,7 +668,7 @@ static intptr_t s_main_route_syscall(int cmd, intptr_t* args) {
 		final_ret = ret;
 	// pass calls to plugins' QMM_syscall_Post functions (ignore return values and results)
 	for (plugin_t& p : g_plugins) {
-		p.QMM_syscall_Post(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); // update with QMM_MAX_SYSCALL_ARGS
+		p.QMM_syscall_Post(cmd, args);
 	}
 	
 	return final_ret;
