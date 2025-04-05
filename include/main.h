@@ -63,10 +63,4 @@ intptr_t syscall(int cmd, ...);
 constexpr bool QMM_DETECT_GETGAMEAPI = true;
 constexpr bool QMM_DETECT_DLLENTRY = false;
 
-void main_detect_env();
-void main_load_config();
-void main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode = QMM_DETECT_DLLENTRY);
-bool main_load_mod(std::string cfg_mod);
-void main_load_plugin(std::string plugin_path);
-
 #endif // __QMM2_MAIN_H__

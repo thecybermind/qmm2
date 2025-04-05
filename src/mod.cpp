@@ -21,12 +21,66 @@ Created By:
 
 mod_t g_mod;
 
+static intptr_t s_mod_vmmain(int cmd, ...);
+static bool s_mod_load_qvm(mod_t* mod);
+static bool s_mod_load_getgameapi(mod_t* mod);
+static bool s_mod_load_vmmain(mod_t* mod);
+
+bool mod_load(mod_t* mod, std::string file) {
+	if (!mod || mod->dll || mod->qvm.memory)
+		return false;
+
+	mod->path = file;
+
+	std::string ext = path_baseext(file);
+
+	// only allow qvm mods if the game engine supports it
+	if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->vmsyscall)
+		return s_mod_load_qvm(mod);
+	
+	// if DLL
+	else if (str_striequal(ext, EXT_DLL)) {
+		// load DLL
+		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror());
+			return false;
+		}
+
+		// if this DLL is the same as QMM, cancel
+		if ((void*)mod->dll == g_gameinfo.qmm_module_ptr) {
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL is actually QMM?\n", file);
+			mod_unload(mod);
+			return false;
+		}
+
+		// pass off to engine-specific loading function
+		if (g_gameinfo.game->apientry)
+			return s_mod_load_getgameapi(mod);
+		else
+			return s_mod_load_vmmain(mod);
+	}
+
+	LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unknown file format\n", file);	
+	return false;
+}
+
+void mod_unload(mod_t* mod) {
+	if (mod->qvm.memory)
+		qvm_unload(&mod->qvm);
+	if (mod->dll)
+		dlclose(mod->dll);
+	*mod = mod_t();
+}
+
 // entry point to store in mod_t->pfnvmMain for qvm mods
 static intptr_t s_mod_vmmain(int cmd, ...) {
-	// if qvm isn't loaded (and this isn't GAME_SHUTDOWN), we need to error
-	if (!g_mod.qvm.memory && cmd != QMM_GAME_SHUTDOWN) {
-		LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", cmd);
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded due to a run-time error.\n=========\n");
+	// if qvm isn't loaded, we need to error
+	if (!g_mod.qvm.memory) {
+		// G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't do this if the message is GAME_SHUTDOWN as that will just recurse
+		if (cmd != QMM_GAME_SHUTDOWN) {
+			LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", cmd);
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded due to a run-time error.\n=========\n");
+		}
 		return 0;
 	}
 
@@ -132,50 +186,4 @@ static bool s_mod_load_vmmain(mod_t* mod) {
 	mod->vmbase = 0;
 
 	return true;
-}
-
-bool mod_load(mod_t* mod, std::string file) {
-	if (!mod || mod->dll || mod->qvm.memory)
-		return false;
-
-	mod->path = file;
-
-	std::string ext = path_baseext(file);
-
-	// only allow qvm mods if the game engine supports it
-	if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->vmsyscall)
-		return s_mod_load_qvm(mod);
-	
-	// if DLL
-	else if (str_striequal(ext, EXT_DLL)) {
-		// load DLL
-		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {
-			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror());
-			return false;
-		}
-
-		// if this DLL is the same as QMM, cancel
-		if ((void*)mod->dll == g_gameinfo.qmm_module_ptr) {
-			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL is actually QMM?\n", file);
-			mod_unload(mod);
-			return false;
-		}
-
-		// pass off to engine-specific loading function
-		if (g_gameinfo.game->apientry)
-			return s_mod_load_getgameapi(mod);
-		else
-			return s_mod_load_vmmain(mod);
-	}
-
-	LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unknown file format\n", file);	
-	return false;
-}
-
-void mod_unload(mod_t* mod) {
-	if (mod->qvm.memory)
-		qvm_unload(&mod->qvm);
-	if (mod->dll)
-		dlclose(mod->dll);
-	*mod = mod_t();
 }

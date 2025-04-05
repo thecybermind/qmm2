@@ -269,8 +269,7 @@ static game_export_t qmm_export = {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-typedef intptr_t (*pfn_import_t)(intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6);
-#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((pfn_import_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break
+#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((pfn_call_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break
 #define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)(orig_import. field); break
 intptr_t MOHBT_syscall(int cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
@@ -510,8 +509,7 @@ intptr_t MOHBT_syscall(int cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-typedef intptr_t (*pfn_export_t)(intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8);
-#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((pfn_export_t)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
+#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((pfn_call_t)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)(orig_export-> field); break
 intptr_t MOHBT_vmMain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();

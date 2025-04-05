@@ -21,13 +21,7 @@ Created By:
 #define CASE_FALLTHROUGH
 #endif
 
-static bool qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start = nullptr, void* end = nullptr) {
-	// default to validating ptr is inside the data + stack segments
-	start = start ? start : qvm->datasegment;
-	end = end ? end : (qvm->memory + qvm->memorysize);
-
-	return (ptr >= start && ptr < end);
-}
+static bool qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start = nullptr, void* end = nullptr);
 
 bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize) {
 	if (!qvm || !filemem || !filelen || qvm->memory || !vmsyscall)
@@ -686,4 +680,12 @@ void* qvm_malloc(size_t len) {
 
 void qvm_free(void* ptr) {
 	free(ptr);
+}
+
+static bool qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start, void* end) {
+	// default to validating ptr is inside the data + stack segments
+	start = start ? start : qvm->datasegment;
+	end = end ? end : (qvm->memory + qvm->memorysize);
+
+	return (ptr >= start && ptr < end);
 }

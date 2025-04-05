@@ -111,9 +111,9 @@ extern supportedgame_t g_supportedgames[];
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, GAME_CLIENT_CONNECT \
 	}
 
-// macro to create an exe hint array
-#define GEN_EXE_HINTS(game)		const char* game##_exe_hints[]
- 
+// used by GetGameAPI code as a cast for generic syscall/vmmain calls
+typedef intptr_t (*pfn_call_t)(intptr_t arg0, ...);
+
 // these macros handle qvm syscall arguments in GAME_vmsyscall functions in game_*.cpp
 // this gets an argument value
 #define vmarg(x)	args[(x)]
