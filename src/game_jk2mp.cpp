@@ -379,7 +379,7 @@ int JK2MP_vmsyscall(byte* membase, int cmd, int* args) {
 		case G_ASIN:				// not used, but probably (double x)
 		case BOTLIB_EA_ALT_ATTACK:		// (int client)
 		case BOTLIB_EA_FORCEPOWER:		// (int client)
-		case G_G2_LISTSURFACES:			// (void* ghlInfo)
+		case G_G2_LISTSURFACES:			// (void* ghoulInfo)
 		case G_G2_HAVEWEGHOULMODELS:		// (void* ghoul2)
 		case G_ROFF_PURGE_ENT:			// (int entID) 
 			return syscall(cmd, vmarg(0));
@@ -406,9 +406,9 @@ int JK2MP_vmsyscall(byte* membase, int cmd, int* args) {
 		case BOTLIB_AI_AVOID_GOAL_TIME:		// (int goalstate, int number)
 		case BOTLIB_AI_MUTATE_GOAL_FUZZY_LOGIC: // (int goalstate, float range)
 		case G_ATAN2:				// (double, double)
-		case G_G2_LISTBONES:			// (void* ghlInfo, int frame)
-		case G_G2_HASGHOUL2MODELONINDEX:	// (void* ghlInfo, int modelIndex)
-		case G_G2_REMOVEGHOUL2MODEL:		// (void* ghlInfo, int modelIndex)
+		case G_G2_LISTBONES:			// (void* ghoulInfo, int frame)
+		case G_G2_HASGHOUL2MODELONINDEX:	// (void* ghoulInfo, int modelIndex)
+		case G_G2_REMOVEGHOUL2MODEL:		// (void* ghoulInfo, int modelIndex)
 			return syscall(cmd, vmarg(0), vmarg(1));
 		case G_SEND_CONSOLE_COMMAND:		// (int exec_when, const char* text)
 		case G_DROP_CLIENT:			// (int clientNum, const char* reason);
@@ -436,7 +436,7 @@ int JK2MP_vmsyscall(byte* membase, int cmd, int* args) {
 		case BOTLIB_AI_CHOOSE_BEST_FIGHT_WEAPON:	// (int weaponstate, int* inventory)
 		case BOTLIB_AI_LOAD_WEAPON_WEIGHTS:	// (int, char*)
 		case BOTLIB_PC_READ_TOKEN:		// (int, void*)
-		case G_G2_DUPLICATEGHOUL2INSTANCE:	// (void* g2From, void** g2To)
+		case G_G2_DUPLICATEGHOUL2INSTANCE:	// (void* ghoul2From, void** ghoul2To)
 			return syscall(cmd, vmarg(0), vmptr(1));
 		case G_GET_SERVERINFO:			// (char* buffer, int bufferSize);
 		case G_POINT_CONTENTS:			// (const vec3_t point, int passEntityNum);
@@ -478,7 +478,7 @@ int JK2MP_vmsyscall(byte* membase, int cmd, int* args) {
 		case BOTLIB_AI_SET_AVOID_GOAL_TIME:	// (int goalstate, int number, float avoidtime)
 		case BOTLIB_AI_INTERBREED_GOAL_FUZZY_LOGIC:	// (int, int, int)
 		case G_G2_SETBOLTINFO:			// (void* ghoul2, int modelIndex, int boltInfo)
-		case G_G2_COPYGHOUL2INSTANCE:		// (void* g2From, void* g2To, int modelIndex)
+		case G_G2_COPYGHOUL2INSTANCE:		// (void* ghoul2From, void* ghoul2To, int modelIndex)
 		case G_ROFF_PLAY:			// (int entID, int roffID, qboolean doTranslation) 
 			return syscall(cmd, vmarg(0), vmarg(1), vmarg(2));
 		case G_DEBUG_POLYGON_CREATE:		// (int color, int numPoints, vec3_t* points)
@@ -516,7 +516,7 @@ int JK2MP_vmsyscall(byte* membase, int cmd, int* args) {
 			return syscall(cmd, vmarg(0), vmptr(1), vmarg(2), vmarg(3));
 		case BOTLIB_AI_CHARACTERISTIC_BFLOAT:	// (int character, int index, float min, float max)
 		case BOTLIB_AI_CHARACTERISTIC_BINTEGER:	// (int character, int index, int min, int max)
-		case G_G2_COPYSPECIFICGHOUL2MODEL:	// (void* g2From, int modelFrom, void* g2To, int modelTo)
+		case G_G2_COPYSPECIFICGHOUL2MODEL:	// (void* ghoul2From, int modelFrom, void* ghoul2To, int modelTo)
 			return syscall(cmd, vmarg(0), vmarg(1), vmarg(2), vmarg(3));
 		case BOTLIB_AI_MATCH_VARIABLE:		// (void /*struct bot_match_s*/* match, int variable, char* buf, int size)
 		case BOTLIB_AI_MOVE_TO_GOAL:		// (void /*struct bot_moveresult_s*/* result, int movestate, void /*struct bot_goal_s*/* goal, int travelflags)
