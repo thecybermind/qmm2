@@ -32,7 +32,7 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode);
 static bool s_main_load_mod(std::string cfg_mod);
 static void s_main_load_plugin(std::string plugin_path);
 static void s_main_g_argv(int argn, char* buf, int buflen);
-static bool s_main_handle_command_qmm();
+static intptr_t s_main_handle_command_qmm();
 static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args);
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
 
@@ -263,9 +263,8 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
 		s_main_g_argv(0, arg0, sizeof(arg0));
 
-		if (str_striequal("qmm", arg0)) {
+		if (str_striequal("qmm", arg0))
 			return s_main_handle_command_qmm();
-		}
 	}
 
 	// route call to plugins and mod
@@ -510,7 +509,7 @@ static void s_main_g_argv(int argn, char* buf, int buflen) {
 
 
 // handle "qmm" console command
-static bool s_main_handle_command_qmm() {
+static intptr_t s_main_handle_command_qmm() {
 	char arg1[10] = "", arg2[10] = "";
 
 	int argc = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
@@ -588,7 +587,7 @@ static bool s_main_handle_command_qmm() {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Log level set to {}\n", log_name_from_severity(severity)).c_str());
 	}
 
-	return true;
+	return 1;
 }
 
 
