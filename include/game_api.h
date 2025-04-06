@@ -14,6 +14,7 @@ Created By:
 
 #include <vector>
 #include <string>
+#include "osdef.h"
 
 typedef const char* (*msgname_t)(intptr_t msg);
 typedef bool (*tracemsg_t)(intptr_t msg);
@@ -136,7 +137,7 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 #if defined(QMM_JMP_STUBS) && !defined(_WIN64) && !defined(__LP64__)
  extern intptr_t g_cmd;
  template<intptr_t cmd>
- intptr_t __declspec(naked) s_api_call_vmmain(intptr_t, ...) {
+ intptr_t NAKED s_api_call_vmmain(intptr_t, ...) {
 	g_cmd = cmd + 1;
 	#if defined(_WIN32)
 	 __asm jmp vmMain;
@@ -145,7 +146,7 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 	#endif
 }
 template<intptr_t cmd>
-intptr_t __declspec(naked) s_api_call_syscall(intptr_t, ...) {
+intptr_t NAKED s_api_call_syscall(intptr_t, ...) {
 	g_cmd = cmd + 1;
 	#if defined(_WIN32)
 	 __asm jmp syscall;

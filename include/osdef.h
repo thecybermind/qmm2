@@ -36,6 +36,7 @@ constexpr const unsigned char MAGIC_DLL[] = { 'M',  'Z', 0x90, 0x00 };
 constexpr const unsigned char MAGIC_SO[]  = { 'M',  'Z', 0x90, 0x00 };
 constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14,  'r', 0x12 };
 
+#define NAKED				__declspec(naked)
 #define PATH_MAX			4096
 #define my_vsnprintf		_vsnprintf
 #define strcasecmp			_stricmp
@@ -66,19 +67,12 @@ constexpr const unsigned char MAGIC_DLL[] = { 0x7F,  'E', 'L',  'F' };
 constexpr const unsigned char MAGIC_SO[]  = { 0x7F,  'E', 'L',  'F' };
 constexpr const unsigned char MAGIC_QVM[] = {  'D', 0x14, 'r', 0x12 };
 
-#define my_vsnprintf	vsnprintf
+#define NAKED				__attribute__((naked))
+#define my_vsnprintf		vsnprintf
 
 #else // !_WIN32 && !__linux__
 
-#define SUF_DLL ""
-#define SUF_SO  ""
-#define EXT_DLL ""
-#define EXT_SO  ""
-#define EXT_QVM ""
-
-constexpr const unsigned char MAGIC_DLL[] = { 0x00, 0x00, 0x00, 0x00 };
-constexpr const unsigned char MAGIC_SO[]  = { 0x00, 0x00, 0x00, 0x00 };
-constexpr const unsigned char MAGIC_QVM[] = { 0x00, 0x00, 0x00, 0x00 };
+#error Unknown OS?
 
 #endif
 

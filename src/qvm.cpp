@@ -15,12 +15,6 @@ Created By:
 #include "format.h"
 #include "qvm.h"
 
-#ifdef _WIN32
-#define CASE_FALLTHROUGH [[fallthrough]]
-#else
-#define CASE_FALLTHROUGH
-#endif
-
 static bool qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start = nullptr, void* end = nullptr);
 
 bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize) {
@@ -122,7 +116,9 @@ bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 					LOG(QMM_LOG_ERROR, "QMM") << fmt::format("qvm_load(): Invalid target in jump/branch instruction: {} > {}\n", *(int*)codeoffset, qvm->header.numops);
 					goto fail;
 				}
-				CASE_FALLTHROUGH; // MSVC C26819: Unannotated fallthrough between switch labels
+				#ifdef _WIN32
+				[[fallthrough]];	// MSVC C26819: Unannotated fallthrough between switch labels
+				#endif
 			case OP_ENTER:
 			case OP_LEAVE:
 			case OP_CONST:
