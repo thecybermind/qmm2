@@ -177,9 +177,6 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	return g_gameinfo.game->apientry(import);
 }
 
-#ifdef QMM_JMP_STUBS
- intptr_t g_cmd = 0;
-#endif
 
 /* Entry point: engine->qmm
    This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the game info is not stored.
@@ -193,20 +190,6 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 */
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
-
-	#ifdef QMM_JMP_STUBS
-	 // if g_cmd is set, then this is a call from the engine/mod for a GetGameAPI-style game. so we have
-	 // to shift the args down the array, and then store "cmd" in args[0]. then, g_cmd contains the
-	 // real cmd+1
-	 if (g_cmd) {
-		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("vmMain called with g_cmd == {} ({})\n", g_cmd, g_gameinfo.game->mod_msg_names(g_cmd));
-		for (int i = QMM_MAX_VMMAIN_ARGS - 1; i >= 1; --i)
-			args[i] = args[i - 1];
-		args[0] = cmd;
-		cmd = g_cmd - 1;
-		g_cmd = 0;
-	 }
-	#endif	
 
 	int loglevel = g_gameinfo.game->is_mod_trace_msg(cmd) ? TRACE : DEBUG;
 	LOG(loglevel, "QMM") << fmt::format("vmMain({}) called\n", g_gameinfo.game->mod_msg_names(cmd));
@@ -316,20 +299,6 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 */
 intptr_t syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
-
-	#ifdef QMM_JMP_STUBS
-	 // if g_cmd is set, then this is a call from the engine/mod for a GetGameAPI-style game. so we have
-	 // to shift the args down the array, and then store "cmd" in args[0]. then, g_cmd contains the
-	 // real cmd+1
-	 if (g_cmd) {
-		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall called with g_cmd == {} ({})\n", g_cmd, g_gameinfo.game->eng_msg_names(g_cmd));
-		for (int i = QMM_MAX_SYSCALL_ARGS - 1; i >= 1; --i)
-			args[i] = args[i - 1];
-		args[0] = cmd;
-		cmd = g_cmd - 1;
-		g_cmd = 0;
-	 }
-	#endif
 
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({}) called\n", g_gameinfo.game->eng_msg_names(cmd));
 

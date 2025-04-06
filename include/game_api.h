@@ -129,39 +129,8 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)(orig_export-> field); break
 
 // handle calls from engine or mod into QMM
-// for 32 bit windows (& linux?), we can make simple naked function stubs that set g_cmd and jump to syscall/vmmain
-// then, syscall and vmmain check for g_cmd != 0 and then shift the args array, since the arg named "cmd" is
-// actually arg0 and g_cmd is cmd+1
-#define QMM_JMP_STUBS
-// 32-bit builds only
-#if defined(QMM_JMP_STUBS) && !defined(_WIN64) && !defined(__LP64__)
- extern intptr_t g_cmd;
- template<intptr_t cmd>
- intptr_t NAKED s_api_call_vmmain(intptr_t, ...) {
-	g_cmd = cmd + 1;
-	#if defined(_WIN32)
-	 __asm jmp vmMain;
-	#elif defined(__linux__)
-	 __asm__ volatile("jmp *%0" : : "r" (vmMain));
-	#endif
-}
-template<intptr_t cmd>
-intptr_t NAKED s_api_call_syscall(intptr_t, ...) {
-	g_cmd = cmd + 1;
-	#if defined(_WIN32)
-	 __asm jmp syscall;
-	#elif defined(__linux__)
-	 __asm__ volatile("jmp *%0" : : "r" (syscall));
-	#endif
-}
-#define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field))  s_api_call_vmmain<cmd>
-#define GEN_IMPORT(field, cmd)	(decltype(qmm_import. field))  s_api_call_syscall<cmd>
-
-// all other builds (64-bit builds and also !QMM_JMP_STUBS)
-#else
- #define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6) { return vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }
- #define GEN_IMPORT(field, cmd)	(decltype(qmm_import. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8, intptr_t arg9, intptr_t arg10, intptr_t arg11, intptr_t arg12, intptr_t arg13, intptr_t arg14, intptr_t arg15, intptr_t arg16) { return syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
-#endif
+#define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6) { return vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }
+#define GEN_IMPORT(field, cmd)	(decltype(qmm_import. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8, intptr_t arg9, intptr_t arg10, intptr_t arg11, intptr_t arg12, intptr_t arg13, intptr_t arg14, intptr_t arg15, intptr_t arg16) { return syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
 
 // ---------------------
 // ----- QVM stuff -----
