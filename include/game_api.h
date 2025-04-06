@@ -131,7 +131,7 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 // for 32 bit windows (& linux?), we can make simple naked function stubs that set g_cmd and jump to syscall/vmmain
 // then, syscall and vmmain check for g_cmd != 0 and then shift the args array, since the arg named "cmd" is
 // actually arg0 and g_cmd is cmd+1
-//#define QMM_JMP_STUBS
+#define QMM_JMP_STUBS
 // 32-bit builds only
 #if defined(QMM_JMP_STUBS) && !defined(_WIN64) && !defined(__LP64__)
  extern intptr_t g_cmd;
