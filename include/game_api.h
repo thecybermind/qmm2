@@ -15,9 +15,9 @@ Created By:
 #include <vector>
 #include <string>
 
+typedef const char* (*msgname_t)(intptr_t msg);
+typedef bool (*tracemsg_t)(intptr_t msg);
 typedef int (*vmsyscall_t)(unsigned char* membase, int cmd, int* args);
-typedef const char* (*msgname_t)(int msg);
-typedef bool (*tracemsg_t)(int msg);
 typedef void* (*apientry_t)(void* import);
 
 // a list of all the mod messages used by QMM
@@ -81,9 +81,9 @@ extern supportedgame_t g_supportedgames[];
 // generate externs for the msg arrays and functions
 #define GEN_EXTS(game)		extern int game##_qmm_eng_msgs[]; \
 							extern int game##_qmm_mod_msgs[]; \
-							const char* game##_eng_msg_names(int msg); \
-							const char* game##_mod_msg_names(int msg); \
-							bool game##_is_mod_trace_msg(int msg)
+							const char* game##_eng_msg_names(intptr_t msg); \
+							const char* game##_mod_msg_names(intptr_t msg); \
+							bool game##_is_mod_trace_msg(intptr_t msg)
 
 // generate extern for the vmsyscall function (if game supports it)
 #define GEN_VMEXT(game)		int game##_vmsyscall(unsigned char* membase, int cmd, int* args)
@@ -111,8 +111,60 @@ extern supportedgame_t g_supportedgames[];
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, GAME_CLIENT_CONNECT \
 	}
 
+
+// ----------------------------
+// ----- GetGameAPI stuff -----
+// ----------------------------
+
 // used by GetGameAPI code as a cast for generic syscall/vmmain calls
-typedef intptr_t (*pfn_call_t)(intptr_t arg0, ...);
+typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
+
+// handle calls from QMM and plugins into the engine
+#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((pfn_call_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break
+#define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)(orig_import. field); break
+
+// handle calls from QMM and plugins into the mod
+#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((pfn_call_t)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
+#define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)(orig_export-> field); break
+
+// handle calls from engine or mod into QMM
+// for 32 bit windows (& linux?), we can make simple naked function stubs that set g_cmd and jump to syscall/vmmain
+// then, syscall and vmmain check for g_cmd != 0 and then shift the args array, since the arg named "cmd" is
+// actually arg0 and g_cmd is cmd+1
+//#define QMM_JMP_STUBS
+// 32-bit builds only
+#if defined(QMM_JMP_STUBS) && !defined(_WIN64) && !defined(__LP64__)
+ extern intptr_t g_cmd;
+ template<intptr_t cmd>
+ intptr_t __declspec(naked) s_api_call_vmmain(intptr_t, ...) {
+	g_cmd = cmd + 1;
+	#if defined(_WIN32)
+	 __asm jmp vmMain;
+	#elif defined(__linux__)
+	 __asm__ volatile("jmp *%0" : : "r" (vmMain));
+	#endif
+}
+template<intptr_t cmd>
+intptr_t __declspec(naked) s_api_call_syscall(intptr_t, ...) {
+	g_cmd = cmd + 1;
+	#if defined(_WIN32)
+	 __asm jmp syscall;
+	#elif defined(__linux__)
+	 __asm__ volatile("jmp *%0" : : "r" (syscall));
+	#endif
+}
+#define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field))  s_api_call_vmmain<cmd>
+#define GEN_IMPORT(field, cmd)	(decltype(qmm_import. field))  s_api_call_syscall<cmd>
+
+// all other builds (64-bit builds and also !QMM_JMP_STUBS)
+#else
+ #define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6) { return vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }
+ #define GEN_IMPORT(field, cmd)	(decltype(qmm_import. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8, intptr_t arg9, intptr_t arg10, intptr_t arg11, intptr_t arg12, intptr_t arg13, intptr_t arg14, intptr_t arg15, intptr_t arg16) { return syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
+#endif
+
+// ---------------------
+// ----- QVM stuff -----
+// ---------------------
 
 // these macros handle qvm syscall arguments in GAME_vmsyscall functions in game_*.cpp
 // note: these have to return either a pointer or intptr_t so that they get pulled from varargs correctly

@@ -36,7 +36,6 @@ static game_import_t orig_import;
 static game_export_t* orig_export = nullptr;
 
 // struct with lambdas that call QMM's syscall function. this is given to the mod
-#define GEN_IMPORT(field, cmd) (decltype(qmm_import. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8, intptr_t arg9, intptr_t arg10, intptr_t arg11, intptr_t arg12, intptr_t arg13, intptr_t arg14, intptr_t arg15, intptr_t arg16) { return syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
 static game_import_t qmm_import = {
 	GEN_IMPORT(Printf, G_PRINTF),
 	GEN_IMPORT(DPrintf, G_DPRINTF),
@@ -382,7 +381,6 @@ static game_import_t qmm_import = {
 };
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
-#define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3) { return vmMain(cmd, arg0, arg1, arg2, arg3); }
 static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
 	GEN_EXPORT(Init, GAME_INIT),
@@ -426,9 +424,7 @@ static game_export_t qmm_export = {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((pfn_call_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break
-#define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)(orig_import. field); break
-intptr_t STEF2_syscall(int cmd, ...) {
+intptr_t STEF2_syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
 	if (cmd != G_PRINT)
@@ -796,9 +792,7 @@ intptr_t STEF2_syscall(int cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((pfn_call_t)(orig_export-> field))(args[0], args[1], args[2], args[3]); break
-#define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)(orig_export-> field); break
-intptr_t STEF2_vmMain(int cmd, ...) {
+intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
 	int loglevel = STEF2_is_mod_trace_msg(cmd) ? TRACE : DEBUG;
@@ -902,7 +896,7 @@ void* STEF2_GetGameAPI(void* import) {
 	return &qmm_export;
 }
 
-const char* STEF2_eng_msg_names(int cmd) {
+const char* STEF2_eng_msg_names(intptr_t cmd) {
 	switch (cmd) {
 		GEN_CASE(G_PRINTF);
 		GEN_CASE(G_DPRINTF);
@@ -1251,7 +1245,7 @@ const char* STEF2_eng_msg_names(int cmd) {
 	}
 }
 
-const char* STEF2_mod_msg_names(int cmd) {
+const char* STEF2_mod_msg_names(intptr_t cmd) {
 	switch (cmd) {
 		GEN_CASE(GAMEV_APIVERSION);
 		GEN_CASE(GAME_INIT);
@@ -1295,7 +1289,7 @@ const char* STEF2_mod_msg_names(int cmd) {
 	}
 }
 
-bool STEF2_is_mod_trace_msg(int cmd) {
+bool STEF2_is_mod_trace_msg(intptr_t cmd) {
 	switch (cmd) {
 	case GAME_CLIENT_THINK:
 	case GAME_PREP_FRAME:

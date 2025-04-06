@@ -18,7 +18,7 @@ Created By:
 
 GEN_QMM_MSGS(JK2MP);
 
-const char* JK2MP_eng_msg_names(int cmd) {
+const char* JK2MP_eng_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(G_PRINT);
 		GEN_CASE(G_ERROR);
@@ -252,7 +252,7 @@ const char* JK2MP_eng_msg_names(int cmd) {
 	}
 }
 
-const char* JK2MP_mod_msg_names(int cmd) {
+const char* JK2MP_mod_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(GAME_INIT);
 		GEN_CASE(GAME_SHUTDOWN);
@@ -271,7 +271,7 @@ const char* JK2MP_mod_msg_names(int cmd) {
 	}
 }
 
-bool JK2MP_is_mod_trace_msg(int cmd) {
+bool JK2MP_is_mod_trace_msg(intptr_t cmd) {
 	switch (cmd) {
 	case GAME_CLIENT_THINK:
 	case GAME_RUN_FRAME:

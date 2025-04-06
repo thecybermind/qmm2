@@ -57,8 +57,8 @@ constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
 
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall);	// initial entry point for non-GetGameAPI games
 C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for GetGameAPI games
-C_DLLEXPORT intptr_t vmMain(int cmd, ...);
-intptr_t syscall(int cmd, ...);
+C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
+intptr_t syscall(intptr_t cmd, ...);
 
 constexpr bool QMM_DETECT_GETGAMEAPI = true;
 constexpr bool QMM_DETECT_DLLENTRY = false;

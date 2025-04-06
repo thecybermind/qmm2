@@ -21,7 +21,7 @@ Created By:
 
 mod_t g_mod;
 
-static intptr_t s_mod_vmmain(int cmd, ...);
+static intptr_t s_mod_vmmain(intptr_t cmd, ...);
 static bool s_mod_load_qvm(mod_t* mod);
 static bool s_mod_load_getgameapi(mod_t* mod);
 static bool s_mod_load_vmmain(mod_t* mod);
@@ -73,7 +73,7 @@ void mod_unload(mod_t* mod) {
 }
 
 // entry point to store in mod_t->pfnvmMain for qvm mods
-static intptr_t s_mod_vmmain(int cmd, ...) {
+static intptr_t s_mod_vmmain(intptr_t cmd, ...) {
 	// if qvm isn't loaded, we need to error
 	if (!g_mod.qvm.memory) {
 		// G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't do this if the message is GAME_SHUTDOWN as that will just recurse
@@ -87,7 +87,7 @@ static intptr_t s_mod_vmmain(int cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
 	// generate new int array from the intptr_t args, and also include cmd at the front
-	int qvmargs[QMM_MAX_VMMAIN_ARGS + 1] = { cmd };
+	int qvmargs[QMM_MAX_VMMAIN_ARGS + 1] = { (int)cmd };
 	for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; i++) {
 		qvmargs[i + 1] = (int)args[i];
 	}

@@ -33,8 +33,8 @@ static bool s_main_load_mod(std::string cfg_mod);
 static void s_main_load_plugin(std::string plugin_path);
 static void s_main_g_argv(int argn, char* buf, int buflen);
 static bool s_main_handle_command_qmm();
-static intptr_t s_main_route_vmmain(int cmd, intptr_t* args);
-static intptr_t s_main_route_syscall(int cmd, intptr_t* args);
+static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args);
+static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
 
 /* About overall control flow:
    syscall (mod->engine) call flow for QVM mods only:
@@ -177,6 +177,9 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	return g_gameinfo.game->apientry(import);
 }
 
+#ifdef QMM_JMP_STUBS
+ intptr_t g_cmd = 0;
+#endif
 
 /* Entry point: engine->qmm
    This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the game info is not stored.
@@ -188,8 +191,22 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
    GAME_INIT (pre): load mod file, load plugins, and optionally execute a cfg file
    GAME_CONSOLE_COMMAND (pre): handle "qmm" server command
 */
-C_DLLEXPORT intptr_t vmMain(int cmd, ...) {
+C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
+
+	#ifdef QMM_JMP_STUBS
+	 // if g_cmd is set, then this is a call from the engine/mod for a GetGameAPI-style game. so we have
+	 // to shift the args down the array, and then store "cmd" in args[0]. then, g_cmd contains the
+	 // real cmd+1
+	 if (g_cmd) {
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("vmMain called with g_cmd == {} ({})\n", g_cmd, g_gameinfo.game->mod_msg_names(g_cmd));
+		for (int i = QMM_MAX_VMMAIN_ARGS - 1; i >= 1; --i)
+			args[i] = args[i - 1];
+		args[0] = cmd;
+		cmd = g_cmd - 1;
+		g_cmd = 0;
+	 }
+	#endif	
 
 	int loglevel = g_gameinfo.game->is_mod_trace_msg(cmd) ? TRACE : DEBUG;
 	LOG(loglevel, "QMM") << fmt::format("vmMain({}) called\n", g_gameinfo.game->mod_msg_names(cmd));
@@ -297,8 +314,22 @@ C_DLLEXPORT intptr_t vmMain(int cmd, ...) {
    This is the "syscall" function called by the mod as a way to pass info to or get info from the engine.
    It routes the function call according to the "overall control flow" comment above.
 */
-intptr_t syscall(int cmd, ...) {
+intptr_t syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
+
+	#ifdef QMM_JMP_STUBS
+	 // if g_cmd is set, then this is a call from the engine/mod for a GetGameAPI-style game. so we have
+	 // to shift the args down the array, and then store "cmd" in args[0]. then, g_cmd contains the
+	 // real cmd+1
+	 if (g_cmd) {
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall called with g_cmd == {} ({})\n", g_cmd, g_gameinfo.game->eng_msg_names(g_cmd));
+		for (int i = QMM_MAX_SYSCALL_ARGS - 1; i >= 1; --i)
+			args[i] = args[i - 1];
+		args[0] = cmd;
+		cmd = g_cmd - 1;
+		g_cmd = 0;
+	 }
+	#endif
 
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({}) called\n", g_gameinfo.game->eng_msg_names(cmd));
 
@@ -511,7 +542,7 @@ static void s_main_g_argv(int argn, char* buf, int buflen) {
 
 // handle "qmm" console command
 static bool s_main_handle_command_qmm() {
-	char arg1[10], arg2[10];
+	char arg1[10] = "", arg2[10] = "";
 
 	int argc = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
 	if (argc == 1) {
@@ -521,13 +552,11 @@ static bool s_main_handle_command_qmm() {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm list - displays information about loaded QMM plugins\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm info <id> - outputs info on plugin with id\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
+		return 1;
 	}
-	else {
-		s_main_g_argv(1, arg1, sizeof(arg1));
-		if (argc > 2)
-			s_main_g_argv(2, arg2, sizeof(arg2));
-	}
-
+	s_main_g_argv(1, arg1, sizeof(arg1));
+	if (argc > 2)
+		s_main_g_argv(2, arg2, sizeof(arg2));
 	if (str_striequal("status", arg1)) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") loaded\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file").c_str());
@@ -595,7 +624,7 @@ static bool s_main_handle_command_qmm() {
 
 
 // route vmMain call to plugins and mod
-static intptr_t s_main_route_vmmain(int cmd, intptr_t* args) {
+static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 	// store max result
 	pluginres_t maxresult = QMM_UNUSED;
 	// store return value to pass back to the engine (either real vmMain return value, or value given by a QMM_OVERRIDE/QMM_SUPERCEDE plugin)
@@ -637,7 +666,7 @@ static intptr_t s_main_route_vmmain(int cmd, intptr_t* args) {
 
 
 // route syscall call to plugins and mod
-static intptr_t s_main_route_syscall(int cmd, intptr_t* args) {
+static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 	// store max result
 	pluginres_t maxresult = QMM_UNUSED;
 	// store return value to pass back to the mod (either real syscall return value, or value given by a QMM_OVERRIDE/QMM_SUPERCEDE plugin)

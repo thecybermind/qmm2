@@ -37,7 +37,7 @@ enum {
 	G_TESTPRINTFLOAT = 113
 };
 
-const char* STVOYHM_eng_msg_names(int cmd) {
+const char* STVOYHM_eng_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(G_PRINT);
 		GEN_CASE(G_ERROR);
@@ -232,7 +232,7 @@ const char* STVOYHM_eng_msg_names(int cmd) {
 	}
 }
 
-const char* STVOYHM_mod_msg_names(int cmd) {
+const char* STVOYHM_mod_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(GAME_INIT);
 		GEN_CASE(GAME_SHUTDOWN);
@@ -250,7 +250,7 @@ const char* STVOYHM_mod_msg_names(int cmd) {
 	}
 }
 
-bool STVOYHM_is_mod_trace_msg(int cmd) {
+bool STVOYHM_is_mod_trace_msg(intptr_t cmd) {
 	switch (cmd) {
 	case GAME_CLIENT_THINK:
 	case GAME_RUN_FRAME:

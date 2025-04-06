@@ -16,7 +16,7 @@ Created By:
 
 GEN_QMM_MSGS(WET);
 
-const char* WET_eng_msg_names(int cmd) {
+const char* WET_eng_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(G_PRINT);
 		GEN_CASE(G_ERROR);
@@ -235,7 +235,7 @@ const char* WET_eng_msg_names(int cmd) {
 	}
 }
 
-const char* WET_mod_msg_names(int cmd) {
+const char* WET_mod_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(GAME_INIT);
 		GEN_CASE(GAME_SHUTDOWN);
@@ -256,7 +256,7 @@ const char* WET_mod_msg_names(int cmd) {
 	}
 }
 
-bool WET_is_mod_trace_msg(int cmd) {
+bool WET_is_mod_trace_msg(intptr_t cmd) {
 	switch (cmd) {
 	case GAME_CLIENT_THINK:
 	case GAME_RUN_FRAME:

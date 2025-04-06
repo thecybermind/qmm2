@@ -28,8 +28,8 @@ Created By:
  #define C_DLLEXPORT DLLEXPORT
 #endif
 
-typedef intptr_t (*eng_syscall_t)(int cmd, ...);
-typedef intptr_t (*mod_vmMain_t)(int cmd, ...);
+typedef intptr_t (*eng_syscall_t)(intptr_t cmd, ...);
+typedef intptr_t (*mod_vmMain_t)(intptr_t cmd, ...);
 
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, pluginfunc_t, or plugininfo_t
 #define QMM_PIFV_MAJOR  2
@@ -90,9 +90,9 @@ typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, plugin
 // QMM_Detach
 typedef void (*plugin_detach)(intptr_t reserved);
 // QMM_syscall
-typedef intptr_t (*plugin_syscall)(int cmd, intptr_t* args);
+typedef intptr_t (*plugin_syscall)(intptr_t cmd, intptr_t* args);
 // QMM_vmMain
-typedef intptr_t (*plugin_vmmain)(int cmd, intptr_t* args);
+typedef intptr_t (*plugin_vmmain)(intptr_t cmd, intptr_t* args);
 
 // plugin use only
 extern plugininfo_t g_plugininfo;       // set '*pinfo' to &g_plugininfo in QMM_Query
@@ -131,10 +131,10 @@ extern intptr_t g_vmbase;               // set to 'vmbase' in QMM_Attach
 C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
 C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, intptr_t reserved);
 C_DLLEXPORT void QMM_Detach(intptr_t reserved);
-C_DLLEXPORT intptr_t QMM_vmMain(int cmd, intptr_t* args);
-C_DLLEXPORT intptr_t QMM_vmMain_Post(int cmd, intptr_t* args);
-C_DLLEXPORT intptr_t QMM_syscall(int cmd, intptr_t* args);
-C_DLLEXPORT intptr_t QMM_syscall_Post(int cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_vmMain(intptr_t cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_vmMain_Post(intptr_t cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_syscall(intptr_t cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_syscall_Post(intptr_t cmd, intptr_t* args);
 
 // macros to help set the plugin result value
 #define QMM_RETURN(x, y)        return (*g_result = (pluginres_t)(x), (y))
