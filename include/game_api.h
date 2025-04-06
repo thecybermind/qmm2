@@ -36,7 +36,6 @@ typedef enum {
 	QMM_G_ARGV,
 	QMM_G_ARGC,
 	QMM_G_SEND_CONSOLE_COMMAND,
-	QMM_G_SEND_SERVER_COMMAND,
 
 	QMM_G_CVAR_REGISTER,
 	QMM_G_CVAR_SET,
@@ -79,18 +78,14 @@ extern supportedgame_t g_supportedgames[];
 // macros to make game support a bit easier to do
 // these macros are used in game_api.cpp and game_xyz.cpp
 
-// generate externs for the msg arrays and functions
+// generate externs for each game's msg arrays and functions
 #define GEN_EXTS(game)		extern int game##_qmm_eng_msgs[]; \
 							extern int game##_qmm_mod_msgs[]; \
 							const char* game##_eng_msg_names(intptr_t msg); \
 							const char* game##_mod_msg_names(intptr_t msg); \
-							bool game##_is_mod_trace_msg(intptr_t msg)
-
-// generate extern for the vmsyscall function (if game supports it)
-#define GEN_VMEXT(game)		int game##_vmsyscall(unsigned char* membase, int cmd, int* args)
-
-// generate extern for the GetGameAPI function (if game supports it)
-#define GEN_APIEXT(game)	void* game##_GetGameAPI(void* import)
+							bool game##_is_mod_trace_msg(intptr_t msg); \
+							int game##_vmsyscall(unsigned char* membase, int cmd, int* args); \
+							void* game##_GetGameAPI(void* import)
 
 // generate struct info for the short name, messages arrays, and message name functions
 #define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names, game##_is_mod_trace_msg
@@ -102,7 +97,7 @@ extern supportedgame_t g_supportedgames[];
 // this macro goes in game_*.cpp
 #define GEN_QMM_MSGS(game) \
 	int game##_qmm_eng_msgs[] = { \
-		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_SEND_SERVER_COMMAND, \
+		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, \
 		G_CVAR_REGISTER, G_CVAR_SET, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, \
 		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, \
 		EXEC_APPEND, FS_READ, \

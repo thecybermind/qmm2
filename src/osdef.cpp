@@ -28,7 +28,7 @@ char* dlerror() {
 void* osdef_path_get_modulehandle(void* ptr) {
 	void* handle = nullptr;
 
-#ifdef _WIN32
+#if defined(_WIN32)
 	MEMORY_BASIC_INFORMATION MBI;
 
 	if (!VirtualQuery(ptr, &MBI, sizeof(MBI)) || MBI.State != MEM_COMMIT || !MBI.AllocationBase)
@@ -43,8 +43,6 @@ void* osdef_path_get_modulehandle(void* ptr) {
 		return NULL;
 
 	handle = dli.dli_fbase;
-#else
-
 #endif
 	return handle;
 }
@@ -53,7 +51,7 @@ const char* osdef_path_get_modulepath(void* ptr) {
 	static char path[PATH_MAX] = "";
 	memset(path, 0, sizeof(path));
 
-#ifdef _WIN32
+#if defined(_WIN32)
 	MEMORY_BASIC_INFORMATION MBI;
 
 	if (!VirtualQuery(ptr, &MBI, sizeof(MBI)) || MBI.State != MEM_COMMIT || !MBI.AllocationBase)
@@ -70,8 +68,6 @@ const char* osdef_path_get_modulepath(void* ptr) {
 
 	strncpy(path, dli.dli_fname, sizeof(path) - 1);
 	path[sizeof(path) - 1] = '\0';
-#else
-
 #endif
 	return path;
 }
@@ -80,7 +76,7 @@ const char* osdef_path_get_procpath() {
 	static char path[PATH_MAX] = "";
 	memset(path, 0, sizeof(path));
 
-#ifdef _WIN32
+#if defined(_WIN32)
 	if (!GetModuleFileName(NULL, path, sizeof(path)))
 		return "";
 #elif defined(__linux__)
@@ -89,8 +85,6 @@ const char* osdef_path_get_procpath() {
 		path[len] = '\0';
 	}
 	path[sizeof(path) - 1] = '\0';
-#else
-
 #endif
 	return path;
 }

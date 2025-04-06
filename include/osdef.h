@@ -12,7 +12,7 @@ Created By:
 #ifndef __QMM2_OSDEF_H__
 #define __QMM2_OSDEF_H__
 
-#ifdef _WIN32
+#if defined(_WIN32)
 
 #define WIN32_LEAN_AND_MEAN
 #ifndef _CRT_SECURE_NO_WARNINGS

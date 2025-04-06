@@ -13,30 +13,18 @@ Created By:
 #include "game_api.h"
 
 // externs for each game's functions/structs
-GEN_EXTS(RTCWSP);
-GEN_EXTS(STVOYHM); 
 GEN_EXTS(Q3A);
+GEN_EXTS(STVOYHM);
+GEN_EXTS(RTCWSP);
 GEN_EXTS(WET);
 GEN_EXTS(RTCWMP);
-GEN_EXTS(JK2MP);
 GEN_EXTS(JAMP);
+GEN_EXTS(JK2MP);
 
-// extern for each game's qvm syscall handler
-GEN_VMEXT(STVOYHM); 
-GEN_VMEXT(Q3A);
-GEN_VMEXT(JK2MP);
-
-// externs for each game's functions/structs
 GEN_EXTS(MOHAA);
 GEN_EXTS(MOHSH);
 GEN_EXTS(MOHBT);
 GEN_EXTS(STEF2);
-
-// extern for each game's GetGameAPI call
-GEN_APIEXT(MOHAA);
-GEN_APIEXT(MOHSH);
-GEN_APIEXT(MOHBT);
-GEN_APIEXT(STEF2);
 
 // add your game's info data here
 supportedgame_t g_supportedgames[] = {
@@ -44,7 +32,7 @@ supportedgame_t g_supportedgames[] = {
 	{ "qagame",		"vm/qagame.qvm",	"baseq3",			"Quake 3 Arena",								GEN_INFO(Q3A),		Q3A_vmsyscall,		nullptr,			13,		4,		{ "q3", "quake3" }},
 	{ "qagame",		"vm/qagame.qvm",	"baseef",			"Star Trek Voyager: Elite Force (Holomatch)",	GEN_INFO(STVOYHM),	STVOYHM_vmsyscall,	nullptr,			13,		3,		{ "stvoy" } },
 	{ "qagame",		nullptr,			".",				"Return to Castle Wolfenstein (Singleplayer)",	GEN_INFO(RTCWSP),	nullptr,			nullptr,			13,		5,		{ "sp" } },
-#ifdef _WIN32
+#if defined(_WIN32)
 	{ "qagame_mp_",	nullptr,			"etmain",			"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
 	{ "qagame_mp_",	nullptr,			"main",				"Return to Castle Wolfenstein (Multiplayer)",	GEN_INFO(RTCWMP),	nullptr,			nullptr,			13,		5,		{ "mp" } },
 #elif defined(__linux__)

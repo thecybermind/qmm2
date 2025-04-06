@@ -15,7 +15,7 @@ Created By:
 #include <stdarg.h>
 
 // plugins and internal use
-#ifdef _WIN32
+#if defined(_WIN32)
  #define DLLEXPORT __declspec(dllexport)
 #elif defined(__linux__)
  #define DLLEXPORT __attribute__((visibility("default")))
