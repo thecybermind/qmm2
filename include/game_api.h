@@ -107,6 +107,25 @@ extern supportedgame_t g_supportedgames[];
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, GAME_CLIENT_CONNECT \
 	}
 
+// ----------------------------
+// ----- API vararg stuff -----
+// ----------------------------
+
+#define QMM_MAX_VMMAIN_ARGS     9
+#define QMM_GET_VMMAIN_ARGS()   intptr_t args[QMM_MAX_VMMAIN_ARGS] = {}; \
+                                va_list arglist; \
+                                va_start(arglist, cmd); \
+                                for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; ++i) \
+                                    args[i] = va_arg(arglist, intptr_t); \
+                                va_end(arglist)
+
+#define QMM_MAX_SYSCALL_ARGS    17
+#define QMM_GET_SYSCALL_ARGS()  intptr_t args[QMM_MAX_SYSCALL_ARGS] = {}; \
+                                va_list arglist; \
+                                va_start(arglist, cmd); \
+                                for (int i = 0; i < QMM_MAX_SYSCALL_ARGS; ++i) \
+                                    args[i] = va_arg(arglist, intptr_t); \
+                                va_end(arglist)
 
 // ----------------------------
 // ----- GetGameAPI stuff -----

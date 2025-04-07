@@ -14,57 +14,90 @@ BIN_DIR := bin
 
 SRC := $(wildcard $(SRC_DIR)/*.cpp)
 
-OBJ_DIR_REL := $(OBJ_DIR)/release
-OBJ_DIR_DBG := $(OBJ_DIR)/debug
+OBJ_DIR_REL    := $(OBJ_DIR)/release
+OBJ_DIR_REL_32 := $(OBJ_DIR_REL)/x86
+OBJ_DIR_REL_64 := $(OBJ_DIR_REL)/x86_64
+OBJ_DIR_DBG    := $(OBJ_DIR)/debug
+OBJ_DIR_DBG_32 := $(OBJ_DIR_DBG)/x86
+OBJ_DIR_DBG_64 := $(OBJ_DIR_DBG)/x86_64
 
-BIN_DIR_REL := $(BIN_DIR)/release
-BIN_DIR_DBG := $(BIN_DIR)/debug
+BIN_DIR_REL    := $(BIN_DIR)/release
+BIN_DIR_REL_32 := $(BIN_DIR_REL)/x86
+BIN_DIR_REL_64 := $(BIN_DIR_REL)/x86_64
+BIN_DIR_DBG    := $(BIN_DIR)/debug
+BIN_DIR_DBG_32 := $(BIN_DIR_DBG)/x86
+BIN_DIR_DBG_64 := $(BIN_DIR_DBG)/x86_64
 
-BIN_REL := $(BIN_DIR_REL)/qmm2.so
-BIN_DBG := $(BIN_DIR_DBG)/qmm2-dbg.so
 
-OBJ_REL := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL)/%.o)
-OBJ_DBG := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG)/%.o)
+BIN_REL_32 := $(BIN_DIR_REL_32)/qmm2.so
+BIN_REL_64 := $(BIN_DIR_REL_64)/qmm2x64.so
+BIN_DBG_32 := $(BIN_DIR_DBG_32)/qmm2-dbg.so
+BIN_DBG_64 := $(BIN_DIR_DBG_64)/qmm2-dbgx64.so
+
+OBJ_REL_32 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL_32)/%.o)
+OBJ_REL_64 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL_64)/%.o)
+OBJ_DBG_32 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_32)/%.o)
+OBJ_DBG_64 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_64)/%.o)
 
 CPPFLAGS := -MMD -MP -I ./include -isystem ../qmm_sdks
-CFLAGS   := -Wall -pipe -m32 -fPIC
-LDFLAGS  := -m32 -shared -fPIC
+CFLAGS   := -Wall -pipe -fPIC
+LDFLAGS  := -shared -fPIC
 LDLIBS   :=
 
 REL_CPPFLAGS := $(CPPFLAGS)
 DBG_CPPFLAGS := $(CPPFLAGS) -D_DEBUG
 
-REL_CFLAGS := $(CFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce 
-DBG_CFLAGS := $(CFLAGS) -g -pg
+REL_CFLAGS_32 := $(CFLAGS) -m32 -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce 
+REL_CFLAGS_64 := $(CFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce 
+DBG_CFLAGS_32 := $(CFLAGS) -m32 -g -pg
+DBG_CFLAGS_64 := $(CFLAGS) -g -pg
 
-REL_LDFLAGS := $(LDFLAGS)
-DBG_LDFLAGS := $(LDFLAGS) -g -pg
+REL_LDFLAGS_32 := $(LDFLAGS) -m32
+REL_LDFLAGS_64 := $(LDFLAGS)
+DBG_LDFLAGS_32 := $(LDFLAGS) -m32 -g -pg
+DBG_LDFLAGS_64 := $(LDFLAGS) -g -pg
 
 REL_LDLIBS := $(LDLIBS)
 DBG_LDLIBS := $(LDLIBS)
 
-.PHONY: all clean
-
-debug: $(BIN_DBG)
-
-release: $(BIN_REL)
+.PHONY: all release debug clean
 
 all: release debug
+release: release32 release64
+debug: debug32 debug64
 
-$(BIN_REL): $(OBJ_REL) | $(BIN_DIR_REL)
-	$(CC) $(REL_LDFLAGS) -o $@ $(LDLIBS) $^
+debug32: $(BIN_DBG_32)
+debug64: $(BIN_DBG_64)
 
-$(BIN_DBG): $(OBJ_DBG) | $(BIN_DIR_DBG)
-	$(CC) $(DBG_LDFLAGS) -o $@ $(LDLIBS) $^
+release32: $(BIN_REL_32)
+release64: $(BIN_REL_64)
 
-$(BIN_DIR) $(BIN_DIR_REL) $(BIN_DIR_DBG) $(OBJ_DIR) $(OBJ_DIR_REL) $(OBJ_DIR_DBG):
+$(BIN_REL_32): $(OBJ_REL_32) | $(BIN_DIR_REL_32)
+	$(CC) $(REL_LDFLAGS_32) -o $@ $(LDLIBS) $^
+
+$(BIN_REL_64): $(OBJ_REL_64) | $(BIN_DIR_REL_64)
+	$(CC) $(REL_LDFLAGS_64) -o $@ $(LDLIBS) $^
+
+$(BIN_DBG_32): $(OBJ_DBG_32) | $(BIN_DIR_DBG_32)
+	$(CC) $(DBG_LDFLAGS_32) -o $@ $(LDLIBS) $^
+
+$(BIN_DBG_64): $(OBJ_DBG_64) | $(BIN_DIR_DBG_64)
+	$(CC) $(DBG_LDFLAGS_64) -o $@ $(LDLIBS) $^
+
+$(OBJ_DIR_REL_32)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_REL_32)
+	$(CC) $(REL_CPPFLAGS) $(REL_CFLAGS_32) -c $< -o $@
+
+$(OBJ_DIR_REL_64)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_REL_64)
+	$(CC) $(REL_CPPFLAGS) $(REL_CFLAGS_64) -c $< -o $@
+
+$(OBJ_DIR_DBG_32)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_DBG_32)
+	$(CC) $(DBG_CPPFLAGS) $(DBG_CFLAGS_32) -c $< -o $@
+
+$(OBJ_DIR_DBG_64)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_DBG_64)
+	$(CC) $(DBG_CPPFLAGS) $(DBG_CFLAGS_64) -c $< -o $@
+
+$(BIN_DIR) $(BIN_DIR_REL_32) $(BIN_DIR_REL_64) $(BIN_DIR_DBG_32) $(BIN_DIR_DBG_64) $(OBJ_DIR_REL_32) $(OBJ_DIR_REL_64) $(OBJ_DIR_DBG_32) $(OBJ_DIR_DBG_64):
 	mkdir -p $@
-
-$(OBJ_DIR_REL)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_REL)
-	$(CC) $(REL_CPPFLAGS) $(REL_CFLAGS) -c $< -o $@
-
-$(OBJ_DIR_DBG)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_DBG)
-	$(CC) $(DBG_CPPFLAGS) $(DBG_CFLAGS) -c $< -o $@
 
 clean:
 	@$(RM) -rv $(BIN_DIR) $(OBJ_DIR)

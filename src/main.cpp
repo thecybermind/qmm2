@@ -209,7 +209,10 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		}, AixLog::Severity::info);
 
 		// get mod dir from engine
-		g_gameinfo.moddir = util_get_str_cvar("fs_game");
+		char moddir[256];
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], "fs_game", moddir, (intptr_t)sizeof(moddir));
+		g_gameinfo.moddir = moddir;
+		
 		// the default mod (including all singleplayer games) return "" for the fs_game, so grab the default mod dir from game info instead
 		if (g_gameinfo.moddir.empty())
 			g_gameinfo.moddir = g_gameinfo.game->moddir;

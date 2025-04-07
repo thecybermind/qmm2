@@ -43,7 +43,7 @@ constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14,  'r', 0x12 };
 #define dlopen(file, x)		((void*)LoadLibrary(file))
 #define dlsym(dll, func)	((void*)GetProcAddress((HMODULE)(dll), (func)))
 #define dlclose(dll)		FreeLibrary((HMODULE)(dll))
-char* dlerror();			// this will return the last error from any win32 function, not just library functions
+const char* dlerror();		// this will return the last error from any win32 function, not just library functions
 
 #elif defined(__linux__)
 

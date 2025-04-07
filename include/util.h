@@ -26,8 +26,4 @@ int str_striequal(std::string s1, std::string s2);
 
 #define util_max(a, b)  ((a) > (b) ? (a) : (b))
 
-char* vaf(const char* format, ...);    // this uses a cycling array of strings so the return value does not need to be stored locally
-int util_get_int_cvar(const char* cvar);
-const char* util_get_str_cvar(const char* cvar);
-
 #endif // __QMM2_UTIL_H__

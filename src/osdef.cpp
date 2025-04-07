@@ -10,17 +10,24 @@ Created By:
 */
 
 #include "osdef.h"
+#include <string>
 #include <string.h>
 
 #ifdef _WIN32
 
-char* dlerror() {
-    static char buffer[4096 * 2]; // https://stackoverflow.com/a/75644008
-    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffer, sizeof(buffer), NULL);
-    // remove newlines at the end
-    buffer[strlen(buffer) - 2] = '\0';
+const char* dlerror() {
+	static std::string str;
+	char* buf = nullptr;
+	str = "";
 
-    return buffer;
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&buf, 0, nullptr);
+    
+	str = buf;
+	
+	LocalFree(buf);
+
+	return str.c_str();
 }
 
 #endif
@@ -40,7 +47,7 @@ void* osdef_path_get_modulehandle(void* ptr) {
 	memset(&dli, 0, sizeof(dli));
 
 	if (!dladdr(ptr, &dli))
-		return NULL;
+		return nullptr;
 
 	handle = dli.dli_fbase;
 #endif
@@ -77,7 +84,7 @@ const char* osdef_path_get_procpath() {
 	memset(path, 0, sizeof(path));
 
 #if defined(_WIN32)
-	if (!GetModuleFileName(NULL, path, sizeof(path)))
+	if (!GetModuleFileName(nullptr, path, sizeof(path)))
 		return "";
 #elif defined(__linux__)
 	ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);

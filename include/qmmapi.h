@@ -48,28 +48,42 @@ typedef struct {
     intptr_t pifv_minor;	// minor plugin interface version
 } plugininfo_t;
 
+// log severity for QMM_WRITEQMMLOG
+enum {
+    QMMLOG_TRACE,
+    QMMLOG_DEBUG,
+    QMMLOG_INFO,
+    QMMLOG_NOTICE,
+    QMMLOG_WARNING,
+    QMMLOG_ERROR,
+    QMMLOG_FATAL
+};
 
 // prototype struct for QMM plugin util funcs
 typedef struct {
-    void (*pfnWriteQMMLog)(const char* text, int severity);
+    void (*pfnWriteQMMLog)(const char* text, int severity, const char* tag);
     char* (*pfnVarArgs)(const char* format, ...);
     int (*pfnIsQVM)();
-    const char* (*pfnEngMsgName)(int msg);
-    const char* (*pfnModMsgName)(int msg);
-    int (*pfnGetIntCvar)(const char* cvar);
+    const char* (*pfnEngMsgName)(intptr_t msg);
+    const char* (*pfnModMsgName)(intptr_t msg);
+    intptr_t (*pfnGetIntCvar)(const char* cvar);
     const char* (*pfnGetStrCvar)(const char* cvar);
     const char* (*pfnGetGameEngine)();
+    void (*pfnArgv)(intptr_t argn, char* buf, intptr_t buflen);
+    const char* (*pfnInfoValueForKey)(const char* userinfo, const char* key);
 } pluginfuncs_t;
 
 // macros for QMM plugin util funcs
-#define QMM_WRITEQMMLOG     (g_pluginfuncs->pfnWriteQMMLog)
-#define QMM_VARARGS         (g_pluginfuncs->pfnVarArgs)
-#define QMM_ISQVM           (g_pluginfuncs->pfnIsQVM)
-#define QMM_ENGMSGNAME      (g_pluginfuncs->pfnEngMsgName)
-#define QMM_MODMSGNAME      (g_pluginfuncs->pfnModMsgName)
-#define QMM_GETINTCVAR      (g_pluginfuncs->pfnGetIntCvar)
-#define QMM_GETSTRCVAR      (g_pluginfuncs->pfnGetStrCvar)
-#define QMM_GETGAMEENGINE   (g_pluginfuncs->pfnGetGameEngine)
+#define QMM_WRITEQMMLOG     (g_pluginfuncs->pfnWriteQMMLog)     // write to the QMM log
+#define QMM_VARARGS         (g_pluginfuncs->pfnVarArgs)         // simple vsprintf helper
+#define QMM_ISQVM           (g_pluginfuncs->pfnIsQVM)           // returns 1 if the mod is QVM
+#define QMM_ENGMSGNAME      (g_pluginfuncs->pfnEngMsgName)      // get the string name of a syscall code
+#define QMM_MODMSGNAME      (g_pluginfuncs->pfnModMsgName)      // get the string name of a vmMain code
+#define QMM_GETINTCVAR      (g_pluginfuncs->pfnGetIntCvar)      // get the int value of a cvar
+#define QMM_GETSTRCVAR      (g_pluginfuncs->pfnGetStrCvar)      // get the str value of a cvar
+#define QMM_GETGAMEENGINE   (g_pluginfuncs->pfnGetGameEngine)   // return the QMM short code for the game engine
+#define QMM_ARGV            (g_pluginfuncs->pfnArgv)            // call G_ARGV, but can handle both engine styles
+#define QMM_INFOVALUEFORKEY (g_pluginfuncs->pfnInfoValueForKey) // same as SDK's Info_ValueForKey
 
 // only set IGNORED, OVERRIDE, and SUPERCEDE
 // UNUSED and ERROR are for internal use only
@@ -108,22 +122,6 @@ extern intptr_t g_vmbase;               // set to 'vmbase' in QMM_Attach
             g_pluginfuncs = pluginfuncs; \
             g_vmbase = vmbase; \
         } while(0)
-
-#define QMM_MAX_VMMAIN_ARGS     9
-#define QMM_GET_VMMAIN_ARGS()   intptr_t args[QMM_MAX_VMMAIN_ARGS] = {}; \
-                                va_list arglist; \
-                                va_start(arglist, cmd); \
-                                for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; ++i) \
-                                    args[i] = va_arg(arglist, intptr_t); \
-                                va_end(arglist)
-
-#define QMM_MAX_SYSCALL_ARGS    17
-#define QMM_GET_SYSCALL_ARGS()  intptr_t args[QMM_MAX_SYSCALL_ARGS] = {}; \
-                                va_list arglist; \
-                                va_start(arglist, cmd); \
-                                for (int i = 0; i < QMM_MAX_SYSCALL_ARGS; ++i) \
-                                    args[i] = va_arg(arglist, intptr_t); \
-                                va_end(arglist)
 
 // prototypes for required entry points in the plugin
 C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
