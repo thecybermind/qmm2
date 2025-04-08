@@ -14,6 +14,7 @@ Created By:
 
 #include <vector>
 #include <string>
+#include <stdint.h>
 #include "osdef.h"
 
 typedef const char* (*msgname_t)(intptr_t msg);
