@@ -28,11 +28,10 @@ BIN_DIR_DBG    := $(BIN_DIR)/debug
 BIN_DIR_DBG_32 := $(BIN_DIR_DBG)/x86
 BIN_DIR_DBG_64 := $(BIN_DIR_DBG)/x86_64
 
-
 BIN_REL_32 := $(BIN_DIR_REL_32)/qmm2.so
-BIN_REL_64 := $(BIN_DIR_REL_64)/qmm2x64.so
-BIN_DBG_32 := $(BIN_DIR_DBG_32)/qmm2-dbg.so
-BIN_DBG_64 := $(BIN_DIR_DBG_64)/qmm2-dbgx64.so
+BIN_REL_64 := $(BIN_DIR_REL_64)/qmm2_x86_64.so
+BIN_DBG_32 := $(BIN_DIR_DBG_32)/qmm2.so
+BIN_DBG_64 := $(BIN_DIR_DBG_64)/qmm2_x86_64.so
 
 OBJ_REL_32 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL_32)/%.o)
 OBJ_REL_64 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL_64)/%.o)
@@ -102,4 +101,7 @@ $(BIN_DIR) $(BIN_DIR_REL_32) $(BIN_DIR_REL_64) $(BIN_DIR_DBG_32) $(BIN_DIR_DBG_6
 clean:
 	@$(RM) -rv $(BIN_DIR) $(OBJ_DIR)
 
--include $(OBJ:.o=.d)
+-include $(OBJ_REL_32:.o=.d)
+-include $(OBJ_REL_64:.o=.d)
+-include $(OBJ_DBG_32:.o=.d)
+-include $(OBJ_DBG_64:.o=.d)

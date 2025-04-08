@@ -75,10 +75,10 @@
     <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);../../qmm_sdks</ExternalIncludePath>
     <OutDir>..\bin\$(Configuration)\$(PlatformShortName)\</OutDir>
     <IntDir>..\obj\$(Configuration)\$(PlatformShortName)\</IntDir>
-    <TargetName>$(ProjectName)-dbg</TargetName>
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <TargetName>$(ProjectName)-dbg_x86_64</TargetName>
+    <TargetName>$(ProjectName)_x86_64</TargetName>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);../include</IncludePath>
     <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);../../qmm_sdks</ExternalIncludePath>
     <OutDir>..\bin\$(Configuration)\$(PlatformShortName)\</OutDir>
