@@ -71,32 +71,37 @@ debug: debug32 debug64
 debug32: $(BIN_DBG_32)
 debug64: $(BIN_DBG_64)
 
-$(BIN_REL_32): $(OBJ_REL_32) | $(BIN_DIR_REL_32)
+$(BIN_REL_32): $(OBJ_REL_32)
+	mkdir -p $(@D)
 	$(CC) $(REL_LDFLAGS_32) -o $@ $(LDLIBS) $^
 
-$(BIN_REL_64): $(OBJ_REL_64) | $(BIN_DIR_REL_64)
+$(BIN_REL_64): $(OBJ_REL_64)
+	mkdir -p $(@D)
 	$(CC) $(REL_LDFLAGS_64) -o $@ $(LDLIBS) $^
 
-$(BIN_DBG_32): $(OBJ_DBG_32) | $(BIN_DIR_DBG_32)
+$(BIN_DBG_32): $(OBJ_DBG_32)
+	mkdir -p $(@D)
 	$(CC) $(DBG_LDFLAGS_32) -o $@ $(LDLIBS) $^
 
-$(BIN_DBG_64): $(OBJ_DBG_64) | $(BIN_DIR_DBG_64)
+$(BIN_DBG_64): $(OBJ_DBG_64)
+	mkdir -p $(@D)
 	$(CC) $(DBG_LDFLAGS_64) -o $@ $(LDLIBS) $^
 
-$(OBJ_DIR_REL_32)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_REL_32)
+$(OBJ_DIR_REL_32)/%.o: $(SRC_DIR)/%.cpp
+	mkdir -p $(@D)
 	$(CC) $(REL_CPPFLAGS) $(REL_CFLAGS_32) -c $< -o $@
 
-$(OBJ_DIR_REL_64)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_REL_64)
+$(OBJ_DIR_REL_64)/%.o: $(SRC_DIR)/%.cpp
+	mkdir -p $(@D)
 	$(CC) $(REL_CPPFLAGS) $(REL_CFLAGS_64) -c $< -o $@
 
-$(OBJ_DIR_DBG_32)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_DBG_32)
+$(OBJ_DIR_DBG_32)/%.o: $(SRC_DIR)/%.cpp
+	mkdir -p $(@D)
 	$(CC) $(DBG_CPPFLAGS) $(DBG_CFLAGS_32) -c $< -o $@
 
-$(OBJ_DIR_DBG_64)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR_DBG_64)
+$(OBJ_DIR_DBG_64)/%.o: $(SRC_DIR)/%.cpp
+	mkdir -p $(@D)
 	$(CC) $(DBG_CPPFLAGS) $(DBG_CFLAGS_64) -c $< -o $@
-
-$(BIN_DIR) $(BIN_DIR_REL_32) $(BIN_DIR_REL_64) $(BIN_DIR_DBG_32) $(BIN_DIR_DBG_64) $(OBJ_DIR_REL_32) $(OBJ_DIR_REL_64) $(OBJ_DIR_DBG_32) $(OBJ_DIR_DBG_64):
-	mkdir -p $@
 
 clean:
 	@$(RM) -rv $(BIN_DIR) $(OBJ_DIR)
