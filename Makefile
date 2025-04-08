@@ -46,8 +46,8 @@ LDLIBS   :=
 REL_CPPFLAGS := $(CPPFLAGS)
 DBG_CPPFLAGS := $(CPPFLAGS) -D_DEBUG
 
-REL_CFLAGS_32 := $(CFLAGS) -m32 -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce 
-REL_CFLAGS_64 := $(CFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce 
+REL_CFLAGS_32 := $(CFLAGS) -m32 -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce
+REL_CFLAGS_64 := $(CFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce
 DBG_CFLAGS_32 := $(CFLAGS) -m32 -g -pg
 DBG_CFLAGS_64 := $(CFLAGS) -g -pg
 
@@ -59,17 +59,17 @@ DBG_LDFLAGS_64 := $(LDFLAGS) -g -pg
 REL_LDLIBS := $(LDLIBS)
 DBG_LDLIBS := $(LDLIBS)
 
-.PHONY: all release debug clean
+.PHONY: all all32 all64 release debug clean
 
 all: release debug
+all32: release32 debug32
+all64: release64 debug64
 release: release32 release64
-debug: debug32 debug64
-
-debug32: $(BIN_DBG_32)
-debug64: $(BIN_DBG_64)
-
 release32: $(BIN_REL_32)
 release64: $(BIN_REL_64)
+debug: debug32 debug64
+debug32: $(BIN_DBG_32)
+debug64: $(BIN_DBG_64)
 
 $(BIN_REL_32): $(OBJ_REL_32) | $(BIN_DIR_REL_32)
 	$(CC) $(REL_LDFLAGS_32) -o $@ $(LDLIBS) $^
