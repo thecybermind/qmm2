@@ -605,6 +605,7 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 	// begin passing calls to plugins' QMM_vmMain functions
 	for (plugin_t& p : g_plugins) {
 		g_plugin_result = QMM_UNUSED;
+		g_api_return = 0;
 		// call plugin's vmMain and store return value
 		ret = p.QMM_vmMain(cmd, args);
 		// set new max result
