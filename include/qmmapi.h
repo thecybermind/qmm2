@@ -32,7 +32,7 @@ typedef intptr_t (*mod_vmMain_t)(intptr_t cmd, ...);
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, pluginfunc_t, or plugininfo_t
 #define QMM_PIFV_MAJOR  2
 // minor interface version increases with trailing addition to pluginfunc_t or plugininfo_t structs
-#define QMM_PIFV_MINOR  0
+#define QMM_PIFV_MINOR  1
 
 // holds plugin info to pass back to QMM
 typedef struct {
@@ -98,7 +98,7 @@ typedef enum pluginres_e {
 // QMM_Query
 typedef void (*plugin_query)(plugininfo_t** pinfo);
 // QMM_Attach
-typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, intptr_t reserved);
+typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, intptr_t* preturn);
 // QMM_Detach
 typedef void (*plugin_detach)(intptr_t reserved);
 // QMM_syscall
@@ -110,9 +110,10 @@ typedef intptr_t (*plugin_vmmain)(intptr_t cmd, intptr_t* args);
 extern plugininfo_t g_plugininfo;       // set '*pinfo' to &g_plugininfo in QMM_Query
 extern eng_syscall_t g_syscall;         // set to 'engfunc' in QMM_Attach
 extern mod_vmMain_t g_vmMain;           // set to 'modfunc' in QMM_Attach
-extern pluginres_t* g_result;           // set to 'result' in QMM_Attach
+extern pluginres_t* g_result;           // set to 'presult' in QMM_Attach
 extern pluginfuncs_t* g_pluginfuncs;    // set to 'pluginfuncs' in QMM_Attach
 extern intptr_t g_vmbase;               // set to 'vmbase' in QMM_Attach
+const extern intptr_t* g_return;        // set to 'preturn' in QMM_Attach
 
 #define QMM_GIVE_PINFO() *pinfo = &g_plugininfo
 #define QMM_SAVE_VARS() do { \
@@ -121,11 +122,12 @@ extern intptr_t g_vmbase;               // set to 'vmbase' in QMM_Attach
             g_result = presult; \
             g_pluginfuncs = pluginfuncs; \
             g_vmbase = vmbase; \
+            g_return = preturn; \
         } while(0)
 
 // prototypes for required entry points in the plugin
 C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
-C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, intptr_t reserved);
+C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, intptr_t* preturn);
 C_DLLEXPORT void QMM_Detach(intptr_t reserved);
 C_DLLEXPORT intptr_t QMM_vmMain(intptr_t cmd, intptr_t* args);
 C_DLLEXPORT intptr_t QMM_vmMain_Post(intptr_t cmd, intptr_t* args);

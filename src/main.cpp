@@ -630,6 +630,8 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 		final_ret = ret;
 	// pass calls to plugins' QMM_vmMain_Post functions (ignore return values and results)
 	for (plugin_t& p : g_plugins) {
+		// store final_ret in variable that is provided to plugins so they can get the end result in a _Post
+		g_api_return = final_ret;
 		p.QMM_vmMain_Post(cmd, args);
 	}
 	return final_ret;
@@ -647,6 +649,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 	// begin passing calls to plugins' QMM_syscall functions
 	for (plugin_t& p : g_plugins) {
 		g_plugin_result = QMM_UNUSED;
+		g_api_return = 0;
 		// call plugin's syscall and store return value
 		ret = p.QMM_syscall(cmd, args);
 
@@ -668,8 +671,9 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 		final_ret = ret;
 	// pass calls to plugins' QMM_syscall_Post functions (ignore return values and results)
 	for (plugin_t& p : g_plugins) {
+		// store final_ret in variable that is provided to plugins so they can get the end result in a _Post
+		g_api_return = final_ret;
 		p.QMM_syscall_Post(cmd, args);
-	}
-	
+	}	
 	return final_ret;
 }

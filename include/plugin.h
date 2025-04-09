@@ -29,6 +29,7 @@ typedef struct plugin_s {
 } plugin_t;
 
 extern pluginres_t g_plugin_result;
+extern intptr_t g_api_return;
 extern std::vector<plugin_t> g_plugins;
 
 const char* plugin_result_to_str(pluginres_t res);
