@@ -59,6 +59,16 @@ enum {
     QMMLOG_FATAL
 };
 
+// only set IGNORED, OVERRIDE, and SUPERCEDE
+// UNUSED and ERROR are for internal use only
+typedef enum pluginres_e {
+    QMM_UNUSED = -2,
+    QMM_ERROR = -1,
+    QMM_IGNORED = 0,
+    QMM_OVERRIDE,
+    QMM_SUPERCEDE
+} pluginres_t;
+
 // prototype struct for QMM plugin util funcs
 typedef struct {
     void (*pfnWriteQMMLog)(const char* text, int severity, const char* tag);
@@ -73,6 +83,17 @@ typedef struct {
     const char* (*pfnInfoValueForKey)(const char* userinfo, const char* key);
 } pluginfuncs_t;
 
+// struct of vars for QMM plugin utils. duplicate the old QMM_Attach vars before new ones
+typedef struct {
+    eng_syscall_t engfunc;
+    mod_vmMain_t modfunc;
+    pluginres_t* presult;
+    pluginfuncs_t* pluginfuncs;
+    intptr_t vmbase;
+
+    intptr_t* preturn;
+} pluginvars_t;
+
 // macros for QMM plugin util funcs
 #define QMM_WRITEQMMLOG     (g_pluginfuncs->pfnWriteQMMLog)     // write to the QMM log
 #define QMM_VARARGS         (g_pluginfuncs->pfnVarArgs)         // simple vsprintf helper
@@ -85,20 +106,10 @@ typedef struct {
 #define QMM_ARGV            (g_pluginfuncs->pfnArgv)            // call G_ARGV, but can handle both engine styles
 #define QMM_INFOVALUEFORKEY (g_pluginfuncs->pfnInfoValueForKey) // same as SDK's Info_ValueForKey
 
-// only set IGNORED, OVERRIDE, and SUPERCEDE
-// UNUSED and ERROR are for internal use only
-typedef enum pluginres_e {
-    QMM_UNUSED = -2,
-    QMM_ERROR = -1,
-    QMM_IGNORED = 0,
-    QMM_OVERRIDE,
-    QMM_SUPERCEDE
-} pluginres_t;
-
 // QMM_Query
 typedef void (*plugin_query)(plugininfo_t** pinfo);
 // QMM_Attach
-typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, intptr_t* preturn);
+typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, pluginvars_t* pluginvars);
 // QMM_Detach
 typedef void (*plugin_detach)(intptr_t reserved);
 // QMM_syscall
@@ -113,7 +124,7 @@ extern mod_vmMain_t g_vmMain;           // set to 'modfunc' in QMM_Attach
 extern pluginres_t* g_result;           // set to 'presult' in QMM_Attach
 extern pluginfuncs_t* g_pluginfuncs;    // set to 'pluginfuncs' in QMM_Attach
 extern intptr_t g_vmbase;               // set to 'vmbase' in QMM_Attach
-const extern intptr_t* g_return;        // set to 'preturn' in QMM_Attach
+extern pluginvars_t* g_pluginvars;      // set to 'pluginvars' in QMM_Attach
 
 #define QMM_GIVE_PINFO() *pinfo = &g_plugininfo
 #define QMM_SAVE_VARS() do { \
@@ -122,12 +133,12 @@ const extern intptr_t* g_return;        // set to 'preturn' in QMM_Attach
             g_result = presult; \
             g_pluginfuncs = pluginfuncs; \
             g_vmbase = vmbase; \
-            g_return = preturn; \
+            g_pluginvars = pluginvars; \
         } while(0)
 
 // prototypes for required entry points in the plugin
 C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
-C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, intptr_t* preturn);
+C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, intptr_t vmbase, pluginvars_t* pluginvars);
 C_DLLEXPORT void QMM_Detach(intptr_t reserved);
 C_DLLEXPORT intptr_t QMM_vmMain(intptr_t cmd, intptr_t* args);
 C_DLLEXPORT intptr_t QMM_vmMain_Post(intptr_t cmd, intptr_t* args);

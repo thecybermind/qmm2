@@ -44,6 +44,16 @@ static pluginfuncs_t s_pluginfuncs = {
 	s_plugin_helper_InfoValueForKey
 };
 
+static pluginvars_t s_pluginvars = {
+	g_gameinfo.pfnsyscall,
+	g_mod.pfnvmMain,
+	&g_plugin_result,
+	&s_pluginfuncs,
+	g_mod.vmbase,
+	
+	&g_api_return
+};
+
 pluginres_t g_plugin_result = QMM_UNUSED;
 intptr_t g_api_return = 0;
 std::vector<plugin_t> g_plugins;
@@ -120,8 +130,8 @@ bool plugin_load(plugin_t* p, std::string file) {
 	}
 
 	// call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
-	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, vmbase, pointer to api return int)
-	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, g_mod.vmbase, &g_api_return))) {
+	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, vmbase, table of plugin variables)
+	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, g_mod.vmbase, &s_pluginvars))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
 		p->QMM_Detach(0); // int arg is reserved, previously iscmd
 		goto fail;
