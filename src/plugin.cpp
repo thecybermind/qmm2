@@ -45,12 +45,7 @@ static pluginfuncs_t s_pluginfuncs = {
 };
 
 static pluginvars_t s_pluginvars = {
-	g_gameinfo.pfnsyscall,
-	g_mod.pfnvmMain,
-	&g_plugin_result,
-	&s_pluginfuncs,
-	g_mod.vmbase,
-	
+	0,	// vmbase, set in plugin_load
 	&g_api_return
 };
 
@@ -90,16 +85,24 @@ bool plugin_load(plugin_t* p, std::string file) {
 		goto fail;
 	}
 
-	// if the plugin's major interface version is lower, load, but suggest to upgrade plugin
+	// if the plugin's major interface version is very high, it is likely an old plugin (pifv < 3:0) and it's actually the name string pointer
+	// so we can just grab the pifv values from reserved2 and reserved3 and let the next checks handle it
+	if (p->plugininfo->pifv_major > 999) {
+		p->plugininfo->pifv_major = p->plugininfo->reserved2;
+		p->plugininfo->pifv_minor = p->plugininfo->reserved3;
+	}
+
+	// if the plugin's major interface version is lower, don't load and suggest to upgrade plugin
 	if (p->plugininfo->pifv_major < QMM_PIFV_MAJOR) {
-		LOG(QMM_LOG_WARNING, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is less than QMM's ({}:{}), suggest upgrading plugin.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is less than QMM's ({}:{}), suggest upgrading plugin.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
+		goto fail;
 	}
 	// if the plugin's interface version is higher, don't load and suggest to upgrade QMM
 	else if (p->plugininfo->pifv_major > QMM_PIFV_MAJOR || p->plugininfo->pifv_minor > QMM_PIFV_MINOR) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is greater than QMM's ({}:{}), suggest upgrading QMM.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
 		goto fail;
 	}
-	// don't care if plugin's minor interface version is lower with same major
+	// at this point, major versions match and the plugin's minor version is less than or equal to QMM's
 
 	// find remaining QMM api functions or fail
 	if (!(p->QMM_Attach = (plugin_attach)dlsym(p->dll, "QMM_Attach"))) {
@@ -129,11 +132,14 @@ bool plugin_load(plugin_t* p, std::string file) {
 		goto fail;
 	}
 
+	// set some pluginvars before loading the plugin
+	s_pluginvars.vmbase = g_mod.vmbase;
+
 	// call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
-	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, vmbase, table of plugin variables)
-	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, g_mod.vmbase, &s_pluginvars))) {
+	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
+	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, &s_pluginvars))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
-		p->QMM_Detach(0); // int arg is reserved, previously iscmd
+		p->QMM_Detach();
 		goto fail;
 	}
 
@@ -150,7 +156,7 @@ bool plugin_load(plugin_t* p, std::string file) {
 void plugin_unload(plugin_t* p) {
 	if (p->dll) {
 		if (p->QMM_Detach)
-			p->QMM_Detach(0); // int arg is reserved, previously iscmd
+			p->QMM_Detach();
 		dlclose(p->dll);
 	}
 
