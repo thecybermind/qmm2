@@ -477,8 +477,11 @@ static void s_main_load_plugin(std::string plugin_path) {
 	plugin_t p;
 	// absolute path, just attempt to load it directly
 	if (!path_is_relative(plugin_path)) {
-		if (plugin_load(&p, plugin_path))
+		// if the plugin decides to cancel itself in QMM_Attach, then plugin_load returns success
+		// but we only want to only store the plugin if it really loaded
+		if (plugin_load(&p, plugin_path) && p.dll) {
 			g_plugins.push_back(p);
+		}
 		return;
 	}
 	// relative path, try the following locations in order:
@@ -491,8 +494,11 @@ static void s_main_load_plugin(std::string plugin_path) {
 		fmt::format("./{}/{}", g_gameinfo.moddir, plugin_path)
 	};
 	for (auto& try_path : try_paths) {
+		// if the plugin decides to cancel itself in QMM_Attach, then plugin_load returns success
+		// but we only want to only store the plugin if it really loaded
 		if (plugin_load(&p, try_path)) {
-			g_plugins.push_back(p);
+			if (p.dll)
+				g_plugins.push_back(p);
 			return;
 		}
 	}

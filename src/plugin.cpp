@@ -71,7 +71,7 @@ bool plugin_load(plugin_t* p, std::string file) {
 
 	if (!(p->dll = dlopen(file.c_str(), RTLD_NOW))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL load failed for plugin: {}\n", file, dlerror());
-		return false;
+		goto fail;
 	}
 	if (!(p->QMM_Query = (plugin_query)dlsym(p->dll, "QMM_Query"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Query\" function\n", file);
@@ -139,17 +139,16 @@ bool plugin_load(plugin_t* p, std::string file) {
 	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
 	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, &s_pluginvars))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
-		p->QMM_Detach();
-		goto fail;
+		plugin_unload(p);
+		// we should treat this as a "successful load" so that QMM won't try to load the DLL repeatedly on different paths
+		return true;
 	}
 
 	p->path = file;
 	return true;
 
 	fail:
-	if (p->dll)
-		dlclose(p->dll);
-	*p = plugin_t();
+	plugin_unload(p);
 	return false;
 }
 
