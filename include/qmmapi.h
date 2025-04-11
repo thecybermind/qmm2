@@ -83,15 +83,16 @@ typedef struct {
     const char* (*pfnInfoValueForKey)(const char* userinfo, const char* key);
 } pluginfuncs_t;
 
-// struct of vars for QMM plugin utils. duplicate the old QMM_Attach vars before new ones
+// struct of vars for QMM plugin utils
 typedef struct {
-    eng_syscall_t engfunc;
-    mod_vmMain_t modfunc;
-    pluginres_t* presult;
-    pluginfuncs_t* pluginfuncs;
-    intptr_t vmbase;
+    // duplicates of the QMM_Attach args
+    eng_syscall_t engfunc;			// pointer to engine syscall
+    mod_vmMain_t modfunc;			// pointer to mod vmMain
+    pluginres_t* presult;			// pointer to int to store plugin result
+    pluginfuncs_t* pluginfuncs;		// pointer to struct of pluginfuncs
+    intptr_t vmbase;				// base address of the QVM memory block (automatically added to pointer args in syscalls)
 
-    intptr_t* preturn;
+    intptr_t* preturn;				// pointer to an int that holds the return value from a function call (used in QMM_x_Post)
 } pluginvars_t;
 
 // macros for QMM plugin util funcs
@@ -105,6 +106,9 @@ typedef struct {
 #define QMM_GETGAMEENGINE   (g_pluginfuncs->pfnGetGameEngine)   // return the QMM short code for the game engine
 #define QMM_ARGV            (g_pluginfuncs->pfnArgv)            // call G_ARGV, but can handle both engine styles
 #define QMM_INFOVALUEFORKEY (g_pluginfuncs->pfnInfoValueForKey) // same as SDK's Info_ValueForKey
+
+// macros for QMM plugin vars
+#define QMM_GET_RETURN(x)   ((x)*(g_pluginvars->preturn))       // get the actual return value of a call while inside a QMM_x_Post call, with given cast
 
 // QMM_Query
 typedef void (*plugin_query)(plugininfo_t** pinfo);
@@ -146,11 +150,11 @@ C_DLLEXPORT intptr_t QMM_syscall(intptr_t cmd, intptr_t* args);
 C_DLLEXPORT intptr_t QMM_syscall_Post(intptr_t cmd, intptr_t* args);
 
 // macros to help set the plugin result value
-#define QMM_RETURN(x, y)        return (*g_result = (pluginres_t)(x), (y))
-#define QMM_SET_RESULT(x)       *g_result = (pluginres_t)(x)
-#define QMM_RET_ERROR(x)        QMM_RETURN(QMM_ERROR, (x))
-#define QMM_RET_IGNORED(x)      QMM_RETURN(QMM_IGNORED, (x))
-#define QMM_RET_OVERRIDE(x)     QMM_RETURN(QMM_OVERRIDE, (x))
+#define QMM_RETURN(x, y)		return (*g_result = (pluginres_t)(x), (y))
+#define QMM_SET_RESULT(x)		*g_result = (pluginres_t)(x)
+#define QMM_RET_ERROR(x)		QMM_RETURN(QMM_ERROR, (x))
+#define QMM_RET_IGNORED(x)		QMM_RETURN(QMM_IGNORED, (x))
+#define QMM_RET_OVERRIDE(x)		QMM_RETURN(QMM_OVERRIDE, (x))
 #define QMM_RET_SUPERCEDE(x)	QMM_RETURN(QMM_SUPERCEDE, (x))
 
 // These are macros to convert between VM pointers and real pointers.
