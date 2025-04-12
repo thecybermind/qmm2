@@ -176,8 +176,8 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		// q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
 		char* var_name = (char*)(args[0]);
 		char* buffer = (char*)(args[1]);
-		*buffer = '\0';
 		int bufsize = args[2];
+		*buffer = '\0';
 		cvar_t* cvar = orig_import.cvar(var_name, (char*)"", 0);
 		if (cvar)
 			strncpy(buffer, cvar->string, bufsize);
@@ -194,8 +194,7 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		break;
 	}
 	case G_FS_FOPEN_FILE:
-		// this doesn't get called by QMM in QUAKE2 (only in engines with QVM mods), so the
-		// cmd == QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE] check in syscall will simply fail at this negative number
+		// this doesn't get called by QMM in QUAKE2 (only in engines with QVM mods)
 		// this is included here only for completeness, really
 		break;
 

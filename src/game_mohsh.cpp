@@ -469,8 +469,8 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 			// q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
 			const char* varName = (const char*)(args[0]);
 			char* buffer = (char*)(args[1]);
-			*buffer = '\0';
 			int bufsize = args[2];
+			*buffer = '\0';
 			cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
 			if (cvar)
 				strncpy(buffer, cvar->string, bufsize - 1);
