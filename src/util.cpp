@@ -20,17 +20,25 @@ Created By:
 #include "util.h"
 
 std::string path_normalize(std::string path) {
+	// switch \ to /
 	for (auto& c : path) {
 		if (c == '\\')
 			c = '/';
 	}
+	// collapse /./ to /
+	auto pos = path.find_last_of("/./");
+	if (pos == std::string::npos)
+		path = path.substr(0, pos) + path.substr(pos + 2);
+
 	return path;
 }
 
 std::string path_dirname(std::string path) {
 	auto pos = path.find_last_of("/\\");
-	if (pos == std::string::npos || !pos)
+	if (pos == std::string::npos)
 		return ".";
+	if (pos == 0)
+		return "/.";
 	return path.substr(0, pos);
 }
 

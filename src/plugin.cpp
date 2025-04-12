@@ -73,6 +73,13 @@ bool plugin_load(plugin_t* p, std::string file) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL load failed for plugin: {}\n", file, dlerror());
 		goto fail;
 	}
+
+	// if this DLL is the same as QMM, cancel
+	if ((void*)p->dll == g_gameinfo.qmm_module_ptr) {
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL is actually QMM?\n", file);
+		goto fail;
+	}
+
 	if (!(p->QMM_Query = (plugin_query)dlsym(p->dll, "QMM_Query"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Query\" function\n", file);
 		goto fail;

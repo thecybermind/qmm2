@@ -442,8 +442,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
 		};
 		// try paths
 		for (auto& try_path : try_paths) {
-			// if this is empty or matches qmm's path, skip it
-			if (try_path.empty() || str_striequal(try_path, g_gameinfo.qmm_path))
+			if (try_path.empty())
 				continue;
 			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to auto-load mod \"{}\"\n", try_path);
 			if (mod_load(&g_mod, try_path))
@@ -464,8 +463,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
 		};
 		// try paths
 		for (auto& try_path : try_paths) {
-			// if this is empty or matches qmm's path, skip it
-			if (try_path.empty() || str_striequal(try_path, g_gameinfo.qmm_path))
+			if (try_path.empty())
 				continue;
 			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
 			if (mod_load(&g_mod, try_path))
