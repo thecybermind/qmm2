@@ -24,6 +24,8 @@ int str_stristr(std::string haystack, std::string needle);
 int str_stricmp(std::string s1, std::string s2);
 int str_striequal(std::string s1, std::string s2);
 
+void qmm_argv(intptr_t argn, char* buf, intptr_t buflen);
+
 #define util_max(a, b)  ((a) > (b) ? (a) : (b))
 
 #endif // __QMM2_UTIL_H__

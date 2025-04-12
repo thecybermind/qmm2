@@ -106,3 +106,14 @@ int str_stricmp(std::string s1, std::string s2) {
 int str_striequal(std::string s1, std::string s2) {
 	return str_stricmp(s1, s2) == 0;
 }
+
+// get a given argument with G_ARGV, based on game engine type
+void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
+	// some games don't return pointers because of QVM interaction, so if this returns anything but null
+	// (or true?), we probably are in an api game, and need to get the arg from the return value instead
+	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn, buf, buflen);
+	if (ret > 1)
+		strncpy(buf, (const char*)ret, buflen);
+
+	buf[buflen - 1] = '\0';
+}

@@ -65,76 +65,78 @@ const char* plugin_result_to_str(pluginres_t res) {
 	};
 }
 
-bool plugin_load(plugin_t* p, std::string file) {
-	if (p->dll)
-		return false;
+bool plugin_load(plugin_t& p, std::string file) {
+	// if this plugin_t somehow already has a dll pointer, wipe it first
+	if (p.dll)
+		plugin_unload(p);
 
-	if (!(p->dll = dlopen(file.c_str(), RTLD_NOW))) {
+	// load DLL
+	if (!(p.dll = dlopen(file.c_str(), RTLD_NOW))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL load failed for plugin: {}\n", file, dlerror());
 		goto fail;
 	}
 
 	// if this DLL is the same as QMM, cancel
-	if ((void*)p->dll == g_gameinfo.qmm_module_ptr) {
+	if ((void*)p.dll == g_gameinfo.qmm_module_ptr) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL is actually QMM?\n", file);
 		goto fail;
 	}
 
-	if (!(p->QMM_Query = (plugin_query)dlsym(p->dll, "QMM_Query"))) {
+	if (!(p.QMM_Query = (plugin_query)dlsym(p.dll, "QMM_Query"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Query\" function\n", file);
 		goto fail;
 	}
 
 	// call initial plugin entry point, get interface version
-	p->QMM_Query(&(p->plugininfo));
-	if (!p->plugininfo) {
+	p.QMM_Query(&p.plugininfo);
+	if (!p.plugininfo) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Query() returned NULL Plugininfo\n", file);
 		goto fail;
 	}
 
 	// if the plugin's major interface version is very high, it is likely an old plugin (pifv < 3:0) and it's actually the name string pointer
 	// so we can just grab the pifv values from reserved2 and reserved3 (the old slots) and let the next checks handle it
-	if (p->plugininfo->pifv_major > 999) {
-		p->plugininfo->pifv_major = p->plugininfo->reserved2;
-		p->plugininfo->pifv_minor = p->plugininfo->reserved3;
+	if (p.plugininfo->pifv_major > 999) {
+		p.plugininfo->pifv_major = p.plugininfo->reserved2;
+		p.plugininfo->pifv_minor = p.plugininfo->reserved3;
 	}
 
 	// if the plugin's major interface version is lower, don't load and suggest to upgrade plugin
-	if (p->plugininfo->pifv_major < QMM_PIFV_MAJOR) {
-		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is less than QMM's ({}:{}), suggest upgrading plugin.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
+	if (p.plugininfo->pifv_major < QMM_PIFV_MAJOR) {
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is less than QMM's ({}:{}), suggest upgrading plugin.\n", file, p.plugininfo->pifv_major, p.plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
 		goto fail;
 	}
 	// if the plugin's interface version is higher, don't load and suggest to upgrade QMM
-	else if (p->plugininfo->pifv_major > QMM_PIFV_MAJOR || p->plugininfo->pifv_minor > QMM_PIFV_MINOR) {
-		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is greater than QMM's ({}:{}), suggest upgrading QMM.\n", file, p->plugininfo->pifv_major, p->plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
+	else if (p.plugininfo->pifv_major > QMM_PIFV_MAJOR || p.plugininfo->pifv_minor > QMM_PIFV_MINOR) {
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is greater than QMM's ({}:{}), suggest upgrading QMM.\n", file, p.plugininfo->pifv_major, p.plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
 		goto fail;
 	}
 	// at this point, major versions match and the plugin's minor version is less than or equal to QMM's
 
 	// find remaining QMM api functions or fail
-	if (!(p->QMM_Attach = (plugin_attach)dlsym(p->dll, "QMM_Attach"))) {
+	if (!(p.QMM_Attach = (plugin_attach)dlsym(p.dll, "QMM_Attach"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Attach\" function\n", file);
 		goto fail;
 	}
-	if (!(p->QMM_Detach = (plugin_detach)dlsym(p->dll, "QMM_Detach"))) {
+	if (!(p.QMM_Detach = (plugin_detach)dlsym(p.dll, "QMM_Detach"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Detach\" function\n", file);
 		goto fail;
 	}
 
 	// find hook functions
-	if (!(p->QMM_vmMain = (plugin_vmmain)dlsym(p->dll, "QMM_vmMain"))) {
+	if (!(p.QMM_vmMain = (plugin_vmmain)dlsym(p.dll, "QMM_vmMain"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain\" function\n", file);
 		goto fail;
 	}
-	if (!(p->QMM_syscall = (plugin_syscall)dlsym(p->dll, "QMM_syscall"))) {
+	if (!(p.QMM_syscall = (plugin_syscall)dlsym(p.dll, "QMM_syscall"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_syscall\" function\n", file);
 		goto fail;
 	}
-	if (!(p->QMM_vmMain_Post = (plugin_vmmain)dlsym(p->dll, "QMM_vmMain_Post"))) {
+	if (!(p.QMM_vmMain_Post = (plugin_vmmain)dlsym(p.dll, "QMM_vmMain_Post"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain_Post\" function\n", file);
 		goto fail;
 	}
-	if (!(p->QMM_syscall_Post = (plugin_syscall)dlsym(p->dll, "QMM_syscall_Post"))) {
+	if (!(p.QMM_syscall_Post = (plugin_syscall)dlsym(p.dll, "QMM_syscall_Post"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_syscall_Post\" function\n", file);
 		goto fail;
 	}
@@ -144,7 +146,7 @@ bool plugin_load(plugin_t* p, std::string file) {
 
 	// call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
 	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
-	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, &s_pluginvars))) {
+	if (!(p.QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, &s_pluginvars))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
 		// treat this failure specially. since this is a valid plugin, but decided on its own that it shouldn't be loaded,
 		// we return "true" so that QMM will not try to load the plugin again on a different path
@@ -152,7 +154,7 @@ bool plugin_load(plugin_t* p, std::string file) {
 		return true;
 	}
 
-	p->path = file;
+	p.path = file;
 	return true;
 
 	fail:
@@ -160,14 +162,14 @@ bool plugin_load(plugin_t* p, std::string file) {
 	return false;
 }
 
-void plugin_unload(plugin_t* p) {
-	if (p->dll) {
-		if (p->QMM_Detach)
-			p->QMM_Detach();
-		dlclose(p->dll);
+void plugin_unload(plugin_t& p) {
+	if (p.dll) {
+		if (p.QMM_Detach)
+			p.QMM_Detach();
+		dlclose(p.dll);
 	}
 
-	*p = plugin_t();
+	p = plugin_t();
 }
 
 static void s_plugin_helper_WriteQMMLog(const char* text, int severity, const char* tag) {
@@ -228,15 +230,8 @@ static const char* s_plugin_helper_GetGameEngine() {
 	return g_gameinfo.game->gamename_short;
 }
 
-// get a given argument with G_ARGV, based on game engine type
 static void s_plugin_helper_Argv(intptr_t argn, char* buf, intptr_t buflen) {
-	// syscall-based games don't return pointers because of QVM interaction, so if this returns anything but
-	// null (or true?), we probably are in an api game, and need to get the arg from the return value instead
-	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn, buf, buflen);
-	if (ret > 1)
-		strncpy(buf, (char*)ret, buflen);
-
-	buf[buflen - 1] = '\0';
+	qmm_argv(argn, buf, buflen);
 }
 
 // same as the SDK's Info_ValueForKey function

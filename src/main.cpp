@@ -31,7 +31,6 @@ static void s_main_load_config();
 static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode);
 static bool s_main_load_mod(std::string cfg_mod);
 static void s_main_load_plugin(std::string plugin_path);
-static void s_main_g_argv(int argn, char* buf, int buflen);
 static intptr_t s_main_handle_command_qmm();
 static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args);
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
@@ -269,7 +268,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	else if (cmd == QMM_MOD_MSG[QMM_GAME_CONSOLE_COMMAND]) {
 		char arg0[10];
 
-		s_main_g_argv(0, arg0, sizeof(arg0));
+		qmm_argv(0, arg0, sizeof(arg0));
 
 		if (str_striequal("qmm", arg0))
 			return s_main_handle_command_qmm();
@@ -282,12 +281,12 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	if (cmd == QMM_MOD_MSG[QMM_GAME_SHUTDOWN]) {
 		// unload mod (dlclose)
 		LOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
-		mod_unload(&g_mod);
+		mod_unload(g_mod);
 
 		// unload each plugin (call QMM_Detach, and then dlclose)
 		LOG(QMM_LOG_INFO, "QMM") << "Shutting down plugins\n";
 		for (plugin_t& p : g_plugins) {
-			plugin_unload(&p);
+			plugin_unload(p);
 		}
 		g_plugins.clear();
 
@@ -423,7 +422,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
 	LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to find mod using \"{}\"\n", cfg_mod);
 	// if config setting is an absolute path, just attempt to load it directly
 	if (!path_is_relative(cfg_mod)) {
-		if (!mod_load(&g_mod, cfg_mod))
+		if (!mod_load(g_mod, cfg_mod))
 			return false;
 	}
 	// if config setting is "auto", try the following locations in order:
@@ -445,7 +444,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
 			if (try_path.empty())
 				continue;
 			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to auto-load mod \"{}\"\n", try_path);
-			if (mod_load(&g_mod, try_path))
+			if (mod_load(g_mod, try_path))
 				return true;
 		}
 	}
@@ -466,7 +465,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
 			if (try_path.empty())
 				continue;
 			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
-			if (mod_load(&g_mod, try_path))
+			if (mod_load(g_mod, try_path))
 				return true;
 		}
 	}
@@ -482,7 +481,7 @@ static void s_main_load_plugin(std::string plugin_path) {
 	if (!path_is_relative(plugin_path)) {
 		// if the plugin decides to cancel itself in QMM_Attach, then plugin_load returns success
 		// but we only want to only store the plugin if it really loaded
-		if (plugin_load(&p, plugin_path) && p.dll) {
+		if (plugin_load(p, plugin_path) && p.dll) {
 			g_plugins.push_back(p);
 		}
 		return;
@@ -499,24 +498,12 @@ static void s_main_load_plugin(std::string plugin_path) {
 	for (auto& try_path : try_paths) {
 		// if the plugin decides to cancel itself in QMM_Attach, then plugin_load returns success
 		// but we only want to only store the plugin if it really loaded
-		if (plugin_load(&p, try_path)) {
+		if (plugin_load(p, try_path)) {
 			if (p.dll)
 				g_plugins.push_back(p);
 			return;
 		}
 	}
-}
-
-
-// get a given argument with G_ARGV, based on game engine type
-static void s_main_g_argv(int argn, char* buf, int buflen) {
-	// syscall-based games don't return pointers because of QVM interaction, so if this returns anything but
-	// null (or true?), we probably are in an api game, and need to get the arg from the return value instead
-	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn, buf, buflen);
-	if (ret > 1)
-		strncpy(buf, (char*)ret, buflen);
-
-	buf[buflen - 1] = '\0';
 }
 
 
@@ -534,9 +521,9 @@ static intptr_t s_main_handle_command_qmm() {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
 		return 1;
 	}
-	s_main_g_argv(1, arg1, sizeof(arg1));
+	qmm_argv(1, arg1, sizeof(arg1));
 	if (argc > 2)
-		s_main_g_argv(2, arg2, sizeof(arg2));
+		qmm_argv(2, arg2, sizeof(arg2));
 	if (str_striequal("status", arg1)) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") loaded\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file").c_str());

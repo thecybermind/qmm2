@@ -33,7 +33,7 @@ extern pluginres_t g_plugin_result;
 extern intptr_t g_api_return;
 
 const char* plugin_result_to_str(pluginres_t res);
-bool plugin_load(plugin_t* p, std::string file);
-void plugin_unload(plugin_t* p);
+bool plugin_load(plugin_t& p, std::string file);
+void plugin_unload(plugin_t& p);
 
 #endif // __QMM2_PLUGIN_H__

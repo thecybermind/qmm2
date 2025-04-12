@@ -22,15 +22,16 @@ Created By:
 mod_t g_mod;
 
 static intptr_t s_mod_vmmain(intptr_t cmd, ...);
-static bool s_mod_load_qvm(mod_t* mod);
-static bool s_mod_load_getgameapi(mod_t* mod);
-static bool s_mod_load_vmmain(mod_t* mod);
+static bool s_mod_load_qvm(mod_t& mod);
+static bool s_mod_load_getgameapi(mod_t& mod);
+static bool s_mod_load_vmmain(mod_t& mod);
 
-bool mod_load(mod_t* mod, std::string file) {
-	if (!mod || mod->dll || mod->qvm.memory)
-		return false;
+bool mod_load(mod_t& mod, std::string file) {
+	// if this mod_t somehow already has a dll or qvm pointer, wipe it first
+	if (mod.dll || mod.qvm.memory)
+		mod_unload(mod);
 
-	mod->path = file;
+	mod.path = file;
 
 	std::string ext = path_baseext(file);
 
@@ -41,13 +42,13 @@ bool mod_load(mod_t* mod, std::string file) {
 	// if DLL
 	else if (str_striequal(ext, EXT_DLL)) {
 		// load DLL
-		if (!(mod->dll = dlopen(file.c_str(), RTLD_NOW))) {
+		if (!(mod.dll = dlopen(file.c_str(), RTLD_NOW))) {
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror());
 			return false;
 		}
 
 		// if this DLL is the same as QMM, cancel
-		if ((void*)mod->dll == g_gameinfo.qmm_module_ptr) {
+		if ((void*)mod.dll == g_gameinfo.qmm_module_ptr) {
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL is actually QMM?\n", file);
 			mod_unload(mod);
 			return false;
@@ -64,12 +65,12 @@ bool mod_load(mod_t* mod, std::string file) {
 	return false;
 }
 
-void mod_unload(mod_t* mod) {
-	if (mod->qvm.memory)
-		qvm_unload(&mod->qvm);
-	if (mod->dll)
-		dlclose(mod->dll);
-	*mod = mod_t();
+void mod_unload(mod_t& mod) {
+	if (mod.qvm.memory)
+		qvm_unload(mod.qvm);
+	if (mod.dll)
+		dlclose(mod.dll);
+	mod = mod_t();
 }
 
 // entry point to store in mod_t->pfnvmMain for qvm mods
@@ -93,59 +94,64 @@ static intptr_t s_mod_vmmain(intptr_t cmd, ...) {
 	}
 
 	// pass array and size to qvm
-	return qvm_exec(&g_mod.qvm, QMM_MAX_VMMAIN_ARGS + 1, qvmargs);
+	return qvm_exec(g_mod.qvm, QMM_MAX_VMMAIN_ARGS + 1, qvmargs);
 }
 
 // load a QVM mod
-static bool s_mod_load_qvm(mod_t* mod) {
-	// load file using engine functions to read into pk3s if necessary
+static bool s_mod_load_qvm(mod_t& mod) {
 	int fpk3;
-	int filelen = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], mod->path.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
+	int filelen;
+	byte* filemem;
+	int stacksize;
+	bool loaded;
+	
+	// load file using engine functions to read into pk3s if necessary
+	filelen = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], mod.path.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
 	if (filelen <= 0) {
-		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Could not open QVM for reading\n", mod->path);
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Could not open QVM for reading\n", mod.path);
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
-		mod_unload(mod);
-		return false;
+		goto fail;
 	}
-	byte* filemem = (byte*)qvm_malloc(filelen);
+	filemem = (byte*)qvm_malloc(filelen);
 	if (!filemem) {
-		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load({}): Unable to allocate memory for QVM file: {} bytes\n", mod->path, filelen);
-		mod_unload(mod);
-		return false;
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load({}): Unable to allocate memory for QVM file: {} bytes\n", mod.path, filelen);
+		goto fail;
 	}
 	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem, filelen, fpk3);
 	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 
 	// load stack size from config
-	int stacksize = cfg_get_int(g_cfg, "stacksize", 1);
+	stacksize = cfg_get_int(g_cfg, "stacksize", 1);
 
 	// attempt to load mod
-	bool loaded = qvm_load(&mod->qvm, filemem, filelen, g_gameinfo.game->vmsyscall, stacksize);
+	loaded = qvm_load(mod.qvm, filemem, filelen, g_gameinfo.game->vmsyscall, stacksize);
 	qvm_free(filemem); // free regardless of qvm_load success
 	if (!loaded) {
-		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", mod->path);
-		mod_unload(mod);
-		return false;
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", mod.path);
+		goto fail;
 	}
 
-	mod->pfnvmMain = s_mod_vmmain;
-	mod->vmbase = (intptr_t)mod->qvm.datasegment;
+	mod.pfnvmMain = s_mod_vmmain;
+	mod.vmbase = (intptr_t)mod.qvm.datasegment;
 
 	return true;
+
+	fail:
+	mod_unload(mod);
+	return false;
 }
 
 // load a GetGameAPI DLL mod
-static bool s_mod_load_getgameapi(mod_t* mod) {
+static bool s_mod_load_getgameapi(mod_t& mod) {
 	mod_GetGameAPI_t GetGameAPI = nullptr;
 
 	// look for GetGameAPI function
 	// fall back to looking for Quake 2-style GetGameApi function
-	if (!(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod->dll, "GetGameAPI"))
-		&& !(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod->dll, "GetGameApi"))
+	if (!(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod.dll, "GetGameAPI"))
+		&& !(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod.dll, "GetGameApi"))
 		) {
-		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", mod->path);
-		mod_unload(mod);
-		return false;
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", mod.path);
+		goto fail;
 	}
 
 	// pass the QMM-hooked import pointers to the mod
@@ -154,39 +160,43 @@ static bool s_mod_load_getgameapi(mod_t* mod) {
 
 	// handle unlikely case of export being null
 	if (!g_gameinfo.api_info.orig_export) {
-		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): \"GetGameAPI\" function returned null\n", mod->path);
-		mod_unload(mod);
-		return false;
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): \"GetGameAPI\" function returned null\n", mod.path);
 	}
 
 	// this is a pointer to a wrapper vmMain function that calls actual mod func from orig_export
-	mod->pfnvmMain = g_gameinfo.api_info.orig_vmmain;
-	mod->vmbase = 0;
+	mod.pfnvmMain = g_gameinfo.api_info.orig_vmmain;
+	mod.vmbase = 0;
 
 	return true;
+
+	fail:
+	mod_unload(mod);
+	return false;
 }
 
 // load a vmMain DLL mod
-static bool s_mod_load_vmmain(mod_t* mod) {
+static bool s_mod_load_vmmain(mod_t& mod) {
 	mod_dllEntry_t dllEntry = nullptr;
 
 	// look for dllEntry function
-	if (!(dllEntry = (mod_dllEntry_t)dlsym(mod->dll, "dllEntry"))) {
-		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", mod->path);
-		mod_unload(mod);
-		return false;
+	if (!(dllEntry = (mod_dllEntry_t)dlsym(mod.dll, "dllEntry"))) {
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", mod.path);
+		goto fail;
 	}
 
 	// look for vmMain function
-	if (!(mod->pfnvmMain = (mod_vmMain_t)dlsym(mod->dll, "vmMain"))) {
-		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"vmMain\" function\n", mod->path);
-		mod_unload(mod);
-		return false;
+	if (!(mod.pfnvmMain = (mod_vmMain_t)dlsym(mod.dll, "vmMain"))) {
+		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"vmMain\" function\n", mod.path);
+		goto fail;
 	}
 
 	// pass syscall to mod dllEntry function
 	dllEntry(g_gameinfo.pfnsyscall);
-	mod->vmbase = 0;
+	mod.vmbase = 0;
 
 	return true;
+
+	fail:
+	mod_unload(mod);
+	return false;
 }

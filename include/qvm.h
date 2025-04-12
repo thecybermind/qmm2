@@ -133,9 +133,9 @@ typedef struct {
 } qvm_t;
 
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t* qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize);
-void qvm_unload(qvm_t* qvm);
-int qvm_exec(qvm_t* qvm, int argc, int* argv);
+bool qvm_load(qvm_t& qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize);
+void qvm_unload(qvm_t& qvm);
+int qvm_exec(qvm_t& qvm, int argc, int* argv);
 
 // easier to change allocation later
 void* qvm_malloc(size_t len);
