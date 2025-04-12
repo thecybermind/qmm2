@@ -17,8 +17,7 @@ Created By:
 
 #define QMM_MAX_SYSCALL_ARGS_QVM	13	// change whenever a QVM mod has a bigger syscall list
 
-typedef unsigned char byte;
-typedef int (*vmsyscall_t)(unsigned char* membase, int cmd, int* args);
+typedef int (*vmsyscall_t)(std::byte* membase, int cmd, int* args);
 
 typedef enum {
 	OP_UNDEF,
@@ -80,7 +79,7 @@ typedef enum {
 	OP_DIVF,
 	OP_MULF,
 	OP_CVIF,
-	OP_CVFI
+	OP_CVFI,
 } qvmopcode_t;
 
 extern const char* opcodename[];
@@ -110,13 +109,13 @@ typedef struct {
 	unsigned int filesize;		// .qvm file size
 
 	// memory
-	byte* memory;				// main block of memory
+	std::byte* memory;			// main block of memory
 	unsigned int memorysize;	// size of memory block
 
 	// segments
 	qvmop_t* codesegment;		// code segment, each op is 8 bytes (4 op, 4 param)
-	byte* datasegment;			// data segment, partially filled on load
-	byte* stacksegment;			// stack segment
+	std::byte* datasegment;		// data segment, partially filled on load
+	std::byte* stacksegment;	// stack segment
 
 	// segment sizes
 	unsigned int codeseglen;	// size of code segment
@@ -133,7 +132,7 @@ typedef struct {
 } qvm_t;
 
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t& qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize);
+bool qvm_load(qvm_t& qvm, std::byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize);
 void qvm_unload(qvm_t& qvm);
 int qvm_exec(qvm_t& qvm, int argc, int* argv);
 

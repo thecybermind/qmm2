@@ -17,11 +17,11 @@ Created By:
 
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start = nullptr, void* end = nullptr);
 
-bool qvm_load(qvm_t& qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize) {
+bool qvm_load(qvm_t& qvm, std::byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize) {
 	if (qvm.memory || !filemem || !filelen || !vmsyscall)
 		return false;
 
-	byte* codeoffset = nullptr;
+	std::byte* codeoffset = nullptr;
 
 	qvm.vmsyscall = vmsyscall;
 	qvm.filesize = filelen;
@@ -55,7 +55,7 @@ bool qvm_load(qvm_t& qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 	qvm.memorysize = qvm.codeseglen + qvm.dataseglen + qvm.stackseglen;
 
 	// allocate vm memory
-	if (!(qvm.memory = (byte*)qvm_malloc(qvm.memorysize))) {
+	if (!(qvm.memory = (std::byte*)qvm_malloc(qvm.memorysize))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("qvm_load(): Unable to allocate memory for VM: {} bytes\n", qvm.memorysize);
 		goto fail;
 	}
@@ -86,12 +86,12 @@ bool qvm_load(qvm_t& qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 	// loop through each op
 	for (unsigned int i = 0; i < qvm.header.numops; ++i) {
 		// get the opcode
-		byte opcode = *codeoffset;
+		qvmopcode_t opcode = (qvmopcode_t)*codeoffset;
 
 		codeoffset++;
 
 		// write opcode (to qvmop_t)
-		qvm.codesegment[i].op = (qvmopcode_t)opcode;
+		qvm.codesegment[i].op = opcode;
 
 		switch (opcode) {
 			// these ops all have full 4-byte params
@@ -129,7 +129,7 @@ bool qvm_load(qvm_t& qvm, byte* filemem, unsigned int filelen, vmsyscall_t vmsys
 				break;
 			// this op has a 1-byte param
 			case OP_ARG:
-				qvm.codesegment[i].param = *codeoffset;
+				qvm.codesegment[i].param = (int)*codeoffset;
 				codeoffset++;
 				break;
 			// remaining ops require no 'param'
@@ -196,7 +196,7 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 		}
 		// verify stack pointer is in top half of stack segment. this could be malicious, or an accidental stack overflow
 		if (!qvm_validate_ptr(qvm, stack, qvm.stacksegment + (qvm.stackseglen / 2), qvm.stacksegment + qvm.stackseglen + 1)) {
-			intptr_t stacksize = qvm.stacksegment + qvm.stackseglen - (byte*)stack;
+			intptr_t stacksize = qvm.stacksegment + qvm.stackseglen - (std::byte*)stack;
 			LOG(QMM_LOG_FATAL, "QMM") << fmt::format("qvm_exec({}) Stack overflow! Stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", args[2], stacksize, qvm.stackseglen / 2);
 			qvm_unload(qvm);
 			return 0;
@@ -221,12 +221,12 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 			case OP_NOP:
 				break;
 
+			// undefined
+			case OP_UNDEF:
+
 			// break to debugger?
 			case OP_BREAK:
 				// todo: dump stacks/memory?
-
-			// undefined
-			case OP_UNDEF:
 
 			// anything else
 			default:
@@ -399,9 +399,9 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 
 			// store 1-byte value from stack[0] into address stored in stack[1]
 			case OP_STORE1: {
-				byte* dst = qvm.datasegment + stack[1];
+				std::byte* dst = qvm.datasegment + stack[1];
 				if (qvm_validate_ptr(qvm, dst))
-					*dst = (byte)(*stack & 0xFF);
+					*dst = (std::byte)(*stack & 0xFF);
 				stack += 2;
 				break;
 			}
@@ -425,9 +425,9 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 			// and store back in stack[0]
 			// 1-byte
 			case OP_LOAD1: {
-				byte* src = qvm.datasegment + *stack;
+				std::byte* src = qvm.datasegment + *stack;
 				if (qvm_validate_ptr(qvm, src))
-					*stack = *src;
+					*stack = (int)*src;
 				break;
 			}
 			// 2-byte
@@ -447,8 +447,8 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 			// copy mem at address pointed to by stack[0] to address pointed to by stack[1]
 			// for 'param' number of bytes
 			case OP_BLOCK_COPY: {
-				byte* src = qvm.datasegment + *stack++;
-				byte* dst = qvm.datasegment + *stack++;
+				std::byte* src = qvm.datasegment + *stack++;
+				std::byte* dst = qvm.datasegment + *stack++;
 
 				// skip if src/dst are the same
 				if (src == dst)
@@ -603,7 +603,7 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 	return *qvm.stackptr++;
 }
 
-//return a string name for the VM opcode
+// return a string name for the VM opcode
 const char* opcodename[] = {
 	"OP_UNDEF",
 	"OP_NOP",

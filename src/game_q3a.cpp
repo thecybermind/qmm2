@@ -267,7 +267,7 @@ const char* Q3A_mod_msg_names(intptr_t cmd) {
 */
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
-int Q3A_vmsyscall(byte* membase, int cmd, int* args) {
+int Q3A_vmsyscall(std::byte* membase, int cmd, int* args) {
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q3A_vmsyscall({}) called\n", Q3A_eng_msg_names(cmd));
 
 	switch(cmd) {

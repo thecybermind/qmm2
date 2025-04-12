@@ -101,7 +101,7 @@ static intptr_t s_mod_vmmain(intptr_t cmd, ...) {
 static bool s_mod_load_qvm(mod_t& mod) {
 	int fpk3;
 	int filelen;
-	byte* filemem;
+	std::byte* filemem;
 	int stacksize;
 	bool loaded;
 	
@@ -112,7 +112,7 @@ static bool s_mod_load_qvm(mod_t& mod) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 		goto fail;
 	}
-	filemem = (byte*)qvm_malloc(filelen);
+	filemem = (std::byte*)qvm_malloc(filelen);
 	if (!filemem) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load({}): Unable to allocate memory for QVM file: {} bytes\n", mod.path, filelen);
 		goto fail;

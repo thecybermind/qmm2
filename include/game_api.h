@@ -18,7 +18,7 @@ Created By:
 #include "osdef.h"
 
 typedef const char* (*msgname_t)(intptr_t msg);
-typedef int (*vmsyscall_t)(unsigned char* membase, int cmd, int* args);
+typedef int (*vmsyscall_t)(std::byte* membase, int cmd, int* args);
 typedef void* (*apientry_t)(void* import);
 
 // a list of all the mod messages used by QMM
@@ -82,7 +82,7 @@ extern supportedgame_t g_supportedgames[];
 							extern int game##_qmm_mod_msgs[]; \
 							const char* game##_eng_msg_names(intptr_t msg); \
 							const char* game##_mod_msg_names(intptr_t msg); \
-							int game##_vmsyscall(unsigned char* membase, int cmd, int* args); \
+							int game##_vmsyscall(std::byte* membase, int cmd, int* args); \
 							void* game##_GetGameAPI(void* import)
 
 // generate struct info for the short name, messages arrays, and message name functions
@@ -149,13 +149,12 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 // ---------------------
 
 // these macros handle qvm syscall arguments in GAME_vmsyscall functions in game_*.cpp
-// note: these have to return either a pointer or intptr_t so that they get pulled from varargs correctly
+// note: these have to return either a pointer or intptr_t so that they get extracted
+// from varargs correctly in 64-bit
 
 // this gets an argument value
 #define vmarg(x)	(intptr_t)args[x]
-// this adds the base VM address to a given value
-#define vmadd(x)	((x) ? membase + (x) : nullptr)
-// this adds the base VM address to an argument value
-#define vmptr(x)	vmadd(args[x])
+// this adds the base VM address pointer to an argument value
+#define vmptr(x)	(args[x] ? membase + args[x] : nullptr)
 
 #endif // __QMM2_GAME_API_H__

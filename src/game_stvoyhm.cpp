@@ -257,7 +257,7 @@ const char* STVOYHM_mod_msg_names(intptr_t cmd) {
 */
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
-int STVOYHM_vmsyscall(byte* membase, int cmd, int* args) {
+int STVOYHM_vmsyscall(std::byte* membase, int cmd, int* args) {
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYHM_vmsyscall({}) called\n", STVOYHM_eng_msg_names(cmd));
 
 	switch(cmd) {
