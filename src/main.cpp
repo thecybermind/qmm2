@@ -175,9 +175,34 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	// the mod
 	return g_gameinfo.game->apientry(import);
 }
-// Quake 2-based games use the differently-cased "GetGameApi" function
-C_DLLEXPORT void* GetGameApi(void* import) {
-	return GetGameAPI(import);
+
+// just pass client loading directly through
+C_DLLEXPORT void* GetCGameAPI(void* import) {
+	s_main_detect_env();
+
+	// ???
+	if (!import)
+		return nullptr;
+
+	s_main_load_config();
+
+	// load mod
+	std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
+
+	if (str_striequal(cfg_mod, "auto"))
+		cfg_mod = fmt::format("qmm_{}", g_gameinfo.qmm_file);
+
+	cfg_mod = fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod);
+
+	void* mod_handle = dlopen(cfg_mod.c_str(), RTLD_NOW);
+	if (!mod_handle)
+		return nullptr;
+
+	mod_GetGameAPI_t GetCGameAPI = (mod_GetGameAPI_t)dlsym(mod_handle, "GetCGameAPI");
+	if (!GetCGameAPI)
+		return nullptr;
+
+	return GetCGameAPI(import);
 }
 
 
@@ -390,7 +415,7 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 		// otherwise, if auto, we need to check matching dll names, with optional exe hint
 		if (str_striequal(cfg_game, "auto")) {
 			// dll name matches
-			std::string full_dll_name = fmt::format("{}{}", game.dllname, SUF_DLL "." EXT_DLL);
+			std::string full_dll_name = fmt::format("{}{}.{}", game.dllname, game.suffix, EXT_DLL);
 			if (str_striequal(g_gameinfo.qmm_file, full_dll_name)) {
 				LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", full_dll_name, game.gamename_short);
 				// if no hint array exists, assume we match
@@ -434,10 +459,10 @@ static bool s_main_load_mod(std::string cfg_mod) {
 	else if (str_striequal(cfg_mod, "auto")) {
 		std::string try_paths[] = {
 			g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "",	// (only if game engine supports it)
-			fmt::format("{}/qmm_{}{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname, SUF_DLL "." EXT_DLL),
-			fmt::format("{}/{}/qmm_{}{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, SUF_DLL "." EXT_DLL),
-			fmt::format("{}/{}/{}{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, SUF_DLL "." EXT_DLL),
-			fmt::format("./{}/qmm_{}{}", g_gameinfo.moddir, g_gameinfo.game->dllname, SUF_DLL "." EXT_DLL)
+			fmt::format("{}/qmm_{}{}.{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname, g_gameinfo.game->suffix, EXT_DLL),
+			fmt::format("{}/{}/qmm_{}{}.{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, g_gameinfo.game->suffix, EXT_DLL),
+			fmt::format("{}/{}/{}{}.{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, g_gameinfo.game->suffix, EXT_DLL),
+			fmt::format("./{}/qmm_{}{}.{}", g_gameinfo.moddir, g_gameinfo.game->dllname, g_gameinfo.game->suffix, EXT_DLL)
 		};
 		// try paths
 		for (auto& try_path : try_paths) {

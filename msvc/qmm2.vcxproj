@@ -190,6 +190,7 @@
     <ClCompile Include="..\src\game_mohaa.cpp" />
     <ClCompile Include="..\src\game_mohbt.cpp" />
     <ClCompile Include="..\src\game_mohsh.cpp" />
+    <ClCompile Include="..\src\game_q2r.cpp" />
     <ClCompile Include="..\src\game_q3a.cpp" />
     <ClCompile Include="..\src\game_quake2.cpp" />
     <ClCompile Include="..\src\game_rtcwmp.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="..\include\game_mohaa.h" />
     <ClInclude Include="..\include\game_mohbt.h" />
     <ClInclude Include="..\include\game_mohsh.h" />
+    <ClInclude Include="..\include\game_q2r.h" />
     <ClInclude Include="..\include\game_quake2.h" />
     <ClInclude Include="..\include\game_stef2.h" />
     <ClInclude Include="..\include\log.h" />

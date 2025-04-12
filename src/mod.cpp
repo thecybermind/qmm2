@@ -143,13 +143,10 @@ static bool s_mod_load_qvm(mod_t& mod) {
 
 // load a GetGameAPI DLL mod
 static bool s_mod_load_getgameapi(mod_t& mod) {
-	mod_GetGameAPI_t GetGameAPI = nullptr;
-
 	// look for GetGameAPI function
-	// fall back to looking for Quake 2-style GetGameApi function
-	if (!(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod.dll, "GetGameAPI"))
-		&& !(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod.dll, "GetGameApi"))
-		) {
+	mod_GetGameAPI_t GetGameAPI = (mod_GetGameAPI_t)dlsym(mod.dll, "GetGameAPI");
+
+	if (!GetGameAPI) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", mod.path);
 		goto fail;
 	}

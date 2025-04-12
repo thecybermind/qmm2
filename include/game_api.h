@@ -57,6 +57,7 @@ typedef enum {
 // some information for each game engine supported by QMM
 typedef struct {
 	const char* dllname;				// default dll mod filename
+	const char* suffix;					// dll suffix
 	const char* qvmname;				// default qvm mod filename (NULL = qmm_<dllname>)
 	const char* moddir;					// default moddir name
 	const char* gamename_long;			// long, descriptive, game name

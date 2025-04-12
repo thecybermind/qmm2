@@ -11,16 +11,16 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
-#include <quake2/game/q_shared.h>
-#include <quake2/game/game.h>
+#include <q2r/common/header/common.h>
+#include <q2r/game/header/game.h>
 #include "game_api.h"
 #include "log.h"
-// QMM-specific QUAKE2 header
-#include "game_quake2.h"
+// QMM-specific Q2R header
+#include "game_q2r.h"
 #include "main.h"
 
-GEN_QMM_MSGS(QUAKE2);
-GEN_EXTS(QUAKE2);
+GEN_QMM_MSGS(Q2R);
+GEN_EXTS(Q2R);
 
 // a copy of the original import struct that comes from the game engine. this is given to plugins
 static game_import_t orig_import;
@@ -74,11 +74,19 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(args, G_ARGS),
 	GEN_IMPORT(AddCommandString, G_ADDCOMMANDSTRING),
 	GEN_IMPORT(DebugGraph, G_DEBUGGRAPH),
+
+	// extended
+	GEN_IMPORT(LoadFile, G_LOADFILE),
+	GEN_IMPORT(FreeFile, G_FREEFILE),
+	GEN_IMPORT(Gamedir, G_GAMEDIR),
+	GEN_IMPORT(CreatePath, G_CREATEPATH),
+	GEN_IMPORT(GetConfigString, G_GET_CONFIGSTRING),
+	GEN_IMPORT(GetModelInfo, G_GET_MODELINFO),
 };
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 static game_export_t qmm_export = {
-	GAME_API_VERSION,	// apiversion
+	2023,	// GAME_API_VERSION,	// apiversion
 	GEN_EXPORT(Init, GAME_INIT),
 	GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
 	GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
@@ -103,11 +111,11 @@ static game_export_t qmm_export = {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
+intptr_t Q2R_syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
 	if (cmd != G_PRINT)
-		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_syscall({}) called\n", QUAKE2_eng_msg_names(cmd));
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_syscall({}) called\n", Q2R_eng_msg_names(cmd));
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
@@ -158,11 +166,19 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT(AddCommandString, G_ADDCOMMANDSTRING);
 		ROUTE_IMPORT(DebugGraph, G_DEBUGGRAPH);
 
+		// extended
+		ROUTE_IMPORT(LoadFile, G_LOADFILE);
+		ROUTE_IMPORT(FreeFile, G_FREEFILE);
+		ROUTE_IMPORT(Gamedir, G_GAMEDIR);
+		ROUTE_IMPORT(CreatePath, G_CREATEPATH);
+		ROUTE_IMPORT(GetConfigString, G_GET_CONFIGSTRING);
+		ROUTE_IMPORT(GetModelInfo, G_GET_MODELINFO);
+
 		// handle cmds for variables, this is how a plugin would get these values if needed
 
 		// handle special cmds which QMM uses but MOHAA doesn't have an analogue for
 	case G_CVAR_REGISTER: {
-		// quake2: cvar_t *(*cvar) (char *var_name, char *value, int flags);
+		// q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
 		// q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
 		// qmm always passes NULL for vmCvar so don't worry about it
 		char* var_name = (char*)(args[1]);
@@ -172,7 +188,7 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		break;
 	}
 	case G_CVAR_VARIABLE_STRING_BUFFER: {
-		// quake2: cvar_t *(*cvar) (char *var_name, char *value, int flags);
+		// q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
 		// q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
 		char* var_name = (char*)(args[0]);
 		char* buffer = (char*)(args[1]);
@@ -185,7 +201,7 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		break;
 	}
 	case G_CVAR_VARIABLE_INTEGER_VALUE: {
-		// quake2: cvar_t *(*cvar) (char *var_name, char *value, int flags);
+		// q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
 		// q3a: int trap_Cvar_VariableIntegerValue(const char* var_name)
 		char* var_name = (char*)(args[0]);
 		cvar_t* cvar = orig_import.cvar(var_name, (char*)"", 0);
@@ -194,7 +210,7 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		break;
 	}
 	case G_FS_FOPEN_FILE:
-		// this doesn't get called by QMM in QUAKE2 (only in engines with QVM mods)
+		// this doesn't get called by QMM in Q2R (only in engines with QVM mods)
 		// this is included here only for completeness, really
 		break;
 
@@ -205,17 +221,17 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 	// do anything that needs to be done after function call here
 
 	if (cmd != G_PRINT)
-		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_syscall({}) returning {}\n", QUAKE2_eng_msg_names(cmd), ret);
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_syscall({}) returning {}\n", Q2R_eng_msg_names(cmd), ret);
 
 	return ret;
 }
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
+intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_vmMain({}) called\n", QUAKE2_mod_msg_names(cmd));
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_vmMain({}) called\n", Q2R_mod_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
 	if (!orig_export)
@@ -259,13 +275,13 @@ intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 	qmm_export.num_edicts = orig_export->num_edicts;
 	qmm_export.max_edicts = orig_export->max_edicts;
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_vmMain({}) returning {}\n", QUAKE2_mod_msg_names(cmd), ret);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_vmMain({}) returning {}\n", Q2R_mod_msg_names(cmd), ret);
 
 	return ret;
 }
 
-void* QUAKE2_GetGameAPI(void* import) {
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_GetGameAPI({}) called\n", import);
+void* Q2R_GetGameAPI(void* import) {
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_GetGameAPI({}) called\n", import);
 
 	// original import struct from engine
 	// the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -282,12 +298,12 @@ void* QUAKE2_GetGameAPI(void* import) {
 
 	// pointer to wrapper vmMain function that calls actual mod func from orig_export
 	// this gets assigned to g_mod->pfnvmMain in mod.cpp:mod_load()
-	g_gameinfo.api_info.orig_vmmain = QUAKE2_vmMain;
+	g_gameinfo.api_info.orig_vmmain = Q2R_vmMain;
 
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
-	g_gameinfo.pfnsyscall = QUAKE2_syscall;
+	g_gameinfo.pfnsyscall = Q2R_syscall;
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
 
 	// struct full of export lambdas to QMM's vmMain
 	// this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -295,7 +311,7 @@ void* QUAKE2_GetGameAPI(void* import) {
 	return &qmm_export;
 }
 
-const char* QUAKE2_eng_msg_names(intptr_t cmd) {
+const char* Q2R_eng_msg_names(intptr_t cmd) {
 	switch (cmd) {
 		GEN_CASE(G_BPRINTF);
 		GEN_CASE(G_DPRINTF);
@@ -342,12 +358,19 @@ const char* QUAKE2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_ADDCOMMANDSTRING);
 		GEN_CASE(G_DEBUGGRAPH);
 
+		// extended
+		GEN_CASE(G_LOADFILE);
+		GEN_CASE(G_FREEFILE);
+		GEN_CASE(G_GAMEDIR);
+		GEN_CASE(G_CREATEPATH);
+		GEN_CASE(G_GET_CONFIGSTRING);
+		GEN_CASE(G_GET_MODELINFO);
 	default:
 		return "unknown";
 	}
 }
 
-const char* QUAKE2_mod_msg_names(intptr_t cmd) {
+const char* Q2R_mod_msg_names(intptr_t cmd) {
 	switch (cmd) {
 		GEN_CASE(GAMEV_APIVERSION);
 		GEN_CASE(GAME_INIT);
