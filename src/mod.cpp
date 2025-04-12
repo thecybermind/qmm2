@@ -139,7 +139,9 @@ static bool s_mod_load_getgameapi(mod_t* mod) {
 	mod_GetGameAPI_t GetGameAPI = nullptr;
 
 	// look for GetGameAPI function
-	if (!(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod->dll, "GetGameAPI"))) {
+	if (!(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod->dll, "GetGameAPI"))
+		&& !(GetGameAPI = (mod_GetGameAPI_t)dlsym(mod->dll, "GetGameApi"))
+		) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", mod->path);
 		mod_unload(mod);
 		return false;

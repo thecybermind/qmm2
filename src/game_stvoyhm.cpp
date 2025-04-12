@@ -250,16 +250,6 @@ const char* STVOYHM_mod_msg_names(intptr_t cmd) {
 	}
 }
 
-bool STVOYHM_is_mod_trace_msg(intptr_t cmd) {
-	switch (cmd) {
-	case GAME_CLIENT_THINK:
-	case GAME_RUN_FRAME:
-	case BOTAI_START_FRAME:
-		return true;
-	default:
-		return false;
-	}
-}
 
 /* Entry point: qvm mod->qmm
    This is the syscall function called by a QVM mod as a way to pass info to or get info from the engine.

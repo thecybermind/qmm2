@@ -51,12 +51,15 @@ extern game_info_t g_gameinfo;
 
 // these are used if we couldn't determine a game engine and we have to fail.
 // G_ERROR and GAME_SHUTDOWN appear to be 1 in all supported dllEntry games.
-// they are different in GetGameAPI games, but returning nullptr from GetGameAPI causes the engine to exit anyway
+// they are different in GetGameAPI games, but for those we just return nullptr from GetGameAPI
 constexpr int QMM_FAIL_G_ERROR = 1;
 constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
 
-C_DLLEXPORT void dllEntry(eng_syscall_t syscall);	// initial entry point for non-GetGameAPI games
-C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for GetGameAPI games
+// these are not needed to be prototyped, as they aren't referenced by anything. this also stops
+// errors in GetGameAPI game source files (e.g. game_mohaa.cpp) since the game headers define
+// GetGameAPI with actual pointer types instead of void*
+// C_DLLEXPORT void dllEntry(eng_syscall_t syscall);	// initial entry point for non-GetGameAPI games
+// C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for GetGameAPI games
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
 intptr_t syscall(intptr_t cmd, ...);
 

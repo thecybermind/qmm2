@@ -176,6 +176,10 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	// the mod
 	return g_gameinfo.game->apientry(import);
 }
+// Quake 2-based games use the differently-cased "GetGameApi" function
+C_DLLEXPORT void* GetGameApi(void* import) {
+	return GetGameAPI(import);
+}
 
 
 /* Entry point: engine->qmm
@@ -191,8 +195,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	int loglevel = g_gameinfo.game->is_mod_trace_msg(cmd) ? TRACE : DEBUG;
-	LOG(loglevel, "QMM") << fmt::format("vmMain({}) called\n", g_gameinfo.game->mod_msg_names(cmd));
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("vmMain({}) called\n", g_gameinfo.game->mod_msg_names(cmd));
 
 	// couldn't load engine info, so we will just call syscall(G_ERROR) to exit
 	if (!g_gameinfo.game) {
@@ -251,7 +254,9 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 			
 			// some games don't support a "when" argument
 			if (!strcmp(g_gameinfo.game->gamename_short, "STEF2")
-				|| !strcmp(g_gameinfo.game->gamename_short, "MOHAA"))
+				|| !strcmp(g_gameinfo.game->gamename_short, "MOHAA")
+				|| !strcmp(g_gameinfo.game->gamename_short, "QUAKE2")
+				)
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], fmt::format("exec {}\n", cfg_execcfg).c_str());
 			else
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], QMM_ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
@@ -289,7 +294,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		LOG(QMM_LOG_INFO, "QMM") << "Finished shutting down\n";
 	}
 
-	LOG(loglevel, "QMM") << fmt::format("vmMain({}) returning {}\n", g_gameinfo.game->mod_msg_names(cmd), ret);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("vmMain({}) returning {}\n", g_gameinfo.game->mod_msg_names(cmd), ret);
 	
 	return ret;
 }
@@ -302,12 +307,12 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 intptr_t syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
-	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({}) called\n", g_gameinfo.game->eng_msg_names(cmd));
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({}) called\n", g_gameinfo.game->eng_msg_names(cmd));
 
 	// route call to plugins and mod
 	intptr_t ret = s_main_route_syscall(cmd, args);
 
-	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), ret);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), ret);
 
 	return ret;
 }

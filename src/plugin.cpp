@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "osdef.h"
+#define _CRT_SECURE_NO_WARNINGS
 #include "log.h"
 #include "format.h"
 #include <stdarg.h>
@@ -86,7 +86,7 @@ bool plugin_load(plugin_t* p, std::string file) {
 	}
 
 	// if the plugin's major interface version is very high, it is likely an old plugin (pifv < 3:0) and it's actually the name string pointer
-	// so we can just grab the pifv values from reserved2 and reserved3 and let the next checks handle it
+	// so we can just grab the pifv values from reserved2 and reserved3 (the old slots) and let the next checks handle it
 	if (p->plugininfo->pifv_major > 999) {
 		p->plugininfo->pifv_major = p->plugininfo->reserved2;
 		p->plugininfo->pifv_minor = p->plugininfo->reserved3;
@@ -139,8 +139,9 @@ bool plugin_load(plugin_t* p, std::string file) {
 	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
 	if (!(p->QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, &s_pluginvars))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
+		// treat this failure specially. since this is a valid plugin, but decided on its own that it shouldn't be loaded,
+		// we return "true" so that QMM will not try to load the plugin again on a different path
 		plugin_unload(p);
-		// we should treat this as a "successful load" so that QMM won't try to load the DLL repeatedly on different paths
 		return true;
 	}
 

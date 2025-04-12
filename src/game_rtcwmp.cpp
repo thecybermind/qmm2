@@ -237,16 +237,3 @@ const char* RTCWMP_mod_msg_names(intptr_t cmd) {
 			return "unknown";
 	}
 }
-
-bool RTCWMP_is_mod_trace_msg(intptr_t cmd) {
-	switch (cmd) {
-	case GAME_CLIENT_THINK:
-	case GAME_RUN_FRAME:
-	case BOTAI_START_FRAME:
-	case AICAST_VISIBLEFROMPOS:
-	case AICAST_CHECKATTACKATPOS:
-		return true;
-	default:
-		return false;
-	}
-}

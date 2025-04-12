@@ -12,13 +12,8 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
 #include <mohaa/qcommon/q_shared.h>
-// fix for type mismatch of GetGameAPI in g_public.h
-// the actual type should be: game_export_t *GetGameAPI(game_import_t *import)
-// but to avoid having to include game-specific headers in main.cpp, our export is void *GetGameAPI(void *import)
-#define GetGameAPI GetGameAPI2 
 #define GAME_DLL
 #include <mohaa/fgame/g_public.h>
-#undef GetGameAPI
 #undef GAME_DLL
 #include "game_api.h"
 #include "log.h"
@@ -492,10 +487,11 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			break;
 		}
 		case G_FS_FOPEN_FILE:
-			// this doesn't get called by QMM in MOHAA (only in engines with QVM mods), and MOHAA doesn't open a log file
-			// so the cmd == QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE] check in syscall will simply fail at this negative number
+			// this doesn't get called by QMM in MOHAA (only in engines with QVM mods), so the
+			// cmd == QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE] check in syscall will simply fail at this negative number
 			// this is included here only for completeness, really
 			break;
+
 		default:
 			break;
 	};
@@ -513,8 +509,7 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 intptr_t MOHAA_vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	int loglevel = MOHAA_is_mod_trace_msg(cmd) ? TRACE : DEBUG;
-	LOG(loglevel, "QMM") << fmt::format("MOHAA_vmMain({}) called\n", MOHAA_mod_msg_names(cmd));
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_vmMain({}) called\n", MOHAA_mod_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
 	if (!orig_export)
@@ -581,7 +576,7 @@ intptr_t MOHAA_vmMain(intptr_t cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.errorMessage = orig_export->errorMessage;
 
-	LOG(loglevel, "QMM") << fmt::format("MOHAA_vmMain({}) returning {}\n", MOHAA_mod_msg_names(cmd), ret);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_vmMain({}) returning {}\n", MOHAA_mod_msg_names(cmd), ret);
 
 	return ret;
 }
@@ -855,18 +850,5 @@ const char* MOHAA_mod_msg_names(intptr_t cmd) {
 		GEN_CASE(GAMEVP_ERRORMESSAGE);
 		default:
 			return "unknown";
-	}
-}
-
-bool MOHAA_is_mod_trace_msg(intptr_t cmd) {
-	switch (cmd) {
-	case GAME_CLIENT_THINK:
-	case GAME_BOTTHINK:
-	case GAME_PREP_FRAME:
-	case GAME_RUN_FRAME:
-	case GAME_SET_FRAME_NUMBER:
-		return true;
-	default:
-		return false;
 	}
 }
