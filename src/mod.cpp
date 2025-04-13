@@ -187,8 +187,8 @@ static bool s_mod_load_vmmain(mod_t& mod) {
 		goto fail;
 	}
 
-	// pass syscall to mod dllEntry function
-	dllEntry(g_gameinfo.pfnsyscall);
+	// pass QMM's syscall to mod dllEntry function
+	dllEntry(syscall);
 	mod.vmbase = 0;
 
 	return true;
