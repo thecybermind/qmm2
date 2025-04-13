@@ -34,6 +34,7 @@ supportedgame_t g_supportedgames[] = {
 	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseq3",			"Quake 3 Arena",								GEN_INFO(Q3A),		Q3A_vmsyscall,		nullptr,			13,		4,		{ "q3", "quake3" } },
 	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseef",			"Star Trek Voyager: Elite Force (Holomatch)",	GEN_INFO(STVOYHM),	STVOYHM_vmsyscall,	nullptr,			13,		3,		{ "stvoy" } },
 	{ "qagame",		SUF_DLL,	nullptr,			".",				"Return to Castle Wolfenstein (Singleplayer)",	GEN_INFO(RTCWSP),	nullptr,			nullptr,			13,		5,		{ "sp" } },
+// RTCWMP & WET filename changes on linux
 #if defined(_WIN32)
 	{ "qagame_mp_",	SUF_DLL,	nullptr,			"etmain",			"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
 	{ "qagame_mp_",	SUF_DLL,	nullptr,			"main",				"Return to Castle Wolfenstein (Multiplayer)",	GEN_INFO(RTCWMP),	nullptr,			nullptr,			13,		5,		{ "mp" } },
@@ -41,14 +42,26 @@ supportedgame_t g_supportedgames[] = {
 	{ "qagame.mp.",	SUF_DLL,	nullptr,			"etmain",			"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
 	{ "qagame.mp.",	SUF_DLL,	nullptr,			"main",				"Return to Castle Wolfenstein (Multiplayer)",	GEN_INFO(RTCWMP),	nullptr,			nullptr,			13,		5,		{ "mp" } },
 #endif
+// JAMP in 32-bit linux uses "x86" instead of the usual "i386"
+#if defined(__linux__) && !defined(__LP64__)
+	{ "jampgame",	"x86",		nullptr,			"base",				"Jedi Knight: Jedi Academy (Multiplayer)",		GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{"ja"}},
+#else
 	{ "jampgame",	SUF_DLL,	nullptr,			"base",				"Jedi Knight: Jedi Academy (Multiplayer)",		GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
+#endif
 	{ "jk2mpgame",	SUF_DLL,	"vm/jk2mpgame.qvm",	"base",				"Jedi Knight 2: Jedi Outcast (Multiplayer)",	GEN_INFO(JK2MP),	JK2MP_vmsyscall,	nullptr,			13,		3,		{ "jk2" } },
 
+	{ "game",		SUF_DLL,	nullptr,			"base",				"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			STEF2_GetGameAPI,	17,		4,		{ "ef" } },
+
+// OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
+#if !defined(_WIN64) && !defined(__LP64__)
 	{ "game",		SUF_DLL,	nullptr,			"main",				"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	nullptr,			MOHAA_GetGameAPI,	9,		7,		{ "mohaa" }},
 	{ "game",		SUF_DLL,	nullptr,			"mainta",			"Medal of Honor: Spearhead",					GEN_INFO(MOHSH),	nullptr,			MOHSH_GetGameAPI,	9,		7,		{ "spear" }},
 	{ "game",		SUF_DLL,	nullptr,			"maintt",			"Medal of Honor: Breakthrough",					GEN_INFO(MOHBT),	nullptr,			MOHBT_GetGameAPI,	9,		7,		{ "break" }},
-	{ "game",		SUF_DLL,	nullptr,			"base",				"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			STEF2_GetGameAPI,	17,		4,		{ "ef" } },
+//#else
+//	{ "game.",		SUF_DLL,	nullptr,			"main",				"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	nullptr,			MOHAA_GetGameAPI,	9,		7,		{ "omoh", "openmoh" }},
+#endif
 
+// Q2R only exists for 64-bit Windows (and no dedicated server)
 #if defined(_WIN64)
 	{ "game_",		"x64",		nullptr,			"baseq2",			"Quake 2 Remastered",							GEN_INFO(Q2R),		nullptr,			Q2R_GetGameAPI,		9,		6,		{ "quake2ex" } },
 #endif
