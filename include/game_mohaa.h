@@ -183,7 +183,7 @@ enum {
 	G_SANITIZENAME,
 	GVP_FSDEBUG,
 
-	G_PRINT = G_PRINTF
+	G_PRINT = G_PRINTF,
 };
 
 // export ("vmMain") cmds
@@ -228,7 +228,7 @@ enum {
 	GAMEV_GENTITYSIZE,
 	GAMEV_NUM_ENTITIES,
 	GAMEV_MAX_ENTITIES,
-	GAMEVP_ERRORMESSAGE
+	GAMEVP_ERRORMESSAGE,
 };
 
 // these import messages do not have an exact analogue in MOHAA

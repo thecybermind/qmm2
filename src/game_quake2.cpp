@@ -207,6 +207,12 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		orig_import.AddCommandString(text);
 		break;
 	}
+	case G_PRINT:
+		// quake2: void	(*bprintf) (int printlevel, char *fmt, ...);
+		// qmm: void trap_Printf( const char *fmt );
+		char* text = (char*)args[0];
+		orig_import.bprintf(PRINT_HIGH, text);
+		break;
 	case G_FS_FOPEN_FILE:
 	case G_FS_READ:
 	case G_FS_WRITE:
@@ -365,6 +371,7 @@ const char* QUAKE2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
 		GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
 		GEN_CASE(G_SEND_CONSOLE_COMMAND);
+		GEN_CASE(G_PRINT);
 		GEN_CASE(G_FS_FOPEN_FILE);
 		GEN_CASE(G_FS_READ);
 		GEN_CASE(G_FS_WRITE);
