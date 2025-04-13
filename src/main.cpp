@@ -35,6 +35,8 @@ static intptr_t s_main_handle_command_qmm(int arg_inc);
 static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args);
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
 
+static bool s_QMM_initialized = false;
+
 /* About overall control flow:
    syscall (mod->engine) call flow for QVM mods only:
    1. mod calls <GAME>_vmsyscall function
@@ -172,7 +174,9 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 
 	// call the game-specific GetGameAPI function (e.g. MOHAA_GetGameAPI) which will set up the exports for
 	// returning here back to the game engine, as well as save the imports in preparation of loading the mod
-	return g_gameinfo.game->apientry(import);
+	void* qmm_export = g_gameinfo.game->apientry(import);
+
+	return qmm_export;
 }
 
 
@@ -214,6 +218,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 	return GetCGameAPI(import);
 }
 
+
 /* Entry point: engine->qmm
    This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the game info is not stored.
    This means that the engine could not be determined, so we fail with G_ERROR and tell the user to set the game in the config file.
@@ -249,6 +254,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		// get mod dir from engine
 		char moddir[256];
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], "fs_game", moddir, (intptr_t)sizeof(moddir));
+		moddir[sizeof(moddir) - 1] = '\0';
 		g_gameinfo.moddir = moddir;
 		
 		// the default mod (including all singleplayer games) return "" for the fs_game, so grab the default mod dir from game info instead

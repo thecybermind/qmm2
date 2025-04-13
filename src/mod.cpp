@@ -158,6 +158,7 @@ static bool s_mod_load_getgameapi(mod_t& mod) {
 	// handle unlikely case of export being null
 	if (!g_gameinfo.api_info.orig_export) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): \"GetGameAPI\" function returned null\n", mod.path);
+		goto fail;
 	}
 
 	// this is a pointer to a wrapper vmMain function that calls actual mod func from orig_export
