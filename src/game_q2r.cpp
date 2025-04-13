@@ -28,9 +28,9 @@ static game_import_t orig_import;
 // a copy of the original export struct pointer that comes from the mod. this is given to plugins
 static game_export_t* orig_export = nullptr;
 
-// sound gets messed up due to the float args, so this will call the original first then route so plugins can still
-// get notified when a sound is played, but they can't change it
-static void syscall_sound(edict_t* arg0, soundchan_t arg1, int arg2, float arg3, float arg4, float arg5) {
+// sound gets messed up (due to the float args in varargs?), so this will call the original first then QMM
+// so plugins can still get called when G_SOUND fires
+static void s_syscall_sound(edict_t* arg0, soundchan_t arg1, int arg2, float arg3, float arg4, float arg5) {
 	orig_import.sound(arg0, arg1, arg2, arg3, arg4, arg5);
 	syscall(G_SOUND, arg0, arg1, arg2, arg3, arg4, arg5);
 }
@@ -44,7 +44,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Com_Print, G_COM_PRINT),
 	GEN_IMPORT(Client_Print, G_CLIENT_PRINT),
 	GEN_IMPORT(Center_Print, G_CENTERPRINT),
-	syscall_sound, // GEN_IMPORT(sound, G_SOUND),
+	s_syscall_sound, // GEN_IMPORT(sound, G_SOUND),
 	GEN_IMPORT(positioned_sound, G_POSITIONED_SOUND),
 	GEN_IMPORT(local_sound, G_LOCAL_SOUND),
 	GEN_IMPORT(configstring, G_CONFIGSTRING),
@@ -375,7 +375,6 @@ void* Q2R_GetGameAPI(void* import) {
 	qmm_import.tick_rate = orig_import.tick_rate;
 	qmm_import.frame_time_s = orig_import.frame_time_s;
 	qmm_import.frame_time_ms = orig_import.frame_time_ms;
-
 	// qmm_import.sound = orig_import.sound;
 
 	// this gets passed to the mod's GetGameAPI() function in mod.cpp:mod_load()
