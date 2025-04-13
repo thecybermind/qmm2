@@ -61,7 +61,6 @@ enum {
 
 	G_PRINT = G_BPRINTF,
 	G_SET_CONFIGSTRING = G_CONFIGSTRING,
-	G_SEND_CONSOLE_COMMAND = G_ADDCOMMANDSTRING,
 };
 
 // export ("vmMain") cmds
@@ -96,6 +95,7 @@ enum {
 	G_CVAR_REGISTER = -100,
 	G_CVAR_VARIABLE_STRING_BUFFER,
 	G_CVAR_VARIABLE_INTEGER_VALUE,
+	G_SEND_CONSOLE_COMMAND,
 	// only used for file-loading, which is QVM engines only
 	G_FS_FOPEN_FILE,
 	G_FS_READ,

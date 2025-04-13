@@ -71,7 +71,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(FS_DeleteFile, G_FS_DELETEFILE),
 	GEN_IMPORT(FS_GetFileList, G_FS_GETFILELIST),
 	GEN_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME),
-	GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
+	GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_EX),
 	GEN_IMPORT(DebugGraph, G_DEBUGGRAPH),
 	GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
 	GEN_IMPORT(GetNumFreeReliableServerCommands, G_GETNUMFREERELIABLESERVERCOMMANDS),
@@ -425,6 +425,14 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_syscall({}) called\n", STEF2_eng_msg_names(cmd));
 
+	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
+	// and these changes need to be available to the engine, so copy those values before entering the engine
+	//qmm_export.gentities = orig_export->gentities;
+	//qmm_export.gentitySize = orig_export->gentitySize;
+	//qmm_export.num_entities = orig_export->num_entities;
+	//qmm_export.max_entities = orig_export->max_entities;
+	//qmm_export.error_message = orig_export->error_message;
+
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
 
@@ -468,7 +476,7 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT(FS_DeleteFile, G_FS_DELETEFILE);
 		ROUTE_IMPORT(FS_GetFileList, G_FS_GETFILELIST);
 		ROUTE_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME);
-		ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
+		ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_EX);
 		ROUTE_IMPORT(DebugGraph, G_DEBUGGRAPH);
 		ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
 		ROUTE_IMPORT(GetNumFreeReliableServerCommands, G_GETNUMFREERELIABLESERVERCOMMANDS);
@@ -773,6 +781,15 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT_VAR(DebugLines, GVP_DEBUGLINES);
 		ROUTE_IMPORT_VAR(numDebugLines, GVP_NUMDEBUGLINES);
 
+		// handle special cmds which QMM uses but STEF2 doesn't have an analogue for
+		case G_SEND_CONSOLE_COMMAND: {
+			// STEF2: void (*SendConsoleCommand)(const char *text);
+			// qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+			const char* text = (const char*)(args[1]);
+			orig_import.SendConsoleCommand(text);
+			break;
+		}
+
 		default:
 			break;
 	};
@@ -931,7 +948,7 @@ const char* STEF2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_FS_DELETEFILE);
 		GEN_CASE(G_FS_GETFILELIST);
 		GEN_CASE(G_GETARCHIVEFILENAME);
-		GEN_CASE(G_SEND_CONSOLE_COMMAND);
+		GEN_CASE(G_SEND_CONSOLE_COMMAND_EX);
 		GEN_CASE(G_DEBUGGRAPH);
 		GEN_CASE(G_SEND_SERVER_COMMAND);
 		GEN_CASE(G_GETNUMFREERELIABLESERVERCOMMANDS);

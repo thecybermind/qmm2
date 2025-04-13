@@ -34,6 +34,7 @@ supportedgame_t g_supportedgames[] = {
 	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseq3",			"Quake 3 Arena",								GEN_INFO(Q3A),		Q3A_vmsyscall,		nullptr,			13,		4,		{ "q3", "quake3" } },
 	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseef",			"Star Trek Voyager: Elite Force (Holomatch)",	GEN_INFO(STVOYHM),	STVOYHM_vmsyscall,	nullptr,			13,		3,		{ "stvoy" } },
 	{ "qagame",		SUF_DLL,	nullptr,			".",				"Return to Castle Wolfenstein (Singleplayer)",	GEN_INFO(RTCWSP),	nullptr,			nullptr,			13,		5,		{ "sp" } },
+
 // RTCWMP & WET filename changes on linux
 #if defined(_WIN32)
 	{ "qagame_mp_",	SUF_DLL,	nullptr,			"etmain",			"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
@@ -42,6 +43,7 @@ supportedgame_t g_supportedgames[] = {
 	{ "qagame.mp.",	SUF_DLL,	nullptr,			"etmain",			"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
 	{ "qagame.mp.",	SUF_DLL,	nullptr,			"main",				"Return to Castle Wolfenstein (Multiplayer)",	GEN_INFO(RTCWMP),	nullptr,			nullptr,			13,		5,		{ "mp" } },
 #endif
+
 // JAMP in 32-bit linux uses "x86" instead of the usual "i386"
 #if defined(__linux__) && !defined(__LP64__)
 	{ "jampgame",	"x86",		nullptr,			"base",				"Jedi Knight: Jedi Academy (Multiplayer)",		GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{"ja"}},

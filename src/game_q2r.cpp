@@ -160,6 +160,14 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_syscall({}) called\n", Q2R_eng_msg_names(cmd));
 
+	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
+	// and these changes need to be available to the engine, so copy those values before entering the engine
+	//qmm_export.edicts = orig_export->edicts;
+	//qmm_export.edict_size = orig_export->edict_size;
+	//qmm_export.num_edicts = orig_export->num_edicts;
+	//qmm_export.max_edicts = orig_export->max_edicts;
+	//qmm_export.server_flags = orig_export->server_flags;
+
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
 
@@ -271,6 +279,13 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 		cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
 		if (cvar)
 			ret = cvar->integer;
+		break;
+	}
+	case G_SEND_CONSOLE_COMMAND: {
+		// Q2R: void (*AddCommandString)(const char *text);
+		// qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+		const char* text = (const char*)(args[1]);
+		orig_import.AddCommandString(text);
 		break;
 	}
 	case G_FS_FOPEN_FILE:
@@ -475,6 +490,7 @@ const char* Q2R_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_CVAR_REGISTER);
 		GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
 		GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
+		GEN_CASE(G_SEND_CONSOLE_COMMAND);
 		GEN_CASE(G_FS_FOPEN_FILE);
 		GEN_CASE(G_FS_READ);
 		GEN_CASE(G_FS_WRITE);

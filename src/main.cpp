@@ -223,6 +223,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
    The internal events we track:
    GAME_INIT (pre): load mod file, load plugins, and optionally execute a cfg file
    GAME_CONSOLE_COMMAND (pre): handle "qmm" server command
+   GAME_SHUTDOWN (post): handle game shutting down
 */
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
@@ -243,6 +244,8 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], log_format(metadata, message, false).c_str());
 		}, AixLog::Severity::info);
 
+		LOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") initializing\n";
+
 		// get mod dir from engine
 		char moddir[256];
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], "fs_game", moddir, (intptr_t)sizeof(moddir));
@@ -252,7 +255,6 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		if (g_gameinfo.moddir.empty())
 			g_gameinfo.moddir = g_gameinfo.game->moddir;
 
-		LOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") initializing\n";
 		LOG(QMM_LOG_INFO, "QMM") << fmt::format("Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file" );
 		LOG(QMM_LOG_INFO, "QMM") << fmt::format("ModDir: {}\n", g_gameinfo.moddir);
 		LOG(QMM_LOG_INFO, "QMM") << fmt::format("Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? "(error)": "");
@@ -283,16 +285,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		std::string cfg_execcfg = cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
 		if (!cfg_execcfg.empty()) {
 			LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Executing config file \"{}\"\n", cfg_execcfg);
-			
-			// some games don't support a "when" argument
-			if (!strcmp(g_gameinfo.game->gamename_short, "STEF2")
-				|| !strcmp(g_gameinfo.game->gamename_short, "MOHAA")
-				|| !strcmp(g_gameinfo.game->gamename_short, "QUAKE2")
-				|| !strcmp(g_gameinfo.game->gamename_short, "Q2R")
-				)
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], fmt::format("exec {}\n", cfg_execcfg).c_str());
-			else
-				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], QMM_ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], QMM_ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
 		}
 
 		// we're done!
