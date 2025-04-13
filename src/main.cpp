@@ -196,11 +196,10 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 
 	// load mod
 	std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
-
 	if (str_striequal(cfg_mod, "auto"))
 		cfg_mod = fmt::format("qmm_{}", g_gameinfo.qmm_file);
-
-	cfg_mod = fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod);
+	if (path_is_relative(cfg_mod))
+		cfg_mod = fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod);
 
 	void* mod_handle = dlopen(cfg_mod.c_str(), RTLD_NOW);
 	if (!mod_handle)
