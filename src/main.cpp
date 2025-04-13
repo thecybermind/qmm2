@@ -27,11 +27,11 @@ Created By:
 game_info_t g_gameinfo;
 
 static void s_main_detect_env();
-static void s_main_load_config();
+static void s_main_load_config(bool quiet = false);
 static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode);
 static bool s_main_load_mod(std::string cfg_mod);
 static void s_main_load_plugin(std::string plugin_path);
-static intptr_t s_main_handle_command_qmm();
+static intptr_t s_main_handle_command_qmm(int arg_inc);
 static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args);
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
 
@@ -109,15 +109,15 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 
 
 /* Entry point: engine->qmm
-   This is the first function called when a GetGameAPI DLL is loaded. This system uses a system closer to HalfLife, where a
-   struct of function pointers is given from the engine to the mod, and the mod returns a struct of function pointers
+   This is the first function called when a GetGameAPI DLL is loaded. This system is based on the API model used by Quake 2,
+   where a struct of function pointers is given from the engine to the mod, and the mod returns a struct of function pointers
    back to the engine.
    To best integrate this with QMM, game_xyz.cpp/.h create an enum for each import (syscall) and export (vmMain) function/variable.
    A game_export_t is given to the engine which has lambdas for each pointer that calls QMM's vmMain(enum, ...).
    A game_import_t is given to the mod which has lambdas for each pointer that calls QMM's syscall(enum, ...).
 
    The original import/export tables are stored. When QMM and plugins need to call the mod or engine, g_mod.pfnvmMain or
-   g_gameinfo.pfnsyscall point to functions which will take the cmd, and call the proper function pointer out of the struct.
+   g_gameinfo.pfnsyscall point to functions which will take the cmd, and route to the proper function pointer in the struct.
 
    General flow:
    * engine->GetGameAPI(import):
@@ -170,13 +170,20 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 		return nullptr;
 	}
 
-	// call the game-specific GetGameAPI function (e.g. MOHAA_GetGameAPI) which will set up the exports
-	// for returning here back to the game engine, as well as save the imports in preparation of loading
-	// the mod
+	// call the game-specific GetGameAPI function (e.g. MOHAA_GetGameAPI) which will set up the exports for
+	// returning here back to the game engine, as well as save the imports in preparation of loading the mod
 	return g_gameinfo.game->apientry(import);
 }
 
-// just pass client loading directly through
+
+/* Entry point: engine->qmm
+   Quake 2 Remastered has a heavily modified engine + API, and includes Game and CGame in the same DLL, with this GetCGameAPI as
+   the entry point. This is the first function called when a Q2R mod DLL is loaded. Since QMM does not care about CGame, this
+   function simply attempts to detect the environment (QMM+EXE paths), load the config, and get the mod from the config. If
+   the setting is "auto", it uses the current QMM DLL filename and appends it to "qmm_", and then loads it from the QMM directory.
+   It loads the DLL, calls the GetCGameAPI function with the same import pointer arg, then returns the return value of that function.
+   It is a direct passing of pointers between the engine and CGame systems.
+*/
 C_DLLEXPORT void* GetCGameAPI(void* import) {
 	s_main_detect_env();
 
@@ -184,7 +191,8 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 	if (!import)
 		return nullptr;
 
-	s_main_load_config();
+	// quiet = true, stops the message from appearing in console whenever the client reloads (which is a lot)
+	s_main_load_config(true);
 
 	// load mod
 	std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
@@ -202,9 +210,10 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 	if (!GetCGameAPI)
 		return nullptr;
 
+	// DLL needs to stay loaded, so no dlclose
+
 	return GetCGameAPI(import);
 }
-
 
 /* Entry point: engine->qmm
    This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the game info is not stored.
@@ -280,6 +289,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 			if (!strcmp(g_gameinfo.game->gamename_short, "STEF2")
 				|| !strcmp(g_gameinfo.game->gamename_short, "MOHAA")
 				|| !strcmp(g_gameinfo.game->gamename_short, "QUAKE2")
+				|| !strcmp(g_gameinfo.game->gamename_short, "Q2R")
 				)
 				ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], fmt::format("exec {}\n", cfg_execcfg).c_str());
 			else
@@ -292,11 +302,17 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
 	else if (cmd == QMM_MOD_MSG[QMM_GAME_CONSOLE_COMMAND]) {
 		char arg0[10];
+		// Quake 2 and Quake 2 Remastered use 1-based command arguments (presumably the 0th arg is "sv"?)
+		int argn = 0;
+		if (!strcmp(g_gameinfo.game->gamename_short, "QUAKE2")
+			|| !strcmp(g_gameinfo.game->gamename_short, "Q2R"))
+			argn++;
 
-		qmm_argv(0, arg0, sizeof(arg0));
+		qmm_argv(argn, arg0, sizeof(arg0));
 
 		if (str_striequal("qmm", arg0))
-			return s_main_handle_command_qmm();
+			// pass 0 or 1 which gets added to argn in the handler function
+			return s_main_handle_command_qmm(argn);
 	}
 
 	// route call to plugins and mod
@@ -371,7 +387,7 @@ static void s_main_detect_env() {
 
 
 // general code to load config file. called from dllEntry() and GetGameAPI()
-static void s_main_load_config() {
+static void s_main_load_config(bool quiet) {
 	// load config file, try the following locations in order:
 	// "<qmmdir>/qmm2.json"
 	// "<exedir>/<moddir>/qmm2.json"
@@ -385,13 +401,15 @@ static void s_main_load_config() {
 		g_cfg = cfg_load(try_path);
 		if (!g_cfg.empty()) {
 			g_gameinfo.cfg_path = try_path;
-			LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Config file found! Path: \"{}\"\n", g_gameinfo.cfg_path);
+			if (!quiet)
+				LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Config file found! Path: \"{}\"\n", g_gameinfo.cfg_path);
 			break;
 		}
 	}
 	if (g_cfg.empty() || g_cfg.is_discarded()) {
 		// a default constructed json object is a blank {}, so in case of load failure, we can still try to read from it and assume defaults
-		LOG(QMM_LOG_WARNING, "QMM") << "Unable to load config file, all settings will use default values\n";
+		if (!quiet)
+			LOG(QMM_LOG_WARNING, "QMM") << "Unable to load config file, all settings will use default values\n";
 	}
 }
 
@@ -429,7 +447,7 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 				if (game.exe_hints.size()) {
 					for (auto hint : game.exe_hints) {
 						if (str_stristr(g_gameinfo.exe_file, hint)) {
-							LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for exe hint name \"{}\"\n", hint);
+							LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for exe hint \"{}\" - {}\n", hint, game.gamename_short);
 							g_gameinfo.game = &game;
 							g_gameinfo.isautodetected = true;
 							return;
@@ -533,11 +551,11 @@ static void s_main_load_plugin(std::string plugin_path) {
 
 
 // handle "qmm" console command
-static intptr_t s_main_handle_command_qmm() {
+static intptr_t s_main_handle_command_qmm(int arg_inc) {
 	char arg1[10] = "", arg2[10] = "";
 
 	int argc = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
-	if (argc == 1) {
+	if (argc == 1 + arg_inc) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) Usage: qmm <command> [params]\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) Available commands:\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm status - displays information about QMM\n");
@@ -546,9 +564,9 @@ static intptr_t s_main_handle_command_qmm() {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
 		return 1;
 	}
-	qmm_argv(1, arg1, sizeof(arg1));
-	if (argc > 2)
-		qmm_argv(2, arg2, sizeof(arg2));
+	qmm_argv(1 + arg_inc, arg1, sizeof(arg1));
+	if (argc > 2 + arg_inc)
+		qmm_argv(2 + arg_inc, arg2, sizeof(arg2));
 	if (str_striequal("status", arg1)) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") loaded\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file").c_str());
@@ -581,7 +599,7 @@ static intptr_t s_main_handle_command_qmm() {
 		}
 	}
 	else if (str_striequal("info", arg1)) {
-		if (argc == 2) {
+		if (argc == 2 + arg_inc) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm info <id> - outputs info on plugin with id\n");
 			return 1;
 		}
@@ -602,7 +620,7 @@ static intptr_t s_main_handle_command_qmm() {
 		}
 	}
 	else if (str_striequal("loglevel", arg1)) {
-		if (argc == 2) {
+		if (argc == 2 + arg_inc) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
 			return 1;
 		}

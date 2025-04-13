@@ -584,11 +584,11 @@ void* MOHBT_GetGameAPI(void* import) {
 	orig_import = *gi;
 
 	// fill in variables of our hooked import struct to pass to the mod
-	qmm_import.DebugLines = gi->DebugLines;
-	qmm_import.numDebugLines = gi->numDebugLines;
-	qmm_import.DebugStrings = gi->DebugStrings;
-	qmm_import.numDebugStrings = gi->numDebugStrings;
-	qmm_import.fsDebug = gi->fsDebug;
+	qmm_import.DebugLines = orig_import.DebugLines;
+	qmm_import.numDebugLines = orig_import.numDebugLines;
+	qmm_import.DebugStrings = orig_import.DebugStrings;
+	qmm_import.numDebugStrings = orig_import.numDebugStrings;
+	qmm_import.fsDebug = orig_import.fsDebug;
 
 	// this gets passed to the mod's GetGameAPI() function in mod.cpp:mod_load()
 	g_gameinfo.api_info.qmm_import = &qmm_import;

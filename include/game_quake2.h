@@ -90,11 +90,13 @@ enum {
 	GAME_CONSOLE_COMMAND = GAME_SERVER_COMMAND,
 };
 
-// these import messages do not have an exact analogue in MOHAA
+// these import messages do not have an exact analogue in QUAKE2
 enum {
+	// used by QMM to make and check cvars
 	G_CVAR_REGISTER = -100,
 	G_CVAR_VARIABLE_STRING_BUFFER,
 	G_CVAR_VARIABLE_INTEGER_VALUE,
+	// only used for file-loading, which is QVM engines only
 	G_FS_FOPEN_FILE,
 	G_FS_READ,
 	G_FS_WRITE,
@@ -103,8 +105,11 @@ enum {
 
 // other values
 enum {
+	// not used with Q2R
 	EXEC_APPEND,
+	// only used for file-loading, which is QVM engines only
 	FS_READ,
+	// used by qmm_version cvar
 	CVAR_ROM = CVAR_NOSET,
 };
 

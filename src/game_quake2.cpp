@@ -194,8 +194,11 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		break;
 	}
 	case G_FS_FOPEN_FILE:
-		// this doesn't get called by QMM in QUAKE2 (only in engines with QVM mods)
-		// this is included here only for completeness, really
+	case G_FS_READ:
+	case G_FS_WRITE:
+	case G_FS_FCLOSE_FILE:
+		// these don't get called by QMM in QUAKE2 (only in engines with QVM mods)
+		// these are included here only for completeness, really
 		break;
 
 	default:
@@ -273,6 +276,7 @@ void* QUAKE2_GetGameAPI(void* import) {
 	orig_import = *gi;
 
 	// fill in variables of our hooked import struct to pass to the mod
+	// qmm_import.x = orig_import.x;
 
 	// this gets passed to the mod's GetGameAPI() function in mod.cpp:mod_load()
 	g_gameinfo.api_info.qmm_import = &qmm_import;
@@ -342,6 +346,14 @@ const char* QUAKE2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_ADDCOMMANDSTRING);
 		GEN_CASE(G_DEBUGGRAPH);
 
+		// special cmds
+		GEN_CASE(G_CVAR_REGISTER);
+		GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
+		GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
+		GEN_CASE(G_FS_FOPEN_FILE);
+		GEN_CASE(G_FS_READ);
+		GEN_CASE(G_FS_WRITE);
+		GEN_CASE(G_FS_FCLOSE_FILE);
 	default:
 		return "unknown";
 	}

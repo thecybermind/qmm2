@@ -50,9 +50,7 @@ supportedgame_t g_supportedgames[] = {
 	{ "game",		SUF_DLL,	nullptr,			"base",				"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			STEF2_GetGameAPI,	17,		4,		{ "ef" } },
 
 #if defined(_WIN64)
-	{ "game",		"_x64",		nullptr,			"baseq2",			"Quake 2 Remastered",							GEN_INFO(Q2R),		nullptr,			Q2R_GetGameAPI,		7,		3,		{ "quake2ex" } },
-#else
-	{ "game",		SUF_DLL,	nullptr,			"baseq2",			"Quake 2 Remastered",							GEN_INFO(Q2R),		nullptr,			Q2R_GetGameAPI,		7,		3,		{ "quake2ex" } },
+	{ "game_",		"x64",		nullptr,			"baseq2",			"Quake 2 Remastered",							GEN_INFO(Q2R),		nullptr,			Q2R_GetGameAPI,		9,		6,		{ "quake2ex" } },
 #endif
 
 	{ "game",		SUF_DLL,	nullptr,			"baseq2",			"Quake 2",										GEN_INFO(QUAKE2),	nullptr,			QUAKE2_GetGameAPI,	7,		3,		{ "q2", "quake2" } },

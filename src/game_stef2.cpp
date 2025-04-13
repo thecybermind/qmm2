@@ -866,8 +866,8 @@ void* STEF2_GetGameAPI(void* import) {
 	orig_import = *gi;
 
 	// fill in variables of our hooked import struct to pass to the mod
-	qmm_import.DebugLines = gi->DebugLines;
-	qmm_import.numDebugLines = gi->numDebugLines;
+	qmm_import.DebugLines = orig_import.DebugLines;
+	qmm_import.numDebugLines = orig_import.numDebugLines;
 
 	// this gets passed to the mod's GetGameAPI() function in mod.cpp:mod_load()
 	g_gameinfo.api_info.qmm_import = &qmm_import;
