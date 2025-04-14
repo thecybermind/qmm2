@@ -6,8 +6,8 @@
 	"execcfg": "qmmexec.cfg",
 	
 	"plugins": [
-		"qmmaddons/plugin1/dlls/plugin1_qmm.dll",
-		"qmmaddons/plugin2/dlls/plugin2_qmm.dll"
+		"qmmaddons/plugin1/plugin1_qmm.dll",
+		"qmmaddons/plugin2/plugin2_qmm.dll"
 	],
 	
 	"qvmstacksize": 1,
