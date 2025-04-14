@@ -20,6 +20,7 @@ Created By:
 #endif
 #include <windows.h>
 #include <limits.h>
+#include <direct.h>
 
 #ifdef _WIN64
 #define SUF_DLL "x86_64"
@@ -43,6 +44,7 @@ constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14,  'r', 0x12 };
 #define dlopen(file, x)		((void*)LoadLibrary(file))
 #define dlsym(dll, func)	((void*)GetProcAddress((HMODULE)(dll), (func)))
 #define dlclose(dll)		FreeLibrary((HMODULE)(dll))
+#define mkdir(path, x)		_mkdir(path)
 const char* dlerror();		// this will return the last error from any win32 function, not just library functions
 
 #elif defined(__linux__)
@@ -51,6 +53,7 @@ const char* dlerror();		// this will return the last error from any win32 functi
 #include <unistd.h> 
 #include <limits.h>
 #include <ctype.h>
+#include <sys/stat.h>
 
 #ifdef __LP64__
 #define SUF_DLL "x86_64"

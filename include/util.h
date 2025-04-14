@@ -20,6 +20,8 @@ bool path_is_relative(std::string path);
 std::string path_get_modulepath(void* ptr);
 void* path_get_modulehandle(void* ptr);
 
+void path_mkdir(std::string path);
+
 int str_stristr(std::string haystack, std::string needle);
 int str_stricmp(std::string s1, std::string s2);
 int str_striequal(std::string s1, std::string s2);

@@ -11,13 +11,17 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
+#include <stdio.h>
 #include <quake2/game/q_shared.h>
+#define GAME_INCLUDE
 #include <quake2/game/game.h>
+#undef GAME_INCLUDE
 #include "game_api.h"
 #include "log.h"
 // QMM-specific QUAKE2 header
 #include "game_quake2.h"
 #include "main.h"
+#include "util.h"
 
 GEN_QMM_MSGS(QUAKE2);
 GEN_EXTS(QUAKE2);
@@ -214,13 +218,67 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		orig_import.bprintf(PRINT_HIGH, text);
 		break;
 	}
-	case G_FS_FOPEN_FILE:
-	case G_FS_READ:
-	case G_FS_WRITE:
-	case G_FS_FCLOSE_FILE:
-		// these don't get called by QMM in QUAKE2 (only in engines with QVM mods)
-		// these are included here only for completeness, really
+				// provide these to plugins just so the most basic file functions all work. use FILE* for these
+	case G_FS_FOPEN_FILE: {
+		// int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
+		const char* qpath = (const char*)args[0];
+		fileHandle_t* f = (fileHandle_t*)args[1];
+		intptr_t mode = args[2];
+
+		const char* str_mode = "rb";
+		if (mode == FS_WRITE)
+			str_mode = "wb";
+		else if (mode == FS_APPEND)
+			str_mode = "ab";
+		LOG(QMM_LOG_INFO, "QMM") << fmt::format("G_FS_FOPEN_FILE({}, {}, {})\n", qpath, (void*)f, mode);
+		std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+		if (mode != FS_READ)
+			path_mkdir(path_dirname(path));
+		LOG(QMM_LOG_INFO, "QMM") << fmt::format("about to fopen(\"{}\", \"{}\")\n", path, str_mode);
+		FILE* fp = fopen(path.c_str(), str_mode);
+		LOG(QMM_LOG_INFO, "QMM") << fmt::format("= {}\n", (void*)fp);
+		if (!fp) {
+			ret = -1;
+			break;
+		}
+		if (mode == FS_WRITE)
+			ret = 0;
+		else if (mode == FS_APPEND)
+			ret = ftell(fp);
+		else {
+			if (fseek(fp, 0, SEEK_END) != 0) {
+				ret = -1;
+				break;
+			}
+			ret = ftell(fp);
+			fseek(fp, 0, SEEK_SET);
+		}
+		LOG(QMM_LOG_INFO, "QMM") << fmt::format("G_FS_FOPEN_FILE ret = {}\n", ret);
+		*f = (fileHandle_t)fp;
 		break;
+	}
+	case G_FS_READ: {
+		// void trap_FS_Read(void* buffer, int len, fileHandle_t f);
+		void* buffer = (void*)args[0];
+		intptr_t len = args[1];
+		fileHandle_t f = (fileHandle_t)args[2];
+		fread(buffer, len, 1, (FILE*)f);
+		break;
+	}
+	case G_FS_WRITE: {
+		// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
+		void* buffer = (void*)args[0];
+		intptr_t len = args[1];
+		fileHandle_t f = (fileHandle_t)args[2];
+		fwrite(buffer, len, 1, (FILE*)f);
+		break;
+	}
+	case G_FS_FCLOSE_FILE: {
+		// void trap_FS_FCloseFile(fileHandle_t f);
+		fileHandle_t f = (fileHandle_t)args[0];
+		fclose((FILE*)f);
+		break;
+	}
 
 	default:
 		break;

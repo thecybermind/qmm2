@@ -85,6 +85,26 @@ void* path_get_modulehandle(void* ptr) {
 	return osdef_path_get_modulehandle(ptr);
 }
 
+void path_mkdir(std::string path) {
+	int i = 1; // start after a possible "/"
+#ifdef _WIN32
+	// if this is an absolute path, start at the 3rd index (after "X:\")
+	if (path[1] == ':')
+		i = 3;
+#endif
+	path = path_normalize(path);
+
+	if (path[path.size() - 1] == '/')
+		path[path.size() - 1] = '\0';
+	for (; i < path.size(); i++)
+		if (path[i] == '/') {
+			path[i] = '\0';
+			(void)mkdir(path.c_str(), S_IRWXU);
+			path[i] = '/';
+		}
+	(void)mkdir(path.c_str(), S_IRWXU);
+}
+
 int str_stristr(std::string haystack, std::string needle) {
 	for (auto& c : haystack)
 		c = (char)std::tolower((unsigned char)c);

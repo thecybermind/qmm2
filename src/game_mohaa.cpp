@@ -480,11 +480,26 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			orig_import.SendConsoleCommand(text);
 			break;
 		}
-		case G_FS_FOPEN_FILE:
-			// this doesn't get called by QMM in MOHAA (only in engines with QVM mods)
-			// this is included here only for completeness, really
+		// MOHAA is only missing FS_FOPEN_FILE for reading. if mode == FS_WRITE, then just pass to FS_FOpenFileWrite.
+		// if mode == FS_APPEND(_SYNC), then just pass to FS_FOpenFileAppend.
+		// if mode == FS_READ, then still use FS_FOpenFileAppend but then seek to the beginning and hope G_FS_READ works
+		case G_FS_FOPEN_FILE: {
+			// MOHAA: fileHandle_t (*FS_FOpenFileAppend)(const char *fileName);
+			// q3a: int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
+			const char* qpath = (const char*)args[0];
+			fileHandle_t* f = (fileHandle_t*)args[1];
+			fsMode_t mode = (fsMode_t)args[2];
+			if (mode == FS_WRITE) {
+				ret = orig_import.FS_FOpenFileWrite(qpath);
+				break;
+			}
+			else {
+				ret = orig_import.FS_FOpenFileAppend(qpath);
+				if (mode == FS_READ)
+					orig_import.FS_Seek(ret, 0, SEEK_SET);
+			}
 			break;
-
+		}
 		default:
 			break;
 	};

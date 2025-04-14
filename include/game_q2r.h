@@ -142,19 +142,24 @@ enum {
 	G_CVAR_VARIABLE_STRING_BUFFER,
 	G_CVAR_VARIABLE_INTEGER_VALUE,
 	G_SEND_CONSOLE_COMMAND,
-	// only used for file-loading, which is QVM engines only
+	// file loading
 	G_FS_FOPEN_FILE,
 	G_FS_READ,
 	G_FS_WRITE,
 	G_FS_FCLOSE_FILE,
 };
 
+typedef intptr_t fileHandle_t;
+
 // other values
 enum {
 	// not used with Q2R
 	EXEC_APPEND,
-	// only used for file-loading, which is QVM engines only
+	// file flags
 	FS_READ,
+	FS_WRITE,
+	FS_APPEND,
+	FS_APPEND_SYNC = FS_APPEND,
 	// used by qmm_version cvar
 	CVAR_ROM = CVAR_NOSET,
 };

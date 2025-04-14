@@ -11,6 +11,7 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
+#include <stdio.h>
 #define GAME_INCLUDE
 #include <q2r/rerelease/game.h>
 #undef GAME_INCLUDE
@@ -18,7 +19,9 @@ Created By:
 #include "log.h"
 // QMM-specific Q2R header
 #include "game_q2r.h"
+#include "plugin.h"
 #include "main.h"
+#include "util.h"
 
 GEN_QMM_MSGS(Q2R);
 GEN_EXTS(Q2R);
@@ -29,11 +32,43 @@ static game_import_t orig_import;
 // a copy of the original export struct pointer that comes from the mod. this is given to plugins
 static game_export_t* orig_export = nullptr;
 
-// sound gets messed up (due to the float args in varargs?), so this will call the original first then QMM
-// so plugins can still get called when G_SOUND fires
+// sound gets messed up (due to the float args in varargs?), so this manually routes the call to plugins
+// and mod using the actual arguments
 static void s_syscall_sound(edict_t* arg0, soundchan_t arg1, int arg2, float arg3, float arg4, float arg5) {
-	orig_import.sound(arg0, arg1, arg2, arg3, arg4, arg5);
-	syscall(G_SOUND, arg0, arg1, arg2, arg3, arg4, arg5);
+	//orig_import.sound(arg0, arg1, arg2, arg3, arg4, arg5);
+	//syscall(G_SOUND, arg0, arg1, arg2, arg3, arg4, arg5);
+	intptr_t args[6] = {
+		(intptr_t)arg0,
+		(intptr_t)arg1,
+		(intptr_t)arg2,
+		*(intptr_t*)&arg3,
+		*(intptr_t*)&arg4,
+		*(intptr_t*)&arg5,
+	};
+	// store max result
+	pluginres_t maxresult = QMM_UNUSED;
+	// begin passing calls to plugins' QMM_syscall functions
+	for (plugin_t& p : g_plugins) {
+		g_plugin_result = QMM_UNUSED;
+		g_api_return = 0;
+		// call plugin's syscall and store return value
+		(void)p.QMM_syscall(G_SOUND, args);
+		// set new max result
+		maxresult = util_max(g_plugin_result, maxresult);
+		if (g_plugin_result == QMM_UNUSED)
+			LOG(QMM_LOG_WARNING, "QMM") << fmt::format("syscall({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->mod_msg_names(G_SOUND), p.plugininfo->name);
+		if (g_plugin_result == QMM_ERROR)
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->mod_msg_names(G_SOUND), p.plugininfo->name);
+	}
+	// call real syscall function (unless a plugin resulted in QMM_SUPERCEDE)
+	if (maxresult < QMM_SUPERCEDE)
+		orig_import.sound(arg0, arg1, arg2, arg3, arg4, arg5);
+	// pass calls to plugins' QMM_syscall_Post functions (ignore return values and results)
+	for (plugin_t& p : g_plugins) {
+		// store final_ret in variable that is provided to plugins so they can get the end result in a _Post
+		g_api_return = 0;
+		p.QMM_syscall_Post(G_SOUND, args);
+	}
 }
 
 // struct with lambdas that call QMM's syscall function. this is given to the mod
@@ -163,11 +198,11 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
-	qmm_export.edicts = orig_export->edicts;
-	qmm_export.edict_size = orig_export->edict_size;
-	qmm_export.num_edicts = orig_export->num_edicts;
-	qmm_export.max_edicts = orig_export->max_edicts;
-	qmm_export.server_flags = orig_export->server_flags;
+	//qmm_export.edicts = orig_export->edicts;
+	//qmm_export.edict_size = orig_export->edict_size;
+	//qmm_export.num_edicts = orig_export->num_edicts;
+	//qmm_export.max_edicts = orig_export->max_edicts;
+	//qmm_export.server_flags = orig_export->server_flags;
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
@@ -289,13 +324,67 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 		orig_import.AddCommandString(text);
 		break;
 	}
-	case G_FS_FOPEN_FILE:
-	case G_FS_READ:
-	case G_FS_WRITE:
-	case G_FS_FCLOSE_FILE:
-		// these don't get called by QMM in Q2R (only in engines with QVM mods)
-		// these are included here only for completeness, really
+	// provide these to plugins just so the most basic file functions all work. use FILE* for these
+	case G_FS_FOPEN_FILE: {
+		// int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
+		const char* qpath = (const char*)args[0];
+		fileHandle_t* f = (fileHandle_t*)args[1];
+		intptr_t mode = args[2];
+		
+		const char* str_mode = "rb";
+		if (mode == FS_WRITE)
+			str_mode = "wb";			
+		else if (mode == FS_APPEND)
+			str_mode = "ab";
+		LOG(QMM_LOG_INFO, "QMM") << fmt::format("G_FS_FOPEN_FILE({}, {}, {})\n", qpath, (void*)f, mode);
+		std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+		if (mode != FS_READ)
+			path_mkdir(path_dirname(path));
+		LOG(QMM_LOG_INFO, "QMM") << fmt::format("about to fopen(\"{}\", \"{}\")\n", path, str_mode);
+		FILE* fp = fopen(path.c_str(), str_mode);
+		LOG(QMM_LOG_INFO, "QMM") << fmt::format("= {}\n", (void*)fp);
+		if (!fp) {
+			ret = -1;
+			break;
+		}
+		if (mode == FS_WRITE)
+			ret = 0;
+		else if (mode == FS_APPEND)
+			ret = ftell(fp);
+		else {
+			if (fseek(fp, 0, SEEK_END) != 0) {
+				ret = -1;
+				break;
+			}
+			ret = ftell(fp);
+			fseek(fp, 0, SEEK_SET);
+		}
+		LOG(QMM_LOG_INFO, "QMM") << fmt::format("G_FS_FOPEN_FILE ret = {}\n", ret);
+		*f = (fileHandle_t)fp;
 		break;
+	}
+	case G_FS_READ: {
+		// void trap_FS_Read(void* buffer, int len, fileHandle_t f);
+		void* buffer = (void*)args[0];
+		intptr_t len = args[1];
+		fileHandle_t f = (fileHandle_t)args[2];
+		fread(buffer, len, 1, (FILE*)f);
+		break;
+	}
+	case G_FS_WRITE: {
+		// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
+		void* buffer = (void*)args[0];
+		intptr_t len = args[1];
+		fileHandle_t f = (fileHandle_t)args[2];
+		fwrite(buffer, len, 1, (FILE*)f);
+		break;
+	}
+	case G_FS_FCLOSE_FILE: {
+		// void trap_FS_FCloseFile(fileHandle_t f);
+		fileHandle_t f = (fileHandle_t)args[0];
+		fclose((FILE*)f);
+		break;
+	}
 
 	default:
 		break;
