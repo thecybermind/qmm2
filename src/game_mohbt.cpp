@@ -46,7 +46,6 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(cvar_set, G_CVAR_SET),
 	GEN_IMPORT(cvar_set2, G_CVAR_SET2),
 	GEN_IMPORT(NextCvar, G_NEXTCVAR),
-	// GEN_IMPORT(Cvar_CheckRange, G_CVAR_CHECKRANGE),
 	GEN_IMPORT(Argc, G_ARGC),
 	GEN_IMPORT(Argv, G_ARGV),
 	GEN_IMPORT(Args, G_ARGS),
@@ -144,13 +143,11 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Anim_Flags, G_ANIM_FLAGS),
 	GEN_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL),
 	GEN_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS),
-	// GEN_IMPORT(Anim_HasCommands_Client, G_ANIM_HASCOMMANDS_CLIENT),
 	GEN_IMPORT(NumHeadModels, G_NUMHEADMODELS),
 	GEN_IMPORT(GetHeadModel, G_GETHEADMODEL),
 	GEN_IMPORT(NumHeadSkins, G_NUMHEADSKINS),
 	GEN_IMPORT(GetHeadSkin, G_GETHEADSKIN),
 	GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
-	// GEN_IMPORT(Frame_Commands_Client, G_FRAME_COMMANDS_CLIENT),
 	GEN_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM),
 	GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
 	GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
@@ -210,7 +207,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(HudDrawFont, G_HUDDRAWFONT),
 	GEN_IMPORT(SanitizeName, G_SANITIZENAME),
 	GEN_IMPORT(pvssoundindex, G_PVSSOUNDINDEX),
-	nullptr	//fsDebug
+	nullptr,	//fsDebug
 };
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
@@ -257,7 +254,7 @@ static game_export_t qmm_export = {
 	0,			// gentitySize
 	0,			// num_entities
 	0,			// max_entities
-	nullptr		// errorMessage
+	nullptr,	// errorMessage
 };
 
 // wrapper syscall function that calls actual engine func from orig_import
@@ -270,12 +267,12 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
-	//qmm_export.profStruct = orig_export->profStruct;
-	//qmm_export.gentities = orig_export->gentities;
-	//qmm_export.gentitySize = orig_export->gentitySize;
-	//qmm_export.num_entities = orig_export->num_entities;
-	//qmm_export.max_entities = orig_export->max_entities;
-	//qmm_export.errorMessage = orig_export->errorMessage;
+	qmm_export.profStruct = orig_export->profStruct;
+	qmm_export.gentities = orig_export->gentities;
+	qmm_export.gentitySize = orig_export->gentitySize;
+	qmm_export.num_entities = orig_export->num_entities;
+	qmm_export.max_entities = orig_export->max_entities;
+	qmm_export.errorMessage = orig_export->errorMessage;
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
@@ -295,7 +292,6 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT(cvar_set, G_CVAR_SET);
 		ROUTE_IMPORT(cvar_set2, G_CVAR_SET2);
 		ROUTE_IMPORT(NextCvar, G_NEXTCVAR);
-		// ROUTE_IMPORT(Cvar_CheckRange, G_CVAR_CHECKRANGE);
 		ROUTE_IMPORT(Argc, G_ARGC);
 		ROUTE_IMPORT(Argv, G_ARGV);
 		ROUTE_IMPORT(Args, G_ARGS);
@@ -393,13 +389,11 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT(Anim_Flags, G_ANIM_FLAGS);
 		ROUTE_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL);
 		ROUTE_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS);
-		// ROUTE_IMPORT(Anim_HasCommands_Client, G_ANIM_HASCOMMANDS_CLIENT);
 		ROUTE_IMPORT(NumHeadModels, G_NUMHEADMODELS);
 		ROUTE_IMPORT(GetHeadModel, G_GETHEADMODEL);
 		ROUTE_IMPORT(NumHeadSkins, G_NUMHEADSKINS);
 		ROUTE_IMPORT(GetHeadSkin, G_GETHEADSKIN);
 		ROUTE_IMPORT(Frame_Commands, G_FRAME_COMMANDS);
-		// ROUTE_IMPORT(Frame_Commands_Client, G_FRAME_COMMANDS_CLIENT);
 		ROUTE_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM);
 		ROUTE_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME);
 		ROUTE_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME);
@@ -636,7 +630,6 @@ const char* MOHBT_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_CVAR_SET);
 		GEN_CASE(G_CVAR_SET2);
 		GEN_CASE(G_NEXTCVAR);
-		// GEN_CASE(G_CVAR_CHECKRANGE);
 		GEN_CASE(G_ARGC);
 		GEN_CASE(G_ARGV);
 		GEN_CASE(G_ARGS);
@@ -731,13 +724,11 @@ const char* MOHBT_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_ANIM_FLAGS);
 		GEN_CASE(G_ANIM_FLAGSSKEL);
 		GEN_CASE(G_ANIM_HASCOMMANDS);
-		// GEN_CASE(G_ANIM_HASCOMMANDS_CLIENT);
 		GEN_CASE(G_NUMHEADMODELS);
 		GEN_CASE(G_GETHEADMODEL);
 		GEN_CASE(G_NUMHEADSKINS);
 		GEN_CASE(G_GETHEADSKIN);
 		GEN_CASE(G_FRAME_COMMANDS);
-		// GEN_CASE(G_FRAME_COMMANDS_CLIENT);
 		GEN_CASE(G_SURFACE_NAMETONUM);
 		GEN_CASE(G_SURFACE_NUMTONAME);
 		GEN_CASE(G_TAG_NUMFORNAME);

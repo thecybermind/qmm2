@@ -111,10 +111,10 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
-	//qmm_export.edicts = orig_export->edicts;
-	//qmm_export.edict_size = orig_export->edict_size;
-	//qmm_export.num_edicts = orig_export->num_edicts;
-	//qmm_export.max_edicts = orig_export->max_edicts;
+	qmm_export.edicts = orig_export->edicts;
+	qmm_export.edict_size = orig_export->edict_size;
+	qmm_export.num_edicts = orig_export->num_edicts;
+	qmm_export.max_edicts = orig_export->max_edicts;
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
@@ -275,7 +275,7 @@ intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 		break;
 	};
 
-	// after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_entities and errorMessage in particular)
+	// after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_entities in particular)
 	// and these changes need to be available to the engine, so copy those values again now before returning from the mod
 	qmm_export.edicts = orig_export->edicts;
 	qmm_export.edict_size = orig_export->edict_size;

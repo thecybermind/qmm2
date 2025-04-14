@@ -246,7 +246,7 @@ static game_export_t qmm_export = {
 	0,			// gentitySize
 	0,			// num_entities
 	0,			// max_entities
-	nullptr		// errorMessage
+	nullptr,	// errorMessage
 };
 
 // wrapper syscall function that calls actual engine func from orig_import
@@ -259,12 +259,12 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
-	//qmm_export.profStruct = orig_export->profStruct;
-	//qmm_export.gentities = orig_export->gentities;
-	//qmm_export.gentitySize = orig_export->gentitySize;
-	//qmm_export.num_entities = orig_export->num_entities;
-	//qmm_export.max_entities = orig_export->max_entities;
-	//qmm_export.errorMessage = orig_export->errorMessage;
+	qmm_export.profStruct = orig_export->profStruct;
+	qmm_export.gentities = orig_export->gentities;
+	qmm_export.gentitySize = orig_export->gentitySize;
+	qmm_export.num_entities = orig_export->num_entities;
+	qmm_export.max_entities = orig_export->max_entities;
+	qmm_export.errorMessage = orig_export->errorMessage;
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;

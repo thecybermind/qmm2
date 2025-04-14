@@ -13,6 +13,7 @@ Created By:
 #include <string.h>
 #define GAME_INCLUDE
 #include <q2r/rerelease/game.h>
+#undef GAME_INCLUDE
 #include "game_api.h"
 #include "log.h"
 // QMM-specific Q2R header
@@ -162,11 +163,11 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
-	//qmm_export.edicts = orig_export->edicts;
-	//qmm_export.edict_size = orig_export->edict_size;
-	//qmm_export.num_edicts = orig_export->num_edicts;
-	//qmm_export.max_edicts = orig_export->max_edicts;
-	//qmm_export.server_flags = orig_export->server_flags;
+	qmm_export.edicts = orig_export->edicts;
+	qmm_export.edict_size = orig_export->edict_size;
+	qmm_export.num_edicts = orig_export->num_edicts;
+	qmm_export.max_edicts = orig_export->max_edicts;
+	qmm_export.server_flags = orig_export->server_flags;
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
