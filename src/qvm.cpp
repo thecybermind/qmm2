@@ -677,6 +677,7 @@ void qvm_free(void* ptr) {
 }
 
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start, void* end) {
+	return true;
 	if (!qvm.memory)
 		return false;
 

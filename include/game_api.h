@@ -150,12 +150,11 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 // ---------------------
 
 // these macros handle qvm syscall arguments in GAME_vmsyscall functions in game_*.cpp
-// note: these have to return either a pointer or intptr_t so that they get extracted
-// from varargs correctly in 64-bit
 
-// this gets an argument value
+// this gets an argument value (evaluate to an intptr_t)
 #define vmarg(x)	(intptr_t)args[x]
-// this adds the base VM address pointer to an argument value
+// this adds the base VM address pointer to an argument value (evaluate to a pointer)
 #define vmptr(x)	(args[x] ? membase + args[x] : nullptr)
-
+// this subtracts the base VM address pointer from a value, for returning from syscall (this should evaluate to an int)
+#define vmret(x)	(int)(x ? (intptr_t)x - (intptr_t)membase : 0)
 #endif // __QMM2_GAME_API_H__
