@@ -241,12 +241,12 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(SoundCallback, GAME_SOUND_CALLBACK),
 
 	// the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
-	nullptr,	// profStruct
-	nullptr,	// gentities
-	0,			// gentitySize
-	0,			// num_entities
-	0,			// max_entities
-	nullptr,	// errorMessage
+	nullptr,			// profStruct
+	nullptr,			// gentities
+	sizeof(gentity_t),	// gentitySize
+	0,					// num_entities
+	0,					// max_entities
+	nullptr,			// errorMessage
 };
 
 // wrapper syscall function that calls actual engine func from orig_import
@@ -257,14 +257,20 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_syscall({}) called\n", MOHAA_eng_msg_names(cmd));
 
+	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	if (!orig_export)
+		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
-	qmm_export.profStruct = orig_export->profStruct;
-	qmm_export.gentities = orig_export->gentities;
-	qmm_export.gentitySize = orig_export->gentitySize;
-	qmm_export.num_entities = orig_export->num_entities;
-	qmm_export.max_entities = orig_export->max_entities;
-	qmm_export.errorMessage = orig_export->errorMessage;
+	if (orig_export) {
+		qmm_export.profStruct = orig_export->profStruct;
+		qmm_export.gentities = orig_export->gentities;
+		qmm_export.gentitySize = orig_export->gentitySize;
+		qmm_export.num_entities = orig_export->num_entities;
+		qmm_export.max_entities = orig_export->max_entities;
+		qmm_export.errorMessage = orig_export->errorMessage;
+	}
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
@@ -480,23 +486,38 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			orig_import.SendConsoleCommand(text);
 			break;
 		}
-		// MOHAA is only missing FS_FOPEN_FILE for reading. if mode == FS_WRITE, then just pass to FS_FOpenFileWrite.
+		// MOHAA is only missing FS_FOPEN_FILE for reading
+		// if mode == FS_WRITE, then just pass to FS_FOpenFileWrite.
 		// if mode == FS_APPEND(_SYNC), then just pass to FS_FOpenFileAppend.
-		// if mode == FS_READ, then still use FS_FOpenFileAppend but then seek to the beginning and hope G_FS_READ works
+		// if mode == FS_READ, then return -1 since we can't do anything :(
 		case G_FS_FOPEN_FILE: {
 			// MOHAA: fileHandle_t (*FS_FOpenFileAppend)(const char *fileName);
+			// MOHAA: fileHandle_t (*FS_FOpenFileWrite)(const char *fileName);
 			// q3a: int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
 			const char* qpath = (const char*)args[0];
 			fileHandle_t* f = (fileHandle_t*)args[1];
 			fsMode_t mode = (fsMode_t)args[2];
-			if (mode == FS_WRITE) {
-				ret = orig_import.FS_FOpenFileWrite(qpath);
+			if (mode == FS_READ) {
+				ret = -1;
 				break;
 			}
+			else if (mode == FS_WRITE) {
+				*f = orig_import.FS_FOpenFileWrite(qpath);
+				if (!*f) {
+					ret = -1;
+					break;
+				}
+				ret = 0;
+			}
+			// mode == FS_APPEND(_SYNC)
 			else {
-				ret = orig_import.FS_FOpenFileAppend(qpath);
-				if (mode == FS_READ)
-					orig_import.FS_Seek(ret, 0, SEEK_SET);
+				*f = orig_import.FS_FOpenFileAppend(qpath);
+				if (!*f) {
+					ret = -1;
+					break;
+				}
+				orig_import.FS_Seek(*f, 0, FS_SEEK_END);
+				ret = orig_import.FS_Tell(*f);
 			}
 			break;
 		}
@@ -797,6 +818,8 @@ const char* MOHAA_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_CVAR_REGISTER);
 		GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
 		GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
+		GEN_CASE(G_SEND_CONSOLE_COMMAND);
+		GEN_CASE(G_FS_FOPEN_FILE);
 
 		default:
 			return "unknown";

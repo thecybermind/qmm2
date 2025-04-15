@@ -425,13 +425,19 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_syscall({}) called\n", STEF2_eng_msg_names(cmd));
 
+	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	if (!orig_export)
+		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
-	qmm_export.gentities = orig_export->gentities;
-	qmm_export.gentitySize = orig_export->gentitySize;
-	qmm_export.num_entities = orig_export->num_entities;
-	qmm_export.max_entities = orig_export->max_entities;
-	qmm_export.error_message = orig_export->error_message;
+	if (orig_export) {
+		qmm_export.gentities = orig_export->gentities;
+		qmm_export.gentitySize = orig_export->gentitySize;
+		qmm_export.num_entities = orig_export->num_entities;
+		qmm_export.max_entities = orig_export->max_entities;
+		qmm_export.error_message = orig_export->error_message;
+	}
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;

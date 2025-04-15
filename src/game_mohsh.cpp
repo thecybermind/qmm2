@@ -265,14 +265,20 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_syscall({}) called\n", MOHSH_eng_msg_names(cmd));
 
+	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	if (!orig_export)
+		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
-	qmm_export.profStruct = orig_export->profStruct;
-	qmm_export.gentities = orig_export->gentities;
-	qmm_export.gentitySize = orig_export->gentitySize;
-	qmm_export.num_entities = orig_export->num_entities;
-	qmm_export.max_entities = orig_export->max_entities;
-	qmm_export.errorMessage = orig_export->errorMessage;
+	if (orig_export) {
+		qmm_export.profStruct = orig_export->profStruct;
+		qmm_export.gentities = orig_export->gentities;
+		qmm_export.gentitySize = orig_export->gentitySize;
+		qmm_export.num_entities = orig_export->num_entities;
+		qmm_export.max_entities = orig_export->max_entities;
+		qmm_export.errorMessage = orig_export->errorMessage;
+	}
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
@@ -503,8 +509,6 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((pfn_call_t)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
-#define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)(orig_export-> field); break
 intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 

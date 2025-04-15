@@ -196,13 +196,19 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_syscall({}) called\n", Q2R_eng_msg_names(cmd));
 
+	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	if (!orig_export)
+		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
-	//qmm_export.edicts = orig_export->edicts;
-	//qmm_export.edict_size = orig_export->edict_size;
-	//qmm_export.num_edicts = orig_export->num_edicts;
-	//qmm_export.max_edicts = orig_export->max_edicts;
-	//qmm_export.server_flags = orig_export->server_flags;
+	if (orig_export) {
+		qmm_export.edicts = orig_export->edicts;
+		qmm_export.edict_size = orig_export->edict_size;
+		qmm_export.num_edicts = orig_export->num_edicts;
+		qmm_export.max_edicts = orig_export->max_edicts;
+		qmm_export.server_flags = orig_export->server_flags;
+	}
 
 	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
@@ -336,13 +342,10 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			str_mode = "wb";			
 		else if (mode == FS_APPEND)
 			str_mode = "ab";
-		LOG(QMM_LOG_INFO, "QMM") << fmt::format("G_FS_FOPEN_FILE({}, {}, {})\n", qpath, (void*)f, mode);
 		std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
 		if (mode != FS_READ)
 			path_mkdir(path_dirname(path));
-		LOG(QMM_LOG_INFO, "QMM") << fmt::format("about to fopen(\"{}\", \"{}\")\n", path, str_mode);
 		FILE* fp = fopen(path.c_str(), str_mode);
-		LOG(QMM_LOG_INFO, "QMM") << fmt::format("= {}\n", (void*)fp);
 		if (!fp) {
 			ret = -1;
 			break;
@@ -359,7 +362,6 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			ret = ftell(fp);
 			fseek(fp, 0, SEEK_SET);
 		}
-		LOG(QMM_LOG_INFO, "QMM") << fmt::format("G_FS_FOPEN_FILE ret = {}\n", ret);
 		*f = (fileHandle_t)fp;
 		break;
 	}
