@@ -237,8 +237,18 @@ enum {
 	G_CVAR_VARIABLE_STRING_BUFFER,
 	G_CVAR_VARIABLE_INTEGER_VALUE,
 	G_SEND_CONSOLE_COMMAND,
-	// file loading
+	// file loading (write and append only, as those are the only fileHandle_t operations provided
 	G_FS_FOPEN_FILE,
+
+	// FILE*-based file loading
+	G_FS_FOPEN_FILE_QMM,
+	G_FS_READ_QMM,
+	G_FS_WRITE_QMM,
+	G_FS_FCLOSE_FILE_QMM,
 };
+
+#if defined(_WIN64) || defined(__LP64__)
+#define fileHandle_t intptr_t
+#endif
 
 #endif // __QMM2_GAME_MOHAA_H__

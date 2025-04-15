@@ -266,8 +266,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_syscall({}) called\n", MOHSH_eng_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
-	if (!orig_export)
-		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
@@ -515,8 +514,9 @@ intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_vmMain({}) called\n", MOHSH_mod_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 	if (!orig_export)
-		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+		return 0;
 
 	// store return value since we do some stuff after the function call is over
 	intptr_t ret = 0;

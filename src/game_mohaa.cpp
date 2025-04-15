@@ -11,6 +11,7 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
+#include <stdio.h>
 #include <mohaa/qcommon/q_shared.h>
 #define GAME_DLL
 #include <mohaa/fgame/g_public.h>
@@ -20,6 +21,7 @@ Created By:
 // QMM-specific MOHAA header
 #include "game_mohaa.h"
 #include "main.h"
+#include "util.h"
 
 GEN_QMM_MSGS(MOHAA);
 GEN_EXTS(MOHAA);
@@ -258,8 +260,7 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_syscall({}) called\n", MOHAA_eng_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
-	if (!orig_export)
-		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
@@ -521,6 +522,65 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			}
 			break;
 		}
+		// since fileHandle_t-based functions don't exist in MOHAA when trying to READ a file, we can provide some help
+		// to plugins by offering the FILE* functions available to Q2R and QUAKE2, although the cmd name ends with _QMM
+		// (since MOHAA provides G_FS_READ, G_FS_WRITE, and G_FS_FCLOSE_FILE)
+		case G_FS_FOPEN_FILE_QMM: {
+			// int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
+			const char* qpath = (const char*)args[0];
+			fileHandle_t* f = (fileHandle_t*)args[1];
+			intptr_t mode = args[2];
+
+			const char* str_mode = "rb";
+			if (mode == FS_WRITE)
+				str_mode = "wb";
+			else if (mode == FS_APPEND)
+				str_mode = "ab";
+			std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+			if (mode != FS_READ)
+				path_mkdir(path_dirname(path));
+			FILE* fp = fopen(path.c_str(), str_mode);
+			if (!fp) {
+				ret = -1;
+				break;
+			}
+			if (mode == FS_WRITE)
+				ret = 0;
+			else if (mode == FS_APPEND)
+				ret = ftell(fp);
+			else {
+				if (fseek(fp, 0, SEEK_END) != 0) {
+					ret = -1;
+					break;
+				}
+				ret = ftell(fp);
+				fseek(fp, 0, SEEK_SET);
+			}
+			*f = (fileHandle_t)fp;
+			break;
+		}
+		case G_FS_READ_QMM: {
+			// void trap_FS_Read(void* buffer, int len, fileHandle_t f);
+			void* buffer = (void*)args[0];
+			intptr_t len = args[1];
+			fileHandle_t f = (fileHandle_t)args[2];
+			fread(buffer, len, 1, (FILE*)f);
+			break;
+		}
+		case G_FS_WRITE_QMM: {
+			// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
+			void* buffer = (void*)args[0];
+			intptr_t len = args[1];
+			fileHandle_t f = (fileHandle_t)args[2];
+			fwrite(buffer, len, 1, (FILE*)f);
+			break;
+		}
+		case G_FS_FCLOSE_FILE_QMM: {
+			// void trap_FS_FCloseFile(fileHandle_t f);
+			fileHandle_t f = (fileHandle_t)args[0];
+			fclose((FILE*)f);
+			break;
+		}
 		default:
 			break;
 	};
@@ -541,8 +601,9 @@ intptr_t MOHAA_vmMain(intptr_t cmd, ...) {
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_vmMain({}) called\n", MOHAA_mod_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 	if (!orig_export)
-		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+		return 0;
 
 	// store return value since we do some stuff after the function call is over
 	intptr_t ret = 0;
@@ -820,6 +881,10 @@ const char* MOHAA_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
 		GEN_CASE(G_SEND_CONSOLE_COMMAND);
 		GEN_CASE(G_FS_FOPEN_FILE);
+		GEN_CASE(G_FS_FOPEN_FILE_QMM);
+		GEN_CASE(G_FS_READ_QMM);
+		GEN_CASE(G_FS_WRITE_QMM);
+		GEN_CASE(G_FS_FCLOSE_FILE_QMM);
 
 		default:
 			return "unknown";

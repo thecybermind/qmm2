@@ -426,8 +426,7 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_syscall({}) called\n", STEF2_eng_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
-	if (!orig_export)
-		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
@@ -816,8 +815,9 @@ intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_vmMain({}) called\n", STEF2_mod_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 	if (!orig_export)
-		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+		return 0;
 
 	// store return value since we do some stuff after the function call is over
 	intptr_t ret = 0;
@@ -1256,6 +1256,8 @@ const char* STEF2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_BOTLIBUPDATEENTITY);
 		GEN_CASE(G_TEST);
 		GEN_CASE(G_BOTUSERCOMMAND);
+
+		GEN_CASE(G_SEND_CONSOLE_COMMAND);
 
 		default:
 			return "unknown";

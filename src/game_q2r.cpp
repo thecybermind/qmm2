@@ -197,8 +197,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_syscall({}) called\n", Q2R_eng_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
-	if (!orig_export)
-		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
 	// and these changes need to be available to the engine, so copy those values before entering the engine
@@ -291,105 +290,105 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT_VAR(frame_time_ms, GV_FRAME_TIME_MS);
 
 		// handle special cmds which QMM uses but MOHAA doesn't have an analogue for
-	case G_CVAR_REGISTER: {
-		// q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
-		// qmm: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
-		// qmm always passes NULL for vmCvar so don't worry about it
-		char* var_name = (char*)(args[1]);
-		char* value = (char*)(args[2]);
-		cvar_flags_t flags = (cvar_flags_t)args[3];
-		(void)orig_import.cvar(var_name, value, flags);
-		break;
-	}
-	case G_CVAR_VARIABLE_STRING_BUFFER: {
-		// q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
-		// qmm: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
-		char* var_name = (char*)(args[0]);
-		char* buffer = (char*)(args[1]);
-		int bufsize = (int)args[2];
-		*buffer = '\0';
-		cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
-		if (cvar)
-			strncpy(buffer, cvar->string, bufsize);
-		buffer[bufsize - 1] = '\0';
-		break;
-	}
-	case G_CVAR_VARIABLE_INTEGER_VALUE: {
-		// q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
-		// qmm: int trap_Cvar_VariableIntegerValue(const char* var_name)
-		char* var_name = (char*)(args[0]);
-		cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
-		if (cvar)
-			ret = cvar->integer;
-		break;
-	}
-	case G_SEND_CONSOLE_COMMAND: {
-		// Q2R: void (*AddCommandString)(const char *text);
-		// qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
-		const char* text = (const char*)(args[1]);
-		orig_import.AddCommandString(text);
-		break;
-	}
-	// provide these to plugins just so the most basic file functions all work. use FILE* for these
-	case G_FS_FOPEN_FILE: {
-		// int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
-		const char* qpath = (const char*)args[0];
-		fileHandle_t* f = (fileHandle_t*)args[1];
-		intptr_t mode = args[2];
-		
-		const char* str_mode = "rb";
-		if (mode == FS_WRITE)
-			str_mode = "wb";			
-		else if (mode == FS_APPEND)
-			str_mode = "ab";
-		std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
-		if (mode != FS_READ)
-			path_mkdir(path_dirname(path));
-		FILE* fp = fopen(path.c_str(), str_mode);
-		if (!fp) {
-			ret = -1;
+		case G_CVAR_REGISTER: {
+			// q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
+			// qmm: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
+			// qmm always passes NULL for vmCvar so don't worry about it
+			char* var_name = (char*)(args[1]);
+			char* value = (char*)(args[2]);
+			cvar_flags_t flags = (cvar_flags_t)args[3];
+			(void)orig_import.cvar(var_name, value, flags);
 			break;
 		}
-		if (mode == FS_WRITE)
-			ret = 0;
-		else if (mode == FS_APPEND)
-			ret = ftell(fp);
-		else {
-			if (fseek(fp, 0, SEEK_END) != 0) {
+		case G_CVAR_VARIABLE_STRING_BUFFER: {
+			// q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
+			// qmm: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
+			char* var_name = (char*)(args[0]);
+			char* buffer = (char*)(args[1]);
+			int bufsize = (int)args[2];
+			*buffer = '\0';
+			cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
+			if (cvar)
+				strncpy(buffer, cvar->string, bufsize);
+			buffer[bufsize - 1] = '\0';
+			break;
+		}
+		case G_CVAR_VARIABLE_INTEGER_VALUE: {
+			// q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
+			// qmm: int trap_Cvar_VariableIntegerValue(const char* var_name)
+			char* var_name = (char*)(args[0]);
+			cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
+			if (cvar)
+				ret = cvar->integer;
+			break;
+		}
+		case G_SEND_CONSOLE_COMMAND: {
+			// Q2R: void (*AddCommandString)(const char *text);
+			// qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+			const char* text = (const char*)(args[1]);
+			orig_import.AddCommandString(text);
+			break;
+		}
+		// provide these to plugins just so the most basic file functions all work. use FILE* for these
+		case G_FS_FOPEN_FILE: {
+			// int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
+			const char* qpath = (const char*)args[0];
+			fileHandle_t* f = (fileHandle_t*)args[1];
+			intptr_t mode = args[2];
+		
+			const char* str_mode = "rb";
+			if (mode == FS_WRITE)
+				str_mode = "wb";			
+			else if (mode == FS_APPEND)
+				str_mode = "ab";
+			std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+			if (mode != FS_READ)
+				path_mkdir(path_dirname(path));
+			FILE* fp = fopen(path.c_str(), str_mode);
+			if (!fp) {
 				ret = -1;
 				break;
 			}
-			ret = ftell(fp);
-			fseek(fp, 0, SEEK_SET);
+			if (mode == FS_WRITE)
+				ret = 0;
+			else if (mode == FS_APPEND)
+				ret = ftell(fp);
+			else {
+				if (fseek(fp, 0, SEEK_END) != 0) {
+					ret = -1;
+					break;
+				}
+				ret = ftell(fp);
+				fseek(fp, 0, SEEK_SET);
+			}
+			*f = (fileHandle_t)fp;
+			break;
 		}
-		*f = (fileHandle_t)fp;
-		break;
-	}
-	case G_FS_READ: {
-		// void trap_FS_Read(void* buffer, int len, fileHandle_t f);
-		void* buffer = (void*)args[0];
-		intptr_t len = args[1];
-		fileHandle_t f = (fileHandle_t)args[2];
-		fread(buffer, len, 1, (FILE*)f);
-		break;
-	}
-	case G_FS_WRITE: {
-		// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
-		void* buffer = (void*)args[0];
-		intptr_t len = args[1];
-		fileHandle_t f = (fileHandle_t)args[2];
-		fwrite(buffer, len, 1, (FILE*)f);
-		break;
-	}
-	case G_FS_FCLOSE_FILE: {
-		// void trap_FS_FCloseFile(fileHandle_t f);
-		fileHandle_t f = (fileHandle_t)args[0];
-		fclose((FILE*)f);
-		break;
-	}
+		case G_FS_READ: {
+			// void trap_FS_Read(void* buffer, int len, fileHandle_t f);
+			void* buffer = (void*)args[0];
+			intptr_t len = args[1];
+			fileHandle_t f = (fileHandle_t)args[2];
+			fread(buffer, len, 1, (FILE*)f);
+			break;
+		}
+		case G_FS_WRITE: {
+			// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
+			void* buffer = (void*)args[0];
+			intptr_t len = args[1];
+			fileHandle_t f = (fileHandle_t)args[2];
+			fwrite(buffer, len, 1, (FILE*)f);
+			break;
+		}
+		case G_FS_FCLOSE_FILE: {
+			// void trap_FS_FCloseFile(fileHandle_t f);
+			fileHandle_t f = (fileHandle_t)args[0];
+			fclose((FILE*)f);
+			break;
+		}
 
-	default:
-		break;
+		default:
+			break;
 	};
 
 	// do anything that needs to be done after function call here
@@ -408,8 +407,9 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_vmMain({}) called\n", Q2R_mod_msg_names(cmd));
 
 	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 	if (!orig_export)
-		orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
+		return 0;
 
 	// store return value since we do some stuff after the function call is over
 	intptr_t ret = 0;

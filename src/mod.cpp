@@ -71,6 +71,7 @@ void mod_unload(mod_t& mod) {
 	if (mod.dll)
 		dlclose(mod.dll);
 	mod = mod_t();
+	g_gameinfo.api_info.orig_export = nullptr;
 }
 
 // entry point to store in mod_t->pfnvmMain for qvm mods
