@@ -32,45 +32,23 @@ static game_import_t orig_import;
 // a copy of the original export struct pointer that comes from the mod. this is given to plugins
 static game_export_t* orig_export = nullptr;
 
-// sound gets messed up (due to the float args in varargs?), so this manually routes the call to plugins
-// and mod using the actual arguments
-static void s_syscall_sound(edict_t* arg0, soundchan_t arg1, int arg2, float arg3, float arg4, float arg5) {
-	//orig_import.sound(arg0, arg1, arg2, arg3, arg4, arg5);
-	//syscall(G_SOUND, arg0, arg1, arg2, arg3, arg4, arg5);
-	intptr_t args[6] = {
-		(intptr_t)arg0,
-		(intptr_t)arg1,
-		(intptr_t)arg2,
-		*(intptr_t*)&arg3,
-		*(intptr_t*)&arg4,
-		*(intptr_t*)&arg5,
-	};
-	// store max result
-	pluginres_t maxresult = QMM_UNUSED;
-	// begin passing calls to plugins' QMM_syscall functions
-	for (plugin_t& p : g_plugins) {
-		g_plugin_result = QMM_UNUSED;
-		g_api_return = 0;
-		// call plugin's syscall and store return value
-		(void)p.QMM_syscall(G_SOUND, args);
-		// set new max result
-		maxresult = util_max(g_plugin_result, maxresult);
-		if (g_plugin_result == QMM_UNUSED)
-			LOG(QMM_LOG_WARNING, "QMM") << fmt::format("syscall({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->mod_msg_names(G_SOUND), p.plugininfo->name);
-		if (g_plugin_result == QMM_ERROR)
-			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->mod_msg_names(G_SOUND), p.plugininfo->name);
-	}
-	// call real syscall function (unless a plugin resulted in QMM_SUPERCEDE)
-	if (maxresult < QMM_SUPERCEDE)
-		orig_import.sound(arg0, arg1, arg2, arg3, arg4, arg5);
-	// pass calls to plugins' QMM_syscall_Post functions (ignore return values and results)
-	for (plugin_t& p : g_plugins) {
-		// store final_ret in variable that is provided to plugins so they can get the end result in a _Post
-		g_api_return = 0;
-		p.QMM_syscall_Post(G_SOUND, args);
-	}
-}
 
+/*
+The sound() import gets messed up because the volume float arg doesn't get passed properly. Server-generated
+sound (i.e. anything from the world like item pickup or another player attacking) would be silent. After
+debugging, the volume argument would appear to come through as ~1e-19 or something else exceptionally small.
+Assigning qmm_import.sound=orig_import.sound would resolve the issue (but obviously not allow for plugin hooking).
+It turns out the problem is the float arguments and the GEN_IMPORT macro using intptr_t.
+
+From: https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention#parameter-passing
+"Any floating-point and double-precision arguments in the first four parameters are passed in XMM0 - XMM3,
+depending on position. Floating-point values are only placed in the integer registers RCX, RDX, R8, and R9
+when there are varargs arguments."
+
+Since the Q2R engine is 64-bit and does not use varargs, floats in the first 4 args don't get put into the
+integer registers. So, we can pull the correct arguments with matching prototypes, then pass them to the
+varargs syscall where they get handled properly.
+*/
 // struct with lambdas that call QMM's syscall function. this is given to the mod
 static game_import_t qmm_import = {
 	0, // tick_rate
@@ -80,7 +58,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Com_Print, G_COM_PRINT),
 	GEN_IMPORT(Client_Print, G_CLIENT_PRINT),
 	GEN_IMPORT(Center_Print, G_CENTERPRINT),
-	s_syscall_sound, // GEN_IMPORT(sound, G_SOUND),
+	+[](edict_t* arg0, soundchan_t arg1, int arg2, float arg3, float arg4, float arg5) { syscall(G_SOUND, arg0, arg1, arg2, arg3, arg4, arg5); },	// GEN_IMPORT(sound, G_SOUND),	
 	GEN_IMPORT(positioned_sound, G_POSITIONED_SOUND),
 	GEN_IMPORT(local_sound, G_LOCAL_SOUND),
 	GEN_IMPORT(configstring, G_CONFIGSTRING),
@@ -106,11 +84,11 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(WriteByte, G_MSG_WRITEBYTE),
 	GEN_IMPORT(WriteShort, G_MSG_WRITESHORT),
 	GEN_IMPORT(WriteLong, G_MSG_WRITELONG),
-	GEN_IMPORT(WriteFloat, G_MSG_WRITEFLOAT),
+	+[](float arg0) { syscall(G_MSG_WRITEFLOAT, arg0); },	// GEN_IMPORT(WriteFloat, G_MSG_WRITEFLOAT),
 	GEN_IMPORT(WriteString, G_MSG_WRITESTRING),
 	GEN_IMPORT(WritePosition, G_MSG_WRITEPOSITION),
 	GEN_IMPORT(WriteDir, G_MSG_WRITEDIR),
-	GEN_IMPORT(WriteAngle, G_MSG_WRITEANGLE),
+	+[](float arg0) { syscall(G_MSG_WRITEANGLE, arg0); },	// GEN_IMPORT(WriteAngle, G_MSG_WRITEANGLE),
 	GEN_IMPORT(WriteEntity, G_MSG_WRITEENTITY),
 	GEN_IMPORT(TagMalloc, G_TAGMALLOC),
 	GEN_IMPORT(TagFree, G_TAGFREE),
@@ -122,7 +100,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(argv, G_ARGV),
 	GEN_IMPORT(args, G_ARGS),
 	GEN_IMPORT(AddCommandString, G_ADDCOMMANDSTRING),
-	GEN_IMPORT(DebugGraph, G_DEBUGGRAPH),
+	+[](float arg0, int arg1) { syscall(G_DEBUGGRAPH, arg0, arg1); },	//GEN_IMPORT(DebugGraph, G_DEBUGGRAPH),
 	GEN_IMPORT(GetExtension, G_GET_EXTENSION),
 	GEN_IMPORT(Bot_RegisterEdict, G_BOT_REGISTEREDICT),
 	GEN_IMPORT(Bot_UnRegisterEdict, G_BOT_UNREGISTEREDICT),
@@ -130,16 +108,16 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Bot_FollowActor, G_BOT_FOLLOWACTOR),
 	GEN_IMPORT(GetPathToGoal, G_GETPATHTOGOAL),
 	GEN_IMPORT(Loc_Print, G_LOC_PRINT),
-	GEN_IMPORT(Draw_Line, G_DRAW_LINE),
-	GEN_IMPORT(Draw_Point, G_DRAW_POINT),
-	GEN_IMPORT(Draw_Circle, G_DRAW_CIRCLE),
-	GEN_IMPORT(Draw_Bounds, G_DRAW_BOUNDS),
-	GEN_IMPORT(Draw_Sphere, G_DRAW_SPHERE),
-	GEN_IMPORT(Draw_OrientedWorldText, G_DRAW_ORIENTEDWORLDTEXT),
+	+[](gvec3_cref_t arg0, gvec3_cref_t arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_LINE, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Line, G_DRAW_LINE),
+	+[](gvec3_cref_t arg0, float arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_POINT, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Point, G_DRAW_POINT),
+	+[](gvec3_cref_t arg0, float arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_CIRCLE, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Circle, G_DRAW_CIRCLE),
+	+[](gvec3_cref_t arg0, gvec3_cref_t arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_BOUNDS, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Bounds, G_DRAW_BOUNDS),
+	+[](gvec3_cref_t arg0, float arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_SPHERE, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Sphere, G_DRAW_SPHERE),
+	+[](gvec3_cref_t arg0, const char* arg1, const rgba_t& arg2, float arg3, float arg4, bool arg5) { syscall(G_DRAW_ORIENTEDWORLDTEXT, arg0, arg1, arg2, arg3, arg4, arg5); },	// GEN_IMPORT(Draw_OrientedWorldText, G_DRAW_ORIENTEDWORLDTEXT),
 	GEN_IMPORT(Draw_StaticWorldText, G_DRAW_STATICWORLDTEXT),
-	GEN_IMPORT(Draw_Cylinder, G_DRAW_CYLINDER),
-	GEN_IMPORT(Draw_Ray, G_DRAW_RAY),
-	GEN_IMPORT(Draw_Arrow, G_DRAW_ARROW),
+	+[](gvec3_cref_t arg0, float arg1, float arg2, const rgba_t& arg3, float arg4, bool arg5) { syscall(G_DRAW_CYLINDER, arg0, arg1, arg2, arg3, arg4, arg5); }, // GEN_IMPORT(Draw_Cylinder, G_DRAW_CYLINDER),
+	+[](gvec3_cref_t arg0, gvec3_cref_t arg1, float arg2, float arg3, const rgba_t& arg4, float arg5, bool arg6) { syscall(G_DRAW_RAY, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }, // GEN_IMPORT(Draw_Ray, G_DRAW_RAY),
+	+[](gvec3_cref_t arg0, gvec3_cref_t arg1, float arg2, const rgba_t& arg3, const rgba_t& arg4, float arg5, bool arg6) { syscall(G_DRAW_ARROW, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }, // GEN_IMPORT(Draw_Arrow, G_DRAW_ARROW),
 	GEN_IMPORT(ReportMatchDetails_Multicast, G_REPORTMATCHDETAILS_MULTICAST),
 	GEN_IMPORT(ServerFrame, G_SERVER_FRAME),
 	GEN_IMPORT(SendToClipBoard, G_SENDTOCLIPBOARD),
