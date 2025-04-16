@@ -81,12 +81,11 @@ void mod_unload(mod_t& mod) {
 static intptr_t s_mod_vmmain(intptr_t cmd, ...) {
 	// if qvm isn't loaded, we need to error
 	if (!g_mod.qvm.memory) {
-		// G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so skip if the message is GAME_SHUTDOWN as that will just recurse
-		// SOF2MP 10 = GAME_GHOUL_SHUTDOWN which also gets called from G_ERROR. skip to prevent recursion
-		if (cmd == QMM_GAME_SHUTDOWN || (!strcmp(g_gameinfo.game->gamename_short, "SOF2MP") && cmd == 10))
-			return 0;
-		LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", g_gameinfo.game->mod_msg_names(cmd));
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded due to a run-time error.\n=========\n");
+		if (!g_shutdown) {
+			g_shutdown = true;
+			LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", g_gameinfo.game->mod_msg_names(cmd));
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded due to a run-time error.\n=========\n");
+		}
 		return 0;
 	}
 

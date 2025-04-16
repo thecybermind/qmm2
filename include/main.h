@@ -49,11 +49,12 @@ extern game_info_t g_gameinfo;
 
 #define ENG_SYSCALL	g_gameinfo.pfnsyscall
 
-// these are used if we couldn't determine a game engine and we have to fail.
-// G_ERROR and GAME_SHUTDOWN appear to be 1 in all supported dllEntry games.
-// they are different in GetGameAPI games, but for those we just return nullptr from GetGameAPI
+// this is used if we couldn't determine a game engine and we have to fail.
+// G_ERROR appears to be 1 in all supported dllEntry games. they are different in some GetGameAPI games,
+// but for those we just return nullptr from GetGameAPI
 constexpr int QMM_FAIL_G_ERROR = 1;
-constexpr int QMM_FAIL_GAME_SHUTDOWN = 1;
+// set to true if a G_ERROR has been triggered, to avoid calling it again from GAME_SHUTDOWN or its ilk (SOF2MP's GAME_GHOUL2_SHUTDOWN, etc)
+extern bool g_shutdown;
 
 // these are not needed to be prototyped, as they aren't referenced by anything. this also stops
 // errors in GetGameAPI game source files (e.g. game_mohaa.cpp) since the game headers define

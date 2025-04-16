@@ -25,6 +25,7 @@ Created By:
 #include "version.h"
 
 game_info_t g_gameinfo;
+bool g_shutdown = false;
 
 static void s_main_detect_env();
 static void s_main_load_config(bool quiet = false);
@@ -34,8 +35,6 @@ static void s_main_load_plugin(std::string plugin_path);
 static intptr_t s_main_handle_command_qmm(int arg_inc);
 static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args);
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
-
-static bool s_QMM_initialized = false;
 
 /* About overall control flow:
    syscall (mod->engine) call flow for QVM mods only:
@@ -237,10 +236,10 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
 	// couldn't load engine info, so we will just call syscall(G_ERROR) to exit
 	if (!g_gameinfo.game) {
-		// calling G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't send G_ERROR in GAME_SHUTDOWN or it'll just recurse
-		// 10 in SOF2MP is GAME_GHOUL_SHUTDOWN which also gets called from G_ERROR
-		if (cmd != QMM_FAIL_GAME_SHUTDOWN && cmd != 10)
+		if (!g_shutdown) {
+			g_shutdown = true;
 			ENG_SYSCALL(QMM_FAIL_G_ERROR, "\n\n=========\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n=========\n");
+		}
 		return 0;
 	}
 
