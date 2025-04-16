@@ -238,7 +238,8 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	// couldn't load engine info, so we will just call syscall(G_ERROR) to exit
 	if (!g_gameinfo.game) {
 		// calling G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't send G_ERROR in GAME_SHUTDOWN or it'll just recurse
-		if (cmd != QMM_FAIL_GAME_SHUTDOWN)
+		// 10 in SOF2MP is GAME_GHOUL_SHUTDOWN which also gets called from G_ERROR
+		if (cmd != QMM_FAIL_GAME_SHUTDOWN && cmd != 10)
 			ENG_SYSCALL(QMM_FAIL_G_ERROR, "\n\n=========\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n=========\n");
 		return 0;
 	}
@@ -577,11 +578,12 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 		if (g_mod.vmbase) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM file size: {}\n", g_mod.qvm.filesize).c_str());
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM op count: {}\n", g_mod.qvm.header.numops).c_str());
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory offset: {}\n", (void*)g_mod.qvm.memory).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory base: {}\n", (void*)g_mod.qvm.memory).c_str());
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory size: {}\n", g_mod.qvm.memorysize).c_str());
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM codeseg size: {}\n", g_mod.qvm.codeseglen).c_str());
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM dataseg size: {}\n", g_mod.qvm.dataseglen).c_str());
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM stack size: {}\n", g_mod.qvm.stackseglen).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM data validation: {}\n", g_mod.qvm.verify_data ? "on" : "off").c_str());
 		}
 		else {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Mod vmMain() offset: {}\n", (void*)g_mod.pfnvmMain).c_str());

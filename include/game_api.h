@@ -61,11 +61,14 @@ typedef struct {
 	const char* qvmname;				// default qvm mod filename (NULL = qmm_<dllname>)
 	const char* moddir;					// default moddir name
 	const char* gamename_long;			// long, descriptive, game name
+
+	// this section is made by GEN_INFO(GAME)
 	const char* gamename_short;			// short initials for game
 	int* qmm_eng_msgs;					// array of engine messages used by QMM
 	int* qmm_mod_msgs;					// array of mod messages used by QMM
 	msgname_t eng_msg_names;			// pointer to a function that returns a string for a given engine message
 	msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
+
 	vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
 	apientry_t apientry;				// pointer to a function that handles GetGameAPI entry for a game
 	int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)

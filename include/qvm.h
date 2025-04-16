@@ -129,10 +129,12 @@ typedef struct {
 
 	// syscall
 	vmsyscall_t vmsyscall;		// e.g. Q3A_vmsyscall function from game_q3a.cpp
+
+	bool verify_data;			// verify data access is inside the memory block
 } qvm_t;
 
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t& qvm, std::byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize);
+bool qvm_load(qvm_t& qvm, std::byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data);
 void qvm_unload(qvm_t& qvm);
 int qvm_exec(qvm_t& qvm, int argc, int* argv);
 

@@ -157,7 +157,7 @@ bool plugin_load(plugin_t& p, std::string file) {
 	p.path = file;
 	return true;
 
-	fail:
+fail:
 	plugin_unload(p);
 	return false;
 }

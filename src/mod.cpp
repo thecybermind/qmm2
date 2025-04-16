@@ -23,8 +23,9 @@ mod_t g_mod;
 
 static intptr_t s_mod_vmmain(intptr_t cmd, ...);
 static bool s_mod_load_qvm(mod_t& mod);
-static bool s_mod_load_getgameapi(mod_t& mod);
 static bool s_mod_load_vmmain(mod_t& mod);
+static bool s_mod_load_getgameapi(mod_t& mod);
+
 
 bool mod_load(mod_t& mod, std::string file) {
 	// if this mod_t somehow already has a dll or qvm pointer, wipe it first
@@ -65,6 +66,7 @@ bool mod_load(mod_t& mod, std::string file) {
 	return false;
 }
 
+
 void mod_unload(mod_t& mod) {
 	if (mod.qvm.memory)
 		qvm_unload(mod.qvm);
@@ -74,15 +76,17 @@ void mod_unload(mod_t& mod) {
 	g_gameinfo.api_info.orig_export = nullptr;
 }
 
+
 // entry point to store in mod_t->pfnvmMain for qvm mods
 static intptr_t s_mod_vmmain(intptr_t cmd, ...) {
 	// if qvm isn't loaded, we need to error
 	if (!g_mod.qvm.memory) {
-		// G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so don't do this if the message is GAME_SHUTDOWN as that will just recurse
-		if (cmd != QMM_GAME_SHUTDOWN) {
-			LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", cmd);
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded due to a run-time error.\n=========\n");
-		}
+		// G_ERROR triggers a vmMain(GAME_SHUTDOWN) call, so skip if the message is GAME_SHUTDOWN as that will just recurse
+		// SOF2MP 10 = GAME_GHOUL_SHUTDOWN which also gets called from G_ERROR. skip to prevent recursion
+		if (cmd == QMM_GAME_SHUTDOWN || (!strcmp(g_gameinfo.game->gamename_short, "SOF2MP") && cmd == 10))
+			return 0;
+		LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", g_gameinfo.game->mod_msg_names(cmd));
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded due to a run-time error.\n=========\n");
 		return 0;
 	}
 
@@ -98,14 +102,16 @@ static intptr_t s_mod_vmmain(intptr_t cmd, ...) {
 	return qvm_exec(g_mod.qvm, QMM_MAX_VMMAIN_ARGS + 1, qvmargs);
 }
 
+
 // load a QVM mod
 static bool s_mod_load_qvm(mod_t& mod) {
 	int fpk3;
 	int filelen;
 	std::byte* filemem;
 	int stacksize;
+	bool verify_data;
 	bool loaded;
-	
+
 	// load file using engine functions to read into pk3s if necessary
 	filelen = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], mod.path.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
 	if (filelen <= 0) {
@@ -124,8 +130,15 @@ static bool s_mod_load_qvm(mod_t& mod) {
 	// load stack size from config
 	stacksize = cfg_get_int(g_cfg, "stacksize", 1);
 
+	// get data verification setting from config
+	verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
+
+	// disable data verification for SOF2MP
+	if (!strcmp(g_gameinfo.game->gamename_short, "SOF2MP"))
+		verify_data = false;
+
 	// attempt to load mod
-	loaded = qvm_load(mod.qvm, filemem, filelen, g_gameinfo.game->vmsyscall, stacksize);
+	loaded = qvm_load(mod.qvm, filemem, filelen, g_gameinfo.game->vmsyscall, stacksize, verify_data);
 	qvm_free(filemem); // free regardless of qvm_load success
 	if (!loaded) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", mod.path);
@@ -137,10 +150,11 @@ static bool s_mod_load_qvm(mod_t& mod) {
 
 	return true;
 
-	fail:
+fail:
 	mod_unload(mod);
 	return false;
 }
+
 
 // load a GetGameAPI DLL mod
 static bool s_mod_load_getgameapi(mod_t& mod) {
@@ -168,7 +182,7 @@ static bool s_mod_load_getgameapi(mod_t& mod) {
 
 	return true;
 
-	fail:
+fail:
 	mod_unload(mod);
 	return false;
 }
@@ -195,7 +209,7 @@ static bool s_mod_load_vmmain(mod_t& mod) {
 
 	return true;
 
-	fail:
+fail:
 	mod_unload(mod);
 	return false;
 }

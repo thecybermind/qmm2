@@ -7,10 +7,12 @@
 	
 	"plugins": [
 		"qmmaddons/plugin1/plugin1_qmm.dll",
-		"qmmaddons/plugin2/plugin2_qmm.dll"
+		// "qmmaddons/plugin2/plugin2_qmm.dll"
 	],
 	
 	"qvmstacksize": 1,
+	
+	"qvmverifydata": true,
 
 	"loglevel": "",
 }
