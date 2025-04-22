@@ -82,7 +82,7 @@ BEGIN
             VALUE "FileDescription", "qmm2 " QMM_OS " " QMM_ARCH "\0"
             VALUE "FileVersion", QMM_VERSION "\0"
             VALUE "InternalName", "qmm2\0"
-            VALUE "LegalCopyright", "Copyright 2004-?\0"
+            VALUE "LegalCopyright", "Copyright 2004-2025\0"
             VALUE "LegalTrademarks", "Quake 3 is a trademark of id Software\0"
             VALUE "OriginalFilename", "qmm2.dll\0"
             VALUE "ProductName", "qmm2\0"
