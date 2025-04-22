@@ -15,6 +15,8 @@ Created By: Kevin Masterson < cybermind@gmail.com >
 
 It supports native DLL/SO mods as well as [QVM](https://github.com/thecybermind/qmm2/wiki/QVM) mods with a complete built-in bytecode virtual machine interpreter.
 
+See what games QMM supports on the [Game Support wiki page](https://github.com/thecybermind/qmm2/wiki/Game-support).
+
 Check out some plugins at the [Plugin List wiki page](https://github.com/thecybermind/qmm2/wiki/Plugin-List).
 
 ***For the latest installation documentation, please see the [GitHub project wiki](https://github.com/thecybermind/qmm2/wiki/Installation).***
