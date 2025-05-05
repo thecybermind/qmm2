@@ -9,6 +9,10 @@ Created By:
 
 */
 
+// AFAIK Quake 2 Remastered is only available on 64-bit Windows, so skip the whole file otherwise.
+// The game entry in game_api is similarly conditionally compiled.
+#if defined(_WIN64)
+
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
 #include <stdio.h>
@@ -34,20 +38,21 @@ static game_export_t* orig_export = nullptr;
 
 
 /*
-The sound() import gets messed up because the volume float arg doesn't get passed properly. Server-generated
-sound (i.e. anything from the world like item pickup or another player attacking) would be silent. After
-debugging, the volume argument would appear to come through as ~1e-19 or something else exceptionally small.
-Assigning qmm_import.sound=orig_import.sound would resolve the issue (but obviously not allow for plugin hooking).
-It turns out the problem is the float arguments and the GEN_IMPORT macro using intptr_t.
+   The sound() import gets messed up because the volume float arg doesn't get passed properly. Server-generated
+   sound (i.e. anything from the world like item pickup or another player attacking) would be silent. After
+   debugging, the volume argument would appear to come through as ~1e-19 or something exceptionally small.
+   Assigning qmm_import.sound=orig_import.sound would resolve the issue but obviously not allow for plugin hooking.
+   turns out the problem is the float arguments and the GEN_IMPORT macro using intptr_t.
 
-From: https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention#parameter-passing
-"Any floating-point and double-precision arguments in the first four parameters are passed in XMM0 - XMM3,
-depending on position. Floating-point values are only placed in the integer registers RCX, RDX, R8, and R9
-when there are varargs arguments."
+   From: https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention#parameter-passing
+   "Any floating-point and double-precision arguments in the first four parameters are passed in XMM0 - XMM3,
+   depending on position. Floating-point values are only placed in the integer registers RCX, RDX, R8, and R9
+   when there are varargs arguments."
 
-Since the Q2R engine is 64-bit and does not use varargs, floats in the first 4 args don't get put into the
-integer registers. So, we can pull the correct arguments with matching prototypes, then pass them to the
-varargs syscall where they get handled properly.
+   Since the Q2R engine is 64-bit and does not use varargs, floats in the first 4 args don't get put into the
+   integer registers. Everything after 4 arguments are passed on the stack in 8-byte-aligned slots. So, we can
+   pull the correct arguments with matching prototypes, then pass them to the varargs syscall where they get
+   handled properly.
 */
 // struct with lambdas that call QMM's syscall function. this is given to the mod
 static game_import_t qmm_import = {
@@ -613,3 +618,5 @@ const char* Q2R_mod_msg_names(intptr_t cmd) {
 		return "unknown";
 	}
 }
+
+#endif // _WIN64
