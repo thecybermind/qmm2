@@ -404,4 +404,5 @@ enum {
 enum {
 	G_SEND_CONSOLE_COMMAND = -100,
 };
+
 #endif // __QMM2_GAME_STEF2_H__

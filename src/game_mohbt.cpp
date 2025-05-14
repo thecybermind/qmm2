@@ -30,6 +30,7 @@ static game_import_t orig_import;
 // a copy of the original export struct pointer that comes from the mod. this is given to plugins
 static game_export_t* orig_export = nullptr;
 
+
 // struct with lambdas that call QMM's syscall function. this is given to the mod
 static game_import_t qmm_import = {
 	GEN_IMPORT(Printf, G_PRINTF),
@@ -210,6 +211,7 @@ static game_import_t qmm_import = {
 	nullptr,	//fsDebug
 };
 
+
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
@@ -256,6 +258,7 @@ static game_export_t qmm_export = {
 	0,			// max_entities
 	nullptr,	// errorMessage
 };
+
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
@@ -506,6 +509,7 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
 	return ret;
 }
 
+
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 intptr_t MOHBT_vmMain(intptr_t cmd, ...) {
@@ -584,6 +588,7 @@ intptr_t MOHBT_vmMain(intptr_t cmd, ...) {
 	return ret;
 }
 
+
 void* MOHBT_GetGameAPI(void* import) {
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHBT_GetGameAPI({}) called\n", import);
 
@@ -619,6 +624,7 @@ void* MOHBT_GetGameAPI(void* import) {
 	// the only thing in this struct the engine uses before calling Init is the apiversion
 	return &qmm_export;
 }
+
 
 const char* MOHBT_eng_msg_names(intptr_t cmd) {
 	switch (cmd) {
@@ -804,6 +810,7 @@ const char* MOHBT_eng_msg_names(intptr_t cmd) {
 			return "unknown";
 	}
 }
+
 
 const char* MOHBT_mod_msg_names(intptr_t cmd) {
 	switch (cmd) {

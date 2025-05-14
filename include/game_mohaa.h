@@ -247,6 +247,7 @@ enum {
 	G_FS_FCLOSE_FILE_QMM,
 };
 
+// we need to store FILE* in fileHandle_t
 #if defined(_WIN64) || defined(__LP64__)
 #define fileHandle_t intptr_t
 #endif

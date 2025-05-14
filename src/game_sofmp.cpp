@@ -18,6 +18,7 @@ Created By:
 
 GEN_QMM_MSGS(SOF2MP);
 
+
 const char* SOF2MP_eng_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(G_PRINT);
@@ -285,6 +286,7 @@ const char* SOF2MP_eng_msg_names(intptr_t cmd) {
 			return "unknown";
 	}
 }
+
 
 const char* SOF2MP_mod_msg_names(intptr_t cmd) {
 	switch(cmd) {

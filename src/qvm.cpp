@@ -17,6 +17,7 @@ Created By:
 
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start = nullptr, void* end = nullptr);
 
+
 bool qvm_load(qvm_t& qvm, std::byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data) {
 	if (qvm.memory || !filemem || !filelen || !vmsyscall)
 		return false;
@@ -151,10 +152,12 @@ fail:
 	return false;
 }
 
+
 void qvm_unload(qvm_t& qvm) {
 	qvm_free(qvm.memory);
 	qvm = qvm_t();
 }
+
 
 int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 	if (!qvm.memory)
@@ -638,6 +641,7 @@ fail:
 	return 0;
 }
 
+
 // return a string name for the VM opcode
 const char* opcodename[] = {
 	"OP_UNDEF",
@@ -702,14 +706,17 @@ const char* opcodename[] = {
 	"OP_CVFI"
 };
 
+
 // easier to change allocation later
 void* qvm_malloc(size_t len) {
 	return malloc(len);
 }
 
+
 void qvm_free(void* ptr) {
 	free(ptr);
 }
+
 
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start, void* end) {
 	if (!qvm.memory)

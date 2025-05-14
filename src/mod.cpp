@@ -186,6 +186,7 @@ fail:
 	return false;
 }
 
+
 // load a vmMain DLL mod
 static bool s_mod_load_vmmain(mod_t& mod) {
 	mod_dllEntry_t dllEntry = nullptr;

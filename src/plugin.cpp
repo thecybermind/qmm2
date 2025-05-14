@@ -44,6 +44,7 @@ static pluginfuncs_t s_pluginfuncs = {
 	s_plugin_helper_InfoValueForKey
 };
 
+
 static pluginvars_t s_pluginvars = {
 	0,	// vmbase, set in plugin_load
 	&g_api_return
@@ -52,6 +53,7 @@ static pluginvars_t s_pluginvars = {
 pluginres_t g_plugin_result = QMM_UNUSED;
 intptr_t g_api_return = 0;
 std::vector<plugin_t> g_plugins;
+
 
 const char* plugin_result_to_str(pluginres_t res) {
 	switch (res) {
@@ -64,6 +66,7 @@ const char* plugin_result_to_str(pluginres_t res) {
 			return "unknown";
 	};
 }
+
 
 bool plugin_load(plugin_t& p, std::string file) {
 	// if this plugin_t somehow already has a dll pointer, wipe it first
@@ -162,6 +165,7 @@ fail:
 	return false;
 }
 
+
 void plugin_unload(plugin_t& p) {
 	if (p.dll) {
 		if (p.QMM_Detach)
@@ -172,11 +176,13 @@ void plugin_unload(plugin_t& p) {
 	p = plugin_t();
 }
 
+
 static void s_plugin_helper_WriteQMMLog(const char* text, int severity, const char* tag) {
 	if (severity < QMM_LOG_TRACE || severity > QMM_LOG_FATAL)
 		severity = QMM_LOG_INFO;
 	LOG(severity, tag) << text;
 }
+
 
 static char* s_plugin_helper_VarArgs(const char* format, ...) {
 	va_list	argptr;
@@ -192,17 +198,21 @@ static char* s_plugin_helper_VarArgs(const char* format, ...) {
 	return str[index];
 }
 
+
 static int s_plugin_helper_IsQVM() {
 	return g_mod.vmbase != 0;
 }
+
 
 static const char* s_plugin_helper_EngMsgName(intptr_t msg) {
 	return g_gameinfo.game->eng_msg_names(msg);
 }
 
+
 static const char* s_plugin_helper_ModMsgName(intptr_t msg) {
 	return g_gameinfo.game->mod_msg_names(msg);
 }
+
 
 static intptr_t s_plugin_helper_GetIntCvar(const char* cvar) {
 	if (!cvar || !*cvar)
@@ -210,6 +220,7 @@ static intptr_t s_plugin_helper_GetIntCvar(const char* cvar) {
 
 	return ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_INTEGER_VALUE], cvar);
 }
+
 
 #define MAX_CVAR_LEN	1024	// most common cvar buffer size in SDK when calling G_CVAR_VARIABLE_STRING_BUFFER
 // this uses a cycling array of strings so the return value does not need to be stored locally
@@ -226,13 +237,16 @@ static const char* s_plugin_helper_GetStrCvar(const char* cvar) {
 	return str[index];
 }
 
+
 static const char* s_plugin_helper_GetGameEngine() {
 	return g_gameinfo.game->gamename_short;
 }
 
+
 static void s_plugin_helper_Argv(intptr_t argn, char* buf, intptr_t buflen) {
 	qmm_argv(argn, buf, buflen);
 }
+
 
 // same as the SDK's Info_ValueForKey function
 static const char* s_plugin_helper_InfoValueForKey(const char* userinfo, const char* key) {

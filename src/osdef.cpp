@@ -32,6 +32,7 @@ const char* dlerror() {
 
 #endif
 
+
 void* osdef_path_get_modulehandle(void* ptr) {
 	void* handle = nullptr;
 
@@ -53,6 +54,7 @@ void* osdef_path_get_modulehandle(void* ptr) {
 #endif
 	return handle;
 }
+
 
 const char* osdef_path_get_modulepath(void* ptr) {
 	static char path[PATH_MAX] = "";
@@ -78,6 +80,7 @@ const char* osdef_path_get_modulepath(void* ptr) {
 #endif
 	return path;
 }
+
 
 const char* osdef_path_get_procpath() {
 	static char path[PATH_MAX] = "";

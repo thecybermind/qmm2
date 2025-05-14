@@ -33,6 +33,7 @@ std::string path_normalize(std::string path) {
 	return path;
 }
 
+
 std::string path_dirname(std::string path) {
 	auto pos = path.find_last_of("/\\");
 	if (pos == std::string::npos)
@@ -42,12 +43,14 @@ std::string path_dirname(std::string path) {
 	return path.substr(0, pos);
 }
 
+
 std::string path_basename(std::string path) {
 	auto pos = path.find_last_of("/\\");
 	if (pos == std::string::npos)
 		return path;
 	return path.substr(pos + 1);
 }
+
 
 std::string path_baseext(std::string path) {
 	std::string base = path_basename(path);
@@ -56,6 +59,7 @@ std::string path_baseext(std::string path) {
 		return base;
 	return base.substr(pos + 1);
 }
+
 
 bool path_is_relative(std::string path) {
 	// \\dir\file
@@ -77,13 +81,16 @@ bool path_is_relative(std::string path) {
 	return true;
 }
 
+
 std::string path_get_modulepath(void* ptr) {
 	return ptr ? osdef_path_get_modulepath(ptr) : osdef_path_get_procpath();
 }
 
+
 void* path_get_modulehandle(void* ptr) {
 	return osdef_path_get_modulehandle(ptr);
 }
+
 
 void path_mkdir(std::string path) {
 	int i = 1; // start after a possible "/"
@@ -105,6 +112,7 @@ void path_mkdir(std::string path) {
 	(void)mkdir(path.c_str(), S_IRWXU);
 }
 
+
 int str_stristr(std::string haystack, std::string needle) {
 	for (auto& c : haystack)
 		c = (char)std::tolower((unsigned char)c);
@@ -113,6 +121,7 @@ int str_stristr(std::string haystack, std::string needle) {
 
 	return haystack.find(needle) != std::string::npos;
 }
+
 
 int str_stricmp(std::string s1, std::string s2) {
 	for (auto& c : s1)
@@ -123,9 +132,11 @@ int str_stricmp(std::string s1, std::string s2) {
 	return s1.compare(s2);
 }
 
+
 int str_striequal(std::string s1, std::string s2) {
 	return str_stricmp(s1, s2) == 0;
 }
+
 
 // get a given argument with G_ARGV, based on game engine type
 void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
