@@ -147,6 +147,16 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 // handle calls from engine or mod into QMM
 #define GEN_IMPORT(field, cmd)	(decltype(qmm_import. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8, intptr_t arg9, intptr_t arg10, intptr_t arg11, intptr_t arg12, intptr_t arg13, intptr_t arg14, intptr_t arg15, intptr_t arg16) { return syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
 #define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { return vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
+// if the lambda types matter (e.g. floats in 64-bit games like Q2R), use these
+// macros to easily generate a lambda with full return and argument type information
+#define GEN_IMPORT_0(cmd, typeret) (+[]() -> typeret { return (typeret)syscall(cmd); } )
+#define GEN_IMPORT_1(cmd, typeret, type0) (+[](type0 arg0) -> typeret { return (typeret)syscall(cmd, arg0); } )
+#define GEN_IMPORT_2(cmd, typeret, type0, type1) (+[](type0 arg0, type1 arg1) -> typeret { return (typeret)syscall(cmd, arg0, arg1); } )
+#define GEN_IMPORT_3(cmd, typeret, type0, type1, type2) (+[](type0 arg0, type1 arg1, type2 arg2) -> typeret { return (typeret)syscall(cmd, arg0, arg1, arg2); } )
+#define GEN_IMPORT_4(cmd, typeret, type0, type1, type2, type3) (+[](type0 arg0, type1 arg1, type2 arg2, type3 arg3) -> typeret { return (typeret)syscall(cmd, arg0, arg1, arg2, arg3); } )
+#define GEN_IMPORT_5(cmd, typeret, type0, type1, type2, type3, type4) (+[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4) -> typeret { return (typeret)syscall(cmd, arg0, arg1, arg2, arg3, arg4); } )
+#define GEN_IMPORT_6(cmd, typeret, type0, type1, type2, type3, type4, type5) (+[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) -> typeret { return (typeret)syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5); } )
+#define GEN_IMPORT_7(cmd, typeret, type0, type1, type2, type3, type4, type5, type6) (+[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6) -> typeret { return (typeret)syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6); } )
 
 // ---------------------
 // ----- QVM stuff -----

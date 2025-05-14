@@ -63,7 +63,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Com_Print, G_COM_PRINT),
 	GEN_IMPORT(Client_Print, G_CLIENT_PRINT),
 	GEN_IMPORT(Center_Print, G_CENTERPRINT),
-	+[](edict_t* arg0, soundchan_t arg1, int arg2, float arg3, float arg4, float arg5) { syscall(G_SOUND, arg0, arg1, arg2, arg3, arg4, arg5); },	// GEN_IMPORT(sound, G_SOUND),	
+	GEN_IMPORT_6(G_SOUND, void, edict_t*, soundchan_t, int, float, float, float), // +[](edict_t* arg0, soundchan_t arg1, int arg2, float arg3, float arg4, float arg5) { syscall(G_SOUND, arg0, arg1, arg2, arg3, arg4, arg5); },	// GEN_IMPORT(sound, G_SOUND),	
 	GEN_IMPORT(positioned_sound, G_POSITIONED_SOUND),
 	GEN_IMPORT(local_sound, G_LOCAL_SOUND),
 	GEN_IMPORT(configstring, G_CONFIGSTRING),
@@ -89,11 +89,11 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(WriteByte, G_MSG_WRITEBYTE),
 	GEN_IMPORT(WriteShort, G_MSG_WRITESHORT),
 	GEN_IMPORT(WriteLong, G_MSG_WRITELONG),
-	+[](float arg0) { syscall(G_MSG_WRITEFLOAT, arg0); },	// GEN_IMPORT(WriteFloat, G_MSG_WRITEFLOAT),
+	GEN_IMPORT_1(G_MSG_WRITEFLOAT, void, float), // +[](float arg0) { syscall(G_MSG_WRITEFLOAT, arg0); },	// GEN_IMPORT(WriteFloat, G_MSG_WRITEFLOAT),
 	GEN_IMPORT(WriteString, G_MSG_WRITESTRING),
 	GEN_IMPORT(WritePosition, G_MSG_WRITEPOSITION),
 	GEN_IMPORT(WriteDir, G_MSG_WRITEDIR),
-	+[](float arg0) { syscall(G_MSG_WRITEANGLE, arg0); },	// GEN_IMPORT(WriteAngle, G_MSG_WRITEANGLE),
+	GEN_IMPORT_1(G_MSG_WRITEANGLE, void, float), // +[](float arg0) { syscall(G_MSG_WRITEANGLE, arg0); },	// GEN_IMPORT(WriteAngle, G_MSG_WRITEANGLE),
 	GEN_IMPORT(WriteEntity, G_MSG_WRITEENTITY),
 	GEN_IMPORT(TagMalloc, G_TAGMALLOC),
 	GEN_IMPORT(TagFree, G_TAGFREE),
@@ -105,7 +105,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(argv, G_ARGV),
 	GEN_IMPORT(args, G_ARGS),
 	GEN_IMPORT(AddCommandString, G_ADDCOMMANDSTRING),
-	+[](float arg0, int arg1) { syscall(G_DEBUGGRAPH, arg0, arg1); },	//GEN_IMPORT(DebugGraph, G_DEBUGGRAPH),
+	GEN_IMPORT_2(G_DEBUGGRAPH, void, float, int), // +[](float arg0, int arg1) { syscall(G_DEBUGGRAPH, arg0, arg1); },	//GEN_IMPORT(DebugGraph, G_DEBUGGRAPH),
 	GEN_IMPORT(GetExtension, G_GET_EXTENSION),
 	GEN_IMPORT(Bot_RegisterEdict, G_BOT_REGISTEREDICT),
 	GEN_IMPORT(Bot_UnRegisterEdict, G_BOT_UNREGISTEREDICT),
@@ -113,16 +113,16 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Bot_FollowActor, G_BOT_FOLLOWACTOR),
 	GEN_IMPORT(GetPathToGoal, G_GETPATHTOGOAL),
 	GEN_IMPORT(Loc_Print, G_LOC_PRINT),
-	+[](gvec3_cref_t arg0, gvec3_cref_t arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_LINE, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Line, G_DRAW_LINE),
-	+[](gvec3_cref_t arg0, float arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_POINT, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Point, G_DRAW_POINT),
-	+[](gvec3_cref_t arg0, float arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_CIRCLE, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Circle, G_DRAW_CIRCLE),
-	+[](gvec3_cref_t arg0, gvec3_cref_t arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_BOUNDS, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Bounds, G_DRAW_BOUNDS),
-	+[](gvec3_cref_t arg0, float arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_SPHERE, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Sphere, G_DRAW_SPHERE),
-	+[](gvec3_cref_t arg0, const char* arg1, const rgba_t& arg2, float arg3, float arg4, bool arg5) { syscall(G_DRAW_ORIENTEDWORLDTEXT, arg0, arg1, arg2, arg3, arg4, arg5); },	// GEN_IMPORT(Draw_OrientedWorldText, G_DRAW_ORIENTEDWORLDTEXT),
+	GEN_IMPORT_5(G_DRAW_LINE, void, gvec3_cref_t, gvec3_cref_t, const rgba_t&, float, bool), // +[](gvec3_cref_t arg0, gvec3_cref_t arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_LINE, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Line, G_DRAW_LINE),
+	GEN_IMPORT_5(G_DRAW_POINT, void, gvec3_cref_t, float, const rgba_t&, float, bool), // +[](gvec3_cref_t arg0, float arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_POINT, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Point, G_DRAW_POINT),
+	GEN_IMPORT_5(G_DRAW_CIRCLE, void, gvec3_cref_t, float, const rgba_t&, float, bool), // +[](gvec3_cref_t arg0, float arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_CIRCLE, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Circle, G_DRAW_CIRCLE),
+	GEN_IMPORT_5(G_DRAW_BOUNDS, void, gvec3_cref_t, gvec3_cref_t, const rgba_t&, float, bool), // +[](gvec3_cref_t arg0, gvec3_cref_t arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_BOUNDS, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Bounds, G_DRAW_BOUNDS),
+	GEN_IMPORT_5(G_DRAW_SPHERE, void, gvec3_cref_t, float, const rgba_t&, float, bool), // +[](gvec3_cref_t arg0, float arg1, const rgba_t& arg2, float arg3, bool arg4) { syscall(G_DRAW_SPHERE, arg0, arg1, arg2, arg3, arg4); },	// GEN_IMPORT(Draw_Sphere, G_DRAW_SPHERE),
+	GEN_IMPORT_6(G_DRAW_ORIENTEDWORLDTEXT, void, gvec3_cref_t, const char*, const rgba_t&, float, float, bool), // +[](gvec3_cref_t arg0, const char* arg1, const rgba_t& arg2, float arg3, float arg4, bool arg5) { syscall(G_DRAW_ORIENTEDWORLDTEXT, arg0, arg1, arg2, arg3, arg4, arg5); },	// GEN_IMPORT(Draw_OrientedWorldText, G_DRAW_ORIENTEDWORLDTEXT),
 	GEN_IMPORT(Draw_StaticWorldText, G_DRAW_STATICWORLDTEXT),
-	+[](gvec3_cref_t arg0, float arg1, float arg2, const rgba_t& arg3, float arg4, bool arg5) { syscall(G_DRAW_CYLINDER, arg0, arg1, arg2, arg3, arg4, arg5); }, // GEN_IMPORT(Draw_Cylinder, G_DRAW_CYLINDER),
-	+[](gvec3_cref_t arg0, gvec3_cref_t arg1, float arg2, float arg3, const rgba_t& arg4, float arg5, bool arg6) { syscall(G_DRAW_RAY, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }, // GEN_IMPORT(Draw_Ray, G_DRAW_RAY),
-	+[](gvec3_cref_t arg0, gvec3_cref_t arg1, float arg2, const rgba_t& arg3, const rgba_t& arg4, float arg5, bool arg6) { syscall(G_DRAW_ARROW, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }, // GEN_IMPORT(Draw_Arrow, G_DRAW_ARROW),
+	GEN_IMPORT_6(G_DRAW_CYLINDER, void, gvec3_cref_t, float, float, const rgba_t&, float, bool), // +[](gvec3_cref_t arg0, float arg1, float arg2, const rgba_t& arg3, float arg4, bool arg5) { syscall(G_DRAW_CYLINDER, arg0, arg1, arg2, arg3, arg4, arg5); }, // GEN_IMPORT(Draw_Cylinder, G_DRAW_CYLINDER),
+	GEN_IMPORT_7(G_DRAW_RAY, void, gvec3_cref_t, gvec3_cref_t, float, float, const rgba_t&, float, bool), // +[](gvec3_cref_t arg0, gvec3_cref_t arg1, float arg2, float arg3, const rgba_t& arg4, float arg5, bool arg6) { syscall(G_DRAW_RAY, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }, // GEN_IMPORT(Draw_Ray, G_DRAW_RAY),
+	GEN_IMPORT_7(G_DRAW_ARROW, void, gvec3_cref_t, gvec3_cref_t, float, const rgba_t&, const rgba_t&, float, bool), // +[](gvec3_cref_t arg0, gvec3_cref_t arg1, float arg2, const rgba_t& arg3, const rgba_t& arg4, float arg5, bool arg6) { syscall(G_DRAW_ARROW, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }, // GEN_IMPORT(Draw_Arrow, G_DRAW_ARROW),
 	GEN_IMPORT(ReportMatchDetails_Multicast, G_REPORTMATCHDETAILS_MULTICAST),
 	GEN_IMPORT(ServerFrame, G_SERVER_FRAME),
 	GEN_IMPORT(SendToClipBoard, G_SENDTOCLIPBOARD),
@@ -130,6 +130,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Info_RemoveKey, G_INFO_REMOVEKEY),
 	GEN_IMPORT(Info_SetValueForKey, G_INFO_SETVALUEFORKEY),
 };
+
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 static game_export_t qmm_export = {
@@ -170,6 +171,7 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(Entity_IsVisibleToPlayer, GAME_ENTITY_ISVISIBLETOPLAYER),
 	GEN_EXPORT(GetShadowLightData, GAME_GETSHADOWLIGHTDATA),
 };
+
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
@@ -382,6 +384,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 	return ret;
 }
 
+
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 intptr_t Q2R_vmMain(intptr_t cmd, ...) {
@@ -452,6 +455,7 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 
 	return ret;
 }
+
 
 void* Q2R_GetGameAPI(void* import) {
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_GetGameAPI({}) called\n", import);
@@ -575,6 +579,7 @@ const char* Q2R_eng_msg_names(intptr_t cmd) {
 		return "unknown";
 	}
 }
+
 
 const char* Q2R_mod_msg_names(intptr_t cmd) {
 	switch (cmd) {
