@@ -93,7 +93,7 @@ void* path_get_modulehandle(void* ptr) {
 
 
 void path_mkdir(std::string path) {
-	int i = 1; // start after a possible "/"
+	unsigned int i = 1; // start after a possible "/"
 #ifdef _WIN32
 	// if this is an absolute path, start at the 3rd index (after "X:\")
 	if (path[1] == ':')

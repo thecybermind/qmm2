@@ -354,7 +354,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			void* buffer = (void*)args[0];
 			intptr_t len = args[1];
 			fileHandle_t f = (fileHandle_t)args[2];
-			fread(buffer, len, 1, (FILE*)f);
+			(void)fread(buffer, len, 1, (FILE*)f);
 			break;
 		}
 		case G_FS_WRITE: {
