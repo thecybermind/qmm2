@@ -247,7 +247,7 @@ enum {
 	G_FS_FCLOSE_FILE_QMM,
 };
 
-// we need to store FILE* in fileHandle_t
+// we need to store FILE* in fileHandle_t so change the underlying type
 #if defined(_WIN64) || defined(__LP64__)
 #define fileHandle_t intptr_t
 #endif
