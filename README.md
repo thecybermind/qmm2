@@ -11,6 +11,8 @@ Created By: Kevin Masterson < cybermind@gmail.com >
 
 **QMM** is a plugin manager for games based on the Quake 3 (and Quake 2!) engine. It functions similar to [Metamod](http://metamod.org/) for Half-Life and [Metamod:Source](https://www.sourcemm.net/) for the Source engine (Half-Life 2).
 
+Formerly located at `q3mm.org`, `planetquake.com/qmm`, and `sourceforge.net/projects/qmm`.
+
 [How it works](https://github.com/thecybermind/qmm2/wiki/How-QMM-works): It hooks communication between the server engine and the game logic (the mod). It allows for plugins to be loaded in-between which can add or change functionality without having to change the mod itself.
 
 It supports native DLL/SO mods as well as [QVM](https://github.com/thecybermind/qmm2/wiki/QVM) mods with a complete built-in bytecode virtual machine interpreter.
