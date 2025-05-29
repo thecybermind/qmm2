@@ -29,7 +29,7 @@ static bool s_mod_load_getgameapi(mod_t& mod);
 
 bool mod_load(mod_t& mod, std::string file) {
 	// if this mod_t somehow already has a dll or qvm pointer, wipe it first
-	if (mod.dll || mod.qvm.memory)
+	if (mod.dll || !mod.qvm.memory.empty())
 		mod_unload(mod);
 
 	mod.path = file;
@@ -68,8 +68,8 @@ bool mod_load(mod_t& mod, std::string file) {
 
 
 void mod_unload(mod_t& mod) {
-	if (mod.qvm.memory)
-		qvm_unload(mod.qvm);
+	// if (!mod.qvm.memory.empty())
+	qvm_unload(mod.qvm);
 	if (mod.dll)
 		dlclose(mod.dll);
 	mod = mod_t();
@@ -80,7 +80,7 @@ void mod_unload(mod_t& mod) {
 // entry point to store in mod_t->pfnvmMain for qvm mods
 static intptr_t s_mod_vmmain(intptr_t cmd, ...) {
 	// if qvm isn't loaded, we need to error
-	if (!g_mod.qvm.memory) {
+	if (g_mod.qvm.memory.empty()) {
 		if (!g_shutdown) {
 			g_shutdown = true;
 			LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded due to a run-time error\n", g_gameinfo.game->mod_msg_names(cmd));
@@ -106,7 +106,7 @@ static intptr_t s_mod_vmmain(intptr_t cmd, ...) {
 static bool s_mod_load_qvm(mod_t& mod) {
 	int fpk3;
 	int filelen;
-	std::byte* filemem;
+	std::vector<std::byte> filemem;
 	int stacksize;
 	bool verify_data;
 	bool loaded;
@@ -118,12 +118,15 @@ static bool s_mod_load_qvm(mod_t& mod) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 		goto fail;
 	}
+	filemem.resize(filelen);
+	/*
 	filemem = (std::byte*)qvm_malloc(filelen);
 	if (!filemem) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load({}): Unable to allocate memory for QVM file: {} bytes\n", mod.path, filelen);
 		goto fail;
 	}
-	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem, filelen, fpk3);
+	*/
+	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem.data(), filelen, fpk3);
 	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 
 	// load stack size from config
@@ -137,8 +140,8 @@ static bool s_mod_load_qvm(mod_t& mod) {
 		verify_data = false;
 
 	// attempt to load mod
-	loaded = qvm_load(mod.qvm, filemem, filelen, g_gameinfo.game->vmsyscall, stacksize, verify_data);
-	qvm_free(filemem); // free regardless of qvm_load success
+	loaded = qvm_load(mod.qvm, filemem, g_gameinfo.game->vmsyscall, stacksize, verify_data);
+	// qvm_free(filemem); // free regardless of qvm_load success
 	if (!loaded) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", mod.path);
 		goto fail;

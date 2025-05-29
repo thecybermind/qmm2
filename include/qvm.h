@@ -103,38 +103,37 @@ typedef struct {
 
 // all the info for a single QVM object
 typedef struct {
-	qvmheader_t header;			// header information
+	qvmheader_t header;				// header information
 
 	// extra
-	unsigned int filesize;		// .qvm file size
+	size_t filesize;				// .qvm file size
 
 	// memory
-	std::byte* memory;			// main block of memory
-	unsigned int memorysize;	// size of memory block
+	std::vector<std::byte> memory;	// main block of memory
 
 	// segments
-	qvmop_t* codesegment;		// code segment, each op is 8 bytes (4 op, 4 param)
-	std::byte* datasegment;		// data segment, partially filled on load
-	std::byte* stacksegment;	// stack segment
+	qvmop_t* codesegment;			// code segment, each op is 8 bytes (4 op, 4 param)
+	std::byte* datasegment;			// data segment, partially filled on load
+	std::byte* stacksegment;		// stack segment
 
 	// segment sizes
-	unsigned int codeseglen;	// size of code segment
-	unsigned int dataseglen;	// size of data segment
-	unsigned int stackseglen;	// size of stack segment
+	unsigned int codeseglen;		// size of code segment
+	unsigned int dataseglen;		// size of data segment
+	unsigned int stackseglen;		// size of stack segment
 
 	// "registers"
-	qvmop_t* opptr;				// current op in code segment
-	int* stackptr;				// pointer to current location in stack
-	int argbase;				// lower end of arg heap
+	qvmop_t* opptr;					// current op in code segment
+	int* stackptr;					// pointer to current location in stack
+	int argbase;					// lower end of arg heap
 
 	// syscall
-	vmsyscall_t vmsyscall;		// e.g. Q3A_vmsyscall function from game_q3a.cpp
+	vmsyscall_t vmsyscall;			// e.g. Q3A_vmsyscall function from game_q3a.cpp
 
-	bool verify_data;			// verify data access is inside the memory block
+	bool verify_data;				// verify data access is inside the memory block
 } qvm_t;
 
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t& qvm, std::byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data);
+bool qvm_load(qvm_t& qvm, const std::vector<std::byte>& filemem, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data);
 void qvm_unload(qvm_t& qvm);
 int qvm_exec(qvm_t& qvm, int argc, int* argv);
 

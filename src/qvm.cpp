@@ -18,18 +18,18 @@ Created By:
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start = nullptr, void* end = nullptr);
 
 
-bool qvm_load(qvm_t& qvm, std::byte* filemem, unsigned int filelen, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data) {
-	if (qvm.memory || !filemem || !filelen || !vmsyscall)
+bool qvm_load(qvm_t& qvm, const std::vector<std::byte>& filemem, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data) {
+	if (!qvm.memory.empty() || filemem.empty() || !vmsyscall)
 		return false;
 
-	std::byte* codeoffset = nullptr;
+	const std::byte* codeoffset = nullptr;
 
-	qvm.filesize = filelen;
+	qvm.filesize = filemem.size();
 	qvm.vmsyscall = vmsyscall;
 	qvm.verify_data = verify_data;
 
 	// grab a copy of the header
-	memcpy(&qvm.header, filemem, sizeof(qvmheader_t));
+	memcpy(&qvm.header, filemem.data(), sizeof(qvmheader_t));
 
 	// check header
 	if (qvm.header.magic != QVM_MAGIC ||
@@ -53,20 +53,20 @@ bool qvm_load(qvm_t& qvm, std::byte* filemem, unsigned int filelen, vmsyscall_t 
 		stacksize = 1;
 	qvm.stackseglen = stacksize * (1 << 20);
 
-	// get total memory size
-	qvm.memorysize = qvm.codeseglen + qvm.dataseglen + qvm.stackseglen;
-
 	// allocate vm memory
+	qvm.memory.resize(qvm.codeseglen + qvm.dataseglen + qvm.stackseglen);
+	/*
 	if (!(qvm.memory = (std::byte*)qvm_malloc(qvm.memorysize))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("qvm_load(): Unable to allocate memory for VM: {} bytes\n", qvm.memorysize);
 		goto fail;
 	}
 	// init the memory
 	memset(qvm.memory, 0, qvm.memorysize);
+	*/
 
 	// set pointers
-	qvm.codesegment = (qvmop_t*)qvm.memory;
-	qvm.datasegment = qvm.memory + qvm.codeseglen;
+	qvm.codesegment = (qvmop_t*)qvm.memory.data();
+	qvm.datasegment = qvm.memory.data() + qvm.codeseglen;
 	qvm.stacksegment = qvm.datasegment + qvm.dataseglen;
 
 	// setup registers
@@ -83,7 +83,7 @@ bool qvm_load(qvm_t& qvm, std::byte* filemem, unsigned int filelen, vmsyscall_t 
 	// this means that the argstack needs to be located just after the data segment, with the stack to follow
 
 	// start loading ops from the code offset to VM
-	codeoffset = filemem + qvm.header.codeoffset;
+	codeoffset = filemem.data() + qvm.header.codeoffset;
 
 	// loop through each op
 	for (unsigned int i = 0; i < qvm.header.numops; ++i) {
@@ -142,7 +142,7 @@ bool qvm_load(qvm_t& qvm, std::byte* filemem, unsigned int filelen, vmsyscall_t 
 	}
 
 	// copy data segment (including literals) to VM
-	memcpy(qvm.datasegment, filemem + qvm.header.dataoffset, qvm.header.datalen + qvm.header.litlen);
+	memcpy(qvm.datasegment, filemem.data() + qvm.header.dataoffset, qvm.header.datalen + qvm.header.litlen);
 
 	// a winner is us
 	return true;
@@ -154,13 +154,13 @@ fail:
 
 
 void qvm_unload(qvm_t& qvm) {
-	qvm_free(qvm.memory);
+	// qvm_free(qvm.memory);
 	qvm = qvm_t();
 }
 
 
 int qvm_exec(qvm_t& qvm, int argc, int* argv) {
-	if (!qvm.memory)
+	if (qvm.memory.empty())
 		return 0;
 
 	// grow arg stack for new arguments
@@ -719,12 +719,12 @@ void qvm_free(void* ptr) {
 
 
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start, void* end) {
-	if (!qvm.memory)
+	if (qvm.memory.empty())
 		return false;
 
 	// default to validating ptr is inside the data + stack segments
 	start = start ? start : qvm.datasegment;
-	end = end ? end : (qvm.memory + qvm.memorysize);
+	end = end ? end : (qvm.memory.data() + qvm.memory.size());
 
 	return (ptr >= start && ptr < end);
 }
