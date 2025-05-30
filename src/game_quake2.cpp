@@ -39,8 +39,8 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(dprintf, G_DPRINTF),
 	GEN_IMPORT(cprintf, G_CPRINTF),
 	GEN_IMPORT(centerprintf, G_CENTERPRINTF),
-	GEN_IMPORT(sound, G_SOUND),
-	GEN_IMPORT(positioned_sound, G_POSITIONED_SOUND),
+	GEN_IMPORT_6(G_SOUND, void, edict_t*, int, int, float, float, float),
+	GEN_IMPORT_7(G_POSITIONED_SOUND, void, vec3_t, edict_t*, int, int, float, float, float),
 	GEN_IMPORT(configstring, G_CONFIGSTRING),
 	GEN_IMPORT(error, G_ERROR),
 	GEN_IMPORT(modelindex, G_MODELINDEX),
@@ -63,11 +63,11 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(WriteByte, G_MSG_WRITEBYTE),
 	GEN_IMPORT(WriteShort, G_MSG_WRITESHORT),
 	GEN_IMPORT(WriteLong, G_MSG_WRITELONG),
-	GEN_IMPORT(WriteFloat, G_MSG_WRITEFLOAT),
+	GEN_IMPORT_1(G_MSG_WRITEFLOAT, void, float),
 	GEN_IMPORT(WriteString, G_MSG_WRITESTRING),
 	GEN_IMPORT(WritePosition, G_MSG_WRITEPOSITION),
 	GEN_IMPORT(WriteDir, G_MSG_WRITEDIR),
-	GEN_IMPORT(WriteAngle,G_MSG_WRITEANGLE),
+	GEN_IMPORT_1(G_MSG_WRITEANGLE, void, float),
 	GEN_IMPORT(TagMalloc, G_TAGMALLOC),
 	GEN_IMPORT(TagFree, G_TAGFREE),
 	GEN_IMPORT(FreeTags, G_FREETAGS),
@@ -78,7 +78,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(argv, G_ARGV),
 	GEN_IMPORT(args, G_ARGS),
 	GEN_IMPORT(AddCommandString, G_ADDCOMMANDSTRING),
-	GEN_IMPORT(DebugGraph, G_DEBUGGRAPH),
+	GEN_IMPORT_2(G_DEBUGGRAPH, void, float, int),
 };
 
 
