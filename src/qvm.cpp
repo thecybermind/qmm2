@@ -55,14 +55,6 @@ bool qvm_load(qvm_t& qvm, const std::vector<std::byte>& filemem, vmsyscall_t vms
 
 	// allocate vm memory
 	qvm.memory.resize(qvm.codeseglen + qvm.dataseglen + qvm.stackseglen);
-	/*
-	if (!(qvm.memory = (std::byte*)qvm_malloc(qvm.memorysize))) {
-		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("qvm_load(): Unable to allocate memory for VM: {} bytes\n", qvm.memorysize);
-		goto fail;
-	}
-	// init the memory
-	memset(qvm.memory, 0, qvm.memorysize);
-	*/
 
 	// set pointers
 	qvm.codesegment = (qvmop_t*)qvm.memory.data();
@@ -154,7 +146,6 @@ fail:
 
 
 void qvm_unload(qvm_t& qvm) {
-	// qvm_free(qvm.memory);
 	qvm = qvm_t();
 }
 
@@ -705,17 +696,6 @@ const char* opcodename[] = {
 	"OP_CVIF",
 	"OP_CVFI"
 };
-
-
-// easier to change allocation later
-void* qvm_malloc(size_t len) {
-	return malloc(len);
-}
-
-
-void qvm_free(void* ptr) {
-	free(ptr);
-}
 
 
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start, void* end) {

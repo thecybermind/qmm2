@@ -111,7 +111,7 @@ typedef struct {
 	// memory
 	std::vector<std::byte> memory;	// main block of memory
 
-	// segments
+	// segments (into memory vector)
 	qvmop_t* codesegment;			// code segment, each op is 8 bytes (4 op, 4 param)
 	std::byte* datasegment;			// data segment, partially filled on load
 	std::byte* stacksegment;		// stack segment
@@ -136,9 +136,5 @@ typedef struct {
 bool qvm_load(qvm_t& qvm, const std::vector<std::byte>& filemem, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data);
 void qvm_unload(qvm_t& qvm);
 int qvm_exec(qvm_t& qvm, int argc, int* argv);
-
-// easier to change allocation later
-void* qvm_malloc(size_t len);
-void qvm_free(void*);
 
 #endif // __QMM2_QVM_H__
