@@ -23,9 +23,11 @@ Created By:
 #include <direct.h>
 
 #ifdef _WIN64
+#define QMM64
 #define SUF_DLL "x86_64"
 #define SUF_SO  "x86_64"
 #else
+#define QMM32
 #define SUF_DLL "x86"
 #define SUF_SO  "x86"
 #endif
@@ -56,9 +58,11 @@ const char* dlerror();		// this will return the last error from any win32 functi
 #include <sys/stat.h>
 
 #ifdef __LP64__
+#define QMM64
 #define SUF_DLL "x86_64"
 #define SUF_SO  "x86_64"
 #else
+#define QMM32
 #define SUF_DLL "i386"
 #define SUF_SO  "i386"
 #endif

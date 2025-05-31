@@ -248,7 +248,7 @@ enum {
 };
 
 // we need to store FILE* in fileHandle_t so change the underlying type
-#if defined(_WIN64) || defined(__LP64__)
+#if QMM64
 #define fileHandle_t intptr_t
 #endif
 

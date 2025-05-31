@@ -46,7 +46,7 @@ supportedgame_t g_supportedgames[] = {
 #endif
 
 // JAMP in 32-bit linux uses "x86" instead of the usual "i386"
-#if defined(__linux__) && !defined(__LP64__)
+#if defined(__linux__) && !defined(QMM64)
 	{ "jampgame",	"x86",		nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
 #else
 	{ "jampgame",	SUF_DLL,	nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
@@ -58,12 +58,12 @@ supportedgame_t g_supportedgames[] = {
 	{ "game",		SUF_DLL,	nullptr,			"base",			"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			STEF2_GetGameAPI,	17,		4,		{ "ef" } },
 
 // OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
-#if !defined(_WIN64) && !defined(__LP64__)
+#if defined(QMM64)
+	//{ "game.",		SUF_DLL,	nullptr,			"main",			"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	nullptr,			MOHAA_GetGameAPI,	9,		7,		{ "omoh", "openmoh" }},
+#else
 	{ "game",		SUF_DLL,	nullptr,			"main",			"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	nullptr,			MOHAA_GetGameAPI,	9,		7,		{ "mohaa" }},
 	{ "game",		SUF_DLL,	nullptr,			"mainta",		"Medal of Honor: Spearhead",					GEN_INFO(MOHSH),	nullptr,			MOHSH_GetGameAPI,	9,		7,		{ "spear" }},
 	{ "game",		SUF_DLL,	nullptr,			"maintt",		"Medal of Honor: Breakthrough",					GEN_INFO(MOHBT),	nullptr,			MOHBT_GetGameAPI,	9,		7,		{ "break" }},
-//#else
-//	{ "game.",		SUF_DLL,	nullptr,			"main",			"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	nullptr,			MOHAA_GetGameAPI,	9,		7,		{ "omoh", "openmoh" }},
 #endif
 
 // Q2R only exists for 64-bit Windows (and no dedicated server)

@@ -71,7 +71,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME),
 	GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_2),
 	GEN_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND),
-	GEN_IMPORT_1(G_DEBUGGRAPH, void, float),
+	GEN_IMPORT_1(DebugGraph, G_DEBUGGRAPH, void, float),
 	GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
 	GEN_IMPORT(DropClient, G_DROPCLIENT),
 	GEN_IMPORT(MSG_WriteBits, G_MSG_WRITEBITS),
@@ -80,11 +80,11 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(MSG_WriteSVC, G_MSG_WRITESVC),
 	GEN_IMPORT(MSG_WriteShort, G_MSG_WRITESHORT),
 	GEN_IMPORT(MSG_WriteLong, G_MSG_WRITELONG),
-	GEN_IMPORT_1(G_MSG_WRITEFLOAT, void, float),
+	GEN_IMPORT_1(MSG_WriteFloat, G_MSG_WRITEFLOAT, void, float),
 	GEN_IMPORT(MSG_WriteString, G_MSG_WRITESTRING),
-	GEN_IMPORT_1(G_MSG_WRITEANGLE8, void, float),
-	GEN_IMPORT_1(G_MSG_WRITEANGLE16, void, float),
-	GEN_IMPORT_1(G_MSG_WRITECOORD, void, float),
+	GEN_IMPORT_1(MSG_WriteAngle8, G_MSG_WRITEANGLE8, void, float),
+	GEN_IMPORT_1(MSG_WriteAngle16, G_MSG_WRITEANGLE16, void, float),
+	GEN_IMPORT_1(MSG_WriteCoord, G_MSG_WRITECOORD, void, float),
 	GEN_IMPORT(MSG_WriteDir, G_MSG_WRITEDIR),
 	GEN_IMPORT(MSG_StartCGM, G_MSG_STARTCGM),
 	GEN_IMPORT(MSG_EndCGM, G_MSG_ENDCGM),
@@ -127,7 +127,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(TIKI_NumAnims, G_TIKI_NUMANIMS),
 	GEN_IMPORT(TIKI_NumSurfaces, G_TIKI_NUMSURFACES),
 	GEN_IMPORT(TIKI_NumTags, G_TIKI_NUMTAGS),
-	GEN_IMPORT_4(G_TIKI_CALCULATEBOUNDS, void, dtiki_t*, float, vec3_t, vec3_t),
+	GEN_IMPORT_4(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS, void, dtiki_t*, float, vec3_t, vec3_t),
 	GEN_IMPORT(TIKI_GetSkeletor, G_TIKI_GETSKELETOR),
 	GEN_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM),
 	GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
@@ -139,8 +139,8 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
 	GEN_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA),
 	GEN_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA),
-	GEN_IMPORT_5(G_ANIM_DELTAOVERTIME, void, dtiki_t*, int, float, float, float*),
-	GEN_IMPORT_5(G_ANIM_ANGULARDELTAOVERTIME, void, dtiki_t*, int, float, float, float*),
+	GEN_IMPORT_5(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME, void, dtiki_t*, int, float, float, float*),
+	GEN_IMPORT_5(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME, void, dtiki_t*, int, float, float, float*),
 	GEN_IMPORT(Anim_Flags, G_ANIM_FLAGS),
 	GEN_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL),
 	GEN_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS),
@@ -155,8 +155,8 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
 	/* TIKI_OrientationInternal */ +[](dtiki_t* arg0, int arg1, int arg2, float arg3) -> orientation_t { return ((orientation_t(*)(intptr_t, dtiki_t*, int, int, float))syscall)(G_TIKI_ORIENTATIONINTERNAL, arg0, arg1, arg2, *(intptr_t*)&arg3); },
 	GEN_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL),
-	GEN_IMPORT_4(G_TIKI_ISONGROUNDINTERNAL, qboolean, dtiki_t*, int, int, float),
-	GEN_IMPORT_6(G_TIKI_SETPOSEINTERNAL, void, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, float),
+	GEN_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, qboolean, dtiki_t*, int, int, float),
+	GEN_IMPORT_6(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, void, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, float),
 	GEN_IMPORT(CM_GetHitLocationInfo, G_CM_GETHITLOCATIONINFO),
 	GEN_IMPORT(CM_GetHitLocationInfoSecondary, G_CM_GETHITLOCATIONINFOSECONDARY),
 	GEN_IMPORT(Alias_Add, G_ALIAS_ADD),
@@ -171,7 +171,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR),
 	GEN_IMPORT(centerprintf, G_CENTERPRINTF),
 	GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
-	GEN_IMPORT_9(G_SOUND, void, vec3_t*, int, int, const char*, float, float, float, float, int),
+	GEN_IMPORT_9(Sound, G_SOUND, void, vec3_t*, int, int, const char*, float, float, float, float, int),
 	GEN_IMPORT(StopSound, G_STOPSOUND),
 	/* SoundLength */ +[](int arg0, const char* arg1) -> float { return ((float(*)(intptr_t, int, const char*))syscall)(G_SOUNDLENGTH, arg0, arg1); },
 	GEN_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES),
@@ -203,7 +203,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(HudDrawRect, G_HUDDRAWRECT),
 	GEN_IMPORT(HudDrawVirtualSize, G_HUDDRAWVIRTUALSIZE),
 	GEN_IMPORT(HudDrawColor, G_HUDDRAWCOLOR),
-	GEN_IMPORT_2(G_HUDDRAWALPHA, void, int, float),
+	GEN_IMPORT_2(HudDrawAlpha, G_HUDDRAWALPHA, void, int, float),
 	GEN_IMPORT(HudDrawString, G_HUDDRAWSTRING),
 	GEN_IMPORT(HudDrawFont, G_HUDDRAWFONT),
 	GEN_IMPORT(SanitizeName, G_SANITIZENAME),
@@ -517,7 +517,7 @@ intptr_t MOHBT_vmMain(intptr_t cmd, ...) {
 
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHBT_vmMain({}) called\n", MOHBT_mod_msg_names(cmd));
 
-	// store copy of mod's export pointer (this is stored in g_gameinfo.api_info in mod_load)
+	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 	if (!orig_export)
 		return 0;
