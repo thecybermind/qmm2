@@ -46,7 +46,7 @@ supportedgame_t g_supportedgames[] = {
 #endif
 
 // JAMP in 32-bit linux uses "x86" instead of the usual "i386"
-#if defined(__linux__) && !defined(QMM64)
+#if defined(__linux__) && !defined(__LP64__)
 	{ "jampgame",	"x86",		nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
 #else
 	{ "jampgame",	SUF_DLL,	nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
@@ -58,7 +58,7 @@ supportedgame_t g_supportedgames[] = {
 	{ "game",		SUF_DLL,	nullptr,			"base",			"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			STEF2_GetGameAPI,	17,		4,		{ "ef" } },
 
 // OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
-#if defined(QMM64)
+#if defined(_WIN64) || defined(__LP64__)
 	//{ "game.",		SUF_DLL,	nullptr,			"main",			"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	nullptr,			MOHAA_GetGameAPI,	9,		7,		{ "omoh", "openmoh" }},
 #else
 	{ "game",		SUF_DLL,	nullptr,			"main",			"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	nullptr,			MOHAA_GetGameAPI,	9,		7,		{ "mohaa" }},
