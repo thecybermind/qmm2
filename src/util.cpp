@@ -11,8 +11,6 @@ Created By:
 
 #include "osdef.h"
 #include <string>
-#include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 #include "format.h"
 #include "game_api.h"

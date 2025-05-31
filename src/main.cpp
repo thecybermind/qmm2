@@ -10,8 +10,6 @@ Created By:
 */
 
 #define _CRT_SECURE_NO_WARNINGS
-#include <stdio.h>
-#include <stdarg.h>
 #include "osdef.h"
 #include "format.h"
 #include "log.h"
