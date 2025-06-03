@@ -12,22 +12,27 @@ Created By:
 #ifndef __QMM2_UTIL_H__
 #define __QMM2_UTIL_H__
 
-std::string path_normalize(std::string path);
-std::string path_dirname(std::string path);
-std::string path_basename(std::string path);
-std::string path_baseext(std::string path);
-bool path_is_relative(std::string path);
-std::string path_get_modulepath(void* ptr);
-void* path_get_modulehandle(void* ptr);
+namespace util {
+    std::string path_normalize(std::string path);
+    std::string path_dirname(std::string path);
+    std::string path_basename(std::string path);
+    std::string path_baseext(std::string path);
+    bool path_is_relative(std::string path);
+    std::string get_modulepath(void* ptr);
+    void* get_modulehandle(void* ptr);
 
-void path_mkdir(std::string path);
+    void path_mkdir(std::string path);
 
-int str_stristr(std::string haystack, std::string needle);
-int str_stricmp(std::string s1, std::string s2);
-int str_striequal(std::string s1, std::string s2);
+    int stristr(std::string haystack, std::string needle);
+    int stricmp(std::string s1, std::string s2);
+    int striequal(std::string s1, std::string s2);
 
-void qmm_argv(intptr_t argn, char* buf, intptr_t buflen);
+    void qmm_argv(intptr_t argn, char* buf, intptr_t buflen);
 
-#define util_max(a, b)  ((a) > (b) ? (a) : (b))
+    template<typename T>
+    T util_max(T a, T b) {
+        return ((a) > (b) ? (a) : (b));
+    }
+}
 
 #endif // __QMM2_UTIL_H__

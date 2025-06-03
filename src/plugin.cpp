@@ -189,6 +189,7 @@ static char* s_plugin_helper_VarArgs(const char* format, ...) {
 	static char str[8][1024];
 	static int index = 0;
 
+	// cycle rotating buffer and store string
 	index = (index + 1) & 7;
 
 	va_start(argptr, format);
@@ -244,7 +245,7 @@ static const char* s_plugin_helper_GetGameEngine() {
 
 
 static void s_plugin_helper_Argv(intptr_t argn, char* buf, intptr_t buflen) {
-	qmm_argv(argn, buf, buflen);
+	util::qmm_argv(argn, buf, buflen);
 }
 
 

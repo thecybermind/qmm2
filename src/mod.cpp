@@ -34,14 +34,14 @@ bool mod_load(mod_t& mod, std::string file) {
 
 	mod.path = file;
 
-	std::string ext = path_baseext(file);
+	std::string ext = util::path_baseext(file);
 
 	// only allow qvm mods if the game engine supports it
-	if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->vmsyscall)
+	if (util::striequal(ext, EXT_QVM) && g_gameinfo.game->vmsyscall)
 		return s_mod_load_qvm(mod);
 	
 	// if DLL
-	else if (str_striequal(ext, EXT_DLL)) {
+	else if (util::striequal(ext, EXT_DLL)) {
 		// load DLL
 		if (!(mod.dll = dlopen(file.c_str(), RTLD_NOW))) {
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror());

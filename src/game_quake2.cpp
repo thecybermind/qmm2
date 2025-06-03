@@ -240,7 +240,7 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 				str_mode = "ab";
 			std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
 			if (mode != FS_READ)
-				path_mkdir(path_dirname(path));
+				util::path_mkdir(util::path_dirname(path));
 			FILE* fp = fopen(path.c_str(), str_mode);
 			if (!fp) {
 				ret = -1;

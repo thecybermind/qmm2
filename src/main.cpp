@@ -197,9 +197,9 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 
 	// load mod
 	std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
-	if (str_striequal(cfg_mod, "auto"))
+	if (util::striequal(cfg_mod, "auto"))
 		cfg_mod = fmt::format("qmm_{}", g_gameinfo.qmm_file);
-	if (path_is_relative(cfg_mod))
+	if (util::path_is_relative(cfg_mod))
 		cfg_mod = fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod);
 
 	void* mod_handle = dlopen(cfg_mod.c_str(), RTLD_NOW);
@@ -304,9 +304,9 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 			|| !strcmp(g_gameinfo.game->gamename_short, "Q2R"))
 			argn++;
 
-		qmm_argv(argn, arg0, sizeof(arg0));
+		util::qmm_argv(argn, arg0, sizeof(arg0));
 
-		if (str_striequal("qmm", arg0))
+		if (util::striequal("qmm", arg0))
 			// pass 0 or 1 which gets added to argn in the handler function
 			return s_main_handle_command_qmm(argn);
 	}
@@ -357,27 +357,27 @@ intptr_t syscall(intptr_t cmd, ...) {
 // general code to get path/module/binary/etc information
 static void s_main_detect_env() {
 	// save exe module path
-	g_gameinfo.exe_path = path_get_modulepath(nullptr);
-	g_gameinfo.exe_dir = path_dirname(g_gameinfo.exe_path);
-	g_gameinfo.exe_file = path_basename(g_gameinfo.exe_path);
+	g_gameinfo.exe_path = util::get_modulepath(nullptr);
+	g_gameinfo.exe_dir = util::path_dirname(g_gameinfo.exe_path);
+	g_gameinfo.exe_file = util::path_basename(g_gameinfo.exe_path);
 
 	// save qmm module path
-	g_gameinfo.qmm_path = path_get_modulepath(&g_gameinfo);
-	g_gameinfo.qmm_dir = path_dirname(g_gameinfo.qmm_path);
-	g_gameinfo.qmm_file = path_basename(g_gameinfo.qmm_path);
+	g_gameinfo.qmm_path = util::get_modulepath(&g_gameinfo);
+	g_gameinfo.qmm_dir = util::path_dirname(g_gameinfo.qmm_path);
+	g_gameinfo.qmm_file = util::path_basename(g_gameinfo.qmm_path);
 
 	// save qmm module pointer
-	g_gameinfo.qmm_module_ptr = path_get_modulehandle(&g_gameinfo);
+	g_gameinfo.qmm_module_ptr = util::get_modulehandle(&g_gameinfo);
 
 	// since we don't have the mod directory yet (can only officially get it using engine functions), we can
 	// attempt to get the mod directory from the qmm path. if the qmm dir is the same as the exe dir, it's
 	// likely that this is a singleplayer game, so just set the temporary moddir to ".".
 	// this doesn't have to be exact, since it will only be used only for config loading.
-	if (str_striequal(g_gameinfo.qmm_dir, g_gameinfo.exe_dir)) {
+	if (util::striequal(g_gameinfo.qmm_dir, g_gameinfo.exe_dir)) {
 		g_gameinfo.moddir = ".";
 	}
 	else {
-		g_gameinfo.moddir = path_basename(g_gameinfo.qmm_dir);
+		g_gameinfo.moddir = util::path_basename(g_gameinfo.qmm_dir);
 	}
 }
 
@@ -420,17 +420,17 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 			continue;
 
 		// if short name matches config option, we found it!
-		if (str_striequal(cfg_game, game.gamename_short)) {
+		if (util::striequal(cfg_game, game.gamename_short)) {
 			LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);
 			g_gameinfo.game = &game;
 			g_gameinfo.isautodetected = false;
 			return;
 		}
 		// otherwise, if auto, we need to check matching dll names, with optional exe hint
-		if (str_striequal(cfg_game, "auto")) {
+		if (util::striequal(cfg_game, "auto")) {
 			// dll name matches
 			std::string full_dll_name = fmt::format("{}{}.{}", game.dllname, game.suffix, EXT_DLL);
-			if (str_striequal(g_gameinfo.qmm_file, full_dll_name)) {
+			if (util::striequal(g_gameinfo.qmm_file, full_dll_name)) {
 				LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", full_dll_name, game.gamename_short);
 				// if no hint array exists, assume we match
 				if (!game.exe_hints.size()) {
@@ -442,7 +442,7 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 				// if a hint array exists, check each for an exe file match
 				if (game.exe_hints.size()) {
 					for (auto hint : game.exe_hints) {
-						if (str_stristr(g_gameinfo.exe_file, hint)) {
+						if (util::stristr(g_gameinfo.exe_file, hint)) {
 							LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for exe hint \"{}\" - {}\n", hint, game.gamename_short);
 							g_gameinfo.game = &game;
 							g_gameinfo.isautodetected = true;
@@ -460,7 +460,7 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 static bool s_main_load_mod(std::string cfg_mod) {
 	LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to find mod using \"{}\"\n", cfg_mod);
 	// if config setting is an absolute path, just attempt to load it directly
-	if (!path_is_relative(cfg_mod)) {
+	if (!util::path_is_relative(cfg_mod)) {
 		if (!mod_load(g_mod, cfg_mod))
 			return false;
 	}
@@ -470,7 +470,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
 	// "<exedir>/<moddir>/qmm_<dllname>"
 	// "<exedir>/<moddir>/<dllname>" (as long as this isn't same as qmm path)
 	// "./<moddir>/qmm_<dllname>"
-	else if (str_striequal(cfg_mod, "auto")) {
+	else if (util::striequal(cfg_mod, "auto")) {
 		std::string try_paths[] = {
 			g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "",	// (only if game engine supports it)
 			fmt::format("{}/qmm_{}{}.{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname, g_gameinfo.game->suffix, EXT_DLL),
@@ -517,7 +517,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
 static void s_main_load_plugin(std::string plugin_path) {
 	plugin_t p;
 	// absolute path, just attempt to load it directly
-	if (!path_is_relative(plugin_path)) {
+	if (!util::path_is_relative(plugin_path)) {
 		// if the plugin decides to cancel itself in QMM_Attach, then plugin_load returns success
 		// but we only want to only store the plugin if it really loaded
 		if (plugin_load(p, plugin_path) && p.dll) {
@@ -560,10 +560,10 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
 		return 1;
 	}
-	qmm_argv(1 + arg_inc, arg1, sizeof(arg1));
+	util::qmm_argv(1 + arg_inc, arg1, sizeof(arg1));
 	if (argc > 2 + arg_inc)
-		qmm_argv(2 + arg_inc, arg2, sizeof(arg2));
-	if (str_striequal("status", arg1)) {
+		util::qmm_argv(2 + arg_inc, arg2, sizeof(arg2));
+	if (util::striequal("status", arg1)) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") loaded\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file").c_str());
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) ModDir: {}\n", g_gameinfo.moddir).c_str());
@@ -586,7 +586,7 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Mod vmMain() offset: {}\n", (void*)g_mod.pfnvmMain).c_str());
 		}
 	}
-	else if (str_striequal("list", arg1)) {
+	else if (util::striequal("list", arg1)) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) id - plugin [version]\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) ---------------------\n");
 		for (plugin_t& p : g_plugins) {
@@ -595,7 +595,7 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 			++num;
 		}
 	}
-	else if (str_striequal("info", arg1)) {
+	else if (util::striequal("info", arg1)) {
 		if (argc == 2 + arg_inc) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm info <id> - outputs info on plugin with id\n");
 			return 1;
@@ -616,7 +616,7 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Unable to find plugin #{}\n", arg2).c_str());
 		}
 	}
-	else if (str_striequal("loglevel", arg1)) {
+	else if (util::striequal("loglevel", arg1)) {
 		if (argc == 2 + arg_inc) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
 			return 1;
@@ -645,7 +645,7 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 		// call plugin's vmMain and store return value
 		ret = p.QMM_vmMain(cmd, args);
 		// set new max result
-		maxresult = util_max(g_plugin_result, maxresult);
+		maxresult = util::util_max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)
 			LOG(QMM_LOG_WARNING, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name);
 		if (g_plugin_result == QMM_ERROR)
@@ -691,7 +691,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 		ret = p.QMM_syscall(cmd, args);
 
 		// set new max result
-		maxresult = util_max(g_plugin_result, maxresult);
+		maxresult = util::util_max(g_plugin_result, maxresult);
 		if (g_plugin_result == QMM_UNUSED)
 			LOG(QMM_LOG_WARNING, "QMM") << fmt::format("syscall({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name);
 		if (g_plugin_result == QMM_ERROR)
