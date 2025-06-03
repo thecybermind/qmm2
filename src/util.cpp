@@ -52,7 +52,7 @@ namespace util {
 
 
 	std::string path_baseext(std::string path) {
-		std::string base = util::path_basename(path);
+		std::string base = path_basename(path);
 		auto pos = base.find_last_of('.');
 		if (pos == std::string::npos)
 			return base;
@@ -98,7 +98,7 @@ namespace util {
 		if (path[1] == ':')
 			i = 3;
 #endif
-		path = util::path_normalize(path);
+		path = path_normalize(path);
 
 		if (path[path.size() - 1] == '/')
 			path[path.size() - 1] = '\0';
@@ -133,7 +133,7 @@ namespace util {
 
 
 	int striequal(std::string s1, std::string s2) {
-		return util::stricmp(s1, s2) == 0;
+		return stricmp(s1, s2) == 0;
 	}
 
 

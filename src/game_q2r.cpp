@@ -23,7 +23,6 @@ Created By:
 #include "log.h"
 // QMM-specific Q2R header
 #include "game_q2r.h"
-#include "plugin.h"
 #include "main.h"
 #include "util.h"
 

@@ -206,7 +206,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 	if (!mod_handle)
 		return nullptr;
 
-	mod_GetGameAPI_t GetCGameAPI = (mod_GetGameAPI_t)dlsym(mod_handle, "GetCGameAPI");
+	mod::mod_GetGameAPI_t GetCGameAPI = (mod::mod_GetGameAPI_t)dlsym(mod_handle, "GetCGameAPI");
 	if (!GetCGameAPI)
 		return nullptr;
 
@@ -275,7 +275,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 			LOG(QMM_LOG_FATAL, "QMM") << fmt::format("vmMain({}): Unable to load mod using \"{}\"\n", g_gameinfo.game->mod_msg_names(cmd), cfg_mod);
 			return 0;
 		}
-		LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} mod \"{}\"\n", g_mod.vmbase ? "VM" : "DLL", g_mod.path);
+		LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} mod \"{}\"\n", mod::g_mod.vmbase ? "VM" : "DLL", mod::g_mod.path);
 
 		// load plugins
 		LOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
@@ -283,7 +283,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load plugin \"{}\"\n", plugin_path);
 			s_main_load_plugin(plugin_path);
 		}
-		LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} plugin(s)\n", g_plugins.size());
+		LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} plugin(s)\n", plugin::g_plugins.size());
 
 		// exec the qmmexec cfg
 		std::string cfg_execcfg = cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
@@ -318,14 +318,14 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	if (cmd == QMM_MOD_MSG[QMM_GAME_SHUTDOWN]) {
 		// unload mod (dlclose)
 		LOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
-		mod_unload(g_mod);
+		mod::mod_unload(mod::g_mod);
 
 		// unload each plugin (call QMM_Detach, and then dlclose)
 		LOG(QMM_LOG_INFO, "QMM") << "Shutting down plugins\n";
-		for (plugin_t& p : g_plugins) {
-			plugin_unload(p);
+		for (plugin::plugin_t& p : plugin::g_plugins) {
+			plugin::plugin_unload(p);
 		}
-		g_plugins.clear();
+		plugin::g_plugins.clear();
 
 		LOG(QMM_LOG_INFO, "QMM") << "Finished shutting down\n";
 	}
@@ -461,7 +461,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
 	LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to find mod using \"{}\"\n", cfg_mod);
 	// if config setting is an absolute path, just attempt to load it directly
 	if (!util::path_is_relative(cfg_mod)) {
-		if (!mod_load(g_mod, cfg_mod))
+		if (!mod::mod_load(mod::g_mod, cfg_mod))
 			return false;
 	}
 	// if config setting is "auto", try the following locations in order:
@@ -483,7 +483,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
 			if (try_path.empty())
 				continue;
 			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to auto-load mod \"{}\"\n", try_path);
-			if (mod_load(g_mod, try_path))
+			if (mod::mod_load(mod::g_mod, try_path))
 				return true;
 		}
 	}
@@ -504,7 +504,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
 			if (try_path.empty())
 				continue;
 			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
-			if (mod_load(g_mod, try_path))
+			if (mod::mod_load(mod::g_mod, try_path))
 				return true;
 		}
 	}
@@ -515,13 +515,13 @@ static bool s_main_load_mod(std::string cfg_mod) {
 
 // general code to find a plugin file to load
 static void s_main_load_plugin(std::string plugin_path) {
-	plugin_t p;
+	plugin::plugin_t p;
 	// absolute path, just attempt to load it directly
 	if (!util::path_is_relative(plugin_path)) {
 		// if the plugin decides to cancel itself in QMM_Attach, then plugin_load returns success
 		// but we only want to only store the plugin if it really loaded
-		if (plugin_load(p, plugin_path) && p.dll) {
-			g_plugins.push_back(p);
+		if (plugin::plugin_load(p, plugin_path) && p.dll) {
+			plugin::g_plugins.push_back(p);
 		}
 		return;
 	}
@@ -537,9 +537,9 @@ static void s_main_load_plugin(std::string plugin_path) {
 	for (auto& try_path : try_paths) {
 		// if the plugin decides to cancel itself in QMM_Attach, then plugin_load returns success
 		// but we only want to only store the plugin if it really loaded
-		if (plugin_load(p, try_path)) {
+		if (plugin::plugin_load(p, try_path)) {
 			if (p.dll)
-				g_plugins.push_back(p);
+				plugin::g_plugins.push_back(p);
 			return;
 		}
 	}
@@ -571,25 +571,25 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) URL: " QMM_URL "\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Plugin interface: {}:{}\n", QMM_PIFV_MAJOR, QMM_PIFV_MINOR).c_str());
-		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Loaded mod file: {}\n", g_mod.path).c_str());
-		if (g_mod.vmbase) {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM file size: {}\n", g_mod.qvm.filesize).c_str());
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM op count: {}\n", g_mod.qvm.header.numops).c_str());
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory base: {}\n", (void*)g_mod.qvm.memory.data()).c_str());
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory size: {}\n", g_mod.qvm.memory.size()).c_str());
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM codeseg size: {}\n", g_mod.qvm.codeseglen).c_str());
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM dataseg size: {}\n", g_mod.qvm.dataseglen).c_str());
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM stack size: {}\n", g_mod.qvm.stackseglen).c_str());
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM data validation: {}\n", g_mod.qvm.verify_data ? "on" : "off").c_str());
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Loaded mod file: {}\n", mod::g_mod.path).c_str());
+		if (mod::g_mod.vmbase) {
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM file size: {}\n", mod::g_mod.qvm.filesize).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM op count: {}\n", mod::g_mod.qvm.header.numops).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory base: {}\n", (void*)mod::g_mod.qvm.memory.data()).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory size: {}\n", mod::g_mod.qvm.memory.size()).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM codeseg size: {}\n", mod::g_mod.qvm.codeseglen).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM dataseg size: {}\n", mod::g_mod.qvm.dataseglen).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM stack size: {}\n", mod::g_mod.qvm.stackseglen).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM data validation: {}\n", mod::g_mod.qvm.verify_data ? "on" : "off").c_str());
 		}
 		else {
-			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Mod vmMain() offset: {}\n", (void*)g_mod.pfnvmMain).c_str());
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Mod vmMain() offset: {}\n", (void*)mod::g_mod.pfnvmMain).c_str());
 		}
 	}
 	else if (util::striequal("list", arg1)) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) id - plugin [version]\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) ---------------------\n");
-		for (plugin_t& p : g_plugins) {
+		for (plugin::plugin_t& p : plugin::g_plugins) {
 			int num = 1;
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) {:>2} - {} [{}]\n", num, p.plugininfo->name, p.plugininfo->version).c_str());
 			++num;
@@ -601,8 +601,8 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 			return 1;
 		}
 		unsigned int pid = atoi(arg2);
-		if (pid > 0 && pid <= g_plugins.size()) {
-			plugin_t& p = g_plugins[pid - 1];
+		if (pid > 0 && pid <= plugin::g_plugins.size()) {
+			plugin::plugin_t& p = plugin::g_plugins[pid - 1];
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Plugin info for #{}:\n", arg2).c_str());
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Name: {}\n", p.plugininfo->name).c_str());
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Version: {}\n", p.plugininfo->version).c_str());
@@ -639,36 +639,38 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 	// temp int for return values
 	intptr_t ret = 0;
 	// begin passing calls to plugins' QMM_vmMain functions
-	for (plugin_t& p : g_plugins) {
-		g_plugin_result = QMM_UNUSED;
-		g_api_return = 0;
+	for (plugin::plugin_t& p : plugin::g_plugins) {
+		plugin::g_plugin_result = QMM_UNUSED;
+		plugin::g_api_return = 0;
 		// call plugin's vmMain and store return value
 		ret = p.QMM_vmMain(cmd, args);
 		// set new max result
-		maxresult = util::util_max(g_plugin_result, maxresult);
-		if (g_plugin_result == QMM_UNUSED)
+		maxresult = util::util_max(plugin::g_plugin_result, maxresult);
+		if (plugin::g_plugin_result == QMM_UNUSED)
 			LOG(QMM_LOG_WARNING, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name);
-		if (g_plugin_result == QMM_ERROR)
+		if (plugin::g_plugin_result == QMM_ERROR)
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name);
 		// if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
-		if (g_plugin_result >= QMM_OVERRIDE)
+		if (plugin::g_plugin_result >= QMM_OVERRIDE)
 			final_ret = ret;
 	}
+
 	// call real vmMain function (unless a plugin resulted in QMM_SUPERCEDE)
 	if (maxresult < QMM_SUPERCEDE) {
-		ret = g_mod.pfnvmMain(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
+		ret = mod::g_mod.pfnvmMain(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
 		// the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs. the
 		// char* is a string to print if the client should not be allowed to connect, so only bother if it's not NULL
-		if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && ret && g_mod.vmbase)
-			ret += g_mod.vmbase;
+		if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && ret && mod::g_mod.vmbase)
+			ret += mod::g_mod.vmbase;
 	}
+
 	// if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the actual mod's return value back to the engine
 	if (maxresult < QMM_OVERRIDE)
 		final_ret = ret;
 	// pass calls to plugins' QMM_vmMain_Post functions (ignore return values and results)
-	for (plugin_t& p : g_plugins) {
+	for (plugin::plugin_t& p : plugin::g_plugins) {
 		// store final_ret in variable that is provided to plugins so they can get the end result in a _Post
-		g_api_return = final_ret;
+		plugin::g_api_return = final_ret;
 		p.QMM_vmMain_Post(cmd, args);
 	}
 	return final_ret;
@@ -684,32 +686,33 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 	// temp int for return values
 	intptr_t ret = 0;
 	// begin passing calls to plugins' QMM_syscall functions
-	for (plugin_t& p : g_plugins) {
-		g_plugin_result = QMM_UNUSED;
-		g_api_return = 0;
+	for (plugin::plugin_t& p : plugin::g_plugins) {
+		plugin::g_plugin_result = QMM_UNUSED;
+		plugin::g_api_return = 0;
 		// call plugin's syscall and store return value
 		ret = p.QMM_syscall(cmd, args);
-
 		// set new max result
-		maxresult = util::util_max(g_plugin_result, maxresult);
-		if (g_plugin_result == QMM_UNUSED)
+		maxresult = util::util_max(plugin::g_plugin_result, maxresult);
+		if (plugin::g_plugin_result == QMM_UNUSED)
 			LOG(QMM_LOG_WARNING, "QMM") << fmt::format("syscall({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name);
-		if (g_plugin_result == QMM_ERROR)
+		if (plugin::g_plugin_result == QMM_ERROR)
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name);
 		// if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
-		if (g_plugin_result >= QMM_OVERRIDE)
+		if (plugin::g_plugin_result >= QMM_OVERRIDE)
 			final_ret = ret;
 	}
+
 	// call real syscall function (unless a plugin resulted in QMM_SUPERCEDE)
 	if (maxresult < QMM_SUPERCEDE)
 		ret = g_gameinfo.pfnsyscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); // update with QMM_MAX_SYSCALL_ARGS
+
 	// if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the actual engine's return value back to the mod
 	if (maxresult < QMM_OVERRIDE)
 		final_ret = ret;
 	// pass calls to plugins' QMM_syscall_Post functions (ignore return values and results)
-	for (plugin_t& p : g_plugins) {
+	for (plugin::plugin_t& p : plugin::g_plugins) {
 		// store final_ret in variable that is provided to plugins so they can get the end result in a _Post
-		g_api_return = final_ret;
+		plugin::g_api_return = final_ret;
 		p.QMM_syscall_Post(cmd, args);
 	}	
 	return final_ret;
