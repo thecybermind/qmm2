@@ -69,8 +69,7 @@ namespace mod {
 
 
 	void mod_unload(mod_t& mod) {
-		// if (!mod.qvm.memory.empty())
-		qvm_unload(mod.qvm);
+		qvm::qvm_unload(mod.qvm);
 		if (mod.dll)
 			dlclose(mod.dll);
 		mod = mod_t();
@@ -99,7 +98,7 @@ namespace mod {
 		}
 
 		// pass array and size to qvm
-		return qvm_exec(g_mod.qvm, QMM_MAX_VMMAIN_ARGS + 1, qvmargs);
+		return qvm::qvm_exec(g_mod.qvm, QMM_MAX_VMMAIN_ARGS + 1, qvmargs);
 	}
 
 
@@ -120,13 +119,7 @@ namespace mod {
 			goto fail;
 		}
 		filemem.resize(filelen);
-		/*
-		filemem = (std::byte*)qvm_malloc(filelen);
-		if (!filemem) {
-			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load({}): Unable to allocate memory for QVM file: {} bytes\n", mod.path, filelen);
-			goto fail;
-		}
-		*/
+
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem.data(), filelen, fpk3);
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 
@@ -141,8 +134,7 @@ namespace mod {
 			verify_data = false;
 
 		// attempt to load mod
-		loaded = qvm_load(mod.qvm, filemem, g_gameinfo.game->vmsyscall, stacksize, verify_data);
-		// qvm_free(filemem); // free regardless of qvm_load success
+		loaded = qvm::qvm_load(mod.qvm, filemem, g_gameinfo.game->vmsyscall, stacksize, verify_data);
 		if (!loaded) {
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", mod.path);
 			goto fail;

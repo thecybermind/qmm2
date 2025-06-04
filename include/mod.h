@@ -22,7 +22,7 @@ namespace mod {
 
 	typedef struct mod_s {
 		void* dll = nullptr;
-		qvm_t qvm = {};
+		qvm::qvm_t qvm = {};
 		mod_vmMain_t pfnvmMain = nullptr;
 		intptr_t vmbase = 0;
 		std::string path;
