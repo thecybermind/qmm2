@@ -16,23 +16,21 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-namespace mod {
-	typedef void (*mod_dllEntry_t)(eng_syscall_t syscall);
-	typedef void* (*mod_GetGameAPI_t)(void* import);
+typedef void (*mod_dllEntry_t)(eng_syscall_t syscall);
+typedef void* (*mod_GetGameAPI_t)(void* import);
 
-	typedef struct mod_s {
-		void* dll = nullptr;
-		qvm::qvm_t qvm = {};
-		mod_vmMain_t pfnvmMain = nullptr;
-		intptr_t vmbase = 0;
-		std::string path;
-	} mod_t;
+typedef struct mod_s {
+	void* dll = nullptr;
+	qvm_t qvm = {};
+	mod_vmMain_t pfnvmMain = nullptr;
+	intptr_t vmbase = 0;
+	std::string path;
+} mod_t;
 
-	extern mod_t g_mod;
+extern mod_t g_mod;
 
-	bool mod_load(mod_t& mod, std::string file);
-	void mod_unload(mod_t& mod);
-}
+bool mod_load(mod_t& mod, std::string file);
+void mod_unload(mod_t& mod);
 
 #endif // __QMM2_MOD_H__
 

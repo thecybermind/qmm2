@@ -541,7 +541,7 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 				str_mode = "ab";
 			std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
 			if (mode != FS_READ)
-				util::path_mkdir(util::path_dirname(path));
+				path_mkdir(path_dirname(path));
 			FILE* fp = fopen(path.c_str(), str_mode);
 			if (!fp) {
 				ret = -1;

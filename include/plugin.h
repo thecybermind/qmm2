@@ -15,27 +15,26 @@ Created By:
 #include <vector>
 #include "qmmapi.h"
 
-namespace plugin {
-	typedef struct plugin_s {
-		void* dll = nullptr;
-		std::string path;
-		plugin_query QMM_Query = nullptr;
-		plugin_attach QMM_Attach = nullptr;
-		plugin_detach QMM_Detach = nullptr;
-		plugin_vmmain QMM_vmMain = nullptr;
-		plugin_vmmain QMM_vmMain_Post = nullptr;
-		plugin_syscall QMM_syscall = nullptr;
-		plugin_syscall QMM_syscall_Post = nullptr;
-		plugininfo_t* plugininfo = nullptr;
-	} plugin_t;
+typedef struct plugin_s {
+	void* dll = nullptr;
+	std::string path;
+	plugin_query QMM_Query = nullptr;
+	plugin_attach QMM_Attach = nullptr;
+	plugin_detach QMM_Detach = nullptr;
+	plugin_vmmain QMM_vmMain = nullptr;
+	plugin_vmmain QMM_vmMain_Post = nullptr;
+	plugin_syscall QMM_syscall = nullptr;
+	plugin_syscall QMM_syscall_Post = nullptr;
+	plugininfo_t* plugininfo = nullptr;
+} plugin_t;
 
-	extern std::vector<plugin_t> g_plugins;
-	extern pluginres_t g_plugin_result;
-	extern intptr_t g_api_return;
+extern std::vector<plugin_t> g_plugins;
+extern pluginres_t g_plugin_result;
+extern intptr_t g_api_return;
 
-	const char* plugin_result_to_str(pluginres_t res);
-	bool plugin_load(plugin_t& p, std::string file);
-	void plugin_unload(plugin_t& p);
-}
+const char* plugin_result_to_str(pluginres_t res);
+bool plugin_load(plugin_t& p, std::string file);
+void plugin_unload(plugin_t& p);
+
 
 #endif // __QMM2_PLUGIN_H__
