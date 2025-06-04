@@ -28,10 +28,10 @@ namespace mod {
 		std::string path;
 	} mod_t;
 
-	extern mod::mod_t g_mod;
+	extern mod_t g_mod;
 
-	bool mod_load(mod::mod_t& mod, std::string file);
-	void mod_unload(mod::mod_t& mod);
+	bool mod_load(mod_t& mod, std::string file);
+	void mod_unload(mod_t& mod);
 }
 
 #endif // __QMM2_MOD_H__
