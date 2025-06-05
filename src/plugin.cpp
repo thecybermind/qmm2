@@ -12,6 +12,7 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS
 #include "log.h"
 #include "format.h"
+#include "config.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,6 +31,12 @@ static const char* s_plugin_helper_GetStrCvar(const char* cvar);
 static const char* s_plugin_helper_GetGameEngine();
 static void s_plugin_helper_Argv(intptr_t argn, char* buf, intptr_t buflen);
 static const char* s_plugin_helper_InfoValueForKey(const char* userinfo, const char* key);
+static const char* s_plugin_helper_ConfigGetStr(const char* key);
+static int s_plugin_helper_ConfigGetInt(const char* key);
+static int s_plugin_helper_ConfigGetBool(const char* key);
+static const char** s_plugin_helper_ConfigGetArrayStr(const char* key);
+static int* s_plugin_helper_ConfigGetArrayInt(const char* key);
+
 
 static pluginfuncs_t s_pluginfuncs = {
 	s_plugin_helper_WriteQMMLog,
@@ -41,7 +48,12 @@ static pluginfuncs_t s_pluginfuncs = {
 	s_plugin_helper_GetStrCvar,
 	s_plugin_helper_GetGameEngine,
 	s_plugin_helper_Argv,
-	s_plugin_helper_InfoValueForKey
+	s_plugin_helper_InfoValueForKey,
+	s_plugin_helper_ConfigGetStr,
+	s_plugin_helper_ConfigGetInt,
+	s_plugin_helper_ConfigGetBool,
+	s_plugin_helper_ConfigGetArrayStr,
+	s_plugin_helper_ConfigGetArrayInt,
 };
 
 pluginres_t g_plugin_result = QMM_UNUSED;
@@ -279,3 +291,79 @@ static const char* s_plugin_helper_InfoValueForKey(const char* userinfo, const c
 	value[index] = fval;
 	return value[index].c_str();
 }
+
+
+static nlohmann::json s_plugin_cfg_get_node(std::string key) {
+	if (key[0] == '/')
+		key = key.substr(1);
+
+	nlohmann::json node = g_cfg;
+
+	size_t sep = key.find('/');
+	while (sep != std::string::npos) {
+		std::string segment = key.substr(0, sep - 1);
+		node = cfg_get_object(node, segment);
+		key = key.substr(sep + 1);
+		sep = key.find('/', sep + 1);
+	}
+
+	return node;
+}
+
+static const char* s_plugin_helper_ConfigGetStr(const char* key) {
+	static std::string value[8];
+	static int index = 0;
+
+	nlohmann::json node = s_plugin_cfg_get_node(key);
+	
+	// cycle rotating buffer and store string
+	index = (index + 1) & 7;
+	value[index] = cfg_get_string(node, key);
+	return value[index].c_str();
+}
+
+
+static int s_plugin_helper_ConfigGetInt(const char* key) {
+	nlohmann::json node = s_plugin_cfg_get_node(key);
+	return cfg_get_int(node, key);
+}
+
+
+static int s_plugin_helper_ConfigGetBool(const char* key) {
+	nlohmann::json node = s_plugin_cfg_get_node(key);
+	return (int)cfg_get_bool(node, key);
+}
+
+
+static const char** s_plugin_helper_ConfigGetArrayStr(const char* key) {
+	static std::vector<std::string> value[8];
+	// plugin API needs to be C-compatible, so this vector stores the .c_str() of each string in the value vector
+	static std::vector<const char*> valuep[8];
+	static int index = 0;
+
+	nlohmann::json node = s_plugin_cfg_get_node(key);
+
+	// cycle rotating buffer and store string
+	index = (index + 1) & 7;
+	value[index] = cfg_get_array_str(node, key);
+	// fill valuep with const char*s from value
+	valuep[index].clear();
+	for (std::string& s : value[index]) {
+		valuep[index].push_back(s.c_str());
+	}
+	return valuep[index].data();
+}
+
+
+static int* s_plugin_helper_ConfigGetArrayInt(const char* key) {
+	static std::vector<int> value[8];
+	static int index = 0;
+
+	nlohmann::json node = s_plugin_cfg_get_node(key);
+
+	// cycle rotating buffer and store string
+	index = (index + 1) & 7;
+	value[index] = cfg_get_array_int(node, key);
+	return value[index].data();
+}
+

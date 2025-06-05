@@ -25,6 +25,7 @@ nlohmann::json cfg_load(std::string file) {
 	return nlohmann::json();
 }
 
+
 std::string cfg_get_string(nlohmann::json& j, std::string key, std::string def) {
 	if (j.contains(key) && j[key].is_string()) {
 		return j[key];
@@ -32,6 +33,7 @@ std::string cfg_get_string(nlohmann::json& j, std::string key, std::string def) 
 	
 	return def;
 }
+
 
 int cfg_get_int(nlohmann::json& j, std::string key, int def) {
 	if (j.contains(key) && j[key].is_number_integer()) {
@@ -41,6 +43,7 @@ int cfg_get_int(nlohmann::json& j, std::string key, int def) {
 	return def;
 }
 
+
 bool cfg_get_bool(nlohmann::json& j, std::string key, bool def) {
 	if (j.contains(key) && j[key].is_boolean()) {
 		return j[key];
@@ -49,13 +52,24 @@ bool cfg_get_bool(nlohmann::json& j, std::string key, bool def) {
 	return def;
 }
 
-std::vector<std::string> cfg_get_array(nlohmann::json& j, std::string key, std::vector<std::string> def) {
+
+std::vector<std::string> cfg_get_array_str(nlohmann::json& j, std::string key, std::vector<std::string> def) {
 	if (j.contains(key) && j[key].is_array()) {
 		return j[key];
 	}
 
 	return def;
 }
+
+
+std::vector<int> cfg_get_array_int(nlohmann::json& j, std::string key, std::vector<int> def) {
+	if (j.contains(key) && j[key].is_array()) {
+		return j[key];
+	}
+
+	return def;
+}
+
 
 nlohmann::json cfg_get_object(nlohmann::json& j, std::string key, nlohmann::json def) {
 	if (j.contains(key) && j[key].is_object()) {

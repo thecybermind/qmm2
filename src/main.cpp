@@ -279,7 +279,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
 		// load plugins
 		LOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
-		for (auto plugin_path : cfg_get_array(g_cfg, "plugins")) {
+		for (auto plugin_path : cfg_get_array_str(g_cfg, "plugins")) {
 			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load plugin \"{}\"\n", plugin_path);
 			s_main_load_plugin(plugin_path);
 		}
