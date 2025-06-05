@@ -301,7 +301,7 @@ static nlohmann::json s_plugin_cfg_get_node(std::string key) {
 
 	size_t sep = key.find('/');
 	while (sep != std::string::npos) {
-		std::string segment = key.substr(0, sep - 1);
+		std::string segment = key.substr(0, sep);
 		node = cfg_get_object(node, segment);
 		key = key.substr(sep + 1);
 		sep = key.find('/', sep + 1);

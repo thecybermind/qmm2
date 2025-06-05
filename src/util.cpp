@@ -25,7 +25,7 @@ std::string path_normalize(std::string path) {
 	}
 	// collapse /./ to /
 	auto pos = path.find_last_of("/./");
-	if (pos == std::string::npos)
+	if (pos != std::string::npos)
 		path = path.substr(0, pos) + path.substr(pos + 2);
 
 	return path;
