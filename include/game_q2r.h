@@ -147,6 +147,8 @@ enum {
 	G_FS_READ,
 	G_FS_WRITE,
 	G_FS_FCLOSE_FILE,
+	// helper for plugins to not need separate logic
+	G_LOCATE_GAME_DATA,
 };
 
 typedef intptr_t fileHandle_t;

@@ -16,9 +16,7 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
 #include <stdio.h>
-#define GAME_INCLUDE
 #include <q2r/rerelease/game.h>
-#undef GAME_INCLUDE
 #include "game_api.h"
 #include "log.h"
 // QMM-specific Q2R header
@@ -370,6 +368,12 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			fclose((FILE*)f);
 			break;
 		}
+		// help plugins not need separate logic for entity/client pointers
+		case G_LOCATE_GAME_DATA: {
+			// void trap_LocateGameData(gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient);
+			// this is just to be hooked by plugins, so ignore everything
+			break;
+		}
 
 		default:
 			break;
@@ -384,6 +388,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 }
 
 
+static size_t prev_edict_size = 0;
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 intptr_t Q2R_vmMain(intptr_t cmd, ...) {
@@ -449,6 +454,14 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 	qmm_export.num_edicts = orig_export->num_edicts;
 	qmm_export.max_edicts = orig_export->max_edicts;
 	qmm_export.server_flags = orig_export->server_flags;
+
+	// if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
+	if (qmm_export.edict_size != prev_edict_size) {
+		prev_edict_size = qmm_export.edict_size;
+		gclient_t* clients = qmm_export.edicts[1].client;
+		intptr_t clientsize = (std::byte*)(qmm_export.edicts[2].client) - (std::byte*)clients;
+		syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, (intptr_t)clients, clientsize);
+	}
 
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_vmMain({}) returning {}\n", Q2R_mod_msg_names(cmd), ret);
 
@@ -573,6 +586,7 @@ const char* Q2R_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_FS_READ);
 		GEN_CASE(G_FS_WRITE);
 		GEN_CASE(G_FS_FCLOSE_FILE);
+		GEN_CASE(G_LOCATE_GAME_DATA);
 
 	default:
 		return "unknown";

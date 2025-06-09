@@ -366,4 +366,3 @@ static int* s_plugin_helper_ConfigGetArrayInt(const char* key) {
 	value[index] = cfg_get_array_int(node, key);
 	return value[index].data();
 }
-

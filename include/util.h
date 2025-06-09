@@ -30,7 +30,7 @@ void qmm_argv(intptr_t argn, char* buf, intptr_t buflen);
 
 template<typename T>
 T util_max(T a, T b) {
-    return ((a) > (b) ? (a) : (b));
+    return (a > b ? a : b);
 }
 
 #endif // __QMM2_UTIL_H__
