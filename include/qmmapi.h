@@ -32,7 +32,7 @@ typedef intptr_t (*mod_vmMain_t)(intptr_t cmd, ...);
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, pluginfunc_t, or plugininfo_t
 #define QMM_PIFV_MAJOR  3
 // minor interface version increases with trailing addition to pluginfunc_t or plugininfo_t structs
-#define QMM_PIFV_MINOR  0
+#define QMM_PIFV_MINOR  1
 
 // holds plugin info to pass back to QMM
 typedef struct {
