@@ -236,18 +236,19 @@ enum {
 
 // these import messages do not have an exact analogue in MOHAA
 enum {
-	G_CVAR_REGISTER = -100,
-	G_CVAR_VARIABLE_STRING_BUFFER,
-	G_CVAR_VARIABLE_INTEGER_VALUE,
-	G_SEND_CONSOLE_COMMAND,
+	G_CVAR_REGISTER = -100,			// void (void* ignored, const char *varName, const char *defaultValue, int flags)
+	G_CVAR_VARIABLE_STRING_BUFFER,	// void (const char* var_name, char* buffer, int bufsize)
+	G_CVAR_VARIABLE_INTEGER_VALUE,	// int (const char* var_name)
+	G_SEND_CONSOLE_COMMAND,			// void (int exec_when, const char *text)
 	// file loading (write and append only, as those are the only fileHandle_t operations provided
-	G_FS_FOPEN_FILE,
-
+	G_FS_FOPEN_FILE,				// int (const char *qpath, fileHandle_t *f, fsMode_t mode)
 	// FILE*-based file loading
-	G_FS_FOPEN_FILE_QMM,
-	G_FS_READ_QMM,
-	G_FS_WRITE_QMM,
-	G_FS_FCLOSE_FILE_QMM,
+	G_FS_FOPEN_FILE_QMM,			// int (const char *qpath, fileHandle_t *f, fsMode_t mode)
+	G_FS_READ_QMM,					// void (void* buffer, int len, fileHandle_t f)
+	G_FS_WRITE_QMM,					// void (const void* buffer, int len, fileHandle_t f)
+	G_FS_FCLOSE_FILE_QMM,			// void (fileHandle_t f)
+
+	G_DROP_CLIENT,					// (int clientNum)
 };
 
 // we need to store FILE* in fileHandle_t so change the underlying type

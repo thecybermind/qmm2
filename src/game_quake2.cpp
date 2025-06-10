@@ -106,6 +106,7 @@ static game_export_t qmm_export = {
 };
 
 
+static std::map<edict_t*, std::string> s_userinfo;
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
@@ -287,6 +288,27 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 			// this is just to be hooked by plugins, so ignore everything
 			break;
 		}
+		case G_DROP_CLIENT: {
+			// void trap_DropClient(int clientNum, const char *reason);
+			intptr_t clientnum = args[0];
+			orig_import.AddCommandString((char*)fmt::format("kick {}", clientnum).c_str());
+			break;
+		}
+		case G_GET_USERINFO: {
+			// void trap_GetUserinfo(int num, char *buffer, int bufferSize);
+			// arg0 comes right from client_connect or client_userinfo_changed, so just treat it as a pointer
+			edict_t* ent = (edict_t*)args[0];
+			char* buffer = (char*)args[1];
+			intptr_t bufferSize = args[2];
+			if (s_userinfo.count(ent)) {
+				strncpy(buffer, s_userinfo[ent].c_str(), bufferSize);
+				buffer[bufferSize - 1] = '\0';
+			}
+			else {
+				buffer[0] = '\0';
+			}
+			break;
+		}
 
 		default:
 			break;
@@ -358,6 +380,12 @@ intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 		gclient_t* clients = qmm_export.edicts[1].client;
 		intptr_t clientsize = (std::byte*)(qmm_export.edicts[2].client) - (std::byte*)clients;
 		syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, (intptr_t)clients, clientsize);
+	}
+	// track userinfo for our G_GET_USERINFO syscall
+	if (cmd == GAME_CLIENT_CONNECT || cmd == GAME_CLIENT_USERINFO_CHANGED) {
+		edict_t* ent = (edict_t*)args[0];
+		const char* userinfo = (const char*)args[1];
+		s_userinfo[ent] = userinfo;
 	}
 
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_vmMain({}) returning {}\n", QUAKE2_mod_msg_names(cmd), ret);
@@ -457,6 +485,8 @@ const char* QUAKE2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_FS_WRITE);
 		GEN_CASE(G_FS_FCLOSE_FILE);
 		GEN_CASE(G_LOCATE_GAME_DATA);
+		GEN_CASE(G_DROP_CLIENT);
+
 	default:
 		return "unknown";
 	}

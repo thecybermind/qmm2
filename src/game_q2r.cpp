@@ -14,6 +14,8 @@ Created By:
 #if defined(_WIN64)
 
 #define _CRT_SECURE_NO_WARNINGS 1
+#include <map>
+#include <string>
 #include <string.h>
 #include <stdio.h>
 #include <q2r/rerelease/game.h>
@@ -170,6 +172,7 @@ static game_export_t qmm_export = {
 };
 
 
+static std::map<edict_t*, std::string> s_userinfo;
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 intptr_t Q2R_syscall(intptr_t cmd, ...) {
@@ -374,6 +377,27 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			// this is just to be hooked by plugins, so ignore everything
 			break;
 		}
+		case G_DROP_CLIENT: {
+			// void trap_DropClient(int clientNum, const char *reason);
+			intptr_t clientnum = args[0];
+			orig_import.AddCommandString(fmt::format("kick {}", clientnum).c_str());
+			break;
+		}
+		case G_GET_USERINFO: {
+			// void trap_GetUserinfo(int num, char *buffer, int bufferSize);
+			// arg0 comes right from client_connect or client_userinfo_changed, so just treat it as a pointer
+			edict_t* ent = (edict_t*)args[0];
+			char* buffer = (char*)args[1];
+			intptr_t bufferSize = args[2];
+			if (s_userinfo.count(ent)) {
+				strncpy(buffer, s_userinfo[ent].c_str(), bufferSize);
+				buffer[bufferSize - 1] = '\0';
+			}
+			else {
+				buffer[0] = '\0';
+			}
+			break;
+		}
 
 		default:
 			break;
@@ -388,7 +412,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 }
 
 
-static size_t prev_edict_size = 0;
+static size_t s_prev_edict_size = 0;
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 intptr_t Q2R_vmMain(intptr_t cmd, ...) {
@@ -403,7 +427,6 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 
 	// store return value since we do some stuff after the function call is over
 	intptr_t ret = 0;
-
 	switch (cmd) {
 		ROUTE_EXPORT(PreInit, GAME_PREINIT);
 		ROUTE_EXPORT(Init, GAME_INIT_EX);
@@ -456,11 +479,17 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 	qmm_export.server_flags = orig_export->server_flags;
 
 	// if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
-	if (qmm_export.edict_size != prev_edict_size) {
-		prev_edict_size = qmm_export.edict_size;
+	if (qmm_export.edict_size != s_prev_edict_size) {
+		s_prev_edict_size = qmm_export.edict_size;
 		gclient_t* clients = qmm_export.edicts[1].client;
 		intptr_t clientsize = (std::byte*)(qmm_export.edicts[2].client) - (std::byte*)clients;
 		syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, (intptr_t)clients, clientsize);
+	}
+	// track userinfo for our G_GET_USERINFO syscall
+	if (cmd == GAME_CLIENT_CONNECT || cmd == GAME_CLIENT_USERINFO_CHANGED) {
+		edict_t* ent = (edict_t*)args[0];
+		const char* userinfo = (const char*)args[1];		
+		s_userinfo[ent] = userinfo;
 	}
 
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_vmMain({}) returning {}\n", Q2R_mod_msg_names(cmd), ret);
@@ -587,6 +616,7 @@ const char* Q2R_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_FS_WRITE);
 		GEN_CASE(G_FS_FCLOSE_FILE);
 		GEN_CASE(G_LOCATE_GAME_DATA);
+		GEN_CASE(G_DROP_CLIENT);
 
 	default:
 		return "unknown";

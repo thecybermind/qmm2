@@ -245,9 +245,11 @@ enum {
 
 // these import messages do not have an exact analogue in MOHSH
 enum {
-	G_CVAR_REGISTER = -100,
-	G_CVAR_VARIABLE_STRING_BUFFER,
-	G_CVAR_VARIABLE_INTEGER_VALUE,
+	G_CVAR_REGISTER = -100,			// void (void* ignored, const char *varName, const char *defaultValue, int flags)
+	G_CVAR_VARIABLE_STRING_BUFFER,	// void (const char* var_name, char* buffer, int bufsize)
+	G_CVAR_VARIABLE_INTEGER_VALUE,	// int (const char* var_name)
+
+	G_DROP_CLIENT,					// (int clientNum)
 };
 
 #endif // __QMM2_GAME_MOHSH_H__

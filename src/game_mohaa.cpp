@@ -584,6 +584,13 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			fclose((FILE*)f);
 			break;
 		}
+		case G_DROP_CLIENT: {
+			// void trap_DropClient(int clientNum, const char *reason);
+			intptr_t clientnum = args[0];
+			orig_import.SendConsoleCommand(fmt::format("kick {}", clientnum).c_str());
+			break;
+		}
+
 		default:
 			break;
 	};
@@ -890,6 +897,7 @@ const char* MOHAA_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_FS_READ_QMM);
 		GEN_CASE(G_FS_WRITE_QMM);
 		GEN_CASE(G_FS_FCLOSE_FILE_QMM);
+		GEN_CASE(G_DROP_CLIENT);
 
 		default:
 			return "unknown";

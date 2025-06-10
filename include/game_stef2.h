@@ -402,7 +402,9 @@ enum {
 
 // these import messages do not have an exact analogue in STEF2
 enum {
-	G_SEND_CONSOLE_COMMAND = -100,
+	G_SEND_CONSOLE_COMMAND = -100,	// void (int exec_when, const char *text)
+
+	G_DROP_CLIENT,					// (int clientNum)
 };
 
 #endif // __QMM2_GAME_STEF2_H__

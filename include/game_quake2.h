@@ -91,18 +91,20 @@ enum {
 // these import messages do not have an exact analogue in QUAKE2
 enum {
 	// used by QMM to make and check cvars
-	G_CVAR_REGISTER = -100,
-	G_CVAR_VARIABLE_STRING_BUFFER,
-	G_CVAR_VARIABLE_INTEGER_VALUE,
-	G_SEND_CONSOLE_COMMAND,
-	G_PRINT,
+	G_CVAR_REGISTER = -100,			// void (void* ignored, const char *varName, const char *defaultValue, int flags)
+	G_CVAR_VARIABLE_STRING_BUFFER,	// void (const char* var_name, char* buffer, int bufsize)
+	G_CVAR_VARIABLE_INTEGER_VALUE,	// int (const char* var_name)
+	G_SEND_CONSOLE_COMMAND,			// void (int exec_when, const char *text)
+	G_PRINT,						// void (const char *fmt)
 	// file loading
-	G_FS_FOPEN_FILE,
-	G_FS_READ,
-	G_FS_WRITE,
-	G_FS_FCLOSE_FILE,
+	G_FS_FOPEN_FILE,				// int (const char *qpath, fileHandle_t *f, fsMode_t mode)
+	G_FS_READ,						// void (void* buffer, int len, fileHandle_t f)
+	G_FS_WRITE,						// void (const void* buffer, int len, fileHandle_t f)
+	G_FS_FCLOSE_FILE,				// void (fileHandle_t f)
 	// helper for plugins to not need separate logic
-	G_LOCATE_GAME_DATA,
+	G_LOCATE_GAME_DATA,				// (gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient)
+	G_DROP_CLIENT,					// (int clientNum)
+	G_GET_USERINFO,					// (edict_t* ent, const char* userinfo)
 };
 
 typedef intptr_t fileHandle_t;

@@ -797,6 +797,12 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 			orig_import.SendConsoleCommand(text);
 			break;
 		}
+		case G_DROP_CLIENT: {
+			// void trap_DropClient(int clientNum, const char *reason);
+			intptr_t clientnum = args[0];
+			orig_import.SendConsoleCommand(fmt::format("kick {}", clientnum).c_str());
+			break;
+		}
 
 		default:
 			break;
@@ -1264,6 +1270,7 @@ const char* STEF2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_BOTUSERCOMMAND);
 
 		GEN_CASE(G_SEND_CONSOLE_COMMAND);
+		GEN_CASE(G_DROP_CLIENT);
 
 		default:
 			return "unknown";
