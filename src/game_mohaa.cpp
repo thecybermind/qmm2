@@ -590,6 +590,15 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			orig_import.SendConsoleCommand(fmt::format("kick {}\n", clientnum).c_str());
 			break;
 		}
+#error 
+/*
+    create a polyfill G_GET_ENTITY_TOKEN that uses the entstring arg of GAME_SPAWN_ENTITIES
+	moh??:  void (*SpawnEntities)(char *entstring, int levelTime);
+	stef2:  void (*SpawnEntities)(const char *mapname, const char *entstring, int levelTime);
+	quake2: void (*SpawnEntities)(const char *mapname, const char *entstring, const char *spawnpoint);
+	q2r:    void (*SpawnEntities)(const char *mapname, const char *entstring, const char *spawnpoint);
+	STEF2 MOHAA MOHSH MOHBT QUAKE2 Q2R
+*/
 
 		default:
 			break;
