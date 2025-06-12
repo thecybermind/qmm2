@@ -877,7 +877,7 @@ intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 			break;
 	};
 
-	// after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_entities and errorMessage in particular)
+	// after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_entities and error_message in particular)
 	// and these changes need to be available to the engine, so copy those values again now before returning from the mod
 	qmm_export.gentities = orig_export->gentities;
 	qmm_export.gentitySize = orig_export->gentitySize;
