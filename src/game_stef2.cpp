@@ -800,7 +800,7 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 		case G_DROP_CLIENT: {
 			// void trap_DropClient(int clientNum, const char *reason);
 			intptr_t clientnum = args[0];
-			orig_import.SendConsoleCommand(fmt::format("kick {}", clientnum).c_str());
+			orig_import.SendConsoleCommand(fmt::format("kick {}\n", clientnum).c_str());
 			break;
 		}
 
