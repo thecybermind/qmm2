@@ -385,8 +385,8 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 		}
 		case G_GET_USERINFO: {
 			// other games: void trap_GetUserinfo(int num, char *buffer, int bufferSize);
-			// quake2: g_syscall(G_GET_USERINFO, edict_t* ent, char* buffer, int bufferSize);
-			// quake2 uses edict_t* ent for the first arg in client_connect and client_userinfo_changed, so this will
+			// q2r: g_syscall(G_GET_USERINFO, edict_t* ent, char* buffer, int bufferSize);
+			// q2r uses edict_t* ent for the first arg in client_connect and client_userinfo_changed, so this will
 			// also be edict_t* ent instead of int num
 			edict_t* ent = (edict_t*)args[0];
 			char* buffer = (char*)args[1];

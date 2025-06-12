@@ -138,10 +138,10 @@ enum {
 // these import messages do not have an exact analogue in Q2R
 enum {
 	// used by QMM to make and check cvars
-	G_CVAR_REGISTER = -100,			// void ( void* ignored, const char *varName, const char *defaultValue, int flags)
+	G_CVAR_REGISTER = -100,			// void ( vmcvar_t* ignored_cvar, const char *varName, const char *defaultValue, int flags)
 	G_CVAR_VARIABLE_STRING_BUFFER,	// void (const char* var_name, char* buffer, int bufsize)
 	G_CVAR_VARIABLE_INTEGER_VALUE,	// int (const char* var_name)
-	G_SEND_CONSOLE_COMMAND,			// void (int ignored, const char *text)
+	G_SEND_CONSOLE_COMMAND,			// void (int ignored_exec_when, const char *text)
 	// file loading
 	G_FS_FOPEN_FILE,				// int (const char *qpath, fileHandle_t *f, fsMode_t mode)
 	G_FS_READ,						// void (void* buffer, int len, fileHandle_t f)

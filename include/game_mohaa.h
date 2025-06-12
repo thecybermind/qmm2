@@ -236,10 +236,10 @@ enum {
 
 // these import messages do not have an exact analogue in MOHAA
 enum {
-	G_CVAR_REGISTER = -100,			// void (void* ignored, const char *varName, const char *defaultValue, int flags)
+	G_CVAR_REGISTER = -100,			// void (vmcvar_t* ignored_cvar, const char *varName, const char *defaultValue, int flags)
 	G_CVAR_VARIABLE_STRING_BUFFER,	// void (const char* var_name, char* buffer, int bufsize)
 	G_CVAR_VARIABLE_INTEGER_VALUE,	// int (const char* var_name)
-	G_SEND_CONSOLE_COMMAND,			// void (int exec_when, const char *text)
+	G_SEND_CONSOLE_COMMAND,			// void (int ignored_exec_when, const char *text)
 	// file loading (write and append only, as those are the only fileHandle_t operations provided
 	G_FS_FOPEN_FILE,				// int (const char *qpath, fileHandle_t *f, fsMode_t mode)
 	// FILE*-based file loading
