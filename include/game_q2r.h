@@ -150,7 +150,7 @@ enum {
 	// helper for plugins to not need separate logic
 	G_LOCATE_GAME_DATA,				// void (gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient)
 	G_DROP_CLIENT,					// void (int clientNum)
-	G_GET_USERINFO,					// void (edict_t* ent, const char* userinfo)
+	G_GET_USERINFO,					// void (edict_t* ent, char* userinfo, int bufferSize)
 };
 
 typedef intptr_t fileHandle_t;

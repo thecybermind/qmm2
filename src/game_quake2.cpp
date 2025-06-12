@@ -295,8 +295,10 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 			break;
 		}
 		case G_GET_USERINFO: {
-			// void trap_GetUserinfo(int num, char *buffer, int bufferSize);
-			// arg0 comes right from client_connect or client_userinfo_changed, so just treat it as a pointer
+			// other games: void trap_GetUserinfo(int num, char *buffer, int bufferSize);
+			// quake2: g_syscall(G_GET_USERINFO, edict_t* ent, char* buffer, int bufferSize);
+			// quake2 uses edict_t* ent for the first arg in client_connect and client_userinfo_changed, so this will
+			// also be edict_t* ent instead of int num
 			edict_t* ent = (edict_t*)args[0];
 			char* buffer = (char*)args[1];
 			intptr_t bufferSize = args[2];
