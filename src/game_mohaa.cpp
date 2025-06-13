@@ -206,6 +206,17 @@ static game_import_t qmm_import = {
 };
 
 
+// these are "pre" hooks for storing some data for polyfills.
+// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
+
+// track userinfo for our G_GET_ENTITY_TOKEN syscall
+static std::vector<std::string> s_entity_tokens;
+static void MOHAA_SpawnEntities(char* entstring, int levelTime) {
+	s_entity_tokens = util_parse_tokens(entstring);
+	vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
+}
+
+
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
@@ -216,7 +227,7 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(SetMap, GAME_SETMAP),
 	GEN_EXPORT(Restart, GAME_RESTART),
 	GEN_EXPORT(SetTime, GAME_SETTIME),
-	GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
+	MOHAA_SpawnEntities, // GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
 	GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
 	GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
 	GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
@@ -590,15 +601,22 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			orig_import.SendConsoleCommand(fmt::format("kick {}\n", clientnum).c_str());
 			break;
 		}
-#error 
-/*
-    create a polyfill G_GET_ENTITY_TOKEN that uses the entstring arg of GAME_SPAWN_ENTITIES
-	moh??:  void (*SpawnEntities)(char *entstring, int levelTime);
-	stef2:  void (*SpawnEntities)(const char *mapname, const char *entstring, int levelTime);
-	quake2: void (*SpawnEntities)(const char *mapname, const char *entstring, const char *spawnpoint);
-	q2r:    void (*SpawnEntities)(const char *mapname, const char *entstring, const char *spawnpoint);
-	STEF2 MOHAA MOHSH MOHBT QUAKE2 Q2R
-*/
+		case G_GET_ENTITY_TOKEN: {
+			// qboolean trap_GetEntityToken(char *buffer, int bufferSize);
+			static size_t token = 0;
+			if (token >= s_entity_tokens.size()) {
+				ret = qfalse;
+				break;
+			}
+
+			char* buffer = (char*)args[0];
+			intptr_t bufferSize = args[1];
+
+			strncpy(buffer, s_entity_tokens[token++].c_str(), bufferSize);
+			buffer[bufferSize - 1] = '\0';
+			ret = qtrue;
+			break;
+		}
 
 		default:
 			break;
@@ -896,17 +914,21 @@ const char* MOHAA_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_SANITIZENAME);
 		GEN_CASE(GVP_FSDEBUG);
 
-		// special cmds
+		// polyfills
 		GEN_CASE(G_CVAR_REGISTER);
 		GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
 		GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
 		GEN_CASE(G_SEND_CONSOLE_COMMAND);
+
 		GEN_CASE(G_FS_FOPEN_FILE);
+
 		GEN_CASE(G_FS_FOPEN_FILE_QMM);
 		GEN_CASE(G_FS_READ_QMM);
 		GEN_CASE(G_FS_WRITE_QMM);
 		GEN_CASE(G_FS_FCLOSE_FILE_QMM);
+
 		GEN_CASE(G_DROP_CLIENT);
+		GEN_CASE(G_GET_ENTITY_TOKEN);
 
 		default:
 			return "unknown";

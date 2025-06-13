@@ -249,7 +249,8 @@ enum {
 	G_CVAR_VARIABLE_STRING_BUFFER,	// void (const char* var_name, char* buffer, int bufsize)
 	G_CVAR_VARIABLE_INTEGER_VALUE,	// int (const char* var_name)
 
-	G_DROP_CLIENT,					// (int clientNum)
+	G_DROP_CLIENT,					// void (int clientNum)
+	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
 };
 
 #endif // __QMM2_GAME_MOHBT_H__

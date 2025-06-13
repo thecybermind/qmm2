@@ -248,7 +248,8 @@ enum {
 	G_FS_WRITE_QMM,					// void (const void* buffer, int len, fileHandle_t f)
 	G_FS_FCLOSE_FILE_QMM,			// void (fileHandle_t f)
 
-	G_DROP_CLIENT,					// (int clientNum)
+	G_DROP_CLIENT,					// void (int clientNum)
+	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
 };
 
 // we need to store FILE* in fileHandle_t so change the underlying type

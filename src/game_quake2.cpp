@@ -80,19 +80,40 @@ static game_import_t qmm_import = {
 };
 
 
+// these are "pre" hooks for storing some data for polyfills.
+// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
+
+// track userinfo for our G_GET_USERINFO syscall
+static std::map<edict_t*, std::string> s_userinfo;
+static qboolean QUAKE2_ClientConnect(edict_t* ent, char* userinfo) {
+	s_userinfo[ent] = userinfo;
+	return vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
+}
+static void QUAKE2_ClientUserinfoChanged(edict_t* ent, char* userinfo) {
+	s_userinfo[ent] = userinfo;
+	vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
+}
+// track userinfo for our G_GET_ENTITY_TOKEN syscall
+static std::vector<std::string> s_entity_tokens;
+static void QUAKE2_SpawnEntities(char* mapname, char* entstring, char* spawnpoint) {
+	s_entity_tokens = util_parse_tokens(entstring);
+	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
+}
+
+
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
 	GEN_EXPORT(Init, GAME_INIT),
 	GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
-	GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
+	QUAKE2_SpawnEntities, // GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
 	GEN_EXPORT(WriteGame, GAME_WRITE_GAME),
 	GEN_EXPORT(ReadGame, GAME_READ_GAME),
 	GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
 	GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
-	GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
+	QUAKE2_ClientConnect, // GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
 	GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
-	GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
+	QUAKE2_ClientUserinfoChanged, // GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
 	GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
 	GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
 	GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
@@ -106,7 +127,6 @@ static game_export_t qmm_export = {
 };
 
 
-static std::map<edict_t*, std::string> s_userinfo;
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
@@ -311,6 +331,22 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 			}
 			break;
 		}
+		case G_GET_ENTITY_TOKEN: {
+			// bool trap_GetEntityToken(char *buffer, int bufferSize);
+			static size_t token = 0;
+			if (token >= s_entity_tokens.size()) {
+				ret = false;
+				break;
+			}
+
+			char* buffer = (char*)args[0];
+			intptr_t bufferSize = args[1];
+
+			strncpy(buffer, s_entity_tokens[token++].c_str(), bufferSize);
+			buffer[bufferSize - 1] = '\0';
+			ret = true;
+			break;
+		}
 
 		default:
 			break;
@@ -325,7 +361,9 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 }
 
 
-static int prev_edict_size = 0;
+static edict_t* s_prev_edicts = qmm_export.edicts;
+static int s_prev_edict_size = qmm_export.edict_size;
+static int s_prev_num_edicts = qmm_export.num_edicts;
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
@@ -377,17 +415,19 @@ intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 	qmm_export.max_edicts = orig_export->max_edicts;
 
 	// if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
-	if (qmm_export.edict_size != prev_edict_size) {
-		prev_edict_size = qmm_export.edict_size;
-		gclient_t* clients = qmm_export.edicts[1].client;
-		intptr_t clientsize = (std::byte*)(qmm_export.edicts[2].client) - (std::byte*)clients;
-		syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, (intptr_t)clients, clientsize);
-	}
-	// track userinfo for our G_GET_USERINFO syscall
-	if (cmd == GAME_CLIENT_CONNECT || cmd == GAME_CLIENT_USERINFO_CHANGED) {
-		edict_t* ent = (edict_t*)args[0];
-		const char* userinfo = (const char*)args[1];
-		s_userinfo[ent] = userinfo;
+	if (qmm_export.edicts != s_prev_edicts
+		|| qmm_export.edict_size != s_prev_edict_size
+		|| qmm_export.num_edicts != s_prev_num_edicts
+		) {
+		s_prev_edicts = qmm_export.edicts;
+		s_prev_edict_size = qmm_export.edict_size;
+		s_prev_num_edicts = qmm_export.num_edicts;
+
+		if (s_prev_edicts) {
+			gclient_t* clients = qmm_export.edicts[1].client;
+			intptr_t clientsize = (std::byte*)(qmm_export.edicts[2].client) - (std::byte*)clients;
+			syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, (intptr_t)clients, clientsize);
+		}
 	}
 
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_vmMain({}) returning {}\n", QUAKE2_mod_msg_names(cmd), ret);
@@ -476,18 +516,22 @@ const char* QUAKE2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_ADDCOMMANDSTRING);
 		GEN_CASE(G_DEBUGGRAPH);
 
-		// special cmds
+		// polyfills
 		GEN_CASE(G_CVAR_REGISTER);
 		GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
 		GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
 		GEN_CASE(G_SEND_CONSOLE_COMMAND);
 		GEN_CASE(G_PRINT);
+
 		GEN_CASE(G_FS_FOPEN_FILE);
 		GEN_CASE(G_FS_READ);
 		GEN_CASE(G_FS_WRITE);
 		GEN_CASE(G_FS_FCLOSE_FILE);
+
 		GEN_CASE(G_LOCATE_GAME_DATA);
 		GEN_CASE(G_DROP_CLIENT);
+		GEN_CASE(G_GET_USERINFO);
+		GEN_CASE(G_GET_ENTITY_TOKEN);
 
 	default:
 		return "unknown";
@@ -517,6 +561,7 @@ const char* QUAKE2_mod_msg_names(intptr_t cmd) {
 		GEN_CASE(GAMEV_EDICT_SIZE);
 		GEN_CASE(GAMEV_NUM_EDICTS);
 		GEN_CASE(GAMEV_MAX_EDICTS);
+
 	default:
 		return "unknown";
 	}

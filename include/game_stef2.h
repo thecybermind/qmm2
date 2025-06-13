@@ -404,7 +404,8 @@ enum {
 enum {
 	G_SEND_CONSOLE_COMMAND = -100,	// void (int exec_when, const char *text)
 
-	G_DROP_CLIENT,					// (int clientNum)
+	G_DROP_CLIENT,					// void (int clientNum)
+	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
 };
 
 #endif // __QMM2_GAME_STEF2_H__

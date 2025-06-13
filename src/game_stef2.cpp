@@ -20,6 +20,7 @@ Created By:
 // QMM-specific STEF2 header
 #include "game_stef2.h"
 #include "main.h"
+#include "util.h"
 
 GEN_QMM_MSGS(STEF2);
 GEN_EXTS(STEF2);
@@ -377,13 +378,24 @@ static game_import_t qmm_import = {
 };
 
 
+// these are "pre" hooks for storing some data for polyfills.
+// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
+
+// track userinfo for our G_GET_ENTITY_TOKEN syscall
+static std::vector<std::string> s_entity_tokens;
+static void STEF2_SpawnEntities(const char* mapname, const char* entstring, int levelTime) {
+	s_entity_tokens = util_parse_tokens(entstring);
+	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, levelTime);
+}
+
+
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
 	GEN_EXPORT(Init, GAME_INIT),
 	GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
 	GEN_EXPORT(Cleanup, GAME_CLEANUP),
-	GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
+	STEF2_SpawnEntities, // GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
 	GEN_EXPORT(PostLoad, GAME_POSTLOAD),
 	GEN_EXPORT(PostSublevelLoad, GAME_POSTSUBLEVELLOAD),
 	GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
@@ -801,6 +813,22 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 			// void trap_DropClient(int clientNum, const char *reason);
 			intptr_t clientnum = args[0];
 			orig_import.SendConsoleCommand(fmt::format("kick {}\n", clientnum).c_str());
+			break;
+		}
+		case G_GET_ENTITY_TOKEN: {
+			// qboolean trap_GetEntityToken(char *buffer, int bufferSize);
+			static size_t token = 0;
+			if (token >= s_entity_tokens.size()) {
+				ret = qfalse;
+				break;
+			}
+
+			char* buffer = (char*)args[0];
+			intptr_t bufferSize = args[1];
+
+			strncpy(buffer, s_entity_tokens[token++].c_str(), bufferSize);
+			buffer[bufferSize - 1] = '\0';
+			ret = qtrue;
 			break;
 		}
 
@@ -1269,8 +1297,10 @@ const char* STEF2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_TEST);
 		GEN_CASE(G_BOTUSERCOMMAND);
 
+		// polyfills
 		GEN_CASE(G_SEND_CONSOLE_COMMAND);
 		GEN_CASE(G_DROP_CLIENT);
+		GEN_CASE(G_GET_ENTITY_TOKEN);
 
 		default:
 			return "unknown";

@@ -146,3 +146,38 @@ void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
 
 	buf[buflen - 1] = '\0';
 }
+
+
+// tokenize an entstring into a vector of strings 
+std::vector<std::string> util_parse_tokens(std::string entstring) {
+	std::vector<std::string> ret;
+
+	std::string build;
+	bool building = false;
+
+	for (auto& c : entstring) {
+		// skip whitespace (or null?)
+		if (std::isspace(c) || !c)
+			continue;
+
+		// handle opening or closing braces
+		if (c == '{')
+			ret.push_back("{");
+		else if (c == '}')
+			ret.push_back("}");
+		// handle quote, start of a key or value
+		else if (c == '"' && !building)
+			building = true;
+		// handle quote, end of a key or value
+		else if (c == '"' && building) {
+			ret.push_back(build);
+			build.clear();
+			building = false;
+		}
+		// all other chars, add to build string
+		else
+			build.push_back(c);
+	}
+
+	return ret;
+}
