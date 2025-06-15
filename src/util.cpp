@@ -25,8 +25,10 @@ std::string path_normalize(std::string path) {
 	}
 	// collapse /./ to /
 	auto pos = path.find_last_of("/./");
-	if (pos != std::string::npos)
+	while (pos != std::string::npos) {
 		path = path.substr(0, pos) + path.substr(pos + 2);
+		pos = path.find_last_of("/./");
+	}
 
 	return path;
 }
@@ -156,8 +158,8 @@ std::vector<std::string> util_parse_tokens(std::string entstring) {
 	bool building = false;
 
 	for (auto& c : entstring) {
-		// skip whitespace (or null?)
-		if (std::isspace(c) || !c)
+		// skip nulls, and whitespace outside strings
+		if ((!building && std::isspace(c)) || !c)
 			continue;
 
 		// handle opening or closing braces

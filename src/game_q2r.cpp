@@ -451,8 +451,8 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 
 
 static edict_t* s_prev_edicts = qmm_export.edicts;
-static int s_prev_edict_size = qmm_export.edict_size;
-static int s_prev_num_edicts = qmm_export.num_edicts;
+static size_t s_prev_edict_size = qmm_export.edict_size;
+static uint32_t s_prev_num_edicts = qmm_export.num_edicts;
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 intptr_t Q2R_vmMain(intptr_t cmd, ...) {
