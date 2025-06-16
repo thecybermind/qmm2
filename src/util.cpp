@@ -166,14 +166,17 @@ std::vector<std::string> util_parse_tokens(std::string entstring) {
 		if (std::isspace(c) && !buildstr)
 			continue;
 
-		// handle opening or closing braces
-		if (c == '{')
+		// handle opening braces
+		else if (c == '{')
 			ret.push_back("{");
+		// handle closing braces
 		else if (c == '}')
 			ret.push_back("}");
 		// handle quote, start of a key or value
-		else if (c == '"' && !buildstr)
+		else if (c == '"' && !buildstr) {
+			build.clear();
 			buildstr = true;
+		}
 		// handle quote, end of a key or value
 		else if (c == '"' && buildstr) {
 			ret.push_back(build);
