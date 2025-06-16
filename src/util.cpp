@@ -161,11 +161,9 @@ std::vector<std::string> util_parse_tokens(std::string entstring) {
 		// end if null (shouldn't happen)
 		if (!c)
 			break;
-
 		// skip whitespace outside strings
-		if (std::isspace(c) && !buildstr)
+		else if (std::isspace(c) && !buildstr)
 			continue;
-
 		// handle opening braces
 		else if (c == '{')
 			ret.push_back("{");
