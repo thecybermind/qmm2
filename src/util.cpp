@@ -155,11 +155,15 @@ std::vector<std::string> util_parse_tokens(std::string entstring) {
 	std::vector<std::string> ret;
 
 	std::string build;
-	bool building = false;
+	bool buildstr = false;
 
 	for (auto& c : entstring) {
-		// skip nulls, and whitespace outside strings
-		if ((!building && std::isspace(c)) || !c)
+		// end if null (shouldn't happen)
+		if (!c)
+			break;
+
+		// skip whitespace outside strings
+		if (std::isspace(c) && !buildstr)
 			continue;
 
 		// handle opening or closing braces
@@ -168,13 +172,13 @@ std::vector<std::string> util_parse_tokens(std::string entstring) {
 		else if (c == '}')
 			ret.push_back("}");
 		// handle quote, start of a key or value
-		else if (c == '"' && !building)
-			building = true;
+		else if (c == '"' && !buildstr)
+			buildstr = true;
 		// handle quote, end of a key or value
-		else if (c == '"' && building) {
+		else if (c == '"' && buildstr) {
 			ret.push_back(build);
 			build.clear();
-			building = false;
+			buildstr = false;
 		}
 		// all other chars, add to build string
 		else
