@@ -91,6 +91,7 @@ enum {
 	G_PRINT = G_COM_PRINT,
 	G_ERROR = G_COM_ERROR,
 	G_SET_CONFIGSTRING = G_CONFIGSTRING,
+	G_CPRINTF = G_CLIENT_PRINT,
 };
 
 // export ("vmMain") cmds

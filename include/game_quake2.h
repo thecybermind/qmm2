@@ -60,6 +60,7 @@ enum {
 	G_DEBUGGRAPH,
 
 	G_SET_CONFIGSTRING = G_CONFIGSTRING,
+	G_CLIENT_PRINT = G_CPRINTF,
 };
 
 // export ("vmMain") cmds
