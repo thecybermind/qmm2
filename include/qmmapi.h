@@ -86,6 +86,7 @@ typedef struct {
     int (*pfnConfigGetBool)(const char* key);
     const char** (*pfnConfigGetArrayStr)(const char* key);
     int* (*pfnConfigGetArrayInt)(const char* key);
+    void (*pfnGetConfigString)(intptr_t argn, char* buf, intptr_t buflen);
 } pluginfuncs_t;
 
 // struct of vars for QMM plugin utils
@@ -110,6 +111,7 @@ typedef struct {
 #define QMM_CFG_GETBOOL     (g_pluginfuncs->pfnConfigGetBool)       // get a bool config entry
 #define QMM_CFG_GETARRAYSTR (g_pluginfuncs->pfnConfigGetArrayStr)   // get an array-of-strings config entry
 #define QMM_CFG_GETARRAYINT (g_pluginfuncs->pfnConfigGetArrayInt)   // get an array-of-ints config entry
+#define QMM_GETCONFIGSTRING (g_pluginfuncs->pfnGetConfigString)     // call G_GET_CONFIGSTRING, but can handle both engine styles
 
 // macros for QMM plugin vars
 #define QMM_GET_RETURN(x)   ((x)*(g_pluginvars->preturn))       // get the actual return value of a call while inside a QMM_x_Post call, with given cast

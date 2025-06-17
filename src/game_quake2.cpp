@@ -31,6 +31,17 @@ static game_import_t orig_import;
 static game_export_t* orig_export = nullptr;
 
 
+// these are "pre" hooks for storing some data for polyfills.
+// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_import table
+
+// track configstrings for our G_GET_CONFIGSTRING syscall
+static std::map<intptr_t, std::string> s_configstrings;
+static void QUAKE2_configstring(int num, char* configstring) {
+	s_configstrings[num] = configstring;
+	vmMain(G_CONFIGSTRING, (intptr_t)num, configstring);
+}
+
+
 // struct with lambdas that call QMM's syscall function. this is given to the mod
 static game_import_t qmm_import = {
 	GEN_IMPORT(bprintf, G_BPRINTF),
@@ -39,7 +50,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(centerprintf, G_CENTERPRINTF),
 	GEN_IMPORT_6(sound, G_SOUND, void, edict_t*, int, int, float, float, float),
 	GEN_IMPORT_7(positioned_sound, G_POSITIONED_SOUND, void, vec3_t, edict_t*, int, int, float, float, float),
-	GEN_IMPORT(configstring, G_CONFIGSTRING),
+	QUAKE2_configstring, // GEN_IMPORT(configstring, G_CONFIGSTRING),
 	GEN_IMPORT(error, G_ERROR),
 	GEN_IMPORT(modelindex, G_MODELINDEX),
 	GEN_IMPORT(soundindex, G_SOUNDINDEX),
@@ -347,6 +358,15 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 			ret = true;
 			break;
 		}
+		case G_GET_CONFIGSTRING: {
+			// const char* (*get_configstring)(int num);
+			intptr_t num = args[0];
+
+			if (s_configstrings.count(num))
+				ret = (intptr_t)s_configstrings[num].c_str();
+
+			break;
+		}
 
 		default:
 			break;
@@ -532,6 +552,7 @@ const char* QUAKE2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_DROP_CLIENT);
 		GEN_CASE(G_GET_USERINFO);
 		GEN_CASE(G_GET_ENTITY_TOKEN);
+		GEN_CASE(G_GET_CONFIGSTRING);
 
 	default:
 		return "unknown";

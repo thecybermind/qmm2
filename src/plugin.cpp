@@ -36,7 +36,7 @@ static int s_plugin_helper_ConfigGetInt(const char* key);
 static int s_plugin_helper_ConfigGetBool(const char* key);
 static const char** s_plugin_helper_ConfigGetArrayStr(const char* key);
 static int* s_plugin_helper_ConfigGetArrayInt(const char* key);
-
+static void s_plugin_helper_GetConfigString(intptr_t argn, char* buf, intptr_t buflen);
 
 static pluginfuncs_t s_pluginfuncs = {
 	s_plugin_helper_WriteQMMLog,
@@ -54,6 +54,7 @@ static pluginfuncs_t s_pluginfuncs = {
 	s_plugin_helper_ConfigGetBool,
 	s_plugin_helper_ConfigGetArrayStr,
 	s_plugin_helper_ConfigGetArrayInt,
+	s_plugin_helper_GetConfigString,
 };
 
 pluginres_t g_plugin_result = QMM_UNUSED;
@@ -366,3 +367,9 @@ static int* s_plugin_helper_ConfigGetArrayInt(const char* key) {
 	value[index] = cfg_get_array_int(node, key);
 	return value[index].data();
 }
+
+
+static void s_plugin_helper_GetConfigString(intptr_t argn, char* buf, intptr_t buflen) {
+	qmm_get_configstring(argn, buf, buflen);
+}
+

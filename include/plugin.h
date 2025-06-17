@@ -13,6 +13,7 @@ Created By:
 #define __QMM2_PLUGIN_H__
 
 #include <vector>
+#include <string>
 #include "qmmapi.h"
 
 typedef struct plugin_s {

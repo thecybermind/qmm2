@@ -51,7 +51,9 @@ typedef enum {
 	QMM_FS_READ,
 
 	QMM_CVAR_SERVERINFO,
-	QMM_CVAR_ROM
+	QMM_CVAR_ROM,
+
+	QMM_G_GET_CONFIGSTRING,
 } qmm_eng_msg_t;
 
 // some information for each game engine supported by QMM
@@ -103,7 +105,8 @@ extern supportedgame_t g_supportedgames[];
 		G_CVAR_REGISTER, G_CVAR_SET, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, \
 		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, \
 		EXEC_APPEND, FS_READ, \
-		CVAR_SERVERINFO, CVAR_ROM \
+		CVAR_SERVERINFO, CVAR_ROM, \
+		G_GET_CONFIGSTRING, \
 	}; \
 	int game##_qmm_mod_msgs[] = { \
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, GAME_CLIENT_CONNECT \
