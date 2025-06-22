@@ -530,7 +530,7 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 		if (s_prev_edicts) {
 			gclient_t* clients = qmm_export.edicts[1].client;
 			intptr_t clientsize = (std::byte*)(qmm_export.edicts[2].client) - (std::byte*)clients;
-			syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, (intptr_t)clients, clientsize);
+			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, (intptr_t)clients, clientsize);
 		}
 	}
 

@@ -199,7 +199,7 @@ static bool s_mod_load_vmmain(mod_t& mod) {
 	}
 
 	// pass QMM's syscall to mod dllEntry function
-	dllEntry(syscall);
+	dllEntry(qmm_syscall);
 	mod.vmbase = 0;
 
 	return true;

@@ -340,7 +340,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
    This is the "syscall" function called by the mod as a way to pass info to or get info from the engine.
    It routes the function call according to the "overall control flow" comment above.
 */
-intptr_t syscall(intptr_t cmd, ...) {
+intptr_t qmm_syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({}) called\n", g_gameinfo.game->eng_msg_names(cmd));

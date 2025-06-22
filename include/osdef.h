@@ -50,7 +50,7 @@ const char* dlerror();		// this will return the last error from any win32 functi
 #elif defined(__linux__)
 
 #include <dlfcn.h>
-#include <unistd.h> 
+//#include <unistd.h> 
 #include <limits.h>
 #include <ctype.h>
 #include <sys/stat.h>

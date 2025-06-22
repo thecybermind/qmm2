@@ -56,13 +56,9 @@ constexpr int QMM_FAIL_G_ERROR = 1;
 // set to true if a G_ERROR has been triggered, to avoid calling it again from GAME_SHUTDOWN or its ilk (SOF2MP's GAME_GHOUL2_SHUTDOWN, etc)
 extern bool g_shutdown;
 
-// these are not needed to be prototyped, as they aren't referenced by anything. this also stops
-// errors in GetGameAPI game source files (e.g. game_mohaa.cpp) since the game headers define
-// GetGameAPI with actual pointer types instead of void*
-// C_DLLEXPORT void dllEntry(eng_syscall_t syscall);	// initial entry point for non-GetGameAPI games
-// C_DLLEXPORT void* GetGameAPI(void* import);			// initial entry point for GetGameAPI games
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
-intptr_t syscall(intptr_t cmd, ...);
+// renamed syscall to qmm_syscall to avoid conflict with POSIX "long syscall(long number, ...)" which has pretty much the same interface
+intptr_t qmm_syscall(intptr_t cmd, ...);
 
 constexpr bool QMM_DETECT_GETGAMEAPI = true;
 constexpr bool QMM_DETECT_DLLENTRY = false;
