@@ -39,7 +39,7 @@ OBJ_DBG_32 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_32)/%.o)
 OBJ_DBG_64 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_64)/%.o)
 
 CPPFLAGS := -MMD -MP -I ./include -isystem ../qmm_sdks
-CFLAGS   := -Wall -pipe -fPIC
+CFLAGS   := -Wall -pipe -fPIC -std=c++17
 LDFLAGS  := -shared -fPIC
 LDLIBS   :=
 
