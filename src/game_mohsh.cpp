@@ -234,7 +234,7 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(SetMap, GAME_SETMAP),
 	GEN_EXPORT(Restart, GAME_RESTART),
 	GEN_EXPORT(SetTime, GAME_SETTIME),
-	GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
+	MOHSH_SpawnEntities, // GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
 	GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
 	GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
 	GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
