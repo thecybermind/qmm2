@@ -59,8 +59,20 @@ DBG_LDFLAGS_64 := $(LDFLAGS) -g -pg
 REL_LDLIBS := $(LDLIBS)
 DBG_LDLIBS := $(LDLIBS)
 
-.PHONY: all all32 all64 release debug clean
+.PHONY: help all all32 all64 release debug clean
 
+help:
+	@echo make targets:
+	@echo all: release debug
+	@echo all32: release32 debug32
+	@echo all64: release64 debug64
+	@echo release: release32 release64
+	@echo release32: [32-bit release build]
+	@echo release64: [64-bit release build]
+	@echo debug: debug32 debug64
+	@echo debug32: [32-bit debug build]
+	@echo debug64: [64-bit debug build]
+	
 all: release debug
 all32: release32 debug32
 all64: release64 debug64
