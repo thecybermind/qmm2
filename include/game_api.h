@@ -154,6 +154,7 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 // macros to easily generate a lambda with full return and argument type information:
 // e.g. GEN_IMPORT_2_VOID(G_DEBUGGRAPH, float, int)
 // e.g. GEN_IMPORT_2(G_ANIM_TIME, float, dtiki_t*, int)
+typedef float(*fsyscall)(intptr_t, ...);
 #if defined(__LP64__) || defined(_WIN64)
 #define  GEN_IMPORT_0(field, cmd, typeret) +[]() -> typeret { return (typeret)syscall(cmd); }
 #define  GEN_IMPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { return (typeret)syscall(cmd, *(intptr_t*)&arg0); }
