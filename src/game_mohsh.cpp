@@ -174,7 +174,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
 	GEN_IMPORT_9(Sound, G_SOUND, void, vec3_t*, int, int, const char*, float, float, float, float, int),
 	GEN_IMPORT(StopSound, G_STOPSOUND),
-	/* SoundLength */ +[](int arg0, const char* arg1) -> float { return (float(*)(intptr_t, ...))qmm_syscall)(G_SOUNDLENGTH, arg0, arg1); },
+	/* SoundLength */ +[](int arg0, const char* arg1) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_SOUNDLENGTH, arg0, arg1); },
 	GEN_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES),
 	GEN_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING),
 	GEN_IMPORT(CalcCRC, G_CALCCRC),
