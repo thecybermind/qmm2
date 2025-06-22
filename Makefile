@@ -46,8 +46,8 @@ LDLIBS   :=
 REL_CPPFLAGS := $(CPPFLAGS)
 DBG_CPPFLAGS := $(CPPFLAGS) -D_DEBUG
 
-REL_CFLAGS_32 := $(CFLAGS) -m32 -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce
-REL_CFLAGS_64 := $(CFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce
+REL_CFLAGS_32 := $(CFLAGS) -m32 -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
+REL_CFLAGS_64 := $(CFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
 DBG_CFLAGS_32 := $(CFLAGS) -m32 -g -pg
 DBG_CFLAGS_64 := $(CFLAGS) -g -pg
 
