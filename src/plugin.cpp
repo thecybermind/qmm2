@@ -344,7 +344,7 @@ static const char** s_plugin_helper_ConfigGetArrayStr(const char* key) {
 
 	nlohmann::json node = s_plugin_cfg_get_node(key);
 
-	// cycle rotating buffer and store string
+	// cycle rotating buffer and store array
 	index = (index + 1) & 7;
 	value[index] = cfg_get_array_str(node, key);
 	// fill valuep with const char*s from value
@@ -362,7 +362,7 @@ static int* s_plugin_helper_ConfigGetArrayInt(const char* key) {
 
 	nlohmann::json node = s_plugin_cfg_get_node(key);
 
-	// cycle rotating buffer and store string
+	// cycle rotating buffer and store array
 	index = (index + 1) & 7;
 	value[index] = cfg_get_array_int(node, key);
 	return value[index].data();
