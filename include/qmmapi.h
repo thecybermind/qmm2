@@ -71,22 +71,22 @@ typedef enum pluginres_e {
 
 // prototype struct for QMM plugin util funcs
 typedef struct {
-    void (*pfnWriteQMMLog)(const char* text, int severity, const char* tag);
-    char* (*pfnVarArgs)(const char* format, ...);
-    int (*pfnIsQVM)();
-    const char* (*pfnEngMsgName)(intptr_t msg);
-    const char* (*pfnModMsgName)(intptr_t msg);
-    intptr_t (*pfnGetIntCvar)(const char* cvar);
-    const char* (*pfnGetStrCvar)(const char* cvar);
-    const char* (*pfnGetGameEngine)();
-    void (*pfnArgv)(intptr_t argn, char* buf, intptr_t buflen);
-    const char* (*pfnInfoValueForKey)(const char* userinfo, const char* key);
-    const char* (*pfnConfigGetStr)(const char* key);
-    int (*pfnConfigGetInt)(const char* key);
-    int (*pfnConfigGetBool)(const char* key);
-    const char** (*pfnConfigGetArrayStr)(const char* key);
-    int* (*pfnConfigGetArrayInt)(const char* key);
-    void (*pfnGetConfigString)(intptr_t argn, char* buf, intptr_t buflen);
+    void (*pfnWriteQMMLog)(const char* text, int severity, const char* tag);    // write to the QMM log
+    char* (*pfnVarArgs)(const char* format, ...);                               // simple vsprintf helper with rotating buffer
+    int (*pfnIsQVM)();                                                          // returns 1 if the mod is QVM
+    const char* (*pfnEngMsgName)(intptr_t msg);                                 // get the string name of a syscall code
+    const char* (*pfnModMsgName)(intptr_t msg);                                 // get the string name of a vmMain code
+    intptr_t (*pfnGetIntCvar)(const char* cvar);                                // get the int value of a cvar
+    const char* (*pfnGetStrCvar)(const char* cvar);                             // get the str value of a cvar
+    const char* (*pfnGetGameEngine)();                                          // return the QMM short code for the game engine
+    void (*pfnArgv)(intptr_t argn, char* buf, intptr_t buflen);                 // call G_ARGV, but can handle both engine styles
+    const char* (*pfnInfoValueForKey)(const char* userinfo, const char* key);   // same as SDK's Info_ValueForKey
+    const char* (*pfnConfigGetStr)(const char* key);                            // get a string config entry
+    int (*pfnConfigGetInt)(const char* key);                                    // get an int config entry
+    int (*pfnConfigGetBool)(const char* key);                                   // get a bool config entry
+    const char** (*pfnConfigGetArrayStr)(const char* key);                      // get an array-of-strings config entry (array terminated with a null pointer)
+    int* (*pfnConfigGetArrayInt)(const char* key);                              // get an array-of-ints config entry (array starts with remaining length)
+    void (*pfnGetConfigString)(intptr_t argn, char* buf, intptr_t buflen);      // call G_GET_CONFIGSTRING, but can handle both engine styles
 } pluginfuncs_t;
 
 // struct of vars for QMM plugin utils
@@ -109,12 +109,12 @@ typedef struct {
 #define QMM_CFG_GETSTR      (g_pluginfuncs->pfnConfigGetStr)        // get a string config entry
 #define QMM_CFG_GETINT      (g_pluginfuncs->pfnConfigGetInt)        // get an int config entry
 #define QMM_CFG_GETBOOL     (g_pluginfuncs->pfnConfigGetBool)       // get a bool config entry
-#define QMM_CFG_GETARRAYSTR (g_pluginfuncs->pfnConfigGetArrayStr)   // get an array-of-strings config entry
-#define QMM_CFG_GETARRAYINT (g_pluginfuncs->pfnConfigGetArrayInt)   // get an array-of-ints config entry
+#define QMM_CFG_GETARRAYSTR (g_pluginfuncs->pfnConfigGetArrayStr)   // get an array-of-strings config entry (array terminated with a null pointer)
+#define QMM_CFG_GETARRAYINT (g_pluginfuncs->pfnConfigGetArrayInt)   // get an array-of-ints config entry (array starts with remaining length)
 #define QMM_GETCONFIGSTRING (g_pluginfuncs->pfnGetConfigString)     // call G_GET_CONFIGSTRING, but can handle both engine styles
 
 // macros for QMM plugin vars
-#define QMM_GET_RETURN(x)   ((x)*(g_pluginvars->preturn))       // get the actual return value of a call while inside a QMM_x_Post call, with given cast
+#define QMM_GET_RETURN(x)   ((x)*(g_pluginvars->preturn))           // get the actual return value of a call while inside a QMM_x_Post call, with given cast
 
 // QMM_Query
 typedef void (*plugin_query)(plugininfo_t** pinfo);

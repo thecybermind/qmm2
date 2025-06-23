@@ -352,6 +352,7 @@ static const char** s_plugin_helper_ConfigGetArrayStr(const char* key) {
 	for (std::string& s : value[index]) {
 		valuep[index].push_back(s.c_str());
 	}
+	valuep[index].push_back(nullptr);	// null-terminate the array
 	return valuep[index].data();
 }
 
@@ -365,6 +366,8 @@ static int* s_plugin_helper_ConfigGetArrayInt(const char* key) {
 	// cycle rotating buffer and store array
 	index = (index + 1) & 7;
 	value[index] = cfg_get_array_int(node, key);
+	// insert length of the array as the first element
+	value[index].insert(value[index].begin(), value[index].size());
 	return value[index].data();
 }
 
