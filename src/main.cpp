@@ -230,7 +230,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("vmMain({}) called\n", g_gameinfo.game->mod_msg_names(cmd));
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("vmMain({} {}) called\n", g_gameinfo.game->mod_msg_names(cmd), cmd);
 
 	// couldn't load engine info, so we will just call syscall(G_ERROR) to exit
 	if (!g_gameinfo.game) {
@@ -330,7 +330,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		LOG(QMM_LOG_INFO, "QMM") << "Finished shutting down\n";
 	}
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("vmMain({}) returning {}\n", g_gameinfo.game->mod_msg_names(cmd), ret);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("vmMain({} {}) returning {}\n", g_gameinfo.game->mod_msg_names(cmd), cmd, ret);
 	
 	return ret;
 }
@@ -339,16 +339,17 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 /* Entry point: mod->qmm
    This is the "syscall" function called by the mod as a way to pass info to or get info from the engine.
    It routes the function call according to the "overall control flow" comment above.
+   Named qmm_syscall to avoid conflict with POSIX syscall function
 */
 intptr_t qmm_syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({}) called\n", g_gameinfo.game->eng_msg_names(cmd));
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({} {}) called\n", g_gameinfo.game->eng_msg_names(cmd), cmd);
 
 	// route call to plugins and mod
 	intptr_t ret = s_main_route_syscall(cmd, args);
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), ret);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({} {}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), cmd, ret);
 
 	return ret;
 }

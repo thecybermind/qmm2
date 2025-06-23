@@ -280,7 +280,7 @@ const char* JK2MP_mod_msg_names(intptr_t cmd) {
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
 int JK2MP_vmsyscall(std::byte* membase, int cmd, int* args) {
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_vmsyscall({}) called\n", JK2MP_eng_msg_names(cmd));
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_vmsyscall({} {}) called\n", JK2MP_eng_msg_names(cmd), cmd);
 
 	switch(cmd) {
 		case G_MILLISECONDS:			// (void)

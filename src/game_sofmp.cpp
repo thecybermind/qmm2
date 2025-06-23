@@ -320,7 +320,7 @@ const char* SOF2MP_mod_msg_names(intptr_t cmd) {
 // TGPValue, TGPGroup, and TGenericParser2 are void*, but treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
 int SOF2MP_vmsyscall(std::byte* membase, int cmd, int* args) {
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_vmsyscall({}) called\n", SOF2MP_eng_msg_names(cmd));
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_vmsyscall({} {}) called\n", SOF2MP_eng_msg_names(cmd), cmd);
 	
 	intptr_t ret = 0;
 

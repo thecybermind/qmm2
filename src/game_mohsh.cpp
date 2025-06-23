@@ -102,7 +102,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(SightTraceEntity, G_SIGHTTRACEENTITY),
 	GEN_IMPORT(SightTrace, G_SIGHTTRACE),
 	GEN_IMPORT(trace, G_TRACE),
-	/* CM_VisualObfuscation */ +[](const vec3_t arg0, const vec3_t arg1) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_CM_VISUALOBFUSCATION, arg0, arg1); },
+	GEN_IMPORT(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION),
 	GEN_IMPORT(GetShader, G_GETSHADER),
 	GEN_IMPORT(pointcontents, G_POINTCONTENTS),
 	GEN_IMPORT(PointBrushnum, G_POINTBRUSHNUM),
@@ -134,9 +134,9 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
 	GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
 	GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
-	/* Anim_Time */ +[](dtiki_t* arg0, int arg1) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_ANIM_TIME, arg0, arg1); },
-	/* Anim_Frametime */ +[](dtiki_t* arg0, int arg1) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_ANIM_FRAMETIME, arg0, arg1); },
-	/* Anim_CrossTime */ +[](dtiki_t* arg0, int arg1) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_ANIM_CROSSTIME, arg0, arg1); },
+	GEN_IMPORT(Anim_Time, G_ANIM_TIME),
+	GEN_IMPORT(Anim_Frametime, G_ANIM_FRAMETIME),
+	GEN_IMPORT(Anim_CrossTime, G_ANIM_CROSSTIME),
 	GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
 	GEN_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA),
 	GEN_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA),
@@ -154,7 +154,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
 	GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
 	GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
-	/* TIKI_OrientationInternal */ +[](dtiki_t* arg0, int arg1, int arg2, float arg3) -> orientation_t { return ((orientation_t(*)(intptr_t, ...))qmm_syscall)(G_TIKI_ORIENTATIONINTERNAL, arg0, arg1, arg2, arg3); },
+	GEN_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL), // todo, change types to actually match float, but also need to return an intptr_t instead of orientation_t
 	GEN_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL),
 	GEN_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, qboolean, dtiki_t*, int, int, float),
 	GEN_IMPORT_6(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, void, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, float),
@@ -174,7 +174,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
 	GEN_IMPORT_9(Sound, G_SOUND, void, vec3_t*, int, int, const char*, float, float, float, float, int),
 	GEN_IMPORT(StopSound, G_STOPSOUND),
-	/* SoundLength */ +[](int arg0, const char* arg1) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_SOUNDLENGTH, arg0, arg1); },
+	GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
 	GEN_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES),
 	GEN_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING),
 	GEN_IMPORT(CalcCRC, G_CALCCRC),
@@ -257,7 +257,7 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(ArchiveFloat, GAME_ARCHIVE_FLOAT),
 	GEN_EXPORT(ArchiveString, GAME_ARCHIVE_STRING),
 	GEN_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME),
-	/* TIKI_Orientation */ +[](gentity_t* arg0, int arg1) -> orientation_t { return ((orientation_t(*)(intptr_t, ...))vmMain)(GAME_TIKI_ORIENTATION, arg0, arg1); },
+	GEN_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION), // todo, change types to actually match float, but also need to return an intptr_t instead of orientation_t
 	/* DebugCircle */ +[](float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6) -> void { vmMain(GAME_DEBUG_CIRCLE, arg0, arg1, arg2, arg3, arg4, arg5, arg6); },
 	GEN_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER),
 	GEN_EXPORT(SoundCallback, GAME_SOUND_CALLBACK),
@@ -278,7 +278,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
 	if (cmd != G_PRINT)
-		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_syscall({}) called\n", MOHSH_eng_msg_names(cmd));
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_syscall({} {}) called\n", MOHSH_eng_msg_names(cmd), cmd);
 
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
@@ -539,7 +539,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 	// do anything that needs to be done after function call here
 
 	if (cmd != G_PRINT)
-		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_syscall({}) returning {}\n", MOHSH_eng_msg_names(cmd), ret);
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_syscall({} {}) returning {}\n", MOHSH_eng_msg_names(cmd), cmd, ret);
 
 	return ret;
 }
@@ -550,7 +550,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_vmMain({}) called\n", MOHSH_mod_msg_names(cmd));
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_vmMain({} {}) called\n", MOHSH_mod_msg_names(cmd), cmd);
 
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
@@ -618,7 +618,7 @@ intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.errorMessage = orig_export->errorMessage;
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_vmMain({}) returning {}\n", MOHSH_mod_msg_names(cmd), ret);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHSH_vmMain({} {}) returning {}\n", MOHSH_mod_msg_names(cmd), cmd, ret);
 
 	return ret;
 }

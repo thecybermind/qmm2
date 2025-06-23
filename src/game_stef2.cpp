@@ -49,7 +49,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(cvar_set, G_CVAR_SET),
 	GEN_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER),
 	GEN_IMPORT(Cvar_Register, G_CVAR_REGISTER),
-	/* Cvar_VariableValue */ +[](const char* arg0) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_CVAR_VARIABLEVALUE, arg0); },
+	GEN_IMPORT(Cvar_VariableValue, G_CVAR_VARIABLEVALUE),
 	GEN_IMPORT(Cvar_Update, G_CVAR_UPDATE),
 	GEN_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE),
 	GEN_IMPORT(argc, G_ARGC),
@@ -125,14 +125,14 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
 	GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
 	GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
-	/* Anim_Time */ +[](int arg0, int arg1) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_ANIM_TIME, arg0, arg1); },
+	GEN_IMPORT(Anim_Time, G_ANIM_TIME),
 	GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
 	GEN_IMPORT(Anim_AbsoluteDelta, G_ANIM_ABSOLUTEDELTA),
 	GEN_IMPORT(Anim_Flags, G_ANIM_FLAGS),
 	GEN_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS),
 	GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
 	GEN_IMPORT(Frame_Delta, G_FRAME_DELTA),
-	/* Frame_Time */ +[](int arg0, int arg1, int arg2) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_FRAME_TIME, arg0, arg1, arg2); },
+	GEN_IMPORT(Frame_Time, G_FRAME_TIME),
 	GEN_IMPORT_6(Frame_Bounds, G_FRAME_BOUNDS, void, int, int, int, float, vec3_t, vec3_t),
 	GEN_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM),
 	GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
@@ -143,8 +143,8 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(GetExpression, G_GETEXPRESSION),
 	GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
 	GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
-	/* Tag_Orientation */ +[](int arg0, int arg1, int arg2, int arg3, float arg4, int* arg5, vec4_t* arg6) -> orientation_t { return ((orientation_t(*)(intptr_t, ...))qmm_syscall)(G_TAG_ORIENTATION, arg0, arg1, arg2, arg3, arg4, arg5, arg6); },
-	/* Tag_OrientationEx */ +[](int arg0, int arg1, int arg2, int arg3, float arg4, int* arg5, vec4_t* arg6, int arg7, int arg8, float arg9, qboolean arg10, qboolean arg11, int arg12, int arg13, int arg14, int arg15, float arg16) -> orientation_t { return ((orientation_t(*)(intptr_t, ...))qmm_syscall)(G_TAG_ORIENTATIONEX, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); },
+	GEN_IMPORT(Tag_Orientation, G_TAG_ORIENTATION),
+	GEN_IMPORT(Tag_OrientationEx, G_TAG_ORIENTATIONEX),	// todo, change types to actually match float, but also need to return an intptr_t instead of orientation_t
 	GEN_IMPORT(Bone_GetParentNum, G_BONE_GETPARENTNUM),
 	GEN_IMPORT(Alias_Add, G_ALIAS_ADD),
 	GEN_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM),
@@ -168,7 +168,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
 	GEN_IMPORT(Sound, G_SOUND),
 	GEN_IMPORT(StopSound, G_STOPSOUND),
-	/* SoundLength */ +[](const char* arg0) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_SOUNDLENGTH, arg0); },
+	GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
 	GEN_IMPORT(GetNextMorphTarget, G_GETNEXTMORPHTARGET),
 	GEN_IMPORT(CalcCRC, G_CALCCRC),
 	nullptr,	// DebugLines
@@ -224,7 +224,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(AAS_EntityInfo, G_AAS_ENTITYINFO),
 	GEN_IMPORT(AAS_Initialized, G_AAS_INITIALIZED),
 	GEN_IMPORT(AAS_PresenceTypeBoundingBox, G_AAS_PRESENCETYPEBOUNDINGBOX),
-	/* AAS_Time */ +[]() -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_AAS_TIME); },
+	GEN_IMPORT(AAS_Time, G_AAS_TIME),
 	GEN_IMPORT(AAS_PointAreaNum, G_AAS_POINTAREANUM),
 	GEN_IMPORT(AAS_PointReachabilityAreaIndex, G_AAS_POINTREACHABILITYAREAINDEX),
 	GEN_IMPORT(AAS_TraceAreas, G_AAS_TRACEAREAS),
@@ -270,8 +270,8 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(EA_ResetInput, G_EA_RESETINPUT),
 	GEN_IMPORT_2(BotLoadCharacter, G_BOTLOADCHARACTER, int, char*, float),
 	GEN_IMPORT(BotFreeCharacter, G_BOTFREECHARACTER),
-	/* Characteristic_Float */ +[](int arg0, int arg1) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_CHARACTERISTIC_FLOAT, arg0, arg1); },
-	/* Characteristic_BFloat */ +[](int arg0, int arg1, float arg2, float arg3) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_CHARACTERISTIC_BFLOAT, arg0, arg1, arg2, arg3); },
+	GEN_IMPORT(Characteristic_Float, G_CHARACTERISTIC_FLOAT),
+	GEN_IMPORT(Characteristic_BFloat, G_CHARACTERISTIC_BFLOAT),
 	GEN_IMPORT(Characteristic_Integer, G_CHARACTERISTIC_INTEGER),
 	GEN_IMPORT(Characteristic_BInteger, G_CHARACTERISTIC_BINTEGER),
 	GEN_IMPORT(Characteristic_String, G_CHARACTERISTIC_STRING),
@@ -313,7 +313,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(BotGetLevelItemGoal, G_BOTGETLEVELITEMGOAL),
 	GEN_IMPORT(BotGetNextCampSpotGoal, G_BOTGETNEXTCAMPSPOTGOAL),
 	GEN_IMPORT(BotGetMapLocationGoal, G_BOTGETMAPLOCATIONGOAL),
-	/* BotAvoidGoalTime */ +[](int arg0, int arg1) -> float { return ((float(*)(intptr_t, ...))qmm_syscall)(G_BOTAVOIDGOALTIME, arg0, arg1); },
+	GEN_IMPORT(BotAvoidGoalTime, G_BOTAVOIDGOALTIME),
 	GEN_IMPORT_3(BotSetAvoidGoalTime, G_BOTSETAVOIDGOALTIME, void, int, int, float),
 	GEN_IMPORT(BotInitLevelItems, G_BOTINITLEVELITEMS),
 	GEN_IMPORT(BotUpdateEntityItems, G_BOTUPDATEENTITYITEMS),
@@ -438,7 +438,7 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
 	if (cmd != G_PRINT)
-		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_syscall({}) called\n", STEF2_eng_msg_names(cmd));
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_syscall({} {}) called\n", STEF2_eng_msg_names(cmd), cmd);
 
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
@@ -839,7 +839,7 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 	// do anything that needs to be done after function call here
 
 	if (cmd != G_PRINT)
-		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_syscall({}) returning {}\n", STEF2_eng_msg_names(cmd), ret);
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_syscall({} {}) returning {}\n", STEF2_eng_msg_names(cmd), cmd, ret);
 
 	return ret;
 }
@@ -850,7 +850,7 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_vmMain({}) called\n", STEF2_mod_msg_names(cmd));
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_vmMain({} {}) called\n", STEF2_mod_msg_names(cmd), cmd);
 
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
@@ -913,7 +913,7 @@ intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.error_message = orig_export->error_message;
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_vmMain({}) returning {}\n", STEF2_mod_msg_names(cmd), ret);
+	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_vmMain({} {}) returning {}\n", STEF2_mod_msg_names(cmd), cmd, ret);
 
 	return ret;
 }

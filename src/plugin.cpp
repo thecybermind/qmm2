@@ -367,7 +367,7 @@ static int* s_plugin_helper_ConfigGetArrayInt(const char* key) {
 	index = (index + 1) & 7;
 	value[index] = cfg_get_array_int(node, key);
 	// insert length of the array as the first element
-	value[index].insert(value[index].begin(), value[index].size());
+	value[index].insert(value[index].begin(), (int)value[index].size());
 	return value[index].data();
 }
 

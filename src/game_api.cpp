@@ -45,12 +45,8 @@ supportedgame_t g_supportedgames[] = {
 	{ "qagame.mp.",	SUF_DLL,	nullptr,			"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	nullptr,			nullptr,			13,		5,		{ "mp" } },
 #endif
 
-// JAMP in 32-bit linux uses "x86" instead of the usual "i386"
-#if defined(__linux__) && !defined(__LP64__)
-	{ "jampgame",	"x86",		nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
-#else
 	{ "jampgame",	SUF_DLL,	nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
-#endif
+
 	{ "jk2mpgame",	SUF_DLL,	"vm/jk2mpgame.qvm",	"base",			"Jedi Knight 2: Jedi Outcast (MP)",				GEN_INFO(JK2MP),	JK2MP_vmsyscall,	nullptr,			13,		3,		{ "jk2" } },
 
 	{ "sof2mp_game",SUF_DLL,   "vm/sof2mp_game.qvm","base/mp",		"Soldier of Fortune 2: Double Helix (MP)",		GEN_INFO(SOF2MP),	SOF2MP_vmsyscall,	nullptr,			13,		6,		{ "mp" } },
