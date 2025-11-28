@@ -319,20 +319,20 @@ static const char* s_plugin_helper_ConfigGetStr(const char* key) {
 	
 	// cycle rotating buffer and store string
 	index = (index + 1) & 7;
-	value[index] = cfg_get_string(node, key);
+	value[index] = cfg_get_string(node, path_basename(key));
 	return value[index].c_str();
 }
 
 
 static int s_plugin_helper_ConfigGetInt(const char* key) {
 	nlohmann::json node = s_plugin_cfg_get_node(key);
-	return cfg_get_int(node, key);
+	return cfg_get_int(node, path_basename(key));
 }
 
 
 static int s_plugin_helper_ConfigGetBool(const char* key) {
 	nlohmann::json node = s_plugin_cfg_get_node(key);
-	return (int)cfg_get_bool(node, key);
+	return (int)cfg_get_bool(node, path_basename(key));
 }
 
 
@@ -346,7 +346,7 @@ static const char** s_plugin_helper_ConfigGetArrayStr(const char* key) {
 
 	// cycle rotating buffer and store array
 	index = (index + 1) & 7;
-	value[index] = cfg_get_array_str(node, key);
+	value[index] = cfg_get_array_str(node, path_basename(key));
 	// fill valuep with const char*s from value
 	valuep[index].clear();
 	for (std::string& s : value[index]) {
@@ -365,7 +365,7 @@ static int* s_plugin_helper_ConfigGetArrayInt(const char* key) {
 
 	// cycle rotating buffer and store array
 	index = (index + 1) & 7;
-	value[index] = cfg_get_array_int(node, key);
+	value[index] = cfg_get_array_int(node, path_basename(key));
 	// insert length of the array as the first element
 	value[index].insert(value[index].begin(), (int)value[index].size());
 	return value[index].data();
