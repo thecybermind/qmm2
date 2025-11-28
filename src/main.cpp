@@ -441,14 +441,12 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 					return;
 				}
 				// if a hint array exists, check each for an exe file match
-				if (game.exe_hints.size()) {
-					for (auto hint : game.exe_hints) {
-						if (str_stristr(g_gameinfo.exe_file, hint)) {
-							LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for exe hint \"{}\" - {}\n", hint, game.gamename_short);
-							g_gameinfo.game = &game;
-							g_gameinfo.isautodetected = true;
-							return;
-						}
+				for (auto hint : game.exe_hints) {
+					if (str_stristr(g_gameinfo.exe_file, hint)) {
+						LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for exe hint \"{}\" - {}\n", hint, game.gamename_short);
+						g_gameinfo.game = &game;
+						g_gameinfo.isautodetected = true;
+						return;
 					}
 				}
 			}
