@@ -162,8 +162,8 @@ C_DLLEXPORT intptr_t QMM_syscall_Post(intptr_t cmd, intptr_t* args);
 #define QMM_RET_SUPERCEDE(x)	QMM_RETURN(QMM_SUPERCEDE, (x))
 
 // These are macros to convert between VM pointers and real pointers.
-// These are generally only needed for pointers inside objects, like gent->parent.
-// As the objects are generally tracked through syscall arguments, which are already
+// These are generally only needed for pointers inside objects, like gent->parent,
+// as the objects are generally tracked through syscall arguments, which are already
 // converted in plugin QMM_syscall functions. SETPTR should only be used to refer to
 // objects that already exist within the QVM, but you have a real pointer to
 #define GETPTR(x,y)     (x ? (y)((intptr_t)(x) + g_pluginvars->vmbase) : NULL)
