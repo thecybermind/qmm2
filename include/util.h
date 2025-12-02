@@ -34,12 +34,6 @@ int str_striequal(std::string s1, std::string s2);
 // "safe" strncpy that always null-terminates
 char* strncpyz(char* dest, const char* src, std::size_t count);
 
-// get a given argument with G_ARGV, based on game engine type
-void qmm_argv(intptr_t argn, char* buf, intptr_t buflen);
-
-// get a configstring with G_GET_CONFIGSTRING, based on game engine type
-void qmm_get_configstring(intptr_t argn, char* buf, intptr_t buflen);
-
 // tokenize an entstring into a vector of strings 
 std::vector<std::string> util_parse_tokens(std::string entstring);
 
