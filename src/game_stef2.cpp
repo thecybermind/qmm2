@@ -9,7 +9,6 @@ Created By:
 
 */
 
-#define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
 #include <stef2/game/q_shared.h>
 #define GAME_DLL
