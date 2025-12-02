@@ -75,8 +75,7 @@ const char* osdef_path_get_modulepath(void* ptr) {
 	if (!dladdr(ptr, &dli))
 		return "";
 
-	strncpy(path, dli.dli_fname, sizeof(path) - 1);
-	path[sizeof(path) - 1] = '\0';
+	strncpyz(path, dli.dli_fname, sizeof(path));
 #endif
 	return path;
 }

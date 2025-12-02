@@ -496,8 +496,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 			*buffer = '\0';
 			cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
 			if (cvar)
-				strncpy(buffer, cvar->string, bufsize - 1);
-			buffer[bufsize - 2] = '\0';
+				strncpyz(buffer, cvar->string, bufsize - 1);
 			break;
 		}
 		case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -526,8 +525,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 			char* buffer = (char*)args[0];
 			intptr_t bufferSize = args[1];
 
-			strncpy(buffer, s_entity_tokens[token++].c_str(), bufferSize);
-			buffer[bufferSize - 1] = '\0';
+			strncpyz(buffer, s_entity_tokens[token++].c_str(), bufferSize);
 			ret = qtrue;
 			break;
 		}

@@ -314,8 +314,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			*buffer = '\0';
 			cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
 			if (cvar)
-				strncpy(buffer, cvar->string, bufsize);
-			buffer[bufsize - 1] = '\0';
+				strncpyz(buffer, cvar->string, bufsize);
 			break;
 		}
 		case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -411,13 +410,9 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			edict_t* ent = (edict_t*)args[0];
 			char* buffer = (char*)args[1];
 			intptr_t bufferSize = args[2];
-			if (s_userinfo.count(ent)) {
-				strncpy(buffer, s_userinfo[ent].c_str(), bufferSize);
-				buffer[bufferSize - 1] = '\0';
-			}
-			else {
-				buffer[0] = '\0';
-			}
+			*buffer = '\0';
+			if (s_userinfo.count(ent))
+				strncpyz(buffer, s_userinfo[ent].c_str(), bufferSize);
 			break;
 		}
 		case G_GET_ENTITY_TOKEN: {
@@ -431,8 +426,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			char* buffer = (char*)args[0];
 			intptr_t bufferSize = args[1];
 
-			strncpy(buffer, s_entity_tokens[token++].c_str(), bufferSize);
-			buffer[bufferSize - 1] = '\0';
+			strncpyz(buffer, s_entity_tokens[token++].c_str(), bufferSize);
 			ret = true;
 			break;
 		}
