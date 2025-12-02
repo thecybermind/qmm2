@@ -153,6 +153,11 @@ void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
 	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn, buf, buflen);
 	if (ret > 1)
 		strncpyz(buf, (const char*)ret, buflen);
+<<<<<<< HEAD
+=======
+	else
+		buf[buflen - 1] = '\0';
+>>>>>>> aa8a8bbe8fe470eb4c688bae1c3831628c0c86f1
 }
 
 
@@ -165,6 +170,11 @@ void qmm_get_configstring(intptr_t argn, char* buf, intptr_t buflen) {
 	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], argn, buf, buflen);
 	if (ret > 1)
 		strncpyz(buf, (const char*)ret, buflen);
+<<<<<<< HEAD
+=======
+	else
+		buf[buflen - 1] = '\0';
+>>>>>>> aa8a8bbe8fe470eb4c688bae1c3831628c0c86f1
 }
 
 
