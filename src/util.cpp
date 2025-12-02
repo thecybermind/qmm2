@@ -63,7 +63,7 @@ std::string path_baseext(std::string path) {
 
 
 bool path_is_relative(std::string path) {
-	// \\dir\file
+	// \\computer\dir\file
 	// \dir\file
 	// /dir/file
 	if (path[0] == '/' || path[0] == '\\')
@@ -73,12 +73,14 @@ bool path_is_relative(std::string path) {
 	// .ssh/known_hosts
 	if (path[0] == '.')
 		return true;
-	// C:\dir\file
+#ifdef _WIN32
+	// windows: C:\dir\file
 	if (path[1] == ':' && std::isalpha((unsigned char)(path[0])))
 		return false;
-	// colon ANYWHERE is probably absolute too?
+	// windows: colon ANYWHERE is probably absolute too?
 	if (path.find_first_of(':') != std::string::npos)
 		return false;
+#endif
 	return true;
 }
 
@@ -102,14 +104,22 @@ void path_mkdir(std::string path) {
 #endif
 	path = path_normalize(path);
 
+	// if the path ends with a /, remove it
 	if (path[path.size() - 1] == '/')
 		path[path.size() - 1] = '\0';
+
+	// loop through each character
 	for (; i < path.size(); i++)
+		// if we found a directory separator
 		if (path[i] == '/') {
+			// replace it with a null terminator
 			path[i] = '\0';
+			// call mkdir on the whole path up to now to make the directory
 			(void)mkdir(path.c_str(), S_IRWXU);
+			// put the directory separator back
 			path[i] = '/';
 		}
+	// call mkdir on the entire path to make the final directory
 	(void)mkdir(path.c_str(), S_IRWXU);
 }
 
@@ -162,7 +172,8 @@ void qmm_get_configstring(intptr_t argn, char* buf, intptr_t buflen) {
 	// char* (*getConfigstring)(int index);
 	// void trap_GetConfigstring(int num, char* buffer, int bufferSize);
 	// some games don't return pointers because of QVM interaction, so if this returns anything but null
-	// (or true?), we probably are in an api game, and need to get the arg from the return value instead
+	// (or true?), we probably are in an api game, and need to get the configstring from the return value
+	// instead
 	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], argn, buf, buflen);
 	if (ret > 1)
 		strncpyz(buf, (const char*)ret, buflen);

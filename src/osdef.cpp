@@ -89,11 +89,12 @@ const char* osdef_path_get_procpath() {
 	if (!GetModuleFileName(nullptr, path, sizeof(path)))
 		return "";
 #elif defined(__linux__)
-	ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
-	if (len != -1) {
+	// readlink does NOT null terminate at all
+	// we pass sizeof-1 to guarantee the \0 from memset is still present at the end of the string
+	// as  a null terminator. also we write a \0 at the specific end of the written buffer.
+	ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1); 
+	if (len != -1)
 		path[len] = '\0';
-	}
-	path[sizeof(path) - 1] = '\0';
 #endif
 	return path;
 }
