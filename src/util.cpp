@@ -124,23 +124,21 @@ void path_mkdir(std::string path) {
 }
 
 
-int str_stristr(std::string haystack, std::string needle) {
-	for (auto& c : haystack)
-		c = (char)std::tolower((unsigned char)c);
-	for (auto& c : needle)
+std::string str_tolower(std::string str) {
+	for (auto& c : str)
 		c = (char)std::tolower((unsigned char)c);
 
-	return haystack.find(needle) != std::string::npos;
+	return str;
+}
+
+
+int str_stristr(std::string haystack, std::string needle) {
+	return str_tolower(haystack).find(str_tolower(needle)) != std::string::npos;
 }
 
 
 int str_stricmp(std::string s1, std::string s2) {
-	for (auto& c : s1)
-		c = (char)std::tolower((unsigned char)c);
-	for (auto& c : s2)
-		c = (char)std::tolower((unsigned char)c);
-
-	return s1.compare(s2);
+	return str_tolower(s1).compare(str_tolower(s2));
 }
 
 
