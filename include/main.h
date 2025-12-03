@@ -56,6 +56,11 @@ constexpr int QMM_FAIL_G_ERROR = 1;
 // set to true if a G_ERROR has been triggered, to avoid calling it again from GAME_SHUTDOWN or its ilk (SOF2MP's GAME_GHOUL2_SHUTDOWN, etc)
 extern bool g_shutdown;
 
+// flag that is set by GEN_EXPORT macro before calling into vmMain. used to tell if this is a call that
+// should be directly routed to the mod or not in some single player games that have game & cgame in the
+// same DLL
+extern bool GetGameAPI_vmMain_call;
+
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
 // renamed syscall to qmm_syscall to avoid conflict with POSIX "long syscall(long number, ...)" which has pretty much the same interface
 intptr_t qmm_syscall(intptr_t cmd, ...);

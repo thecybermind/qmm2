@@ -98,16 +98,19 @@ static game_import_t qmm_import = {
 static std::map<edict_t*, std::string> s_userinfo;
 static qboolean QUAKE2_ClientConnect(edict_t* ent, char* userinfo) {
 	s_userinfo[ent] = userinfo;
+	GetGameAPI_vmMain_call = true;
 	return vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
 }
 static void QUAKE2_ClientUserinfoChanged(edict_t* ent, char* userinfo) {
 	s_userinfo[ent] = userinfo;
+	GetGameAPI_vmMain_call = true;
 	vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 // track userinfo for our G_GET_ENTITY_TOKEN syscall
 static std::vector<std::string> s_entity_tokens;
 static void QUAKE2_SpawnEntities(char* mapname, char* entstring, char* spawnpoint) {
 	s_entity_tokens = util_parse_tokens(entstring);
+	GetGameAPI_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 

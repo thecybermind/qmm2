@@ -70,7 +70,17 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
    we can do is store the syscall, load the config file, and attempt to figure out what game engine we are in.
    This is either determined by the config file, or by getting the filename of the QMM DLL itself.
 */
+static eng_syscall_t vmMain_passthrough = nullptr;
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
+	// QMM is already loaded, this is likely one of a few singleplayer games with game/cgame in the same DLL.
+	// since the mod isn't loaded yet, we can just store the syscall pointer and pass it to the mod once it's
+	// loaded
+	if (g_gameinfo.game) {
+		vmMain_passthrough = syscall;
+		LOG(QMM_LOG_NOTICE, "QMM") << "QMM vmMain_passthrough enabled\n";
+		return;
+	}
+
 	s_main_detect_env();
 
 	log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
@@ -206,15 +216,20 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 	if (!mod_handle)
 		return nullptr;
 
-	mod_GetGameAPI_t GetCGameAPI = (mod_GetGameAPI_t)dlsym(mod_handle, "GetCGameAPI");
-	if (!GetCGameAPI)
+	mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(mod_handle, "GetCGameAPI");
+	if (!mod_GetCGameAPI)
 		return nullptr;
 
 	// DLL needs to stay loaded, so no dlclose
 
-	return GetCGameAPI(import);
+	return mod_GetCGameAPI(import);
 }
 
+
+// flag that is set by GEN_EXPORT macro before calling into vmMain. used to tell if this is a call that
+// should be directly routed to the mod or not in some single player games that have game & cgame in the
+// same DLL
+bool GetGameAPI_vmMain_call = false;
 
 /* Entry point: engine->qmm
    This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the game info is not stored.
@@ -229,6 +244,22 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 */
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
+
+	// if this is a call from cgame and we need to simply pass this call onto the mod
+	if (vmMain_passthrough && !GetGameAPI_vmMain_call) {
+		// pass original cgame syscall to dllEntry in mod
+		static mod_dllEntry_t mod_dllEntry = nullptr;
+		if (!mod_dllEntry) {
+			mod_dllEntry = (mod_dllEntry_t)dlsym(g_mod.dll, "dllEntry");
+			mod_dllEntry(vmMain_passthrough);
+		}
+
+		static mod_vmMain_t mod_vmMain = nullptr;
+		if (!mod_vmMain)
+			mod_vmMain = (mod_vmMain_t)dlsym(g_mod.dll, "vmMain");
+		return mod_vmMain(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS);
+	}
+	GetGameAPI_vmMain_call = false;
 
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("vmMain({} {}) called\n", g_gameinfo.game->mod_msg_names(cmd), cmd);
 
