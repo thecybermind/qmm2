@@ -12,7 +12,7 @@ Created By:
 #ifndef __QMM2_QMMAPI_H__
 #define __QMM2_QMMAPI_H__
 
-#include <stdint.h>
+#include <stdint.h>     // intptr_t
 
 // plugins and internal use
 #if defined(_WIN32)
