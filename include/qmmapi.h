@@ -12,6 +12,9 @@ Created By:
 #ifndef __QMM2_QMMAPI_H__
 #define __QMM2_QMMAPI_H__
 
+#ifndef _HAS_STD_BYTE
+#define _HAS_STD_BYTE 0
+#endif
 #include <stdint.h>     // intptr_t
 
 // plugins and internal use

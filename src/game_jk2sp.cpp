@@ -11,9 +11,7 @@ Created By:
 
 #include <string.h>
 #include <jk2sp/game/q_shared.h>
-#define GAME_DLL
 #include <jk2sp/game/g_public.h>
-#undef GAME_DLL
 #include "game_api.h"
 #include "log.h"
 // QMM-specific JK2SP header
@@ -86,9 +84,9 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(G2API_SetRootSurface, G_G2API_SETROOTSURFACE),
 	GEN_IMPORT(G2API_RemoveSurface, G_G2API_REMOVESURFACE),
 	GEN_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, int, CGhoul2Info*, int, int, float, float, int),
-	GEN_IMPORT_9(_G2API_SetBoneAnim, G_G2API_SETBONEANIM, qboolean, CGhoul2Info*, const char*, const int, const int, const int, const float, const int, const float, const int),
-	GEN_IMPORT_9(G2API_GetBoneAnim, G_G2API_GETBONEANIM, qboolean, CGhoul2Info*, const char*, const int, float*, int*, int*, int*, float*, int*),
-	GEN_IMPORT_9(G2API_GetBoneAnimIndex, G_G2API_GETBONEANIMINDEX, qboolean, CGhoul2Info*, const int, const int, float*, int*, int*, int*, float*, int*),
+	GEN_IMPORT(_G2API_SetBoneAnim, G_G2API_SETBONEANIM),
+	GEN_IMPORT(G2API_GetBoneAnim, G_G2API_GETBONEANIM),
+	GEN_IMPORT(G2API_GetBoneAnimIndex, G_G2API_GETBONEANIMINDEX),
 	GEN_IMPORT(G2API_GetAnimRange, G_G2API_GETANIMRANGE),
 	GEN_IMPORT(G2API_GetAnimRangeIndex, G_G2API_GETANIMRANGEINDEX),
 	GEN_IMPORT(G2API_PauseBoneAnim, G_G2API_PAUSEBONEANIM),
@@ -113,7 +111,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(G2API_SetGhoul2ModelFlags, G_G2API_SETGHOUL2MODELFLAGS),
 	GEN_IMPORT(G2API_GetGhoul2ModelFlags, G_G2API_GETGHOUL2MODELFLAGS),
 	GEN_IMPORT(G2API_GetAnimFileName, G_G2API_GETANIMFILENAME),
-	GEN_IMPORT_13(G2API_CollisionDetect, G_G2API_COLLISIONDETECT, void, CCollisionRecord*, CGhoul2Info_v&, const vec3_t, const vec3_t, int, int, vec3_t, vec3_t, vec3_t, CMiniHeap*, EG2_Collision, int, float),
+	GEN_IMPORT(G2API_CollisionDetect, G_G2API_COLLISIONDETECT),
 	GEN_IMPORT(G2API_GiveMeVectorFromMatrix, G_G2API_GIVEMEVECTORFROMMATRIX),
 	GEN_IMPORT(_G2API_CopyGhoul2Instance, G_G2API_COPYGHOUL2INSTANCE),
 	GEN_IMPORT(G2API_CleanGhoul2Models, G_G2API_CLEANGHOUL2MODELS),
@@ -128,7 +126,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(G2API_StopBoneAnimIndex, G_G2API_STOPBONEANIMINDEX),
 	GEN_IMPORT(_G2API_SetBoneAnglesIndex, G_G2API_SETBONEANGLESINDEX),
 	GEN_IMPORT(G2API_SetBoneAnglesMatrixIndex, G_G2API_SETBONEANGLESMATRIXINDEX),
-	GEN_IMPORT_9(_G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, qboolean, CGhoul2Info*, const int, const int, const int, const int, const float, const int, const float, const int),
+	GEN_IMPORT(_G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX),
 	GEN_IMPORT(G2API_SaveGhoul2Models, G_G2API_SAVEGHOUL2MODELS),
 	GEN_IMPORT(G2API_LoadGhoul2Models, G_G2API_LOADGHOUL2MODELS),
 	GEN_IMPORT(G2API_LoadSaveCodeDestructGhoul2Info, G_G2API_LOADSAVECODEDESTRUCTGHOUL2INFO),
@@ -325,6 +323,12 @@ intptr_t JK2SP_syscall(intptr_t cmd, ...) {
 		orig_import.SendConsoleCommand(text);
 		break;
 	}
+	// help plugins not need separate logic for entity/client pointers
+	case G_LOCATE_GAME_DATA: {
+		// void trap_LocateGameData(gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient);
+		// this is just to be hooked by plugins, so ignore everything
+		break;
+	}
 	case G_GET_ENTITY_TOKEN: {
 		// qboolean trap_GetEntityToken(char *buffer, int bufferSize);
 		static size_t token = 0;
@@ -354,6 +358,9 @@ intptr_t JK2SP_syscall(intptr_t cmd, ...) {
 }
 
 
+static gentity_t* s_prev_gentities = qmm_export.gentities;
+static int s_prev_gentity_size = qmm_export.gentitySize;
+static int s_prev_num_entities = qmm_export.num_entities;
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 intptr_t JK2SP_vmMain(intptr_t cmd, ...) {
@@ -401,6 +408,22 @@ intptr_t JK2SP_vmMain(intptr_t cmd, ...) {
 	qmm_export.gentities = orig_export->gentities;
 	qmm_export.gentitySize = orig_export->gentitySize;
 	qmm_export.num_entities = orig_export->num_entities;
+
+	// if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
+	if (qmm_export.gentities != s_prev_gentities
+		|| qmm_export.gentitySize != s_prev_gentity_size
+		|| qmm_export.num_entities != s_prev_num_entities
+		) {
+		s_prev_gentities = qmm_export.gentities;
+		s_prev_gentity_size = qmm_export.gentitySize;
+		s_prev_num_entities = qmm_export.num_entities;
+
+		if (s_prev_gentities) {
+			gclient_t* clients = (gclient_t*)qmm_export.gentities[1].client;
+			intptr_t clientsize = (std::byte*)(qmm_export.gentities[2].client) - (std::byte*)clients;
+			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, (intptr_t)clients, clientsize);
+		}
+	}
 
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2SP_vmMain({} {}) returning {}\n", JK2SP_mod_msg_names(cmd), cmd, ret);
 
