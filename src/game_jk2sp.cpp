@@ -146,7 +146,7 @@ static game_import_t qmm_import = {
 static std::vector<std::string> s_entity_tokens;
 static void JK2SP_Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition) {
 	s_entity_tokens = util_parse_tokens(entstring);
-	GetGameAPI_vmMain_call = true;
+	is_QMM_vmMain_call = true;
 	vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
 }
 

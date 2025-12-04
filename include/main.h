@@ -59,7 +59,7 @@ extern bool g_shutdown;
 // flag that is set by GEN_EXPORT macro before calling into vmMain. used to tell if this is a call that
 // should be directly routed to the mod or not in some single player games that have game & cgame in the
 // same DLL
-extern bool GetGameAPI_vmMain_call;
+extern bool is_QMM_vmMain_call;
 
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
 // renamed syscall to qmm_syscall to avoid conflict with POSIX "long syscall(long number, ...)" which has pretty much the same interface

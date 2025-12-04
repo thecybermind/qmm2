@@ -138,19 +138,19 @@ static game_import_t qmm_import = {
 static std::map<edict_t*, std::string> s_userinfo;
 static bool Q2R_ClientConnect(edict_t* ent, char* userinfo, const char* social_id, bool isBot) {
 	s_userinfo[ent] = userinfo;
-	GetGameAPI_vmMain_call = true;
+	is_QMM_vmMain_call = true;
 	return vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
 }
 static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
 	s_userinfo[ent] = userinfo;
-	GetGameAPI_vmMain_call = true;
+	is_QMM_vmMain_call = true;
 	vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 // track userinfo for our G_GET_ENTITY_TOKEN syscall
 static std::vector<std::string> s_entity_tokens;
 static void Q2R_SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
 	s_entity_tokens = util_parse_tokens(entstring);
-	GetGameAPI_vmMain_call = true;
+	is_QMM_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 

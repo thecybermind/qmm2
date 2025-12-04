@@ -384,7 +384,7 @@ static game_import_t qmm_import = {
 static std::vector<std::string> s_entity_tokens;
 static void STEF2_SpawnEntities(const char* mapname, const char* entstring, int levelTime) {
 	s_entity_tokens = util_parse_tokens(entstring);
-	GetGameAPI_vmMain_call = true;
+	is_QMM_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, levelTime);
 }
 
