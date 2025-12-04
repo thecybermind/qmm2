@@ -88,47 +88,51 @@ bool qvm_load(qvm_t& qvm, const std::vector<std::byte>& filemem, vmsyscall_t vms
 
 		switch (opcode) {
 			// these ops all have full 4-byte params
-		case OP_EQ:
-		case OP_NE:
-		case OP_LTI:
-		case OP_LEI:
-		case OP_GTI:
-		case OP_GEI:
-		case OP_LTU:
-		case OP_LEU:
-		case OP_GTU:
-		case OP_GEU:
-		case OP_EQF:
-		case OP_NEF:
-		case OP_LTF:
-		case OP_LEF:
-		case OP_GTF:
-		case OP_GEF:
-			// these ops all jump to an instruction, just a sanity check to make sure it's within range
-			if (*(unsigned int*)codeoffset > qvm.header.numops) {
-				LOG(QMM_LOG_ERROR, "QMM") << fmt::format("qvm_load(): Invalid target in jump/branch instruction: {} > {}\n", *(int*)codeoffset, qvm.header.numops);
-				goto fail;
-			}
+		
+			// this first group of ops all jump to an instruction, so
+			// perform a sanity check to make sure the arg is within range
+			case OP_EQ:
+			case OP_NE:
+			case OP_LTI:
+			case OP_LEI:
+			case OP_GTI:
+			case OP_GEI:
+			case OP_LTU:
+			case OP_LEU:
+			case OP_GTU:
+			case OP_GEU:
+			case OP_EQF:
+			case OP_NEF:
+			case OP_LTF:
+			case OP_LEF:
+			case OP_GTF:
+			case OP_GEF:		
+				if (*(unsigned int*)codeoffset > qvm.header.numops) {
+					LOG(QMM_LOG_ERROR, "QMM") << fmt::format("qvm_load(): Invalid target in jump/branch instruction: {} > {}\n", *(int*)codeoffset, qvm.header.numops);
+					goto fail;
+				}
 #ifdef _WIN32
-			[[fallthrough]];	// MSVC C26819: Unannotated fallthrough between switch labels
+				[[fallthrough]];	// MSVC C26819: Unannotated fallthrough between switch labels
 #endif
-		case OP_ENTER:
-		case OP_LEAVE:
-		case OP_CONST:
-		case OP_LOCAL:
-		case OP_BLOCK_COPY:
-			qvm.codesegment[i].param = *(int*)codeoffset;
-			codeoffset += 4;
-			break;
+			case OP_ENTER:
+			case OP_LEAVE:
+			case OP_CONST:
+			case OP_LOCAL:
+			case OP_BLOCK_COPY:
+				qvm.codesegment[i].param = *(int*)codeoffset;
+				codeoffset += 4;
+				break;
+
 			// this op has a 1-byte param
-		case OP_ARG:
-			qvm.codesegment[i].param = (int)*codeoffset;
-			codeoffset++;
-			break;
+			case OP_ARG:
+				qvm.codesegment[i].param = (int)*codeoffset;
+				codeoffset++;
+				break;
+
 			// remaining ops require no 'param'
-		default:
-			qvm.codesegment[i].param = 0;
-			break;
+			default:
+				qvm.codesegment[i].param = 0;
+				break;
 		}
 	}
 
