@@ -190,6 +190,7 @@
     <ClCompile Include="..\src\game_api.cpp" />
     <ClCompile Include="..\src\game_jamp.cpp" />
     <ClCompile Include="..\src\game_jk2mp.cpp" />
+    <ClCompile Include="..\src\game_jk2sp.cpp" />
     <ClCompile Include="..\src\game_mohaa.cpp" />
     <ClCompile Include="..\src\game_mohbt.cpp" />
     <ClCompile Include="..\src\game_mohsh.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="..\include\config.h" />
     <ClInclude Include="..\include\format.h" />
     <ClInclude Include="..\include\game_api.h" />
+    <ClInclude Include="..\include\game_jk2sp.h" />
     <ClInclude Include="..\include\game_mohaa.h" />
     <ClInclude Include="..\include\game_mohbt.h" />
     <ClInclude Include="..\include\game_mohsh.h" />

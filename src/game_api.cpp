@@ -28,6 +28,7 @@ GEN_EXTS(MOHBT);
 GEN_EXTS(STEF2);
 GEN_EXTS(QUAKE2);
 GEN_EXTS(Q2R);
+GEN_EXTS(JK2SP);
 
 // add your game's info data here
 supportedgame_t g_supportedgames[] = {
@@ -49,7 +50,7 @@ supportedgame_t g_supportedgames[] = {
 
 	{ "jk2mpgame",	SUF_DLL,	"vm/jk2mpgame.qvm",	"base",			"Jedi Knight 2: Jedi Outcast (MP)",				GEN_INFO(JK2MP),	JK2MP_vmsyscall,	nullptr,			13,		3,		{ "jk2" } },
 
-	{ "sof2mp_game",SUF_DLL,   "vm/sof2mp_game.qvm","base/mp",		"Soldier of Fortune 2: Double Helix (MP)",		GEN_INFO(SOF2MP),	SOF2MP_vmsyscall,	nullptr,			13,		6,		{ "mp" } },
+	{ "sof2mp_game",SUF_DLL,	"vm/sof2mp_game.qvm","base/mp",		"Soldier of Fortune 2: Double Helix (MP)",		GEN_INFO(SOF2MP),	SOF2MP_vmsyscall,	nullptr,			13,		6,		{ "mp" } },
 
 	{ "game",		SUF_DLL,	nullptr,			"base",			"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			STEF2_GetGameAPI,	17,		4,		{ "ef" } },
 
@@ -68,6 +69,8 @@ supportedgame_t g_supportedgames[] = {
 #endif
 
 	{ "game",		SUF_DLL,	nullptr,			"baseq2",		"Quake 2",										GEN_INFO(QUAKE2),	nullptr,			QUAKE2_GetGameAPI,	7,		3,		{ "q2", "quake2" } },
+
+	{ "jk2game",	SUF_DLL,	nullptr,			".",			"Jedi Knight 2: Jedi Outcast (SP)",				GEN_INFO(JK2SP),	nullptr,			JK2SP_GetGameAPI,	13,		9,		{ "jk2" } },
 
 	{ nullptr, }
 };
