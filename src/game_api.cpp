@@ -29,6 +29,7 @@ GEN_EXTS(STEF2);
 GEN_EXTS(QUAKE2);
 GEN_EXTS(Q2R);
 GEN_EXTS(JK2SP);
+GEN_EXTS(JASP);
 
 // add your game's info data here
 supportedgame_t g_supportedgames[] = {
@@ -71,6 +72,8 @@ supportedgame_t g_supportedgames[] = {
 	{ "game",		SUF_DLL,	nullptr,			"baseq2",		"Quake 2",										GEN_INFO(QUAKE2),	nullptr,			QUAKE2_GetGameAPI,	7,		3,		{ "q2", "quake2" } },
 
 	{ "jk2game",	SUF_DLL,	nullptr,			".",			"Jedi Knight 2: Jedi Outcast (SP)",				GEN_INFO(JK2SP),	nullptr,			JK2SP_GetGameAPI,	13,		9,		{ "jk2" } },
+
+	{ "jagame",		SUF_DLL,	nullptr,			".",			"Jedi Knight: Jedi Academy (SP)",				GEN_INFO(JASP),		nullptr,			JASP_GetGameAPI,	13,		9,		{ "ja" } },
 
 	{ nullptr, }
 };
