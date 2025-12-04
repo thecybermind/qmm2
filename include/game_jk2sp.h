@@ -142,6 +142,8 @@ enum {
 	GAMEVP_GENTITIES,
 	GAMEV_GENTITYSIZE,
 	GAMEV_NUM_ENTITIES,
+
+	GAME_SPAWN_ENTITIES = GAME_INIT,
 };
 
 // these import messages do not have an exact analogue in JK2SP
