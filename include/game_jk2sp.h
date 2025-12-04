@@ -10,7 +10,7 @@ Created By:
 */
 
 #ifndef __QMM2_GAME_JK2SP_H__
-#define __QMM2_GAME_JKS2P_H__
+#define __QMM2_GAME_JK2SP_H__
 
 // import ("syscall") cmds
 enum {

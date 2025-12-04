@@ -150,6 +150,7 @@ static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
 static std::vector<std::string> s_entity_tokens;
 static void Q2R_SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
 	s_entity_tokens = util_parse_tokens(entstring);
+	GetGameAPI_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 
@@ -454,7 +455,7 @@ static uint32_t s_prev_num_edicts = qmm_export.num_edicts;
 intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_vmMain({} {}) called\n", Q2R_mod_msg_names(cmd), cmd);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) called\n", Q2R_mod_msg_names(cmd), cmd);
 
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
@@ -502,8 +503,8 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 		ROUTE_EXPORT_VAR(max_edicts, GAMEV_MAX_EDICTS);
 		ROUTE_EXPORT_VAR(server_flags, GAMEV_SERVER_FLAGS);
 
-	default:
-		break;
+		default:
+			break;
 	};
 
 	// after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_edicts in particular)
@@ -530,7 +531,7 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 		}
 	}
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_vmMain({} {}) returning {}\n", Q2R_mod_msg_names(cmd), cmd, ret);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) returning {}\n", Q2R_mod_msg_names(cmd), cmd, ret);
 
 	return ret;
 }

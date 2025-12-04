@@ -12,6 +12,9 @@ Created By:
 #ifndef __QMM2_QVM_H__
 #define __QMM2_QVM_H__
 
+#include <cstddef>
+#include <vector>
+
 // magic number is stored in file as 44 14 72 12
 #define	QVM_MAGIC       0x12721444
 

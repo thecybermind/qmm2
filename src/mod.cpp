@@ -153,16 +153,16 @@ fail:
 // load a GetGameAPI DLL mod
 static bool s_mod_load_getgameapi(mod_t& mod) {
 	// look for GetGameAPI function
-	mod_GetGameAPI_t GetGameAPI = (mod_GetGameAPI_t)dlsym(mod.dll, "GetGameAPI");
+	mod_GetGameAPI_t mod_GetGameAPI = (mod_GetGameAPI_t)dlsym(mod.dll, "GetGameAPI");
 
-	if (!GetGameAPI) {
+	if (!mod_GetGameAPI) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", mod.path);
 		goto fail;
 	}
 
 	// pass the QMM-hooked import pointers to the mod
 	// get the original export pointers from the mod
-	g_gameinfo.api_info.orig_export = GetGameAPI(g_gameinfo.api_info.qmm_import);
+	g_gameinfo.api_info.orig_export = mod_GetGameAPI(g_gameinfo.api_info.qmm_import);
 
 	// handle unlikely case of export being null
 	if (!g_gameinfo.api_info.orig_export) {
@@ -184,10 +184,10 @@ fail:
 
 // load a vmMain DLL mod
 static bool s_mod_load_vmmain(mod_t& mod) {
-	mod_dllEntry_t dllEntry = nullptr;
+	mod_dllEntry_t mod_dllEntry = nullptr;
 
 	// look for dllEntry function
-	if (!(dllEntry = (mod_dllEntry_t)dlsym(mod.dll, "dllEntry"))) {
+	if (!(mod_dllEntry = (mod_dllEntry_t)dlsym(mod.dll, "dllEntry"))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", mod.path);
 		goto fail;
 	}
@@ -199,7 +199,7 @@ static bool s_mod_load_vmmain(mod_t& mod) {
 	}
 
 	// pass QMM's syscall to mod dllEntry function
-	dllEntry(qmm_syscall);
+	mod_dllEntry(qmm_syscall);
 	mod.vmbase = 0;
 
 	return true;

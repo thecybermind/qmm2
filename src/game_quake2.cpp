@@ -38,6 +38,7 @@ static game_export_t* orig_export = nullptr;
 static std::map<intptr_t, std::string> s_configstrings;
 static void QUAKE2_configstring(int num, char* configstring) {
 	s_configstrings[num] = configstring;
+	GetGameAPI_vmMain_call = true;
 	vmMain(G_CONFIGSTRING, (intptr_t)num, configstring);
 }
 
@@ -386,7 +387,7 @@ static int s_prev_num_edicts = qmm_export.num_edicts;
 intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_vmMain({} {}) called\n", QUAKE2_mod_msg_names(cmd), cmd);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) called\n", QUAKE2_mod_msg_names(cmd), cmd);
 
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
@@ -420,8 +421,8 @@ intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 		ROUTE_EXPORT_VAR(num_edicts, GAMEV_NUM_EDICTS);
 		ROUTE_EXPORT_VAR(max_edicts, GAMEV_MAX_EDICTS);
 
-	default:
-		break;
+		default:
+			break;
 	};
 
 	// after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_edicts in particular)
@@ -447,7 +448,7 @@ intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 		}
 	}
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_vmMain({} {}) returning {}\n", QUAKE2_mod_msg_names(cmd), cmd, ret);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) returning {}\n", QUAKE2_mod_msg_names(cmd), cmd, ret);
 
 	return ret;
 }

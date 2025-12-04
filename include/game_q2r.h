@@ -167,7 +167,7 @@ enum {
 	FS_APPEND,
 	FS_APPEND_SYNC = FS_APPEND,
 	// used by qmm_version cvar
-	CVAR_ROM = CVAR_NOSET,
+	CVAR_ROM = 8U, // CVAR_NOSET = 8
 };
 
 #endif // __QMM2_GAME_Q2R_H__

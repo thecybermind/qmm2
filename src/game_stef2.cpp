@@ -356,7 +356,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(DebugLineShow, G_DEBUGLINESHOW),
 	GEN_IMPORT(DebugPolygonCreate, G_DEBUGPOLYGONCREATE),
 	GEN_IMPORT(DebugPolygonDelete, G_DEBUGPOLYGONDELETE),
-	GEN_IMPORT(DropClient, G_DROPCLIENT),
+	GEN_IMPORT(DropClient, G_DROP_CLIENT),
 	GEN_IMPORT(SV_GetServerinfo, G_SV_GETSERVERINFO),
 	GEN_IMPORT(BotAllocateClient, G_BOTALLOCATECLIENT),
 	GEN_IMPORT(BotGetSnapshotEntity, G_BOTGETSNAPSHOTENTITY),
@@ -778,7 +778,7 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT(DebugLineShow, G_DEBUGLINESHOW);
 		ROUTE_IMPORT(DebugPolygonCreate, G_DEBUGPOLYGONCREATE);
 		ROUTE_IMPORT(DebugPolygonDelete, G_DEBUGPOLYGONDELETE);
-		ROUTE_IMPORT(DropClient, G_DROPCLIENT);
+		ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
 		ROUTE_IMPORT(SV_GetServerinfo, G_SV_GETSERVERINFO);
 		ROUTE_IMPORT(BotAllocateClient, G_BOTALLOCATECLIENT);
 		ROUTE_IMPORT(BotGetSnapshotEntity, G_BOTGETSNAPSHOTENTITY);
@@ -807,12 +807,6 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 			// qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
 			const char* text = (const char*)(args[1]);
 			orig_import.SendConsoleCommand(text);
-			break;
-		}
-		case G_DROP_CLIENT: {
-			// void trap_DropClient(int clientNum, const char *reason);
-			intptr_t clientnum = args[0];
-			orig_import.SendConsoleCommand(fmt::format("kick {}\n", clientnum).c_str());
 			break;
 		}
 		case G_GET_ENTITY_TOKEN: {
@@ -849,7 +843,7 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_vmMain({} {}) called\n", STEF2_mod_msg_names(cmd), cmd);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) called\n", STEF2_mod_msg_names(cmd), cmd);
 
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
@@ -912,7 +906,7 @@ intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.error_message = orig_export->error_message;
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_vmMain({} {}) returning {}\n", STEF2_mod_msg_names(cmd), cmd, ret);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) returning {}\n", STEF2_mod_msg_names(cmd), cmd, ret);
 
 	return ret;
 }
@@ -1277,7 +1271,7 @@ const char* STEF2_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_DEBUGLINESHOW);
 		GEN_CASE(G_DEBUGPOLYGONCREATE);
 		GEN_CASE(G_DEBUGPOLYGONDELETE);
-		GEN_CASE(G_DROPCLIENT);
+		GEN_CASE(G_DROP_CLIENT);
 		GEN_CASE(G_SV_GETSERVERINFO);
 		GEN_CASE(G_BOTALLOCATECLIENT);
 		GEN_CASE(G_BOTGETSNAPSHOTENTITY);
@@ -1298,7 +1292,6 @@ const char* STEF2_eng_msg_names(intptr_t cmd) {
 
 		// polyfills
 		GEN_CASE(G_SEND_CONSOLE_COMMAND);
-		GEN_CASE(G_DROP_CLIENT);
 		GEN_CASE(G_GET_ENTITY_TOKEN);
 
 		default:

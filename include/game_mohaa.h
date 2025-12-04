@@ -51,7 +51,7 @@ enum {
 	G_SEND_CONSOLE_COMMAND_EX,
 	G_DEBUGGRAPH,
 	G_SEND_SERVER_COMMAND,
-	G_DROPCLIENT,
+	G_DROP_CLIENT,
 	G_MSG_WRITEBITS,
 	G_MSG_WRITECHAR,
 	G_MSG_WRITEBYTE,
@@ -248,7 +248,6 @@ enum {
 	G_FS_WRITE_QMM,					// void (const void* buffer, int len, fileHandle_t f)
 	G_FS_FCLOSE_FILE_QMM,			// void (fileHandle_t f)
 
-	G_DROP_CLIENT,					// void (int clientNum)
 	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
 };
 

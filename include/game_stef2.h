@@ -337,7 +337,7 @@ enum {
 	G_DEBUGLINESHOW,
 	G_DEBUGPOLYGONCREATE,
 	G_DEBUGPOLYGONDELETE,
-	G_DROPCLIENT,
+	G_DROP_CLIENT,
 	G_SV_GETSERVERINFO,
 	G_BOTALLOCATECLIENT,
 	G_BOTGETSNAPSHOTENTITY,
@@ -404,7 +404,6 @@ enum {
 enum {
 	G_SEND_CONSOLE_COMMAND = -100,	// void (int exec_when, const char *text)
 
-	G_DROP_CLIENT,					// void (int clientNum)
 	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
 };
 

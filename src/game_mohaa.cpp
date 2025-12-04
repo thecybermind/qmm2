@@ -72,7 +72,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_EX),
 	GEN_IMPORT_1(DebugGraph, G_DEBUGGRAPH, void, float),
 	GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
-	GEN_IMPORT(DropClient, G_DROPCLIENT),
+	GEN_IMPORT(DropClient, G_DROP_CLIENT),
 	GEN_IMPORT(MSG_WriteBits, G_MSG_WRITEBITS),
 	GEN_IMPORT(MSG_WriteChar, G_MSG_WRITECHAR),
 	GEN_IMPORT(MSG_WriteByte, G_MSG_WRITEBYTE),
@@ -330,7 +330,7 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_EX);
 		ROUTE_IMPORT(DebugGraph, G_DEBUGGRAPH);
 		ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
-		ROUTE_IMPORT(DropClient, G_DROPCLIENT);
+		ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
 		ROUTE_IMPORT(MSG_WriteBits, G_MSG_WRITEBITS);
 		ROUTE_IMPORT(MSG_WriteChar, G_MSG_WRITECHAR);
 		ROUTE_IMPORT(MSG_WriteByte, G_MSG_WRITEBYTE);
@@ -596,12 +596,6 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			fclose((FILE*)f);
 			break;
 		}
-		case G_DROP_CLIENT: {
-			// void trap_DropClient(int clientNum, const char *reason);
-			intptr_t clientnum = args[0];
-			orig_import.SendConsoleCommand(fmt::format("kick {}\n", clientnum).c_str());
-			break;
-		}
 		case G_GET_ENTITY_TOKEN: {
 			// qboolean trap_GetEntityToken(char *buffer, int bufferSize);
 			static size_t token = 0;
@@ -636,7 +630,7 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 intptr_t MOHAA_vmMain(intptr_t cmd, ...) {
 	QMM_GET_VMMAIN_ARGS();
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_vmMain({} {}) called\n", MOHAA_mod_msg_names(cmd), cmd);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_vmMain({} {}) called\n", MOHAA_mod_msg_names(cmd), cmd);
 
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
@@ -704,7 +698,7 @@ intptr_t MOHAA_vmMain(intptr_t cmd, ...) {
 	qmm_export.max_entities = orig_export->max_entities;
 	qmm_export.errorMessage = orig_export->errorMessage;
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_vmMain({} {}) returning {}\n", MOHAA_mod_msg_names(cmd), cmd, ret);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_vmMain({} {}) returning {}\n", MOHAA_mod_msg_names(cmd), cmd, ret);
 
 	return ret;
 }
@@ -786,7 +780,7 @@ const char* MOHAA_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_SEND_CONSOLE_COMMAND_EX);
 		GEN_CASE(G_DEBUGGRAPH);
 		GEN_CASE(G_SEND_SERVER_COMMAND);
-		GEN_CASE(G_DROPCLIENT);
+		GEN_CASE(G_DROP_CLIENT);
 		GEN_CASE(G_MSG_WRITEBITS);
 		GEN_CASE(G_MSG_WRITECHAR);
 		GEN_CASE(G_MSG_WRITEBYTE);
@@ -927,7 +921,6 @@ const char* MOHAA_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_FS_WRITE_QMM);
 		GEN_CASE(G_FS_FCLOSE_FILE_QMM);
 
-		GEN_CASE(G_DROP_CLIENT);
 		GEN_CASE(G_GET_ENTITY_TOKEN);
 
 		default:

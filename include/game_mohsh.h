@@ -54,7 +54,7 @@ enum {
 	G_EXECUTE_CONSOLE_COMMAND,
 	G_DEBUGGRAPH,
 	G_SEND_SERVER_COMMAND,
-	G_DROPCLIENT,
+	G_DROP_CLIENT,
 	G_MSG_WRITEBITS,
 	G_MSG_WRITECHAR,
 	G_MSG_WRITEBYTE,
@@ -249,7 +249,6 @@ enum {
 	G_CVAR_VARIABLE_STRING_BUFFER,	// void (const char* var_name, char* buffer, int bufsize)
 	G_CVAR_VARIABLE_INTEGER_VALUE,	// int (const char* var_name)
 
-	G_DROP_CLIENT,					// void (int clientNum)
 	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
 };
 
