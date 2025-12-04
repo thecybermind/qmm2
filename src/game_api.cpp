@@ -70,7 +70,10 @@ supportedgame_t g_supportedgames[] = {
 
 	{ "game",		SUF_DLL,	nullptr,			"baseq2",		"Quake 2",										GEN_INFO(QUAKE2),	nullptr,			QUAKE2_GetGameAPI,	7,		3,		{ "q2", "quake2" } },
 
+// single player games only exist for 32-bit Windows
+#if defined(_WIN32)
 	{ "jk2game",	SUF_DLL,	nullptr,			".",			"Jedi Knight 2: Jedi Outcast (SP)",				GEN_INFO(JK2SP),	nullptr,			JK2SP_GetGameAPI,	13,		9,		{ "jk2" } },
+#endif
 
 	{ nullptr, }
 };
