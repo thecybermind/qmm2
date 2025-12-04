@@ -270,7 +270,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		return ret;
 	}
 	
-	// clear flag
+	// clear passthrough flag
 	GetGameAPI_vmMain_call = false;
 
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) called\n", g_gameinfo.game->mod_msg_names(cmd), cmd);
@@ -372,7 +372,9 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
 	// handle shut down (this is after the plugins and mod get called with GAME_SHUTDOWN)
 	if (cmd == QMM_MOD_MSG[QMM_GAME_SHUTDOWN]) {
-		// hack to keep single player games shutting down correctly
+		LOG(QMM_LOG_NOTICE, "QMM") << "Shutdown initiated!\n";
+
+		// hack to keep single player games shutting down correctly between levels/cutscenes/etc
 		if (vmMain_passthrough) {
 			passthrough_shutdown = true;
 			LOG(QMM_LOG_NOTICE, "QMM") << "Delaying shutting down mod so cgame shutdown can run\n";
@@ -384,13 +386,13 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		}
 
 		// unload each plugin (call QMM_Detach, and then dlclose)
-		LOG(QMM_LOG_INFO, "QMM") << "Shutting down plugins\n";
+		LOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
 		for (plugin_t& p : g_plugins) {
 			plugin_unload(p);
 		}
 		g_plugins.clear();
 
-		LOG(QMM_LOG_INFO, "QMM") << "Finished shutting down\n";
+		LOG(QMM_LOG_NOTICE, "QMM") << "Finished shutting down\n";
 	}
 
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) returning {}\n", g_gameinfo.game->mod_msg_names(cmd), cmd, ret);
