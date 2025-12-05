@@ -91,10 +91,17 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
    the mod DLL and sets a "passthrough_shutdown" bool to true. Then, when a vmMain call is being handled as a passthrough,
    and "passthrough_shutdown" is true, it will then unload the mod DLL. This allows the cgame system to shutdown properly.
 */
-
 // store syscall pointer if we need to pass it through to the mod's dllEntry function for games with
 // combined game+cgame (singleplayer)
 static eng_syscall_t passthrough_syscall = nullptr;
+// flag that is set by GEN_EXPORT macro before calling into vmMain. used to tell if this is a call that
+// should be directly routed to the mod or not in some single player games that have game & cgame in the
+// same DLL
+bool is_QMM_vmMain_call = false;
+// store mod's vmMain function for cgame passthrough
+static mod_vmMain_t passthrough_mod_vmMain = nullptr;
+// GAME_SHUTDOWN has been called, but mod DLL was kept loaded so cgame shutdown can run
+static bool passthrough_shutdown = false;
 
 /* Entry point: engine->qmm
    This is the first function called when a vmMain DLL is loaded. The address of the engine's syscall callback is given,
@@ -103,9 +110,13 @@ static eng_syscall_t passthrough_syscall = nullptr;
    This is either determined by the config file, or by getting the filename of the QMM DLL itself.
 */
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
-	// QMM is already loaded, this is likely one of a few singleplayer games with game/cgame in the same DLL.
-	// since the mod isn't loaded yet, we can just store the syscall pointer and pass it to the mod once it's
-	// loaded
+#ifdef DEBUG_MESSAGEBOX
+	MessageBoxA(NULL, "dllEntry called", "QMM2", 0);
+#endif
+
+	// cgame passthrough crap:
+	// QMM is already loaded, so this is a cgame passthrough situation. since the mod DLL isn't loaded yet, we can
+	// just store the syscall pointer and pass it to the mod once it's loaded in vmMain(GAME_INIT)
 	if (g_gameinfo.game) {
 		passthrough_syscall = syscall;
 		LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QMM passthrough_syscall = {}\n", (void*)passthrough_syscall);
@@ -178,6 +189,10 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	 - store variables from mod's real export struct into our qmm_export before returning out of mod
 */
 C_DLLEXPORT void* GetGameAPI(void* import) {
+#ifdef DEBUG_MESSAGEBOX
+	MessageBoxA(NULL, "GetGameAPI called", "QMM2", 0);
+#endif
+
 	s_main_detect_env();
 
 	log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
@@ -226,6 +241,8 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
    It loads the DLL, calls the GetCGameAPI function with the same import pointer arg, then returns the return value of that
    function. It is a direct passing of pointers between the engine and CGame systems. After this function returns, there is no
    further interaction between QMM and the CGame system until this function is called again as a reload.
+
+   We may be able to find a way to integrate this better with the other cgame passthrough stuff that other games use.
 */
 C_DLLEXPORT void* GetCGameAPI(void* import) {
 	s_main_detect_env();
@@ -258,11 +275,6 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 }
 
 
-// flag that is set by GEN_EXPORT macro before calling into vmMain. used to tell if this is a call that
-// should be directly routed to the mod or not in some single player games that have game & cgame in the
-// same DLL
-bool is_QMM_vmMain_call = false;
-
 /* Entry point: engine->qmm
    This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the game info is not stored.
    This means that the engine could not be determined, so we fail with G_ERROR and tell the user to set the game in the config file.
@@ -275,13 +287,15 @@ bool is_QMM_vmMain_call = false;
    GAME_SHUTDOWN (post): handle game shutting down
 */
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
+#ifdef DEBUG_MESSAGEBOX
+	if (is_QMM_vmMain_call)
+		MessageBoxA(NULL, "vmMain called through QMM wrappers", "QMM2", 0);
+	else
+		MessageBoxA(NULL, "vmMain called directly", "QMM2", 0);
+#endif
+
 	QMM_GET_VMMAIN_ARGS();
 
-	// passthrough crap:
-	// store mod's vmMain function for cgame passthrough
-	static mod_vmMain_t passthrough_mod_vmMain = nullptr;
-	// GAME_SHUTDOWN has been called, but mod DLL was kept loaded so cgame shutdown can run
-	static bool passthrough_shutdown = false;
 	// if this is a call from cgame and we need to pass this call onto the mod
 	if (passthrough_syscall && !is_QMM_vmMain_call) {
 		if (!passthrough_mod_vmMain)
@@ -406,6 +420,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 	if (cmd == QMM_MOD_MSG[QMM_GAME_SHUTDOWN]) {
 		LOG(QMM_LOG_NOTICE, "QMM") << "Shutdown initiated!\n";
 
+		// cgame passthrough crap:
 		// hack to keep single player games shutting down correctly between levels/cutscenes/etc
 		if (passthrough_syscall) {
 			passthrough_shutdown = true;
