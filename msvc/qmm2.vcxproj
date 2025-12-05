@@ -203,6 +203,7 @@
     <ClCompile Include="..\src\game_sofmp.cpp" />
     <ClCompile Include="..\src\game_stef2.cpp" />
     <ClCompile Include="..\src\game_stvoyhm.cpp" />
+    <ClCompile Include="..\src\game_stvoysp.cpp" />
     <ClCompile Include="..\src\game_wet.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
@@ -224,6 +225,7 @@
     <ClInclude Include="..\include\game_q2r.h" />
     <ClInclude Include="..\include\game_quake2.h" />
     <ClInclude Include="..\include\game_stef2.h" />
+    <ClInclude Include="..\include\game_stvoysp.h" />
     <ClInclude Include="..\include\log.h" />
     <ClInclude Include="..\include\main.h" />
     <ClInclude Include="..\include\mod.h" />
