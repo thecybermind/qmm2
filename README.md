@@ -22,3 +22,8 @@ See what games QMM supports on the [Game Support wiki page](https://github.com/t
 Check out some plugins at the [Plugin List wiki page](https://github.com/thecybermind/qmm2/wiki/Plugin-List).
 
 ***For the latest installation documentation, please see the [GitHub project wiki](https://github.com/thecybermind/qmm2/wiki/Installation).***
+
+QMM uses the following libraries:  
+- [https://github.com/nlohmann/json](nlohmann/json) - for reading the configuration file.
+- [https://github.com/badaix/aixlog](aixlog) - for all logging (including to game console!)
+- [https://github.com/fmtlib/fmt](fmtlib) - for all string generation
