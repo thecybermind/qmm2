@@ -60,7 +60,7 @@ extern bool g_shutdown;
 // should be directly routed to the mod or not in some single player games that have game & cgame in the
 // same DLL
 extern bool is_QMM_vmMain_call;
-
+// engine->mod entry point
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
 // renamed syscall to qmm_syscall to avoid conflict with POSIX "long syscall(long number, ...)" which has pretty much the same interface
 intptr_t qmm_syscall(intptr_t cmd, ...);
