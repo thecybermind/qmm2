@@ -579,7 +579,7 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			void* buffer = (void*)args[0];
 			intptr_t len = args[1];
 			fileHandle_t f = (fileHandle_t)args[2];
-			(void)fread(buffer, len, 1, (FILE*)f);
+			(void)!fread(buffer, len, 1, (FILE*)f);	// warn_unused_result
 			break;
 		}
 		case G_FS_WRITE_QMM: {
@@ -587,7 +587,7 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			void* buffer = (void*)args[0];
 			intptr_t len = args[1];
 			fileHandle_t f = (fileHandle_t)args[2];
-			fwrite(buffer, len, 1, (FILE*)f);
+			(void)!fwrite(buffer, len, 1, (FILE*)f);	// warn_unused_result
 			break;
 		}
 		case G_FS_FCLOSE_FILE_QMM: {
