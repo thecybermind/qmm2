@@ -143,7 +143,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
 	GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
 	GEN_IMPORT(Tag_Orientation, G_TAG_ORIENTATION),
-	GEN_IMPORT(Tag_OrientationEx, G_TAG_ORIENTATIONEX),	// todo, change types to actually match float, but also need to return an intptr_t instead of orientation_t
+	GEN_IMPORT(Tag_OrientationEx, G_TAG_ORIENTATIONEX),	// todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
 	GEN_IMPORT(Bone_GetParentNum, G_BONE_GETPARENTNUM),
 	GEN_IMPORT(Alias_Add, G_ALIAS_ADD),
 	GEN_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM),
@@ -395,7 +395,7 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(Init, GAME_INIT),
 	GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
 	GEN_EXPORT(Cleanup, GAME_CLEANUP),
-	STEF2_SpawnEntities, // GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
+	STEF2_SpawnEntities,
 	GEN_EXPORT(PostLoad, GAME_POSTLOAD),
 	GEN_EXPORT(PostSublevelLoad, GAME_POSTSUBLEVELLOAD),
 	GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),

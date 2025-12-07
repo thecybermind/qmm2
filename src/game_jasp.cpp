@@ -9,7 +9,6 @@ Created By:
 
 */
 
-// #include <cstddef> // std::byte (jasp headers are still weird with system headers, so include this at the top)
 #include <string.h>
 #ifdef __INTELLISENSE__
 #pragma diag_suppress 266
@@ -162,8 +161,8 @@ static game_import_t qmm_import = {
 		GEN_IMPORT(WE_GetWindVector, G_WE_GETWINDVECTOR),
 		GEN_IMPORT(WE_GetWindGusting, G_WE_GETWINDGUSTING),
 		GEN_IMPORT(WE_IsOutside, G_WE_ISOUTSIDE),
-		GEN_IMPORT(WE_IsOutsideCausingPain, G_WE_ISOUTSIDECAUSINGPAIN),	// returns float
-		GEN_IMPORT(WE_GetChanceOfSaberFizz, G_WE_GETCHANCEOFSABERFIZZ),	// returns float
+		GEN_IMPORT(WE_IsOutsideCausingPain, G_WE_ISOUTSIDECAUSINGPAIN),	// todo: returns float
+		GEN_IMPORT(WE_GetChanceOfSaberFizz, G_WE_GETCHANCEOFSABERFIZZ),	// todo: returns float
 		GEN_IMPORT(WE_IsShaking, G_WE_ISSHAKING),
 		GEN_IMPORT(WE_AddWeatherZone, G_WE_ADDWEATHERZONE),
 		GEN_IMPORT(WE_SetTempGlobalFogColor, G_WE_SETTEMPGLOBALFOGCOLOR),

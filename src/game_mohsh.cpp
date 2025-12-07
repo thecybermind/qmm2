@@ -153,7 +153,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
 	GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
 	GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
-	GEN_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL), // todo, change types to actually match float, but also need to return an intptr_t instead of orientation_t
+	GEN_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL), // todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
 	GEN_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL),
 	GEN_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, qboolean, dtiki_t*, int, int, float),
 	GEN_IMPORT_6(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, void, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, float),
@@ -224,6 +224,13 @@ static void MOHSH_SpawnEntities(char* entstring, int levelTime) {
 }
 
 
+// at least one of first four args is a float (see big comment at top of game_q2r.cpp), so use specific types
+static void MOHSH_DebugCircle(float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6) {
+	is_QMM_vmMain_call = true;
+	vmMain(GAME_DEBUG_CIRCLE, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
@@ -234,7 +241,7 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(SetMap, GAME_SETMAP),
 	GEN_EXPORT(Restart, GAME_RESTART),
 	GEN_EXPORT(SetTime, GAME_SETTIME),
-	MOHSH_SpawnEntities, // GEN_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES),
+	MOHSH_SpawnEntities,
 	GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
 	GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
 	GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
@@ -257,8 +264,8 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(ArchiveFloat, GAME_ARCHIVE_FLOAT),
 	GEN_EXPORT(ArchiveString, GAME_ARCHIVE_STRING),
 	GEN_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME),
-	GEN_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION), // todo, change types to actually match float, but also need to return an intptr_t instead of orientation_t
-	/* DebugCircle */ +[](float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6) -> void { vmMain(GAME_DEBUG_CIRCLE, arg0, arg1, arg2, arg3, arg4, arg5, arg6); },
+	GEN_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION), // todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
+	MOHSH_DebugCircle,
 	GEN_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER),
 	GEN_EXPORT(SoundCallback, GAME_SOUND_CALLBACK),
 
