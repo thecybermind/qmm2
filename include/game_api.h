@@ -124,6 +124,7 @@ extern supportedgame_t g_supportedgames[];
                                 for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; ++i) \
                                     args[i] = va_arg(arglist, intptr_t); \
                                 va_end(arglist)
+#define QMM_PUT_VMMAIN_ARGS()	args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]
 
 #define QMM_MAX_SYSCALL_ARGS    17
 #define QMM_GET_SYSCALL_ARGS()  intptr_t args[QMM_MAX_SYSCALL_ARGS] = {}; \
@@ -132,6 +133,7 @@ extern supportedgame_t g_supportedgames[];
                                 for (int i = 0; i < QMM_MAX_SYSCALL_ARGS; ++i) \
                                     args[i] = va_arg(arglist, intptr_t); \
                                 va_end(arglist)
+#define QMM_PUT_SYSCALL_ARGS()	args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]
 
 // ----------------------------
 // ----- GetGameAPI stuff -----

@@ -303,7 +303,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
 		LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain({}) called\n", cmd);
 
-		intptr_t ret = passthrough_mod_vmMain(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
+		intptr_t ret = passthrough_mod_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 		LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain({}) returning {}\n", cmd, ret);
 
@@ -791,7 +791,7 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 
 	// call real vmMain function (unless a plugin resulted in QMM_SUPERCEDE)
 	if (maxresult < QMM_SUPERCEDE) {
-		ret = g_mod.pfnvmMain(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); // update with QMM_MAX_VMMAIN_ARGS
+		ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 		// the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs. the
 		// char* is a string to print if the client should not be allowed to connect, so only bother if it's not NULL
 		if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && ret && g_mod.vmbase)
@@ -838,7 +838,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 
 	// call real syscall function (unless a plugin resulted in QMM_SUPERCEDE)
 	if (maxresult < QMM_SUPERCEDE)
-		ret = g_gameinfo.pfnsyscall(cmd, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); // update with QMM_MAX_SYSCALL_ARGS
+		ret = g_gameinfo.pfnsyscall(cmd, QMM_PUT_SYSCALL_ARGS());
 
 	// if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the actual engine's return value back to the mod
 	if (maxresult < QMM_OVERRIDE)

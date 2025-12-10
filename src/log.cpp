@@ -12,10 +12,16 @@ Created By:
 #include <string>
 #include "log.h"
 
-static std::shared_ptr<AixLog::SinkFile> s_log_sink_file = nullptr;
+#if defined(QMM_LOG_APPEND)
+ #define QMM_LOG_FILE_TYPE SinkFileAppend
+#else
+ #define QMM_LOG_FILE_TYPE AixLog::SinkFile
+#endif
+
+static std::shared_ptr<QMM_LOG_FILE_TYPE> s_log_sink_file = nullptr;
 
 void log_init(std::string file, AixLog::Severity severity) {
-	s_log_sink_file = std::make_shared<AixLog::SinkFile>(severity, file);
+	s_log_sink_file = std::make_shared<QMM_LOG_FILE_TYPE>(severity, file);
 	AixLog::Log::init({ s_log_sink_file });
 }
 

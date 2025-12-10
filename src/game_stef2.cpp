@@ -440,7 +440,8 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_syscall({} {}) called\n", STEF2_eng_msg_names(cmd), cmd);
 
-	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
+	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
+	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
@@ -453,7 +454,6 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 		qmm_export.error_message = orig_export->error_message;
 	}
 
-	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
 
 	switch (cmd) {
@@ -845,7 +845,8 @@ intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) called\n", STEF2_mod_msg_names(cmd), cmd);
 
-	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
+	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
+	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 	if (!orig_export)
 		return 0;

@@ -12,6 +12,10 @@ Created By:
 #ifndef __QMM2_GAME_Q2R_H__
 #define __QMM2_GAME_Q2R_H__
 
+// AFAIK Quake 2 Remastered is only available on 64-bit Windows, so skip the whole file otherwise.
+// The game entry in game_api is similarly conditionally compiled.
+#if defined(_WIN64)
+
 // import ("syscall") cmds
 enum {
 	GV_TICK_RATE,
@@ -101,10 +105,10 @@ enum {
 	GAME_INIT_EX,
 	GAME_SHUTDOWN,
 	GAME_SPAWN_ENTITIES,
-	GAME_WRITE_GAME_JSON,
-	GAME_READ_GAME_JSON,
-	GAME_WRITE_LEVEL_JSON,
-	GAME_READ_LEVEL_JSON,
+	GAME_WRITE_GAME,
+	GAME_READ_GAME,
+	GAME_WRITE_LEVEL,
+	GAME_READ_LEVEL,
 	GAME_CAN_SAVE,
 	GAME_CLIENT_CHOOSESLOT,
 	GAME_CLIENT_CONNECT,
@@ -167,7 +171,9 @@ enum {
 	FS_APPEND,
 	FS_APPEND_SYNC = FS_APPEND,
 	// used by qmm_version cvar
-	CVAR_ROM = 8U, // CVAR_NOSET = 8
+	CVAR_ROM = CVAR_NOSET // 8
 };
+
+#endif // _WIN64
 
 #endif // __QMM2_GAME_Q2R_H__
