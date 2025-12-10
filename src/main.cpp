@@ -241,10 +241,11 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
    It loads the DLL, calls the GetCGameAPI function with the same import pointer arg, then returns the return value of that
    function. It is a direct passing of pointers between the engine and CGame systems. After this function returns, there is no
    further interaction between QMM and the CGame system until this function is called again as a reload.
-
-   We may be able to find a way to integrate this better with the other cgame passthrough stuff that other games use.
 */
 C_DLLEXPORT void* GetCGameAPI(void* import) {
+#ifdef DEBUG_MESSAGEBOX
+	MessageBoxA(NULL, "GetCGameAPI called", "QMM2", 0);
+#endif
 	s_main_detect_env();
 
 	// ???
@@ -427,7 +428,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 			LOG(QMM_LOG_NOTICE, "QMM") << "Delaying shutting down mod so cgame shutdown can run\n";
 		}
 		else {
-			// unload mod (dlclose)
+			// unload mod
 			LOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
 			mod_unload(g_mod);
 		}
