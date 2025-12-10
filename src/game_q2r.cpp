@@ -383,7 +383,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 		case G_FS_READ: {
 			// void trap_FS_Read(void* buffer, int len, fileHandle_t f);
 			char* buffer = (char*)args[0];
-			intptr_t len = args[1];
+			size_t len = args[1];
 			FILE* f = (FILE*)args[2];
 			size_t total = 0;
 			for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
@@ -396,7 +396,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 		case G_FS_WRITE: {
 			// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
 			char* buffer = (char*)args[0];
-			intptr_t len = args[1];
+			size_t len = args[1];
 			FILE* f = (FILE*)args[2];
 			size_t total = 0;
 			for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to write
