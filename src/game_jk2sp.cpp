@@ -185,7 +185,8 @@ intptr_t JK2SP_syscall(intptr_t cmd, ...) {
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2SP_syscall({} {}) called\n", JK2SP_eng_msg_names(cmd), cmd);
 
-	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
+	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
+	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
@@ -196,7 +197,6 @@ intptr_t JK2SP_syscall(intptr_t cmd, ...) {
 		qmm_export.num_entities = orig_export->num_entities;
 	}
 
-	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
 
 	switch (cmd) {
@@ -359,9 +359,6 @@ intptr_t JK2SP_syscall(intptr_t cmd, ...) {
 }
 
 
-static gentity_t* s_prev_gentities = qmm_export.gentities;
-static int s_prev_gentity_size = qmm_export.gentitySize;
-static int s_prev_num_entities = qmm_export.num_entities;
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 intptr_t JK2SP_vmMain(intptr_t cmd, ...) {
@@ -369,7 +366,8 @@ intptr_t JK2SP_vmMain(intptr_t cmd, ...) {
 
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2SP_vmMain({} {}) called\n", JK2SP_mod_msg_names(cmd), cmd);
 
-	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
+	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
+	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 	if (!orig_export)
 		return 0;
@@ -404,27 +402,28 @@ intptr_t JK2SP_vmMain(intptr_t cmd, ...) {
 			break;
 	};
 
+	// if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
+	if (qmm_export.gentities != orig_export->gentities
+		|| qmm_export.gentitySize != orig_export->gentitySize
+		|| qmm_export.num_entities != orig_export->num_entities
+		) {
+
+		gentity_t* gentities = orig_export->gentities;
+
+		if (gentities) {
+			playerState_s* clients = gentities[1].client;
+			intptr_t clientsize = (std::byte*)(gentities[2].client) - (std::byte*)clients;
+			// this will trigger this message to be fired to plugins, and then it will be handled
+			// by the empty "case G_LOCATE_GAME_DATA" above in QUAKE2_syscall
+			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)gentities, orig_export->num_entities, orig_export->gentitySize, (intptr_t)clients, clientsize);
+		}
+	}
+
 	// after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_entities and errorMessage in particular)
 	// and these changes need to be available to the engine, so copy those values again now before returning from the mod
 	qmm_export.gentities = orig_export->gentities;
 	qmm_export.gentitySize = orig_export->gentitySize;
 	qmm_export.num_entities = orig_export->num_entities;
-
-	// if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
-	if (qmm_export.gentities != s_prev_gentities
-		|| qmm_export.gentitySize != s_prev_gentity_size
-		|| qmm_export.num_entities != s_prev_num_entities
-		) {
-		s_prev_gentities = qmm_export.gentities;
-		s_prev_gentity_size = qmm_export.gentitySize;
-		s_prev_num_entities = qmm_export.num_entities;
-
-		if (s_prev_gentities) {
-			gclient_t* clients = (gclient_t*)qmm_export.gentities[1].client;
-			intptr_t clientsize = (std::byte*)(qmm_export.gentities[2].client) - (std::byte*)clients;
-			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, (intptr_t)clients, clientsize);
-		}
-	}
 
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2SP_vmMain({} {}) returning {}\n", JK2SP_mod_msg_names(cmd), cmd, ret);
 

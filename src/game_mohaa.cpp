@@ -281,7 +281,8 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHAA_syscall({} {}) called\n", MOHAA_eng_msg_names(cmd), cmd);
 
-	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
+	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
+	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
@@ -295,7 +296,6 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 		qmm_export.errorMessage = orig_export->errorMessage;
 	}
 
-	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
 
 	switch (cmd) {
@@ -582,26 +582,34 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 		}
 		case G_FS_READ_QMM: {
 			// void trap_FS_Read(void* buffer, int len, fileHandle_t f);
-			void* buffer = (void*)args[0];
-			intptr_t len = args[1];
-			fileHandle_t f = (fileHandle_t)args[2];
-			// todo: loop fread until done, error, or max iterations
-			(void)!fread(buffer, len, 1, (FILE*)f);	// warn_unused_result
+			char* buffer = (char*)args[0];
+			size_t len = args[1];
+			FILE* f = (FILE*)args[2];
+			size_t total = 0;
+			for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
+				total += fread(buffer + total, 1, len - total, f);
+				if (total >= len || ferror(f) || feof(f))
+					break;
+			}
 			break;
 		}
 		case G_FS_WRITE_QMM: {
 			// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
-			void* buffer = (void*)args[0];
-			intptr_t len = args[1];
-			fileHandle_t f = (fileHandle_t)args[2];
-			// todo: loop fwrite until done, error, or max iterations
-			(void)!fwrite(buffer, len, 1, (FILE*)f);	// warn_unused_result
+			char* buffer = (char*)args[0];
+			size_t len = args[1];
+			FILE* f = (FILE*)args[2];
+			size_t total = 0;
+			for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to write
+				total += fwrite(buffer + total, 1, len - total, f);
+				if (total >= len || ferror(f))
+					break;
+			}
 			break;
 		}
 		case G_FS_FCLOSE_FILE_QMM: {
 			// void trap_FS_FCloseFile(fileHandle_t f);
-			fileHandle_t f = (fileHandle_t)args[0];
-			fclose((FILE*)f);
+			FILE* f = (FILE*)args[0];
+			fclose(f);
 			break;
 		}
 		case G_GET_ENTITY_TOKEN: {
@@ -640,7 +648,8 @@ intptr_t MOHAA_vmMain(intptr_t cmd, ...) {
 
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_vmMain({} {}) called\n", MOHAA_mod_msg_names(cmd), cmd);
 
-	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
+	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
+	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 	if (!orig_export)
 		return 0;

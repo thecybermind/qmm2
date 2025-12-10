@@ -12,6 +12,8 @@ Created By:
 #ifndef __QMM2_LOG_H__
 #define __QMM2_LOG_H__
 
+// #define QMM_LOG_APPEND
+
 #include <aixlog/aixlog.hpp>
 #include "format.h"
 
@@ -44,5 +46,30 @@ enum {
 	QMM_LOG_ERROR,
 	QMM_LOG_FATAL
 };
+
+#if defined(QMM_LOG_APPEND)
+// class like AixLog's SinkFile except it will not truncate the file on opening
+struct SinkFileAppend : public AixLog::SinkFormat
+{
+    SinkFileAppend(const AixLog::Filter& filter, const std::string& filename, const std::string& format = "%Y-%m-%d %H:%M:%S.#ms [#severity] (#tag_func)")
+        : SinkFormat(filter, format)
+    {
+        ofs.open(filename.c_str(), std::ofstream::out | std::ios_base::app);
+    }
+
+    ~SinkFileAppend() override
+    {
+        ofs.close();
+    }
+
+    void log(const AixLog::Metadata& metadata, const std::string& message) override
+    {
+        do_log(ofs, metadata, message);
+    }
+
+protected:
+    mutable std::ofstream ofs;
+};
+#endif
 
 #endif // __QMM2_LOG_H__

@@ -37,9 +37,12 @@ static game_export_t* orig_export = nullptr;
 // track configstrings for our G_GET_CONFIGSTRING syscall
 static std::map<intptr_t, std::string> s_configstrings;
 static void QUAKE2_configstring(int num, char* configstring) {
-	s_configstrings[num] = configstring;
-	is_QMM_vmMain_call = true;
-	vmMain(G_CONFIGSTRING, (intptr_t)num, configstring);
+	// if configstring is null, remove entry in map. otherwise store in map
+	if (configstring)
+		s_configstrings[num] = configstring;
+	else if (s_configstrings.count(num))
+		s_configstrings.erase(num);
+	qmm_syscall(G_CONFIGSTRING, num, configstring);
 }
 
 
@@ -98,19 +101,29 @@ static game_import_t qmm_import = {
 // track userinfo for our G_GET_USERINFO syscall
 static std::map<edict_t*, std::string> s_userinfo;
 static qboolean QUAKE2_ClientConnect(edict_t* ent, char* userinfo) {
-	s_userinfo[ent] = userinfo;
+	// if userinfo is null, remove entry in map. otherwise store in map
+	if (userinfo)
+		s_userinfo.emplace(ent, userinfo);
+	else if (s_userinfo.count(ent))
+		s_userinfo.erase(ent);
 	is_QMM_vmMain_call = true;
 	return vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
 }
 static void QUAKE2_ClientUserinfoChanged(edict_t* ent, char* userinfo) {
-	s_userinfo[ent] = userinfo;
+	// if userinfo is null, remove entry in map. otherwise store in map
+	if (userinfo)
+		s_userinfo.emplace(ent, userinfo);
+	else if (s_userinfo.count(ent))
+		s_userinfo.erase(ent);
 	is_QMM_vmMain_call = true;
 	vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
+
 // track userinfo for our G_GET_ENTITY_TOKEN syscall
 static std::vector<std::string> s_entity_tokens;
 static void QUAKE2_SpawnEntities(char* mapname, char* entstring, char* spawnpoint) {
-	s_entity_tokens = util_parse_tokens(entstring);
+	if (entstring)
+		s_entity_tokens = util_parse_tokens(entstring);
 	is_QMM_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
@@ -150,7 +163,8 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("QUAKE2_syscall({} {}) called\n", QUAKE2_eng_msg_names(cmd), cmd);
 
-	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
+	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
+	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
 	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
@@ -162,7 +176,6 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		qmm_export.max_edicts = orig_export->max_edicts;
 	}
 
-	// store return value in case we do some stuff after the function call is over
 	intptr_t ret = 0;
 
 	switch (cmd) {
@@ -296,24 +309,34 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 		}
 		case G_FS_READ: {
 			// void trap_FS_Read(void* buffer, int len, fileHandle_t f);
-			void* buffer = (void*)args[0];
-			intptr_t len = args[1];
-			fileHandle_t f = (fileHandle_t)args[2];
-			(void)!fread(buffer, len, 1, (FILE*)f);	// warn_unused_result
+			char* buffer = (char*)args[0];
+			size_t len = args[1];
+			FILE* f = (FILE*)args[2];
+			size_t total = 0;
+			for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
+				total += fread(buffer + total, 1, len - total, f);
+				if (total >= len || ferror(f) || feof(f))
+					break;
+			}
 			break;
 		}
 		case G_FS_WRITE: {
 			// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
-			void* buffer = (void*)args[0];
-			intptr_t len = args[1];
-			fileHandle_t f = (fileHandle_t)args[2];
-			(void)!fwrite(buffer, len, 1, (FILE*)f);	// warn_unused_result
+			char* buffer = (char*)args[0];
+			size_t len = args[1];
+			FILE* f = (FILE*)args[2];
+			size_t total = 0;
+			for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to write
+				total += fwrite(buffer + total, 1, len - total, f);
+				if (total >= len || ferror(f))
+					break;
+			}
 			break;
 		}
 		case G_FS_FCLOSE_FILE: {
 			// void trap_FS_FCloseFile(fileHandle_t f);
-			fileHandle_t f = (fileHandle_t)args[0];
-			fclose((FILE*)f);
+			FILE* f = (FILE*)args[0];
+			fclose(f);
 			break;
 		}
 		// help plugins not need separate logic for entity/client pointers
@@ -379,9 +402,6 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 }
 
 
-static edict_t* s_prev_edicts = qmm_export.edicts;
-static int s_prev_edict_size = qmm_export.edict_size;
-static int s_prev_num_edicts = qmm_export.num_edicts;
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
 intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
@@ -389,7 +409,8 @@ intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) called\n", QUAKE2_mod_msg_names(cmd), cmd);
 
-	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in mod_load(), or set to nullptr in mod_unload()
+	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
+	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 	if (!orig_export)
 		return 0;
@@ -425,28 +446,29 @@ intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 			break;
 	};
 
+	// if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
+	if (qmm_export.edicts != orig_export->edicts
+		|| qmm_export.edict_size != orig_export->edict_size
+		|| qmm_export.num_edicts != orig_export->num_edicts
+		) {
+
+		edict_t* edicts = orig_export->edicts;
+
+		if (edicts) {
+			gclient_t* clients = edicts[1].client;
+			intptr_t clientsize = (std::byte*)(edicts[2].client) - (std::byte*)clients;
+			// this will trigger this message to be fired to plugins, and then it will be handled
+			// by the empty "case G_LOCATE_GAME_DATA" above in QUAKE2_syscall
+			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)edicts, orig_export->num_edicts, orig_export->edict_size, (intptr_t)clients, clientsize);
+		}
+	}
+
 	// after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_edicts in particular)
 	// and these changes need to be available to the engine, so copy those values again now before returning from the mod
 	qmm_export.edicts = orig_export->edicts;
 	qmm_export.edict_size = orig_export->edict_size;
 	qmm_export.num_edicts = orig_export->num_edicts;
 	qmm_export.max_edicts = orig_export->max_edicts;
-
-	// if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
-	if (qmm_export.edicts != s_prev_edicts
-		|| qmm_export.edict_size != s_prev_edict_size
-		|| qmm_export.num_edicts != s_prev_num_edicts
-		) {
-		s_prev_edicts = qmm_export.edicts;
-		s_prev_edict_size = qmm_export.edict_size;
-		s_prev_num_edicts = qmm_export.num_edicts;
-
-		if (s_prev_edicts) {
-			gclient_t* clients = qmm_export.edicts[1].client;
-			intptr_t clientsize = (std::byte*)(qmm_export.edicts[2].client) - (std::byte*)clients;
-			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, (intptr_t)clients, clientsize);
-		}
-	}
 
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) returning {}\n", QUAKE2_mod_msg_names(cmd), cmd, ret);
 
