@@ -215,7 +215,7 @@ static game_import_t qmm_import = {
 // these are "pre" hooks for storing some data for polyfills.
 // we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
 
-// track userinfo for our G_GET_ENTITY_TOKEN syscall
+// track entstrings for our G_GET_ENTITY_TOKEN syscall
 static std::vector<std::string> s_entity_tokens;
 static void MOHBT_SpawnEntities(char* entstring, int levelTime) {
 	s_entity_tokens = util_parse_tokens(entstring);

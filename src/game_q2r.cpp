@@ -154,7 +154,7 @@ static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
 	is_QMM_vmMain_call = true;
 	vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
-// track userinfo for our G_GET_ENTITY_TOKEN syscall
+// track entstrings for our G_GET_ENTITY_TOKEN syscall
 static std::vector<std::string> s_entity_tokens;
 static void Q2R_SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
 	if (entstring)

@@ -35,7 +35,7 @@ static game_export_t* orig_export = nullptr;
 // we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_import table
 
 // track configstrings for our G_GET_CONFIGSTRING syscall
-static std::map<intptr_t, std::string> s_configstrings;
+static std::map<int, std::string> s_configstrings;
 static void QUAKE2_configstring(int num, char* configstring) {
 	// if configstring is null, remove entry in map. otherwise store in map
 	if (configstring)
@@ -119,7 +119,7 @@ static void QUAKE2_ClientUserinfoChanged(edict_t* ent, char* userinfo) {
 	vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
-// track userinfo for our G_GET_ENTITY_TOKEN syscall
+// track entstrings for our G_GET_ENTITY_TOKEN syscall
 static std::vector<std::string> s_entity_tokens;
 static void QUAKE2_SpawnEntities(char* mapname, char* entstring, char* spawnpoint) {
 	if (entstring)
