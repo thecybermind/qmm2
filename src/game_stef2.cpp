@@ -383,7 +383,7 @@ static game_import_t qmm_import = {
 // track entstrings for our G_GET_ENTITY_TOKEN syscall
 static std::vector<std::string> s_entity_tokens;
 static void STEF2_SpawnEntities(const char* mapname, const char* entstring, int levelTime) {
-	s_entity_tokens = util_parse_tokens(entstring);
+	s_entity_tokens = util_parse_entstring(entstring);
 	is_QMM_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, levelTime);
 }

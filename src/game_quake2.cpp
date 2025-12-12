@@ -123,7 +123,7 @@ static void QUAKE2_ClientUserinfoChanged(edict_t* ent, char* userinfo) {
 static std::vector<std::string> s_entity_tokens;
 static void QUAKE2_SpawnEntities(char* mapname, char* entstring, char* spawnpoint) {
 	if (entstring)
-		s_entity_tokens = util_parse_tokens(entstring);
+		s_entity_tokens = util_parse_entstring(entstring);
 	is_QMM_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }

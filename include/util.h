@@ -35,7 +35,7 @@ int str_striequal(std::string s1, std::string s2);
 char* strncpyz(char* dest, const char* src, std::size_t count);
 
 // tokenize an entstring into a vector of strings 
-std::vector<std::string> util_parse_tokens(std::string entstring);
+std::vector<std::string> util_parse_entstring(std::string entstring);
 
 template<typename T>
 T util_max(T a, T b) {

@@ -158,7 +158,7 @@ static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
 static std::vector<std::string> s_entity_tokens;
 static void Q2R_SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
 	if (entstring)
-		s_entity_tokens = util_parse_tokens(entstring);
+		s_entity_tokens = util_parse_entstring(entstring);
 	is_QMM_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
