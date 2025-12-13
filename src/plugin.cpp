@@ -21,6 +21,8 @@ Created By:
 #include "plugin.h"
 #include "util.h"
 
+#define NUM_PLUGIN_STR_BUFFERS 12
+
 static void s_plugin_helper_WriteQMMLog(const char* text, int severity, const char* tag);
 static char* s_plugin_helper_VarArgs(const char* format, ...);
 static int s_plugin_helper_IsQVM();
@@ -198,11 +200,11 @@ static void s_plugin_helper_WriteQMMLog(const char* text, int severity, const ch
 
 static char* s_plugin_helper_VarArgs(const char* format, ...) {
 	va_list	argptr;
-	static char str[8][1024];
+	static char str[NUM_PLUGIN_STR_BUFFERS][1024];
 	static int index = 0;
 
 	// cycle rotating buffer and store string
-	index = (index + 1) & 7;
+	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
 
 	va_start(argptr, format);
 	vsnprintf(str[index], sizeof(str[index]), format, argptr);
@@ -238,14 +240,14 @@ static intptr_t s_plugin_helper_GetIntCvar(const char* cvar) {
 #define MAX_CVAR_LEN	1024	// most common cvar buffer size in SDK when calling G_CVAR_VARIABLE_STRING_BUFFER
 // this uses a cycling array of strings so the return value does not need to be stored locally
 static const char* s_plugin_helper_GetStrCvar(const char* cvar) {
-	static char str[8][MAX_CVAR_LEN];
+	static char str[NUM_PLUGIN_STR_BUFFERS][MAX_CVAR_LEN];
 	static int index = 0;
 
 	if (!cvar || !*cvar)
 		return nullptr;
 
 	// cycle rotating buffer and store string
-	index = (index + 1) & 7;
+	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
 	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], cvar, str[index], (intptr_t)sizeof(str[index]));
 	return str[index];
 }
@@ -263,7 +265,7 @@ static void s_plugin_helper_Argv(intptr_t argn, char* buf, intptr_t buflen) {
 
 // same as the SDK's Info_ValueForKey function
 static const char* s_plugin_helper_InfoValueForKey(const char* userinfo, const char* key) {
-	static std::string value[8];
+	static std::string value[NUM_PLUGIN_STR_BUFFERS];
 	static int index = 0;
 
 	if (!userinfo || !key)
@@ -288,7 +290,7 @@ static const char* s_plugin_helper_InfoValueForKey(const char* userinfo, const c
 	std::string fval = s.substr(valpos, valend - valpos);
 
 	// cycle rotating buffer and store string
-	index = (index + 1) & 7;
+	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
 	value[index] = fval;
 	return value[index].c_str();
 }
@@ -312,13 +314,13 @@ static nlohmann::json s_plugin_cfg_get_node(std::string key) {
 }
 
 static const char* s_plugin_helper_ConfigGetStr(const char* key) {
-	static std::string value[8];
+	static std::string value[NUM_PLUGIN_STR_BUFFERS];
 	static int index = 0;
 
 	nlohmann::json node = s_plugin_cfg_get_node(key);
 	
 	// cycle rotating buffer and store string
-	index = (index + 1) & 7;
+	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
 	value[index] = cfg_get_string(node, path_basename(key));
 	return value[index].c_str();
 }
@@ -337,15 +339,15 @@ static int s_plugin_helper_ConfigGetBool(const char* key) {
 
 
 static const char** s_plugin_helper_ConfigGetArrayStr(const char* key) {
-	static std::vector<std::string> value[8];
+	static std::vector<std::string> value[NUM_PLUGIN_STR_BUFFERS];
 	// plugin API needs to be C-compatible, so this vector stores the .c_str() of each string in the value vector
-	static std::vector<const char*> valuep[8];
+	static std::vector<const char*> valuep[NUM_PLUGIN_STR_BUFFERS];
 	static int index = 0;
 
 	nlohmann::json node = s_plugin_cfg_get_node(key);
 
 	// cycle rotating buffer and store array
-	index = (index + 1) & 7;
+	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
 	value[index] = cfg_get_array_str(node, path_basename(key));
 	// fill valuep with const char*s from value
 	valuep[index].clear();
@@ -358,13 +360,13 @@ static const char** s_plugin_helper_ConfigGetArrayStr(const char* key) {
 
 
 static int* s_plugin_helper_ConfigGetArrayInt(const char* key) {
-	static std::vector<int> value[8];
+	static std::vector<int> value[NUM_PLUGIN_STR_BUFFERS];
 	static int index = 0;
 
 	nlohmann::json node = s_plugin_cfg_get_node(key);
 
 	// cycle rotating buffer and store array
-	index = (index + 1) & 7;
+	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
 	value[index] = cfg_get_array_int(node, path_basename(key));
 	// insert length of the array as the first element
 	value[index].insert(value[index].begin(), (int)value[index].size());
