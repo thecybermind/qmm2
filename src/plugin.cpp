@@ -238,7 +238,6 @@ static intptr_t s_plugin_helper_GetIntCvar(const char* cvar) {
 
 
 #define MAX_CVAR_LEN	1024	// most common cvar buffer size in SDK when calling G_CVAR_VARIABLE_STRING_BUFFER
-// this uses a cycling array of strings so the return value does not need to be stored locally
 static const char* s_plugin_helper_GetStrCvar(const char* cvar) {
 	static char str[NUM_PLUGIN_STR_BUFFERS][MAX_CVAR_LEN];
 	static int index = 0;
@@ -374,7 +373,15 @@ static int* s_plugin_helper_ConfigGetArrayInt(const char* key) {
 }
 
 
+// get a configstring with G_GET_CONFIGSTRING, based on game engine type
 static void s_plugin_helper_GetConfigString(intptr_t argn, char* buf, intptr_t buflen) {
-	qmm_get_configstring(argn, buf, buflen);
+	// char* (*getConfigstring)(int index);
+	// void trap_GetConfigstring(int num, char* buffer, int bufferSize);
+	// some games don't return pointers because of QVM interaction, so if this returns anything but null
+	// (or true?), we probably are in an api game, and need to get the configstring from the return value
+	// instead
+	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], argn, buf, buflen);
+	if (ret > 1)
+		strncpyz(buf, (const char*)ret, buflen);
 }
 

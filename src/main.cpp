@@ -478,19 +478,6 @@ void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
 }
 
 
-// get a configstring with G_GET_CONFIGSTRING, based on game engine type
-void qmm_get_configstring(intptr_t argn, char* buf, intptr_t buflen) {
-	// char* (*getConfigstring)(int index);
-	// void trap_GetConfigstring(int num, char* buffer, int bufferSize);
-	// some games don't return pointers because of QVM interaction, so if this returns anything but null
-	// (or true?), we probably are in an api game, and need to get the configstring from the return value
-	// instead
-	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], argn, buf, buflen);
-	if (ret > 1)
-		strncpyz(buf, (const char*)ret, buflen);
-}
-
-
 // general code to get path/module/binary/etc information
 static void s_main_detect_env() {
 	// save exe module path
