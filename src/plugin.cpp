@@ -243,7 +243,7 @@ static const char* s_plugin_helper_GetStrCvar(const char* cvar) {
 	static int index = 0;
 
 	if (!cvar || !*cvar)
-		return nullptr;
+		return "";
 
 	// cycle rotating buffer and store string
 	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
