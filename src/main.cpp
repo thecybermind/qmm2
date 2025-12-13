@@ -233,49 +233,6 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 }
 
 
-/* Entry point: engine->qmm (Q2R only)
-   Quake 2 Remastered has a heavily modified engine + API, and includes Game and CGame in the same DLL, with this GetCGameAPI as
-   the entry point. This is the first function called when a Q2R mod DLL is loaded. Since QMM does not care about CGame, this
-   function simply attempts to detect the environment (QMM+EXE paths), load the config, and get the mod from the config. If
-   the setting is "auto", it uses the current QMM DLL filename and appends it to "qmm_", and then loads it from the QMM directory.
-   It loads the DLL, calls the GetCGameAPI function with the same import pointer arg, then returns the return value of that
-   function. It is a direct passing of pointers between the engine and CGame systems. After this function returns, there is no
-   further interaction between QMM and the CGame system until this function is called again as a reload.
-*/
-C_DLLEXPORT void* GetCGameAPI(void* import) {
-#ifdef DEBUG_MESSAGEBOX
-	MessageBoxA(NULL, "GetCGameAPI called", "QMM2", 0);
-#endif
-	s_main_detect_env();
-
-	// ???
-	if (!import)
-		return nullptr;
-
-	// quiet = true, stops the message from appearing in console whenever the client reloads (which is a lot)
-	s_main_load_config(true);
-
-	// load mod
-	std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
-	if (str_striequal(cfg_mod, "auto"))
-		cfg_mod = fmt::format("qmm_{}", g_gameinfo.qmm_file);
-	if (path_is_relative(cfg_mod))
-		cfg_mod = fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod);
-
-	void* mod_handle = dlopen(cfg_mod.c_str(), RTLD_NOW);
-	if (!mod_handle)
-		return nullptr;
-
-	mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(mod_handle, "GetCGameAPI");
-	if (!mod_GetCGameAPI)
-		return nullptr;
-
-	// DLL needs to stay loaded, so no dlclose
-
-	return mod_GetCGameAPI(import);
-}
-
-
 /* Entry point: engine->qmm
    This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the game info is not stored.
    This means that the engine could not be determined, so we fail with G_ERROR and tell the user to set the game in the config file.
@@ -839,3 +796,48 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 	}	
 	return final_ret;
 }
+
+
+#ifdef _WIN64
+/* Entry point: engine->qmm (Q2R only)
+   Quake 2 Remastered has a heavily modified engine + API, and includes Game and CGame in the same DLL, with this GetCGameAPI as
+   the entry point. This is the first function called when a Q2R mod DLL is loaded. Since QMM does not care about CGame, this
+   function simply attempts to detect the environment (QMM+EXE paths), load the config, and get the mod from the config. If
+   the setting is "auto", it uses the current QMM DLL filename and appends it to "qmm_", and then loads it from the QMM directory.
+   It loads the DLL, calls the GetCGameAPI function with the same import pointer arg, then returns the return value of that
+   function. It is a direct passing of pointers between the engine and CGame systems. After this function returns, there is no
+   further interaction between QMM and the CGame system until this function is called again as a reload.
+*/
+C_DLLEXPORT void* GetCGameAPI(void* import) {
+#ifdef DEBUG_MESSAGEBOX
+	MessageBoxA(NULL, "GetCGameAPI called", "QMM2", 0);
+#endif
+	s_main_detect_env();
+
+	// ???
+	if (!import)
+		return nullptr;
+
+	// quiet = true, stops the message from appearing in console whenever the client reloads (which is a lot)
+	s_main_load_config(true);
+
+	// load mod
+	std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
+	if (str_striequal(cfg_mod, "auto"))
+		cfg_mod = fmt::format("qmm_{}", g_gameinfo.qmm_file);
+	if (path_is_relative(cfg_mod))
+		cfg_mod = fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod);
+
+	void* mod_handle = dlopen(cfg_mod.c_str(), RTLD_NOW);
+	if (!mod_handle)
+		return nullptr;
+
+	mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(mod_handle, "GetCGameAPI");
+	if (!mod_GetCGameAPI)
+		return nullptr;
+
+	// DLL needs to stay loaded, so no dlclose
+
+	return mod_GetCGameAPI(import);
+}
+#endif / _WIN64
