@@ -63,8 +63,9 @@ enum {
     QMMLOG_FATAL
 };
 
-// only set IGNORED, OVERRIDE, and SUPERCEDE
-// UNUSED and ERROR are for internal use only
+// only set ERROR, IGNORED, OVERRIDE, and SUPERCEDE
+// ERROR will output an error message in logs, but otherwise functions like IGNORED
+// UNUSED is for internal use only and will output a warning message in logs, but otherwise functions like IGNORED
 typedef enum pluginres_e {
     QMM_UNUSED = -2,
     QMM_ERROR = -1,
@@ -95,8 +96,11 @@ typedef struct {
 
 // struct of vars for QMM plugin utils
 typedef struct {
-    intptr_t vmbase;				// base address of the QVM memory block (automatically added to pointer args in syscalls)
-    intptr_t* preturn;				// pointer to an int that holds the return value from a function call (used in QMM_x_Post)
+    // base address of the QVM memory block (automatically added to pointer args in syscalls)
+    intptr_t vmbase;
+    
+    // pointer to an int that holds the current value to be returned from a function call (updated by QMM_OVERRIDE/QMM_SUPERCEDE in all hooks)
+    intptr_t* preturn;
 } pluginvars_t;
 
 // macros for QMM plugin util funcs

@@ -231,7 +231,7 @@ static const char* s_plugin_helper_ModMsgName(intptr_t msg) {
 
 static intptr_t s_plugin_helper_GetIntCvar(const char* cvar) {
 	if (!cvar || !*cvar)
-		return -1;
+		return 0;
 
 	return ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_INTEGER_VALUE], cvar);
 }
