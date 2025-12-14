@@ -161,6 +161,9 @@ enum {
 
 typedef intptr_t fileHandle_t;
 
+// allow plugins to use this type for easier code
+typedef edict_t gentity_t;
+
 // other values
 enum {
 	// not used with Q2R
