@@ -879,4 +879,4 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 
 	return mod_GetCGameAPI(import);
 }
-#endif / _WIN64
+#endif // _WIN64
