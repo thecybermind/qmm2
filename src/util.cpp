@@ -129,6 +129,14 @@ std::string str_tolower(std::string str) {
 }
 
 
+std::string str_toupper(std::string str) {
+	for (auto& c : str)
+		c = (char)std::toupper((unsigned char)c);
+
+	return str;
+}
+
+
 int str_stristr(std::string haystack, std::string needle) {
 	return str_tolower(haystack).find(str_tolower(needle)) != std::string::npos;
 }

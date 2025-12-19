@@ -23,22 +23,24 @@ Created By:
 
 #define NUM_PLUGIN_STR_BUFFERS 12
 
-static void s_plugin_helper_WriteQMMLog(const char* text, int severity, const char* tag);
-static char* s_plugin_helper_VarArgs(const char* format, ...);
-static int s_plugin_helper_IsQVM();
-static const char* s_plugin_helper_EngMsgName(intptr_t msg);
-static const char* s_plugin_helper_ModMsgName(intptr_t msg);
-static intptr_t s_plugin_helper_GetIntCvar(const char* cvar);
-static const char* s_plugin_helper_GetStrCvar(const char* cvar);
-static const char* s_plugin_helper_GetGameEngine();
-static void s_plugin_helper_Argv(intptr_t argn, char* buf, intptr_t buflen);
-static const char* s_plugin_helper_InfoValueForKey(const char* userinfo, const char* key);
-static const char* s_plugin_helper_ConfigGetStr(const char* key);
-static int s_plugin_helper_ConfigGetInt(const char* key);
-static int s_plugin_helper_ConfigGetBool(const char* key);
-static const char** s_plugin_helper_ConfigGetArrayStr(const char* key);
-static int* s_plugin_helper_ConfigGetArrayInt(const char* key);
-static void s_plugin_helper_GetConfigString(intptr_t argn, char* buf, intptr_t buflen);
+static plugin_t* s_plugin_find_by_id(plid_t plid);
+
+static void s_plugin_helper_WriteQMMLog(plid_t plid, const char* text, int severity);
+static char* s_plugin_helper_VarArgs(plid_t plid, const char* format, ...);
+static int s_plugin_helper_IsQVM(plid_t plid);
+static const char* s_plugin_helper_EngMsgName(plid_t plid, intptr_t msg);
+static const char* s_plugin_helper_ModMsgName(plid_t plid, intptr_t msg);
+static intptr_t s_plugin_helper_GetIntCvar(plid_t plid, const char* cvar);
+static const char* s_plugin_helper_GetStrCvar(plid_t plid, const char* cvar);
+static const char* s_plugin_helper_GetGameEngine(plid_t plid);
+static void s_plugin_helper_Argv(plid_t plid, intptr_t argn, char* buf, intptr_t buflen);
+static const char* s_plugin_helper_InfoValueForKey(plid_t plid, const char* userinfo, const char* key);
+static const char* s_plugin_helper_ConfigGetStr(plid_t plid, const char* key);
+static int s_plugin_helper_ConfigGetInt(plid_t plid, const char* key);
+static int s_plugin_helper_ConfigGetBool(plid_t plid, const char* key);
+static const char** s_plugin_helper_ConfigGetArrayStr(plid_t plid, const char* key);
+static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid, const char* key);
+static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t argn, char* buf, intptr_t buflen);
 
 static pluginfuncs_t s_pluginfuncs = {
 	s_plugin_helper_WriteQMMLog,
@@ -112,10 +114,10 @@ bool plugin_load(plugin_t& p, std::string file) {
 	}
 
 	// if the plugin's major interface version is very high, it is likely an old plugin (pifv < 3:0) and it's actually the name string pointer
-	// so we can just grab the pifv values from reserved2 and reserved3 (the old slots) and let the next checks handle it
+	// so we can just grab the pifv values from reserved1 and reserved2 (the old slots) and let the next checks handle it
 	if (p.plugininfo->pifv_major > 999) {
-		p.plugininfo->pifv_major = p.plugininfo->reserved2;
-		p.plugininfo->pifv_minor = p.plugininfo->reserved3;
+		p.plugininfo->pifv_major = p.plugininfo->reserved1;
+		p.plugininfo->pifv_minor = p.plugininfo->reserved2;
 	}
 
 	// if the plugin's major interface version is lower, don't load and suggest to upgrade plugin
@@ -191,14 +193,28 @@ void plugin_unload(plugin_t& p) {
 }
 
 
-static void s_plugin_helper_WriteQMMLog(const char* text, int severity, const char* tag) {
-	if (severity < QMM_LOG_TRACE || severity > QMM_LOG_FATAL)
-		severity = QMM_LOG_INFO;
-	LOG(severity, tag) << text;
+static plugin_t* s_plugin_find_by_id(plid_t plid) {
+	for (plugin_t& p : g_plugins) {
+		if (p.plugininfo == (plugininfo_t*)plid)
+			return &p;
+	}
+
+	return nullptr;
 }
 
 
-static char* s_plugin_helper_VarArgs(const char* format, ...) {
+static void s_plugin_helper_WriteQMMLog(plid_t plid, const char* text, int severity) {
+	if (severity < QMM_LOG_TRACE || severity > QMM_LOG_FATAL)
+		severity = QMM_LOG_INFO;
+	plugininfo_t* plinfo = (plugininfo_t*)plid;
+	const char* logtag = plinfo->logtag;
+	if (!logtag || !*logtag)
+		logtag = plinfo->name;
+	LOG(severity, str_toupper(logtag)) << text;
+}
+
+
+static char* s_plugin_helper_VarArgs(plid_t plid, const char* format, ...) {
 	va_list	argptr;
 	static char str[NUM_PLUGIN_STR_BUFFERS][1024];
 	static int index = 0;
@@ -210,92 +226,111 @@ static char* s_plugin_helper_VarArgs(const char* format, ...) {
 	vsnprintf(str[index], sizeof(str[index]), format, argptr);
 	va_end(argptr);
 
-	return str[index];
+	char* ret = str[index];
+
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnVarArgs(\"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, format, ret);
+
+	return ret;
 }
 
 
-static int s_plugin_helper_IsQVM() {
-	return g_mod.vmbase != 0;
+static int s_plugin_helper_IsQVM(plid_t plid) {
+	int ret = g_mod.vmbase != 0;
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnIsQVM(\"{}\") = {}\n", ((plugininfo_t*)plid)->name, ret);
+	return ret;
 }
 
 
-static const char* s_plugin_helper_EngMsgName(intptr_t msg) {
-	return g_gameinfo.game->eng_msg_names(msg);
+static const char* s_plugin_helper_EngMsgName(plid_t plid, intptr_t msg) {
+	const char* ret = g_gameinfo.game->eng_msg_names(msg);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnEngMsgName(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, msg, ret);
+	return ret;
 }
 
 
-static const char* s_plugin_helper_ModMsgName(intptr_t msg) {
-	return g_gameinfo.game->mod_msg_names(msg);
+static const char* s_plugin_helper_ModMsgName(plid_t plid, intptr_t msg) {
+	const char* ret = g_gameinfo.game->mod_msg_names(msg);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnModMsgName(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, msg, ret);
+	return ret;
 }
 
 
-static intptr_t s_plugin_helper_GetIntCvar(const char* cvar) {
-	if (!cvar || !*cvar)
-		return 0;
-
-	return ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_INTEGER_VALUE], cvar);
+static intptr_t s_plugin_helper_GetIntCvar(plid_t plid, const char* cvar) {
+	intptr_t ret = 0;
+	if (cvar && *cvar)
+		ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_INTEGER_VALUE], cvar);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetIntCvar(\"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, cvar, ret);
+	return ret;
 }
 
 
 #define MAX_CVAR_LEN	1024	// most common cvar buffer size in SDK when calling G_CVAR_VARIABLE_STRING_BUFFER
-static const char* s_plugin_helper_GetStrCvar(const char* cvar) {
+static const char* s_plugin_helper_GetStrCvar(plid_t plid, const char* cvar) {
 	static char str[NUM_PLUGIN_STR_BUFFERS][MAX_CVAR_LEN];
 	static int index = 0;
 
-	if (!cvar || !*cvar)
-		return "";
+	const char* ret = "";
 
-	// cycle rotating buffer and store string
-	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
-	ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], cvar, str[index], (intptr_t)sizeof(str[index]));
-	return str[index];
+	if (cvar && *cvar) {
+		// cycle rotating buffer and store string
+		index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
+		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], cvar, str[index], (intptr_t)sizeof(str[index]));
+		ret = str[index];
+	}
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetStrCvar(\"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, cvar, ret);
+	return ret;
 }
 
 
-static const char* s_plugin_helper_GetGameEngine() {
-	return g_gameinfo.game->gamename_short;
+static const char* s_plugin_helper_GetGameEngine(plid_t plid) {
+	const char* ret = g_gameinfo.game->gamename_short;
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetGameEngine(\"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, ret);
+	return ret;
 }
 
 
-static void s_plugin_helper_Argv(intptr_t argn, char* buf, intptr_t buflen) {
+static void s_plugin_helper_Argv(plid_t plid, intptr_t argn, char* buf, intptr_t buflen) {
 	qmm_argv(argn, buf, buflen);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnArgv(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, argn, buf);
 }
 
 
 // same as the SDK's Info_ValueForKey function
-static const char* s_plugin_helper_InfoValueForKey(const char* userinfo, const char* key) {
+static const char* s_plugin_helper_InfoValueForKey(plid_t plid, const char* userinfo, const char* key) {
 	static std::string value[NUM_PLUGIN_STR_BUFFERS];
 	static int index = 0;
 
-	if (!userinfo || !key)
-		return "";
+	const char* ret = "";
 
-	std::string s = userinfo;
+	if (userinfo && key) {
+		std::string s = userinfo;
 
-	// userinfo strings are "\key\value\key\value\"
-	// so search for "\key\" and then get everything up to the next "\"
-	std::string fkey = fmt::format("\\{}\\", key);
-	size_t keypos = s.find(fkey);
-	if (keypos == std::string::npos)	// key not found
-		return "";
+		// userinfo strings are "\key\value\key\value\"
+		// so search for "\key\" and then get everything up to the next "\"
+		std::string fkey = fmt::format("\\{}\\", key);
+		size_t keypos = s.find(fkey);
+		if (keypos != std::string::npos) {	// key found
+			// find next "\"
+			size_t valpos = keypos + fkey.size();
+			size_t valend = s.find('\\', valpos);
+			if (valend == std::string::npos)	// handle case(?) where final value does not end with a "\"
+				valend = s.size();
 
-	// find next "\"
-	size_t valpos = keypos + fkey.size();
-	size_t valend = s.find('\\', valpos);
-	if (valend == std::string::npos)	// handle case(?) where final value does not end with a "\"
-		valend = s.size();
+			// get everything between "\key\" and "\"
+			std::string fval = s.substr(valpos, valend - valpos);
 
-	// get everything between "\key\" and "\"
-	std::string fval = s.substr(valpos, valend - valpos);
-
-	// cycle rotating buffer and store string
-	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
-	value[index] = fval;
-	return value[index].c_str();
+			// cycle rotating buffer and store string
+			index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
+			value[index] = fval;
+			ret = value[index].c_str();
+		}
+	}
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnInfoValueForKey(\"{}\", \"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, userinfo, key, ret);
+	return ret;
 }
 
 
-static nlohmann::json s_plugin_cfg_get_node(std::string key) {
+static nlohmann::json s_plugin_cfg_get_node(plid_t plid, std::string key) {
 	if (key[0] == '/')
 		key = key.substr(1);
 
@@ -312,38 +347,44 @@ static nlohmann::json s_plugin_cfg_get_node(std::string key) {
 	return node;
 }
 
-static const char* s_plugin_helper_ConfigGetStr(const char* key) {
+static const char* s_plugin_helper_ConfigGetStr(plid_t plid, const char* key) {
 	static std::string value[NUM_PLUGIN_STR_BUFFERS];
 	static int index = 0;
 
-	nlohmann::json node = s_plugin_cfg_get_node(key);
+	nlohmann::json node = s_plugin_cfg_get_node(plid, key);
 	
 	// cycle rotating buffer and store string
 	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
 	value[index] = cfg_get_string(node, path_basename(key));
-	return value[index].c_str();
+	const char* ret = value[index].c_str();
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnConfigGetStr(\"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, key, ret);
+	return ret;
 }
 
 
-static int s_plugin_helper_ConfigGetInt(const char* key) {
-	nlohmann::json node = s_plugin_cfg_get_node(key);
-	return cfg_get_int(node, path_basename(key));
+static int s_plugin_helper_ConfigGetInt(plid_t plid, const char* key) {
+	nlohmann::json node = s_plugin_cfg_get_node(plid, key);
+	int ret = cfg_get_int(node, path_basename(key));
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnConfigGetInt(\"{}\", \"{}\") = {}\n", ((plugininfo_t*)plid)->name, key, ret);
+	return ret;
 }
 
 
-static int s_plugin_helper_ConfigGetBool(const char* key) {
-	nlohmann::json node = s_plugin_cfg_get_node(key);
-	return (int)cfg_get_bool(node, path_basename(key));
+static int s_plugin_helper_ConfigGetBool(plid_t plid, const char* key) {
+	nlohmann::json node = s_plugin_cfg_get_node(plid, key);
+	int ret = (int)cfg_get_bool(node, path_basename(key));
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnConfigGetBool(\"{}\", \"{}\") = {}\n", ((plugininfo_t*)plid)->name, key, ret);
+	return ret;
 }
 
 
-static const char** s_plugin_helper_ConfigGetArrayStr(const char* key) {
+static const char** s_plugin_helper_ConfigGetArrayStr(plid_t plid, const char* key) {
 	static std::vector<std::string> value[NUM_PLUGIN_STR_BUFFERS];
 	// plugin API needs to be C-compatible, so this vector stores the .c_str() of each string in the value vector
 	static std::vector<const char*> valuep[NUM_PLUGIN_STR_BUFFERS];
 	static int index = 0;
 
-	nlohmann::json node = s_plugin_cfg_get_node(key);
+	nlohmann::json node = s_plugin_cfg_get_node(plid, key);
 
 	// cycle rotating buffer and store array
 	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
@@ -354,27 +395,29 @@ static const char** s_plugin_helper_ConfigGetArrayStr(const char* key) {
 		valuep[index].push_back(s.c_str());
 	}
 	valuep[index].push_back(nullptr);	// null-terminate the array
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin ConfigGetArrayStr(\"{}\", \"{}\") = [{} items]\n", ((plugininfo_t*)plid)->name, key, value[index].size());
 	return valuep[index].data();
 }
 
 
-static int* s_plugin_helper_ConfigGetArrayInt(const char* key) {
+static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid, const char* key) {
 	static std::vector<int> value[NUM_PLUGIN_STR_BUFFERS];
 	static int index = 0;
 
-	nlohmann::json node = s_plugin_cfg_get_node(key);
+	nlohmann::json node = s_plugin_cfg_get_node(plid, key);
 
 	// cycle rotating buffer and store array
 	index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
 	value[index] = cfg_get_array_int(node, path_basename(key));
 	// insert length of the array as the first element
 	value[index].insert(value[index].begin(), (int)value[index].size());
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin ConfigGetArrayInt(\"{}\", \"{}\") = [{} items]\n", ((plugininfo_t*)plid)->name, key, value[index].size());
 	return value[index].data();
 }
 
 
 // get a configstring with G_GET_CONFIGSTRING, based on game engine type
-static void s_plugin_helper_GetConfigString(intptr_t argn, char* buf, intptr_t buflen) {
+static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t argn, char* buf, intptr_t buflen) {
 	// char* (*getConfigstring)(int index);
 	// void trap_GetConfigstring(int num, char* buffer, int bufferSize);
 	// some games don't return pointers because of QVM interaction, so if this returns anything but null
@@ -383,5 +426,6 @@ static void s_plugin_helper_GetConfigString(intptr_t argn, char* buf, intptr_t b
 	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], argn, buf, buflen);
 	if (ret > 1)
 		strncpyz(buf, (const char*)ret, buflen);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, argn, buf);
 }
 
