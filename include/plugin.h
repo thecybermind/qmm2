@@ -29,9 +29,16 @@ typedef struct plugin_s {
 	plugininfo_t* plugininfo = nullptr;
 } plugin_t;
 
+typedef struct plugin_globals_s {
+	pluginres_t plugin_result;
+	intptr_t api_return;
+	intptr_t orig_return;
+	pluginres_t high_result;
+} plugin_globals_t;
+
+extern plugin_globals_t g_plugin_globals;
+
 extern std::vector<plugin_t> g_plugins;
-extern pluginres_t g_plugin_result;
-extern intptr_t g_api_return;
 
 const char* plugin_result_to_str(pluginres_t res);
 bool plugin_load(plugin_t& p, std::string file);

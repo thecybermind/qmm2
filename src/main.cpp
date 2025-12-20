@@ -712,7 +712,7 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 // route vmMain call to plugins and mod
 static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 	// store max result
-	pluginres_t maxresult = QMM_UNUSED;
+	pluginres_t max_result = QMM_UNUSED;
 	// return values from a plugin call
 	intptr_t plugin_ret = 0;
 	// return value from mod call
@@ -722,27 +722,30 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 
 	// begin passing calls to plugins' QMM_vmMain functions
 	for (plugin_t& p : g_plugins) {
-		g_plugin_result = QMM_UNUSED;
+		g_plugin_globals.plugin_result = QMM_UNUSED;
 		// allow plugins to see the current final_ret value
-		g_api_return = final_ret;
+		g_plugin_globals.api_return = final_ret;
 
 		// call plugin's vmMain and store return value
 		plugin_ret = p.QMM_vmMain(cmd, args);
 		
 		// set new max result
-		maxresult = util_max(g_plugin_result, maxresult);
-		if (g_plugin_result == QMM_UNUSED)
+		max_result = util_max(g_plugin_globals.plugin_result, max_result);
+		// store current max result in global for plugins
+		g_plugin_globals.high_result = max_result;
+		// invalid/error result values
+		if (g_plugin_globals.plugin_result == QMM_UNUSED)
 			LOG(QMM_LOG_WARNING, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name);
-		if (g_plugin_result == QMM_ERROR)
+		else if (g_plugin_globals.plugin_result == QMM_ERROR)
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name);
 		
 		// if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
-		if (g_plugin_result >= QMM_OVERRIDE)
+		else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
 			final_ret = plugin_ret;
 	}
 
 	// call real vmMain function (unless a plugin resulted in QMM_SUPERCEDE)
-	if (maxresult < QMM_SUPERCEDE) {
+	if (max_result < QMM_SUPERCEDE) {
 		mod_ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 		// the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs. the
 		// char* is a string to print if the client should not be allowed to connect, so only bother if it's not NULL
@@ -750,25 +753,28 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 			mod_ret += g_mod.vmbase;
 	}
 
+	// store mod_ret in global for plugins
+	g_plugin_globals.orig_return = mod_ret;
+
 	// if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the actual mod's return value back to the engine
-	if (maxresult < QMM_OVERRIDE)
+	if (max_result < QMM_OVERRIDE)
 		final_ret = mod_ret;
 
 	// pass calls to plugins' QMM_vmMain_Post functions (QMM_OVERRIDE or QMM_SUPERCEDE can still change final_ret)
 	for (plugin_t& p : g_plugins) {
-		g_plugin_result = QMM_UNUSED;
+		g_plugin_globals.plugin_result = QMM_UNUSED;
 		// allow plugins to see the current final_ret value
-		g_api_return = final_ret;
+		g_plugin_globals.api_return = final_ret;
 
 		// call plugin's vmMain_Post and store return value
 		plugin_ret = p.QMM_vmMain_Post(cmd, args);
 
 		// ignore QMM_UNUSED, but still show a message for QMM_ERROR
-		if (g_plugin_result == QMM_ERROR)
+		if (g_plugin_globals.plugin_result == QMM_ERROR)
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name);
 
 		// if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
-		if (g_plugin_result >= QMM_OVERRIDE)
+		else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
 			final_ret = plugin_ret;
 	}
 
@@ -779,7 +785,7 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 // route syscall call to plugins and mod
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 	// store max result
-	pluginres_t maxresult = QMM_UNUSED;
+	pluginres_t max_result = QMM_UNUSED;
 	// return values from a plugin call
 	intptr_t plugin_ret = 0;
 	// return value from engine call
@@ -789,48 +795,54 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 
 	// begin passing calls to plugins' QMM_syscall functions
 	for (plugin_t& p : g_plugins) {
-		g_plugin_result = QMM_UNUSED;
+		g_plugin_globals.plugin_result = QMM_UNUSED;
 		// allow plugins to see the current final_ret value
-		g_api_return = final_ret;
+		g_plugin_globals.api_return = final_ret;
 
 		// call plugin's syscall and store return value
 		plugin_ret = p.QMM_syscall(cmd, args);
 		
 		// set new max result
-		maxresult = util_max(g_plugin_result, maxresult);
-		if (g_plugin_result == QMM_UNUSED)
+		max_result = util_max(g_plugin_globals.plugin_result, max_result);
+		// store current max result in global for plugins
+		g_plugin_globals.high_result = max_result;
+		// invalid/error result values
+		if (g_plugin_globals.plugin_result == QMM_UNUSED)
 			LOG(QMM_LOG_WARNING, "QMM") << fmt::format("syscall({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name);
-		if (g_plugin_result == QMM_ERROR)
+		else if (g_plugin_globals.plugin_result == QMM_ERROR)
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name);
 		
 		// if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
-		if (g_plugin_result >= QMM_OVERRIDE)
+		else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
 			final_ret = plugin_ret;
 	}
 
 	// call real syscall function (unless a plugin resulted in QMM_SUPERCEDE)
-	if (maxresult < QMM_SUPERCEDE)
+	if (max_result < QMM_SUPERCEDE)
 		eng_ret = g_gameinfo.pfnsyscall(cmd, QMM_PUT_SYSCALL_ARGS());
 
+	// store eng_ret in global for plugins
+	g_plugin_globals.orig_return = eng_ret;
+
 	// if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the actual engine's return value back to the mod
-	if (maxresult < QMM_OVERRIDE)
+	if (max_result < QMM_OVERRIDE)
 		final_ret = eng_ret;
 
 	// pass calls to plugins' QMM_syscall_Post functions (ignore return values and results)
 	for (plugin_t& p : g_plugins) {
-		g_plugin_result = QMM_UNUSED;
+		g_plugin_globals.plugin_result = QMM_UNUSED;
 		// allow plugins to see the current final_ret value
-		g_api_return = final_ret;
+		g_plugin_globals.api_return = final_ret;
 
 		// call plugin's syscall_Post and store return value
 		plugin_ret = p.QMM_syscall_Post(cmd, args);
 
-		// ignore QMM_UNUSED, but still show a message for QMM_ERROR
-		if (g_plugin_result == QMM_ERROR)
+		// ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR
+		if (g_plugin_globals.plugin_result == QMM_ERROR)
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name);
 
 		// if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
-		if (g_plugin_result >= QMM_OVERRIDE)
+		else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
 			final_ret = plugin_ret;
 	}
 	return final_ret;

@@ -61,13 +61,21 @@ static pluginfuncs_t s_pluginfuncs = {
 	s_plugin_helper_GetConfigString,
 };
 
-pluginres_t g_plugin_result = QMM_UNUSED;
-intptr_t g_api_return = 0;
+// struct to store all the globals available to plugins
+plugin_globals_t g_plugin_globals = {
+	QMM_UNUSED,	// plugin_result
+	0,			// api_return
+	0,			// orig_return
+	QMM_UNUSED,	// high_result
+};
+
 std::vector<plugin_t> g_plugins;
 
 static pluginvars_t s_pluginvars = {
-	0,	// vmbase, set in plugin_load
-	&g_api_return
+	0,				// vmbase, set in plugin_load
+	&g_plugin_globals.api_return,
+	&g_plugin_globals.orig_return,
+	&g_plugin_globals.high_result,
 };
 
 
@@ -160,12 +168,12 @@ bool plugin_load(plugin_t& p, std::string file) {
 		goto fail;
 	}
 
-	// set some pluginvars before loading the plugin
+	// set some pluginvars only available at run-time (this will get repeated for every plugin, but that's ok)
 	s_pluginvars.vmbase = g_mod.vmbase;
 
 	// call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
 	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
-	if (!(p.QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_result, &s_pluginfuncs, &s_pluginvars))) {
+	if (!(p.QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_globals.plugin_result, &s_pluginfuncs, &s_pluginvars))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
 		// treat this failure specially. since this is a valid plugin, but decided on its own that it shouldn't be loaded,
 		// we return "true" so that QMM will not try to load the plugin again on a different path
