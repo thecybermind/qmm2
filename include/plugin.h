@@ -16,6 +16,19 @@ Created By:
 #include <string>
 #include "qmmapi.h"
 
+// QMM_Query
+typedef void (*plugin_query)(plugininfo_t** pinfo);
+// QMM_Attach
+typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, pluginvars_t* pluginvars);
+// QMM_Detach
+typedef void (*plugin_detach)();
+// QMM_PluginMessage
+typedef void (*plugin_pluginmessage)(plid_t from_plid, const char* message, void* buf, intptr_t buflen);
+// QMM_syscall
+typedef intptr_t(*plugin_syscall)(intptr_t cmd, intptr_t* args);
+// QMM_vmMain
+typedef intptr_t(*plugin_vmmain)(intptr_t cmd, intptr_t* args);
+
 typedef struct plugin_s {
 	void* dll = nullptr;
 	std::string path;
@@ -26,8 +39,8 @@ typedef struct plugin_s {
 	plugin_vmmain QMM_vmMain_Post = nullptr;
 	plugin_syscall QMM_syscall = nullptr;
 	plugin_syscall QMM_syscall_Post = nullptr;
-	plugininfo_t* plugininfo = nullptr;
 	plugin_pluginmessage QMM_PluginMessage = nullptr;
+	plugininfo_t* plugininfo = nullptr;
 } plugin_t;
 
 typedef struct plugin_globals_s {

@@ -153,20 +153,6 @@ typedef struct {
 #define QMM_GET_ORIG_RETURN(x)  ((x)*(g_pluginvars->porigreturn))   // get the actual return value of a real call while inside a QMM_x_Post call, with given cast
 #define QMM_GET_HIGH_RES()      (*(g_pluginvars->phighresult))      // get the current highest QMM result value while inside a QMM_x (pre) call
 
-
-// QMM_Query
-typedef void (*plugin_query)(plugininfo_t** pinfo);
-// QMM_Attach
-typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, pluginvars_t* pluginvars);
-// QMM_Detach
-typedef void (*plugin_detach)();
-// QMM_PluginMessage
-typedef void (*plugin_pluginmessage)(plid_t from_plid, const char* message, void* buf, intptr_t buflen);
-// QMM_syscall
-typedef intptr_t (*plugin_syscall)(intptr_t cmd, intptr_t* args);
-// QMM_vmMain
-typedef intptr_t (*plugin_vmmain)(intptr_t cmd, intptr_t* args);
-
 // plugin use only
 extern plugininfo_t g_plugininfo;       // set '*pinfo' to &g_plugininfo in QMM_Query
 extern eng_syscall_t g_syscall;         // set to 'engfunc' in QMM_Attach
