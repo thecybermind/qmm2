@@ -64,7 +64,7 @@ static pluginfuncs_t s_pluginfuncs = {
 // struct to store all the globals available to plugins
 plugin_globals_t g_plugin_globals = {
 	QMM_UNUSED,	// plugin_result
-	0,			// api_return
+	0,			// final_return
 	0,			// orig_return
 	QMM_UNUSED,	// high_result
 };
@@ -73,7 +73,7 @@ std::vector<plugin_t> g_plugins;
 
 static pluginvars_t s_pluginvars = {
 	0,				// vmbase, set in plugin_load
-	&g_plugin_globals.api_return,
+	&g_plugin_globals.final_return,
 	&g_plugin_globals.orig_return,
 	&g_plugin_globals.high_result,
 };

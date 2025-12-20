@@ -724,7 +724,7 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 	for (plugin_t& p : g_plugins) {
 		g_plugin_globals.plugin_result = QMM_UNUSED;
 		// allow plugins to see the current final_ret value
-		g_plugin_globals.api_return = final_ret;
+		g_plugin_globals.final_return = final_ret;
 
 		// call plugin's vmMain and store return value
 		plugin_ret = p.QMM_vmMain(cmd, args);
@@ -764,7 +764,7 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 	for (plugin_t& p : g_plugins) {
 		g_plugin_globals.plugin_result = QMM_UNUSED;
 		// allow plugins to see the current final_ret value
-		g_plugin_globals.api_return = final_ret;
+		g_plugin_globals.final_return = final_ret;
 
 		// call plugin's vmMain_Post and store return value
 		plugin_ret = p.QMM_vmMain_Post(cmd, args);
@@ -797,7 +797,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 	for (plugin_t& p : g_plugins) {
 		g_plugin_globals.plugin_result = QMM_UNUSED;
 		// allow plugins to see the current final_ret value
-		g_plugin_globals.api_return = final_ret;
+		g_plugin_globals.final_return = final_ret;
 
 		// call plugin's syscall and store return value
 		plugin_ret = p.QMM_syscall(cmd, args);
@@ -832,7 +832,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 	for (plugin_t& p : g_plugins) {
 		g_plugin_globals.plugin_result = QMM_UNUSED;
 		// allow plugins to see the current final_ret value
-		g_plugin_globals.api_return = final_ret;
+		g_plugin_globals.final_return = final_ret;
 
 		// call plugin's syscall_Post and store return value
 		plugin_ret = p.QMM_syscall_Post(cmd, args);

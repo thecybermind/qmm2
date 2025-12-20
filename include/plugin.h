@@ -31,7 +31,7 @@ typedef struct plugin_s {
 
 typedef struct plugin_globals_s {
 	pluginres_t plugin_result;
-	intptr_t api_return;
+	intptr_t final_return;
 	intptr_t orig_return;
 	pluginres_t high_result;
 } plugin_globals_t;
