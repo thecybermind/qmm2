@@ -23,8 +23,6 @@ Created By:
 
 #define NUM_PLUGIN_STR_BUFFERS 12
 
-static plugin_t* s_plugin_find_by_id(plid_t plid);
-
 static void s_plugin_helper_WriteQMMLog(plid_t plid, const char* text, int severity);
 static char* s_plugin_helper_VarArgs(plid_t plid, const char* format, ...);
 static int s_plugin_helper_IsQVM(plid_t plid);
@@ -41,6 +39,7 @@ static int s_plugin_helper_ConfigGetBool(plid_t plid, const char* key);
 static const char** s_plugin_helper_ConfigGetArrayStr(plid_t plid, const char* key);
 static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid, const char* key);
 static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t argn, char* buf, intptr_t buflen);
+static void s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen);
 
 static pluginfuncs_t s_pluginfuncs = {
 	s_plugin_helper_WriteQMMLog,
@@ -59,6 +58,7 @@ static pluginfuncs_t s_pluginfuncs = {
 	s_plugin_helper_ConfigGetArrayStr,
 	s_plugin_helper_ConfigGetArrayInt,
 	s_plugin_helper_GetConfigString,
+	s_plugin_helper_PluginBroadcast,
 };
 
 // struct to store all the globals available to plugins
@@ -168,6 +168,9 @@ bool plugin_load(plugin_t& p, std::string file) {
 		goto fail;
 	}
 
+	// find optional plugin message function
+	p.QMM_PluginMessage = (plugin_pluginmessage)dlsym(p.dll, "QMM_PluginMessage");
+
 	// set some pluginvars only available at run-time (this will get repeated for every plugin, but that's ok)
 	s_pluginvars.vmbase = g_mod.vmbase;
 
@@ -198,16 +201,6 @@ void plugin_unload(plugin_t& p) {
 	}
 
 	p = plugin_t();
-}
-
-
-static plugin_t* s_plugin_find_by_id(plid_t plid) {
-	for (plugin_t& p : g_plugins) {
-		if (p.plugininfo == (plugininfo_t*)plid)
-			return &p;
-	}
-
-	return nullptr;
 }
 
 
@@ -437,3 +430,20 @@ static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t argn, char* bu
 	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, argn, buf);
 }
 
+
+// broadcast a message to other plugins' QMM_PluginMessage() functions
+static void s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen) {
+	// count how many plugins were called
+	int total = 0;
+	for (plugin_t& p : g_plugins) {
+		// skip the calling plugin
+		if (p.plugininfo == (plugininfo_t*)plid)
+			continue;
+		// skip if the plugin doesn't have the function
+		if (!p.QMM_PluginMessage)
+			continue;
+		p.QMM_PluginMessage(plid, message, buf, buflen);
+		total++;
+	}
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnPluginBroadcast(\"{}\", \"{}\", {}, {}) = {} plugins called\n", ((plugininfo_t*)plid)->name, message, buf, buflen, total);
+}

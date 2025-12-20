@@ -27,6 +27,7 @@ typedef struct plugin_s {
 	plugin_syscall QMM_syscall = nullptr;
 	plugin_syscall QMM_syscall_Post = nullptr;
 	plugininfo_t* plugininfo = nullptr;
+	plugin_pluginmessage QMM_PluginMessage = nullptr;
 } plugin_t;
 
 typedef struct plugin_globals_s {
