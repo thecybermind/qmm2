@@ -36,7 +36,7 @@ typedef intptr_t (*mod_vmMain_t)(intptr_t cmd, ...);
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, pluginfunc_t, or plugininfo_t
 #define QMM_PIFV_MAJOR  4
 // minor interface version increases with trailing addition to pluginfunc_t or plugininfo_t structs
-#define QMM_PIFV_MINOR  1
+#define QMM_PIFV_MINOR  0
 // 2:0
 // - removed canpause, loadcmd, unloadcmd from plugininfo_t
 // - renamed old pause/cmd args to QMM_ functions (iscmd, etc) to "reserved"
@@ -52,8 +52,8 @@ typedef intptr_t (*mod_vmMain_t)(intptr_t cmd, ...);
 // - introduced the PLID arg to all plugin functions
 // - added logtag to plugininfo_t
 // - added porigreturn and phighresult to pluginvars_t
-// 4:1
 // - added PluginMessage function to broadcast a message to all plugins' QMM_PluginMessage function
+// - renamed QMM_GET_RETURN to QMM_VAR_RETURN
 
 
 // holds plugin info to pass back to QMM
@@ -149,9 +149,9 @@ typedef struct {
 #define QMM_PLUGIN_BROADCAST    (g_pluginfuncs->pfnPluginBroadcast)     // broadcast a message to plugins' QMM_PluginMessage functions
 
 // macros for QMM plugin vars
-#define QMM_GET_RETURN(x)       ((x)*(g_pluginvars->preturn))       // get the value to be passed to the caller (from override/supercede or original call), with given cast
-#define QMM_GET_ORIG_RETURN(x)  ((x)*(g_pluginvars->porigreturn))   // get the actual return value of a real call while inside a QMM_x_Post call, with given cast
-#define QMM_GET_HIGH_RES()      (*(g_pluginvars->phighresult))      // get the current highest QMM result value while inside a QMM_x (pre) call
+#define QMM_VAR_RETURN(x)       ((x)*(g_pluginvars->preturn))           // get the value to be passed to the caller (from override/supercede or original call), with given cast
+#define QMM_VAR_ORIG_RETURN(x)  ((x)*(g_pluginvars->porigreturn))       // get the actual return value of a real call while inside a QMM_x_Post call, with given cast
+#define QMM_VAR_HIGH_RES()      (*(g_pluginvars->phighresult))          // get the current highest QMM result value while inside a QMM_x (pre) call
 
 // plugin use only
 extern plugininfo_t g_plugininfo;       // set '*pinfo' to &g_plugininfo in QMM_Query
