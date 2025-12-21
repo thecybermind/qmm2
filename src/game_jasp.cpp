@@ -668,6 +668,7 @@ const char* JASP_eng_msg_names(intptr_t cmd) {
 	}
 }
 
+
 const char* JASP_mod_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(GAMEV_APIVERSION);

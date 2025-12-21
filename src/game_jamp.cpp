@@ -353,6 +353,7 @@ const char* JAMP_eng_msg_names(intptr_t cmd) {
 	}
 }
 
+
 const char* JAMP_mod_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(GAME_INIT);

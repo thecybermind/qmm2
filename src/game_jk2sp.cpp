@@ -582,6 +582,7 @@ const char* JK2SP_eng_msg_names(intptr_t cmd) {
 	}
 }
 
+
 const char* JK2SP_mod_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(GAMEV_APIVERSION);

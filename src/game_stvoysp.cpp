@@ -394,6 +394,7 @@ const char* STVOYSP_eng_msg_names(intptr_t cmd) {
 	}
 }
 
+
 const char* STVOYSP_mod_msg_names(intptr_t cmd) {
 	switch(cmd) {
 		GEN_CASE(GAMEV_APIVERSION);
