@@ -384,11 +384,12 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			// void trap_FS_Read(void* buffer, int len, fileHandle_t f);
 			char* buffer = (char*)args[0];
 			size_t len = args[1];
-			FILE* f = (FILE*)args[2];
+			fileHandle_t f = (fileHandle_t)args[2];
 			size_t total = 0;
+			FILE* fp = (FILE*)f;
 			for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
-				total += fread(buffer + total, 1, len - total, f);
-				if (total >= len || ferror(f) || feof(f))
+				total += fread(buffer + total, 1, len - total, fp);
+				if (total >= len || ferror(fp) || feof(fp))
 					break;
 			}
 			break;
@@ -397,19 +398,21 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
 			char* buffer = (char*)args[0];
 			size_t len = args[1];
-			FILE* f = (FILE*)args[2];
+			fileHandle_t f = (fileHandle_t)args[2];
 			size_t total = 0;
+			FILE* fp = (FILE*)f;
 			for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to write
-				total += fwrite(buffer + total, 1, len - total, f);
-				if (total >= len || ferror(f))
+				total += fwrite(buffer + total, 1, len - total, fp);
+				if (total >= len || ferror(fp))
 					break;
 			}
 			break;
 		}
 		case G_FS_FCLOSE_FILE: {
 			// void trap_FS_FCloseFile(fileHandle_t f);
-			FILE* f = (FILE*)args[0];
-			fclose(f);
+			fileHandle_t f = (fileHandle_t)args[0];
+			FILE* fp = (FILE*)f;
+			fclose(fp);
 			break;
 		}
 		// help plugins not need separate logic for entity/client pointers
