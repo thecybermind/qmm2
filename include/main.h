@@ -68,7 +68,4 @@ intptr_t qmm_syscall(intptr_t cmd, ...);
 // get a given argument with G_ARGV, based on game engine type
 void qmm_argv(intptr_t argn, char* buf, intptr_t buflen);
 
-constexpr bool QMM_DETECT_GETGAMEAPI = true;
-constexpr bool QMM_DETECT_DLLENTRY = false;
-
 #endif // __QMM2_MAIN_H__
