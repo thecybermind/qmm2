@@ -355,7 +355,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			const char* str_mode = "rb";
 			if (mode == FS_WRITE)
 				str_mode = "wb";			
-			else if (mode == FS_APPEND)
+			else if (mode == FS_APPEND || mode == FS_APPEND_SYNC)
 				str_mode = "ab";
 			std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
 			if (mode != FS_READ)
@@ -367,7 +367,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			}
 			if (mode == FS_WRITE)
 				ret = 0;
-			else if (mode == FS_APPEND)
+			else if (mode == FS_APPEND || mode == FS_APPEND_SYNC)
 				ret = ftell(fp);
 			else {
 				if (fseek(fp, 0, SEEK_END) != 0) {
