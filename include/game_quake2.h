@@ -107,7 +107,7 @@ enum {
 	G_DROP_CLIENT,					// void (int clientNum)
 	G_GET_USERINFO,					// void (edict_t* ent, char* userinfo, int bufferSize)
 	G_GET_ENTITY_TOKEN,				// bool (char *buffer, int bufferSize)
-	G_GET_CONFIGSTRING,				// 
+	G_GET_CONFIGSTRING,				// void ( int num, char *buffer, int bufferSize )
 };
 
 typedef intptr_t fileHandle_t;
