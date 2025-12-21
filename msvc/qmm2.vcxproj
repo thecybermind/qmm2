@@ -200,7 +200,7 @@
     <ClCompile Include="..\src\game_quake2.cpp" />
     <ClCompile Include="..\src\game_rtcwmp.cpp" />
     <ClCompile Include="..\src\game_rtcwsp.cpp" />
-    <ClCompile Include="..\src\game_sofmp.cpp" />
+    <ClCompile Include="..\src\game_sof2mp.cpp" />
     <ClCompile Include="..\src\game_stef2.cpp" />
     <ClCompile Include="..\src\game_stvoyhm.cpp" />
     <ClCompile Include="..\src\game_stvoysp.cpp" />

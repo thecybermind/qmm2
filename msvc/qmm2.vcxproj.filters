@@ -152,7 +152,7 @@
     <ClCompile Include="..\src\game_q2r.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game_sofmp.cpp">
+    <ClCompile Include="..\src\game_sof2mp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\game_jk2sp.cpp">
