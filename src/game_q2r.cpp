@@ -76,7 +76,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(clip, G_CLIP),
 	GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
 	GEN_IMPORT(inPVS, G_IN_PVS),
-	GEN_IMPORT(inPHS, G_INPHS),
+	GEN_IMPORT(inPHS, G_IN_PHS),
 	GEN_IMPORT(SetAreaPortalState, G_SETAREAPORTALSTATE),
 	GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
 	GEN_IMPORT(linkentity, G_LINKENTITY),
@@ -248,7 +248,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT(clip, G_CLIP);
 		ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
 		ROUTE_IMPORT(inPVS, G_IN_PVS);
-		ROUTE_IMPORT(inPHS, G_INPHS);
+		ROUTE_IMPORT(inPHS, G_IN_PHS);
 		ROUTE_IMPORT(SetAreaPortalState, G_SETAREAPORTALSTATE);
 		ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
 		ROUTE_IMPORT(linkentity, G_LINKENTITY);
@@ -613,7 +613,7 @@ const char* Q2R_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_CLIP);
 		GEN_CASE(G_POINT_CONTENTS);
 		GEN_CASE(G_IN_PVS);
-		GEN_CASE(G_INPHS);
+		GEN_CASE(G_IN_PHS);
 		GEN_CASE(G_SETAREAPORTALSTATE);
 		GEN_CASE(G_AREAS_CONNECTED);
 		GEN_CASE(G_LINKENTITY);
