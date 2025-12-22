@@ -867,10 +867,16 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
    function. It is a direct passing of pointers between the engine and CGame systems. After this function returns, there is no
    further interaction between QMM and the CGame system until this function is called again as a reload.
 */
+static mod_GetGameAPI_t mod_GetCGameAPI = nullptr;
 C_DLLEXPORT void* GetCGameAPI(void* import) {
 #ifdef DEBUG_MESSAGEBOX
 	MessageBoxA(NULL, "GetCGameAPI called", "QMM2", 0);
 #endif
+
+	// if client needs to be reloaded, just call the same entry point in the DLL (it's still loaded)
+	if (mod_GetCGameAPI)
+		return mod_GetCGameAPI(import);
+	
 	s_main_detect_env();
 
 	// ???
@@ -891,7 +897,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 	if (!mod_handle)
 		return nullptr;
 
-	mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(mod_handle, "GetCGameAPI");
+	mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(mod_handle, "GetCGameAPI");
 	if (!mod_GetCGameAPI)
 		return nullptr;
 
