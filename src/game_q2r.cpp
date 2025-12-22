@@ -145,6 +145,8 @@ static bool Q2R_ClientConnect(edict_t* ent, char* userinfo, const char* social_i
 	is_QMM_vmMain_call = true;
 	return vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
 }
+
+
 static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
 	// if userinfo is null, remove entry in map. otherwise store in map
 	if (userinfo)
@@ -154,6 +156,8 @@ static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
 	is_QMM_vmMain_call = true;
 	vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
+
+
 // track entstrings for our G_GET_ENTITY_TOKEN syscall
 static std::vector<std::string> s_entity_tokens;
 static void Q2R_SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
