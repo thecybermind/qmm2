@@ -306,7 +306,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT_VAR(frame_time_s, GV_FRAME_TIME_S);
 		ROUTE_IMPORT_VAR(frame_time_ms, GV_FRAME_TIME_MS);
 
-		// handle special cmds which QMM uses but MOHAA doesn't have an analogue for
+		// handle special cmds which QMM uses but Q2R doesn't have an analogue for
 		case G_CVAR_REGISTER: {
 			// q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
 			// qmm: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )

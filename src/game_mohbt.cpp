@@ -483,7 +483,7 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT_VAR(DebugStrings, GVP_DEBUGSTRINGS);
 		ROUTE_IMPORT_VAR(numDebugStrings, GVP_NUMDEBUGSTRINGS);
 
-		// handle special cmds which QMM uses but MOHAA doesn't have an analogue for
+		// handle special cmds which QMM uses but MOHBT doesn't have an analogue for
 		case G_CVAR_REGISTER: {
 			// mohaa: cvar_t* (*Cvar_Get)(const char* varName, const char* varValue, int varFlags)
 			// q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )

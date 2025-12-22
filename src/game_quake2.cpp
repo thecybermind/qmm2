@@ -226,7 +226,7 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 
 		// handle cmds for variables, this is how a plugin would get these values if needed
 
-		// handle special cmds which QMM uses but MOHAA doesn't have an analogue for
+		// handle special cmds which QMM uses but QUAKE2 doesn't have an analogue for
 		case G_CVAR_REGISTER: {
 			// quake2: cvar_t *(*cvar) (char *var_name, char *value, int flags);
 			// q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
