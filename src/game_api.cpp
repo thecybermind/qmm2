@@ -28,6 +28,7 @@ GEN_EXTS(MOHBT);
 GEN_EXTS(STEF2);
 GEN_EXTS(QUAKE2);
 GEN_EXTS(Q2R);
+GEN_EXTS(SIN);
 GEN_EXTS(JK2SP);
 GEN_EXTS(JASP);
 GEN_EXTS(STVOYSP);
@@ -38,7 +39,6 @@ supportedgame_t g_supportedgames[] = {
 	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseq3",		"Quake 3 Arena",								GEN_INFO(Q3A),		Q3A_vmsyscall,		nullptr,			13,		4,		{ "q3", "quake3" } },
 	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseef",		"Star Trek Voyager: Elite Force (Holomatch)",	GEN_INFO(STVOYHM),	STVOYHM_vmsyscall,	nullptr,			13,		3,		{ "stvoy" } },
 	{ "qagame",		SUF_DLL,	nullptr,			".",			"Return to Castle Wolfenstein (SP)",			GEN_INFO(RTCWSP),	nullptr,			nullptr,			13,		5,		{ "sp" } },
-
 // RTCWMP & WET filename changes on linux
 #if defined(_WIN32)
 	{ "qagame_mp_",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
@@ -47,14 +47,9 @@ supportedgame_t g_supportedgames[] = {
 	{ "qagame.mp.",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
 	{ "qagame.mp.",	SUF_DLL,	nullptr,			"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	nullptr,			nullptr,			13,		5,		{ "mp" } },
 #endif
-
 	{ "jampgame",	SUF_DLL,	nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
-
 	{ "jk2mpgame",	SUF_DLL,	"vm/jk2mpgame.qvm",	"base",			"Jedi Knight 2: Jedi Outcast (MP)",				GEN_INFO(JK2MP),	JK2MP_vmsyscall,	nullptr,			13,		3,		{ "jk2" } },
-
 	{ "sof2mp_game",SUF_DLL,	"vm/sof2mp_game.qvm","base/mp",		"Soldier of Fortune 2: Double Helix (MP)",		GEN_INFO(SOF2MP),	SOF2MP_vmsyscall,	nullptr,			13,		6,		{ "mp" } },
-
-	{ "game",		SUF_DLL,	nullptr,			"base",			"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			STEF2_GetGameAPI,	17,		4,		{ "ef" } },
 
 // OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
 #if defined(_WIN64) || defined(__LP64__)
@@ -64,18 +59,15 @@ supportedgame_t g_supportedgames[] = {
 	{ "game",		SUF_DLL,	nullptr,			"mainta",		"Medal of Honor: Spearhead",					GEN_INFO(MOHSH),	nullptr,			MOHSH_GetGameAPI,	9,		7,		{ "spear" }},
 	{ "game",		SUF_DLL,	nullptr,			"maintt",		"Medal of Honor: Breakthrough",					GEN_INFO(MOHBT),	nullptr,			MOHBT_GetGameAPI,	9,		7,		{ "break" }},
 #endif
-
 // Q2R only exists for 64-bit Windows (and no dedicated server)
 #if defined(_WIN64)
 	{ "game_",		"x64",		nullptr,			"baseq2",		"Quake 2 Remastered",							GEN_INFO(Q2R),		nullptr,			Q2R_GetGameAPI,		9,		6,		{ "quake2ex" } },
 #endif
-
 	{ "game",		SUF_DLL,	nullptr,			"baseq2",		"Quake 2",										GEN_INFO(QUAKE2),	nullptr,			QUAKE2_GetGameAPI,	7,		3,		{ "q2", "quake2" } },
-
+	{ "game",		SUF_DLL,	nullptr,			"base",			"Star Trek: Elite Force II",					GEN_INFO(STEF2),	nullptr,			STEF2_GetGameAPI,	17,		4,		{ "ef" } },
+	{ "game",		SUF_DLL,	nullptr,			"base",			"SiN",											GEN_INFO(SIN),		nullptr,			SIN_GetGameAPI,		10,		3,		{ "sin" } },
 	{ "jk2game",	SUF_DLL,	nullptr,			".",			"Jedi Knight 2: Jedi Outcast (SP)",				GEN_INFO(JK2SP),	nullptr,			JK2SP_GetGameAPI,	13,		9,		{ "jk2" } },
-
 	{ "jagame",		SUF_DLL,	nullptr,			".",			"Jedi Knight: Jedi Academy (SP)",				GEN_INFO(JASP),		nullptr,			JASP_GetGameAPI,	13,		9,		{ "ja" } },
-
 	{ "efgame",		SUF_DLL,	nullptr,			".",			"Star Trek Voyager: Elite Force (SP)",			GEN_INFO(STVOYSP),	nullptr,			STVOYSP_GetGameAPI,	13,		9,		{ "stvoy" } },
 
 	{ nullptr, }

@@ -369,7 +369,9 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		// Quake 2 and Quake 2 Remastered use 1-based command arguments (presumably the 0th arg is "sv"?)
 		int argn = 0;
 		if (!strcmp(g_gameinfo.game->gamename_short, "QUAKE2")
-			|| !strcmp(g_gameinfo.game->gamename_short, "Q2R"))
+			|| !strcmp(g_gameinfo.game->gamename_short, "Q2R")
+			|| !strcmp(g_gameinfo.game->gamename_short, "SIN")
+			)
 			argn++;
 
 		qmm_argv(argn, arg0, sizeof(arg0));
