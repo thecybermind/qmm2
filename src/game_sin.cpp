@@ -12,7 +12,6 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <string.h>
 #include <stdio.h>
-#define SIN
 #include <sin/game/q_shared.h>
 #include <sin/game/game.h>
 #include "game_api.h"
