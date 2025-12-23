@@ -22,10 +22,10 @@ std::string path_normalize(std::string path) {
 			c = '/';
 	}
 	// collapse /./ to /
-	auto pos = path.find_last_of("/./");
+	auto pos = path.rfind("/./");
 	while (pos != std::string::npos) {
 		path = path.substr(0, pos) + path.substr(pos + 2);
-		pos = path.find_last_of("/./");
+		pos = path.rfind("/./");
 	}
 
 	return path;

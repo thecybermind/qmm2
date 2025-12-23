@@ -446,7 +446,7 @@ intptr_t SIN_syscall(intptr_t cmd, ...) {
 		}
 		case G_FS_FCLOSE_FILE: {
 			// void trap_FS_FCloseFile(fileHandle_t f);
-			fileHandle_t f = (fileHandle_t)args[2];
+			fileHandle_t f = (fileHandle_t)args[0];
 			FILE* fp = (FILE*)f;
 			fclose(fp);
 			break;
