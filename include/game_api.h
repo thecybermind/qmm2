@@ -155,7 +155,7 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 #define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { is_QMM_vmMain_call = true; return vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
 // if the syscall lambda types matter (float args in 64-bit games like Q2R), use these
 // macros to easily generate a lambda with full return and argument type information:
-// e.g. GEN_IMPORT_2_VOID(G_DEBUGGRAPH, float, int)
+// e.g. GEN_IMPORT_2(G_DEBUGGRAPH, void, float, int)
 // e.g. GEN_IMPORT_2(G_ANIM_TIME, float, dtiki_t*, int)
 #if defined(__LP64__) || defined(_WIN64)
 #define  GEN_IMPORT_0(field, cmd, typeret) +[]() -> typeret { return (typeret)qmm_syscall(cmd); }
