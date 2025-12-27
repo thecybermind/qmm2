@@ -359,23 +359,23 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 			LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Executing config file \"{}\"\n", cfg_execcfg);
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], QMM_ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
 		}
-
 		// we're done!
 		LOG(QMM_LOG_NOTICE, "QMM") << "Startup successful!\n";
 	}
 
 	else if (cmd == QMM_MOD_MSG[QMM_GAME_CONSOLE_COMMAND]) {
 		char arg0[10];
-		// Quake 2 and Quake 2 Remastered use 1-based command arguments (presumably the 0th arg is "sv"?)
 		int argn = 0;
-		if (!strcmp(g_gameinfo.game->gamename_short, "QUAKE2")
-			|| !strcmp(g_gameinfo.game->gamename_short, "Q2R")
-			|| !strcmp(g_gameinfo.game->gamename_short, "SIN")
-			)
-			argn++;
-
+		// get command
 		qmm_argv(argn, arg0, sizeof(arg0));
 
+		// if command is "sv", then get the next arg
+		// idTech2 games use "sv" on listen server to run a server command
+		if (str_striequal("sv", arg0)) {
+			argn++;
+			qmm_argv(argn, arg0, sizeof(arg0));
+		}
+		// check for "qmm" command
 		if (str_striequal("qmm", arg0))
 			// pass 0 or 1 which gets added to argn in the handler function
 			return s_main_handle_command_qmm(argn);
