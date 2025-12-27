@@ -188,6 +188,8 @@
   <ItemGroup>
     <ClCompile Include="..\src\config.cpp" />
     <ClCompile Include="..\src\game_api.cpp" />
+    <ClCompile Include="..\src\game_cod11mp.cpp" />
+    <ClCompile Include="..\src\game_cod15mp.cpp" />
     <ClCompile Include="..\src\game_jamp.cpp" />
     <ClCompile Include="..\src\game_jasp.cpp" />
     <ClCompile Include="..\src\game_jk2mp.cpp" />
@@ -218,6 +220,8 @@
     <ClInclude Include="..\include\config.h" />
     <ClInclude Include="..\include\format.h" />
     <ClInclude Include="..\include\game_api.h" />
+    <ClInclude Include="..\include\game_cod11mp.h" />
+    <ClInclude Include="..\include\game_cod15mp.h" />
     <ClInclude Include="..\include\game_jasp.h" />
     <ClInclude Include="..\include\game_jk2sp.h" />
     <ClInclude Include="..\include\game_mohaa.h" />

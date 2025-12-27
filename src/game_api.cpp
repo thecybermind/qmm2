@@ -21,6 +21,8 @@ GEN_EXTS(RTCWMP);
 GEN_EXTS(JAMP);
 GEN_EXTS(JK2MP);
 GEN_EXTS(SOF2MP);
+GEN_EXTS(COD11MP);
+GEN_EXTS(COD15MP);
 
 GEN_EXTS(MOHAA);
 GEN_EXTS(MOHSH);
@@ -39,17 +41,32 @@ supportedgame_t g_supportedgames[] = {
 	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseq3",		"Quake 3 Arena",								GEN_INFO(Q3A),		Q3A_vmsyscall,		nullptr,			13,		4,		{ "q3", "quake3" } },
 	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseef",		"Star Trek Voyager: Elite Force (Holomatch)",	GEN_INFO(STVOYHM),	STVOYHM_vmsyscall,	nullptr,			13,		3,		{ "stvoy" } },
 	{ "qagame",		SUF_DLL,	nullptr,			".",			"Return to Castle Wolfenstein (SP)",			GEN_INFO(RTCWSP),	nullptr,			nullptr,			13,		5,		{ "sp" } },
-// RTCWMP & WET filename changes on linux
+
+// COD, RTCWMP & WET filename changes on linux
 #if defined(_WIN32)
 	{ "qagame_mp_",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
 	{ "qagame_mp_",	SUF_DLL,	nullptr,			"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	nullptr,			nullptr,			13,		5,		{ "mp" } },
+	{ "game_mp_",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.5 (MP)",						GEN_INFO(COD15MP),	nullptr,			nullptr,			8,		4,		{ "codmp", "cod_"}},
+	{ "uo_game_mp_",SUF_DLL,	nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(COD15MP),	nullptr,			nullptr,			8,		4,		{ "coduo" }},
+	// allow a user to choose "COD11MP" manually if they are playing an old version of CoD (fake exe hints so it won't auto-detect)
+	{ "game_mp_",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.1 (MP)",						GEN_INFO(COD11MP),	nullptr,			nullptr,			8,		4,		{ "zzz_no_auto" }},
 #elif defined(__linux__)
 	{ "qagame.mp.",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
 	{ "qagame.mp.",	SUF_DLL,	nullptr,			"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	nullptr,			nullptr,			13,		5,		{ "mp" } },
+	{ "game.mp.",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.5 (MP)",						GEN_INFO(COD15MP),	nullptr,			nullptr,			8		4,		{ "codmp", "cod_" }},
+	{ "game.mp.uo.",SUF_DLL,	nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(COD15MP),	nullptr,			nullptr,			8,		4,		{ "coduo" } },
+	// allow a user to choose "COD11MP" manually if they are playing an old version of CoD (fake exe hints so it won't auto-detect)
+	{ "game.mp.",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.1 (MP)",						GEN_INFO(COD11MP),	nullptr,			nullptr,			8,		4,		{ "zzz_no_auto" }},
 #endif
 	{ "jampgame",	SUF_DLL,	nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		nullptr,			nullptr,			13,		6,		{ "ja" } },
 	{ "jk2mpgame",	SUF_DLL,	"vm/jk2mpgame.qvm",	"base",			"Jedi Knight 2: Jedi Outcast (MP)",				GEN_INFO(JK2MP),	JK2MP_vmsyscall,	nullptr,			13,		3,		{ "jk2" } },
 	{ "sof2mp_game",SUF_DLL,	"vm/sof2mp_game.qvm","base/mp",		"Soldier of Fortune 2: Double Helix (MP)",		GEN_INFO(SOF2MP),	SOF2MP_vmsyscall,	nullptr,			13,		6,		{ "mp" } },
+
+// don't include CoD single players in linux
+#if 0 // defined(_WIN32)
+	{ "game",		SUF_DLL,	nullptr,			".",			"Call of Duty (SP)",							GEN_INFO(CODSP),	nullptr,			nullptr,			-1,		-1,		{ "cod" } },
+	{ "uo_game",	SUF_DLL,	nullptr,			".",			"Call of Duty: United Offensive (SP)",			GEN_INFO(CODUOSP),	nullptr,			nullptr,			-1,		-1,		{ "coduo" } },
+#endif
 
 // OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
 #if defined(_WIN64) || defined(__LP64__)
