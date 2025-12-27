@@ -221,6 +221,23 @@ enum CvarFlags {
 	CVAR_CHANGEABLE_RESET = 0x8000,
 };
 
+// the game guarantees that no string from the network will ever
+// exceed MAX_STRING_CHARS
+#define	MAX_STRING_CHARS	1024	// max length of a string passed to Cmd_TokenizeString
+#define	MAX_STRING_TOKENS	1024	// max tokens resulting from Cmd_TokenizeString
+#define	MAX_TOKEN_CHARS		1024	// max length of an individual token
+
+#define	MAX_INFO_STRING		1024
+#define	MAX_INFO_KEY		1024
+#define	MAX_INFO_VALUE		1024
+
+#define	BIG_INFO_STRING		8192  // used for system info key only
+#define	BIG_INFO_KEY		8192
+#define	BIG_INFO_VALUE		8192
+
+typedef struct gentity_s gentity_t;
+typedef struct gclient_s gclient_t;
+
 typedef intptr_t fileHandle_t;
 
 #endif // __QMM2_GAME_COD11MP_H__
