@@ -87,10 +87,13 @@
     <ClInclude Include="..\include\game_sin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\game_cod15mp.h">
+    <ClInclude Include="..\include\game_cod11mp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\game_cod11mp.h">
+    <ClInclude Include="..\include\game_codmp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\game_coduomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -179,7 +182,10 @@
     <ClCompile Include="..\src\game_cod11mp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game_cod15mp.cpp">
+    <ClCompile Include="..\src\game_codmp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_coduomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

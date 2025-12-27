@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_COD15MP_H__
-#define __QMM2_GAME_COD15MP_H__
+#ifndef __QMM2_GAME_CODUOMP_H__
+#define __QMM2_GAME_CODUOMP_H__
 
 #include <stdint.h>     // intptr_t
 
@@ -249,4 +249,4 @@ typedef struct gclient_s gclient_t;
 
 typedef intptr_t fileHandle_t;
 
-#endif // __QMM2_GAME_COD15MP_H__
+#endif // __QMM2_GAME_CODUOMP_H__

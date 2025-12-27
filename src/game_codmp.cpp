@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "game_cod15mp.h"
+#include "game_codmp.h"
 
 #include "game_api.h"
 #include "log.h"
@@ -19,10 +19,10 @@ Created By:
 // don't want to make plugins have to use separate code to handle the actual GAME_INIT message, so just
 // do a dirty redefine here for the QMM_GAME_INIT message definition
 #define GAME_INIT GAME_GET_APIVERSION
-GEN_QMM_MSGS(COD15MP);
+GEN_QMM_MSGS(CODMP);
 #undef GAME_INIT
 
-const char* COD15MP_eng_msg_names(intptr_t cmd) {
+const char* CODMP_eng_msg_names(intptr_t cmd) {
 	switch (cmd) {
 		GEN_CASE(G_PRINTF);
 		GEN_CASE(G_ERROR);
@@ -171,7 +171,7 @@ const char* COD15MP_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* COD15MP_mod_msg_names(intptr_t cmd) {
+const char* CODMP_mod_msg_names(intptr_t cmd) {
 	switch (cmd) {
 		GEN_CASE(GAME_DEFAULT_0);
 		GEN_CASE(GAME_GET_APIVERSION);

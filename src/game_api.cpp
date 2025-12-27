@@ -22,7 +22,8 @@ GEN_EXTS(JAMP);
 GEN_EXTS(JK2MP);
 GEN_EXTS(SOF2MP);
 GEN_EXTS(COD11MP);
-GEN_EXTS(COD15MP);
+GEN_EXTS(CODMP);
+GEN_EXTS(CODUOMP);
 
 GEN_EXTS(MOHAA);
 GEN_EXTS(MOHSH);
@@ -50,15 +51,15 @@ supportedgame_t g_supportedgames[] = {
 #if defined(_WIN32)
 	{ "qagame_mp_",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
 	{ "qagame_mp_",	SUF_DLL,	nullptr,			"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	nullptr,			nullptr,			13,		5,		{ "mp" } },
-	{ "game_mp_",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.5 (MP)",						GEN_INFO(COD15MP),	nullptr,			nullptr,			8,		4,		{ "codmp", "cod_"}},
-	{ "uo_game_mp_",SUF_DLL,	nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(COD15MP),	nullptr,			nullptr,			8,		4,		{ "coduo" }},
+	{ "game_mp_",	SUF_DLL,	nullptr,			"Main",			"Call of Duty (MP)",							GEN_INFO(CODMP),	nullptr,			nullptr,			8,		4,		{ "codmp", "cod_"}},
+	{ "uo_game_mp_",SUF_DLL,	nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(CODUOMP),	nullptr,			nullptr,			8,		4,		{ "coduo" }},
 	// allow a user to choose "COD11MP" manually if they are playing an old version of CoD (fake exe hints so it won't auto-detect)
 	{ "game_mp_",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.1 (MP)",						GEN_INFO(COD11MP),	nullptr,			nullptr,			8,		4,		{ "zzz_no_auto" }},
 #elif defined(__linux__)
-	{ "qagame.mp.",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,			13,		5,		{ "et" } },
+	{ "qagame.mp.",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,	 		nullptr,			13,		5,		{ "et" } },
 	{ "qagame.mp.",	SUF_DLL,	nullptr,			"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	nullptr,			nullptr,			13,		5,		{ "mp" } },
-	{ "game.mp.",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.5 (MP)",						GEN_INFO(COD15MP),	nullptr,			nullptr,			8		4,		{ "codmp", "cod_" }},
-	{ "game.mp.uo.",SUF_DLL,	nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(COD15MP),	nullptr,			nullptr,			8,		4,		{ "coduo" } },
+	{ "game.mp.",	SUF_DLL,	nullptr,			"Main",			"Call of Duty (MP)",							GEN_INFO(CODMP),	nullptr,			nullptr,			8		4,		{ "codmp", "cod_" }},
+	{ "game.mp.uo.",SUF_DLL,	nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(CODUOMP),	nullptr,			nullptr,			8,		4,		{ "coduo" } },
 	// allow a user to choose "COD11MP" manually if they are playing an old version of CoD (fake exe hints so it won't auto-detect)
 	{ "game.mp.",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.1 (MP)",						GEN_INFO(COD11MP),	nullptr,			nullptr,			8,		4,		{ "zzz_no_auto" }},
 #endif
