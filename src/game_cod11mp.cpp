@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "game_cod11mp.h"
+#include <cod11mp/game/g_public.h>
 
 #include "game_api.h"
 #include "log.h"

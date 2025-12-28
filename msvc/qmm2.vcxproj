@@ -221,9 +221,6 @@
     <ClInclude Include="..\include\config.h" />
     <ClInclude Include="..\include\format.h" />
     <ClInclude Include="..\include\game_api.h" />
-    <ClInclude Include="..\include\game_cod11mp.h" />
-    <ClInclude Include="..\include\game_codmp.h" />
-    <ClInclude Include="..\include\game_coduomp.h" />
     <ClInclude Include="..\include\game_jasp.h" />
     <ClInclude Include="..\include\game_jk2sp.h" />
     <ClInclude Include="..\include\game_mohaa.h" />
