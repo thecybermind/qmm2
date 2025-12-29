@@ -22,7 +22,7 @@ Created By:
 #define QMM_VERSION		STRINGIFY(QMM_VERSION_MAJOR) "." STRINGIFY(QMM_VERSION_MINOR) "." STRINGIFY(QMM_VERSION_REV)
 
 #define QMM_COMPILE		__TIME__ " " __DATE__
-#define QMM_BUILDER		"cybermind"
+#define QMM_BUILDER		"Kevin Masterson"
 #define QMM_URL         "https://github.com/thecybermind/qmm2/"
 
 #if defined(_WIN32)
