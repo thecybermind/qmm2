@@ -181,25 +181,25 @@ C_DLLEXPORT intptr_t QMM_syscall(intptr_t cmd, intptr_t* args);
 C_DLLEXPORT intptr_t QMM_syscall_Post(intptr_t cmd, intptr_t* args);
 
 // macros to help set the plugin result value
-#define QMM_RETURN(x, y)		return (*g_result = (pluginres_t)(x), (y))
-#define QMM_SET_RESULT(x)		*g_result = (pluginres_t)(x)
-#define QMM_RET_ERROR(x)		QMM_RETURN(QMM_ERROR, (x))
-#define QMM_RET_IGNORED(x)		QMM_RETURN(QMM_IGNORED, (x))
-#define QMM_RET_OVERRIDE(x)		QMM_RETURN(QMM_OVERRIDE, (x))
-#define QMM_RET_SUPERCEDE(x)	QMM_RETURN(QMM_SUPERCEDE, (x))
+#define QMM_RETURN(res, ret)	return (*g_result = (pluginres_t)(res), (ret))
+#define QMM_SET_RESULT(res)		*g_result = (pluginres_t)(res)
+#define QMM_RET_ERROR(ret)		QMM_RETURN(QMM_ERROR, (ret))
+#define QMM_RET_IGNORED(ret)	QMM_RETURN(QMM_IGNORED, (ret))
+#define QMM_RET_OVERRIDE(ret)	QMM_RETURN(QMM_OVERRIDE, (ret))
+#define QMM_RET_SUPERCEDE(ret)	QMM_RETURN(QMM_SUPERCEDE, (ret))
 
 // These are macros to convert between VM pointers and real pointers.
 // These are generally only needed for pointers inside objects, like gent->parent,
 // as the objects are generally tracked through syscall arguments, which are already
 // converted in plugin QMM_syscall functions. SETPTR should only be used to refer to
 // objects that already exist within the QVM, but you have a real pointer to
-#define GETPTR(x,y)     (x ? (y)((intptr_t)(x) + g_pluginvars->vmbase) : NULL)
-#define SETPTR(x,y)     (x ? (y)((intptr_t)(x) - g_pluginvars->vmbase) : NULL)
+#define GETPTR(ptr, cast)     ((ptr) ? (cast)((intptr_t)(ptr) + g_pluginvars->vmbase) : NULL)
+#define SETPTR(ptr, cast)     ((ptr) ? (cast)((intptr_t)(ptr) - g_pluginvars->vmbase) : NULL)
 
 // Some helpful macros assuming you've stored these in G_LOCATE_GAME_DATA
 #define ENT_FROM_NUM(index)     ((gentity_t*)((unsigned char*)g_gents + g_gentsize * (index)))
 #define NUM_FROM_ENT(ent)       ((int)((unsigned char*)(ent) - (unsigned char*)g_gents) / g_gentsize)
 #define CLIENT_FROM_NUM(index)  ((gclient_t*)((unsigned char*)g_clients + g_clientsize * (index)))
-#define NUM_FROM_CLIENT(ent)    ((int)((unsigned char*)(ent) - (unsigned char*)g_clients) / g_clientsize)
+#define NUM_FROM_CLIENT(client) ((int)((unsigned char*)(client) - (unsigned char*)g_clients) / g_clientsize)
 
 #endif // __QMM2_QMMAPI_H__

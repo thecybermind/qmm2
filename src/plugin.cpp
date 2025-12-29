@@ -229,7 +229,7 @@ static char* s_plugin_helper_VarArgs(plid_t plid, const char* format, ...) {
 
 	char* ret = str[index];
 
-	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnVarArgs(\"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, format, ret);
+	// LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnVarArgs(\"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, format, ret);
 
 	return ret;
 }
