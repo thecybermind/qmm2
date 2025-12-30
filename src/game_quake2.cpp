@@ -170,15 +170,6 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
-	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
-	// and these changes need to be available to the engine, so copy those values before entering the engine
-	if (orig_export) {
-		qmm_export.edicts = orig_export->edicts;
-		qmm_export.edict_size = orig_export->edict_size;
-		qmm_export.num_edicts = orig_export->num_edicts;
-		qmm_export.max_edicts = orig_export->max_edicts;
-	}
-
 	intptr_t ret = 0;
 
 	switch (cmd) {

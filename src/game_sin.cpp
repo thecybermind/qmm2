@@ -227,25 +227,6 @@ intptr_t SIN_syscall(intptr_t cmd, ...) {
 	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
-	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
-	// and these changes need to be available to the engine, so copy those values before entering the engine
-	if (orig_export) {
-		qmm_export.edicts = orig_export->edicts;
-		qmm_export.edict_size = orig_export->edict_size;
-		qmm_export.num_edicts = orig_export->num_edicts;
-		qmm_export.max_edicts = orig_export->max_edicts;
-		qmm_export.consoles = orig_export->consoles;
-		qmm_export.console_size = orig_export->console_size;
-		qmm_export.num_consoles = orig_export->num_consoles;
-		qmm_export.max_consoles = orig_export->max_consoles;
-		qmm_export.conbuffers = orig_export->conbuffers;
-		qmm_export.conbuffer_size = orig_export->conbuffer_size;
-		qmm_export.surfaces = orig_export->surfaces;
-		qmm_export.surface_size = orig_export->surface_size;
-		qmm_export.max_surfaces = orig_export->max_surfaces;
-		qmm_export.num_surfaces = orig_export->num_surfaces;
-	}
-
 	intptr_t ret = 0;
 
 	switch (cmd) {

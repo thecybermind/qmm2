@@ -219,14 +219,6 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
 	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
-	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
-	// and these changes need to be available to the engine, so copy those values before entering the engine
-	if (orig_export) {
-		qmm_export.gentities = orig_export->gentities;
-		qmm_export.gentitySize = orig_export->gentitySize;
-		qmm_export.num_entities = orig_export->num_entities;
-	}
-
 	intptr_t ret = 0;
 
 	switch (cmd) {
