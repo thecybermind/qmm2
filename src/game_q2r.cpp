@@ -26,7 +26,12 @@ Created By:
 #include "main.h"
 #include "util.h"
 
+// GAME_PREINIT gets called first, which is when QMM has to perform mod/plugin loading, but we
+// don't want to make plugins have to use separate code to handle the actual GAME_INIT message, so just
+// do a dirty redefine here for the QMM_GAME_INIT message definition
+#define GAME_INIT GAME_PREINIT
 GEN_QMM_MSGS(Q2R);
+#undef GAME_INIT
 GEN_EXTS(Q2R);
 
 // a copy of the original import struct that comes from the game engine. this is given to plugins
@@ -172,7 +177,7 @@ static void Q2R_SpawnEntities(const char* mapname, const char* entstring, const 
 static game_export_t qmm_export = {
 	GAME_API_VERSION,	// apiversion
 	GEN_EXPORT(PreInit, GAME_PREINIT),
-	GEN_EXPORT(Init, GAME_INIT_EX),
+	GEN_EXPORT(Init, GAME_INIT),
 	GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
 	Q2R_SpawnEntities,
 	GEN_EXPORT(WriteGameJson, GAME_WRITE_GAME),
@@ -220,16 +225,6 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
 	// or set to nullptr in mod_unload()
 	orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
-
-	// before the engine is called into by the mod, some of the variables in the mod's exports may have changed
-	// and these changes need to be available to the engine, so copy those values before entering the engine
-	if (orig_export) {
-		qmm_export.edicts = orig_export->edicts;
-		qmm_export.edict_size = orig_export->edict_size;
-		qmm_export.num_edicts = orig_export->num_edicts;
-		qmm_export.max_edicts = orig_export->max_edicts;
-		qmm_export.server_flags = orig_export->server_flags;
-	}
 
 	intptr_t ret = 0;
 
@@ -490,7 +485,7 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 	intptr_t ret = 0;
 	switch (cmd) {
 		ROUTE_EXPORT(PreInit, GAME_PREINIT);
-		ROUTE_EXPORT(Init, GAME_INIT_EX);
+		ROUTE_EXPORT(Init, GAME_INIT);
 		ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
 		ROUTE_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES);
 		ROUTE_EXPORT(WriteGameJson, GAME_WRITE_GAME);
@@ -696,7 +691,7 @@ const char* Q2R_mod_msg_names(intptr_t cmd) {
 	switch (cmd) {
 		GEN_CASE(GAMEV_APIVERSION);
 		GEN_CASE(GAME_PREINIT);
-		GEN_CASE(GAME_INIT_EX);
+		GEN_CASE(GAME_INIT);
 		GEN_CASE(GAME_SHUTDOWN);
 		GEN_CASE(GAME_SPAWN_ENTITIES);
 		GEN_CASE(GAME_WRITE_GAME);
