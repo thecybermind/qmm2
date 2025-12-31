@@ -118,8 +118,10 @@ static game_export_t qmm_export = {
 intptr_t STVOYSP_syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
+#ifdef _DEBUG
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYSP_syscall({} {}) called\n", STVOYSP_eng_msg_names(cmd), cmd);
+#endif
 
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
 	// or set to nullptr in mod_unload()
@@ -219,8 +221,10 @@ intptr_t STVOYSP_syscall(intptr_t cmd, ...) {
 
 	// do anything that needs to be done after function call here
 
+#ifdef _DEBUG
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYSP_syscall({} {}) returning {}\n", STVOYSP_eng_msg_names(cmd), cmd, ret);
+#endif
 
 	return ret;
 }
@@ -297,7 +301,7 @@ intptr_t STVOYSP_vmMain(intptr_t cmd, ...) {
 
 
 void* STVOYSP_GetGameAPI(void* import) {
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYSP_GetGameAPI({}) called\n", import);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYSP_GetGameAPI({}) called\n", import);
 
 	// original import struct from engine
 	// the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -320,7 +324,7 @@ void* STVOYSP_GetGameAPI(void* import) {
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
 	g_gameinfo.pfnsyscall = STVOYSP_syscall;
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYSP_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYSP_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
 
 	// struct full of export lambdas to QMM's vmMain
 	// this gets returned to the game engine, but we haven't loaded the mod yet.

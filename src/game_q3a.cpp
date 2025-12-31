@@ -269,7 +269,9 @@ const char* Q3A_mod_msg_names(intptr_t cmd) {
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
 int Q3A_vmsyscall(std::byte* membase, int cmd, int* args) {
+#ifdef _DEBUG
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q3A_vmsyscall({} {}) called\n", Q3A_eng_msg_names(cmd), cmd);
+#endif
 
 	intptr_t ret = 0;
 
@@ -546,7 +548,9 @@ int Q3A_vmsyscall(std::byte* membase, int cmd, int* args) {
 			ret = 0;
 	}
 
+#ifdef _DEBUG
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q3A_vmsyscall({} {}) returning {}\n", Q3A_eng_msg_names(cmd), cmd, ret);
+#endif
 
 	return ret;
 }
