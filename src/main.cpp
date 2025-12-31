@@ -735,8 +735,12 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 		// allow plugins to see the current final_ret value
 		g_plugin_globals.final_return = final_ret;
 
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_vmMain({} {}) called\n", p.plugininfo->name, g_gameinfo.game->mod_msg_names(cmd), cmd);
+
 		// call plugin's vmMain and store return value
 		plugin_ret = p.QMM_vmMain(cmd, args);
+
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_vmMain({} {}) returning {} with result {}\n", p.plugininfo->name, g_gameinfo.game->mod_msg_names(cmd), cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
 		
 		// set new max result
 		max_result = util_max(g_plugin_globals.plugin_result, max_result);
@@ -775,8 +779,12 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 		// allow plugins to see the current final_ret value
 		g_plugin_globals.final_return = final_ret;
 
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_vmMain_Post({} {}) called\n", p.plugininfo->name, g_gameinfo.game->mod_msg_names(cmd), cmd);
+
 		// call plugin's vmMain_Post and store return value
 		plugin_ret = p.QMM_vmMain_Post(cmd, args);
+
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_vmMain_Post({} {}) returning {} with result {}\n", p.plugininfo->name, g_gameinfo.game->mod_msg_names(cmd), cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
 
 		// ignore QMM_UNUSED, but still show a message for QMM_ERROR
 		if (g_plugin_globals.plugin_result == QMM_ERROR)
@@ -808,9 +816,13 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 		// allow plugins to see the current final_ret value
 		g_plugin_globals.final_return = final_ret;
 
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_syscall({} {}) called\n", p.plugininfo->name, g_gameinfo.game->eng_msg_names(cmd), cmd);
+
 		// call plugin's syscall and store return value
 		plugin_ret = p.QMM_syscall(cmd, args);
-		
+
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_syscall({} {}) returning {} with result {}\n", p.plugininfo->name, g_gameinfo.game->eng_msg_names(cmd), cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
+
 		// set new max result
 		max_result = util_max(g_plugin_globals.plugin_result, max_result);
 		// store current max result in global for plugins
@@ -843,8 +855,12 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 		// allow plugins to see the current final_ret value
 		g_plugin_globals.final_return = final_ret;
 
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_syscall_Post({} {}) called\n", p.plugininfo->name, g_gameinfo.game->eng_msg_names(cmd), cmd);
+
 		// call plugin's syscall_Post and store return value
 		plugin_ret = p.QMM_syscall_Post(cmd, args);
+
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_syscall_Post({} {}) returning {} with result {}\n", p.plugininfo->name, g_gameinfo.game->eng_msg_names(cmd), cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
 
 		// ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR
 		if (g_plugin_globals.plugin_result == QMM_ERROR)
