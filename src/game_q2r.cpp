@@ -354,7 +354,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			const char* str_mode = "rb";
 			if (mode == FS_WRITE)
 				str_mode = "wb";			
-			else if (mode == FS_APPEND || mode == FS_APPEND_SYNC)
+			else if (mode == FS_APPEND)
 				str_mode = "ab";
 			std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
 			if (mode != FS_READ)
@@ -366,7 +366,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			}
 			if (mode == FS_WRITE)
 				ret = 0;
-			else if (mode == FS_APPEND || mode == FS_APPEND_SYNC)
+			else if (mode == FS_APPEND)
 				ret = ftell(fp);
 			else {
 				if (fseek(fp, 0, SEEK_END) != 0) {
@@ -535,8 +535,13 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 		edict_t* edicts = orig_export->edicts;
 
 		if (edicts) {
-			gclient_t* clients = edicts[1].client;
-			intptr_t clientsize = (std::byte*)(edicts[2].client) - (std::byte*)clients;
+			gclient_t* clients = nullptr;
+			intptr_t clientsize = 0;
+			// only do clients if this isn't GAME_PREINIT or GAME_INIT
+			if (cmd != GAME_INIT && cmd != GAME_PREINIT) {
+				clients = edicts[1].client;
+				clientsize = (std::byte*)(edicts[2].client) - (std::byte*)clients;
+			}
 			// this will trigger this message to be fired to plugins, and then it will be handled
 			// by the empty "case G_LOCATE_GAME_DATA" above in QUAKE2_syscall
 			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)edicts, orig_export->num_edicts, orig_export->edict_size, (intptr_t)clients, clientsize);

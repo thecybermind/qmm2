@@ -558,8 +558,13 @@ intptr_t SIN_vmMain(intptr_t cmd, ...) {
 		edict_t* edicts = orig_export->edicts;
 
 		if (edicts) {
-			gclient_t* clients = edicts[1].client;
-			intptr_t clientsize = (std::byte*)(edicts[2].client) - (std::byte*)clients;
+			gclient_t* clients = nullptr;
+			intptr_t clientsize = 0;
+			// only do clients if this isn't GAME_INIT
+			if (cmd != GAME_INIT) {
+				clients = edicts[1].client;
+				clientsize = (std::byte*)(edicts[2].client) - (std::byte*)clients;
+			}
 			// this will trigger this message to be fired to plugins, and then it will be handled
 			// by the empty "case G_LOCATE_GAME_DATA" above in SIN_syscall
 			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)edicts, orig_export->num_edicts, orig_export->edict_size, (intptr_t)clients, clientsize);
