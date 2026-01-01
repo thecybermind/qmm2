@@ -420,7 +420,7 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(inMultiplayerGame, GAME_IN_MULTIPLAYER_GAME),
 	GEN_EXPORT(isDefined, GAME_IS_DEFINED),
 	GEN_EXPORT(getDefine, GAME_GET_DEFINE),
-	GEN_EXPORT(BotAIStartFrame, GAME_BOTAISTARTFRAME),
+	GEN_EXPORT(BotAIStartFrame, BOTAI_START_FRAME),
 	GEN_EXPORT(AddBot_f, GAME_ADDBOT_F),
 	GEN_EXPORT(GetTotalGameFrames, GAME_GETTOTALGAMEFRAMES),
 	// the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
@@ -877,7 +877,7 @@ intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 		ROUTE_EXPORT(inMultiplayerGame, GAME_IN_MULTIPLAYER_GAME);
 		ROUTE_EXPORT(isDefined, GAME_IS_DEFINED);
 		ROUTE_EXPORT(getDefine, GAME_GET_DEFINE);
-		ROUTE_EXPORT(BotAIStartFrame, GAME_BOTAISTARTFRAME);
+		ROUTE_EXPORT(BotAIStartFrame, BOTAI_START_FRAME);
 		ROUTE_EXPORT(AddBot_f, GAME_ADDBOT_F);
 		ROUTE_EXPORT(GetTotalGameFrames, GAME_GETTOTALGAMEFRAMES);
 
@@ -1326,7 +1326,7 @@ const char* STEF2_mod_msg_names(intptr_t cmd) {
 		GEN_CASE(GAME_IN_MULTIPLAYER_GAME);
 		GEN_CASE(GAME_IS_DEFINED);
 		GEN_CASE(GAME_GET_DEFINE);
-		GEN_CASE(GAME_BOTAISTARTFRAME);
+		GEN_CASE(BOTAI_START_FRAME);
 		GEN_CASE(GAME_ADDBOT_F);
 		GEN_CASE(GAME_GETTOTALGAMEFRAMES);
 		GEN_CASE(GAMEVP_GENTITIES);
