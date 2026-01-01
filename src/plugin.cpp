@@ -92,7 +92,10 @@ const char* plugin_result_to_str(pluginres_t res) {
 }
 
 
-bool plugin_load(plugin_t& p, std::string file) {
+// returns: -1 if failed to load and don't continue, 0 if failed to load and continue, 1 if loaded
+int plugin_load(plugin_t& p, std::string file) {
+	int ret = 0;
+
 	// if this plugin_t somehow already has a dll pointer, wipe it first
 	if (p.dll)
 		plugin_unload(p);
@@ -106,7 +109,19 @@ bool plugin_load(plugin_t& p, std::string file) {
 	// if this DLL is the same as QMM, cancel
 	if ((void*)p.dll == g_gameinfo.qmm_module_ptr) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL is actually QMM?\n", file);
+		// treat this failure specially. this is a valid DLL, but it is QMM
+		ret = -1;
 		goto fail;
+	}
+
+	// if this DLL is the same as another loaded plugin, cancel
+	for (plugin_t& t : g_plugins) {
+		if (p.dll == t.dll) {
+			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL is already loaded as plugin\n", file);
+			// treat this failure specially. this is a valid plugin, but it is already loaded
+			ret = -1;
+			goto fail;
+		}
 	}
 
 	if (!(p.QMM_Query = (plugin_query)dlsym(p.dll, "QMM_Query"))) {
@@ -178,18 +193,18 @@ bool plugin_load(plugin_t& p, std::string file) {
 	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
 	if (!(p.QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_globals.plugin_result, &s_pluginfuncs, &s_pluginvars))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
-		// treat this failure specially. since this is a valid plugin, but decided on its own that it shouldn't be loaded,
-		// we return "true" so that QMM will not try to load the plugin again on a different path
-		plugin_unload(p);
-		return true;
+		// treat this failure specially. this is a valid plugin, but it decided on its own that it shouldn't be loaded
+		ret = -1;
+		goto fail;
 	}
 
 	p.path = file;
-	return true;
+	ret = 1;
+	return ret;
 
 fail:
 	plugin_unload(p);
-	return false;
+	return ret;
 }
 
 

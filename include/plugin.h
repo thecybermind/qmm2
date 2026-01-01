@@ -55,7 +55,8 @@ extern plugin_globals_t g_plugin_globals;
 extern std::vector<plugin_t> g_plugins;
 
 const char* plugin_result_to_str(pluginres_t res);
-bool plugin_load(plugin_t& p, std::string file);
+// returns: -1 if failed to load and don't continue, 0 if failed to load and continue, 1 if loaded
+int plugin_load(plugin_t& p, std::string file);
 void plugin_unload(plugin_t& p);
 
 #endif // __QMM2_PLUGIN_H__
