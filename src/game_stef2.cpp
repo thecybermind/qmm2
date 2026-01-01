@@ -420,7 +420,7 @@ static game_export_t qmm_export = {
 	GEN_EXPORT(inMultiplayerGame, GAME_IN_MULTIPLAYER_GAME),
 	GEN_EXPORT(isDefined, GAME_IS_DEFINED),
 	GEN_EXPORT(getDefine, GAME_GET_DEFINE),
-	GEN_EXPORT(BotAIStartFrame, GAME_BOTAISTARTFRAME),
+	GEN_EXPORT(BotAIStartFrame, BOTAI_START_FRAME),
 	GEN_EXPORT(AddBot_f, GAME_ADDBOT_F),
 	GEN_EXPORT(GetTotalGameFrames, GAME_GETTOTALGAMEFRAMES),
 	// the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
@@ -437,8 +437,10 @@ static game_export_t qmm_export = {
 intptr_t STEF2_syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
+#ifdef _DEBUG
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_syscall({} {}) called\n", STEF2_eng_msg_names(cmd), cmd);
+#endif
 
 	// store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
 	// or set to nullptr in mod_unload()
@@ -821,8 +823,10 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 
 	// do anything that needs to be done after function call here
 
+#ifdef _DEBUG
 	if (cmd != G_PRINT)
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_syscall({} {}) returning {}\n", STEF2_eng_msg_names(cmd), cmd, ret);
+#endif
 
 	return ret;
 }
@@ -873,7 +877,7 @@ intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 		ROUTE_EXPORT(inMultiplayerGame, GAME_IN_MULTIPLAYER_GAME);
 		ROUTE_EXPORT(isDefined, GAME_IS_DEFINED);
 		ROUTE_EXPORT(getDefine, GAME_GET_DEFINE);
-		ROUTE_EXPORT(BotAIStartFrame, GAME_BOTAISTARTFRAME);
+		ROUTE_EXPORT(BotAIStartFrame, BOTAI_START_FRAME);
 		ROUTE_EXPORT(AddBot_f, GAME_ADDBOT_F);
 		ROUTE_EXPORT(GetTotalGameFrames, GAME_GETTOTALGAMEFRAMES);
 
@@ -904,7 +908,7 @@ intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 
 
 void* STEF2_GetGameAPI(void* import) {
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_GetGameAPI({}) called\n", import);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_GetGameAPI({}) called\n", import);
 
 	// original import struct from engine
 	// the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -928,7 +932,7 @@ void* STEF2_GetGameAPI(void* import) {
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
 	g_gameinfo.pfnsyscall = STEF2_syscall;
 
-	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STEF2_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
 
 	// struct full of export lambdas to QMM's vmMain
 	// this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -1322,7 +1326,7 @@ const char* STEF2_mod_msg_names(intptr_t cmd) {
 		GEN_CASE(GAME_IN_MULTIPLAYER_GAME);
 		GEN_CASE(GAME_IS_DEFINED);
 		GEN_CASE(GAME_GET_DEFINE);
-		GEN_CASE(GAME_BOTAISTARTFRAME);
+		GEN_CASE(BOTAI_START_FRAME);
 		GEN_CASE(GAME_ADDBOT_F);
 		GEN_CASE(GAME_GETTOTALGAMEFRAMES);
 		GEN_CASE(GAMEVP_GENTITIES);

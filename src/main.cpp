@@ -110,7 +110,6 @@ static mod_vmMain_t passthrough_mod_vmMain = nullptr;
 // GAME_SHUTDOWN has been called, but mod DLL was kept loaded so cgame shutdown can run
 static bool passthrough_shutdown = false;
 
-
 /* Entry point: engine->qmm
    This is the first function called when a vmMain DLL is loaded. The address of the engine's syscall callback is given,
    but it is not guaranteed to be initialized and ready for calling until vmMain() is called later. For now, all
@@ -118,7 +117,7 @@ static bool passthrough_shutdown = false;
    This is either determined by the config file, or by getting the filename of the QMM DLL itself.
 */
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
-#ifdef DEBUG_MESSAGEBOX
+#ifdef _DEBUG
 	MessageBoxA(NULL, "dllEntry called", "QMM2", 0);
 #endif
 
@@ -197,7 +196,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	 - store variables from mod's real export struct into our qmm_export before returning out of mod
 */
 C_DLLEXPORT void* GetGameAPI(void* import) {
-#ifdef DEBUG_MESSAGEBOX
+#ifdef _DEBUG
 	MessageBoxA(NULL, "GetGameAPI called", "QMM2", 0);
 #endif
 
@@ -253,11 +252,11 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
    GAME_SHUTDOWN (post): handle game shutting down
 */
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
-#ifdef DEBUG_MESSAGEBOX
+#ifdef _DEBUG
 	if (is_QMM_vmMain_call)
-		MessageBoxA(NULL, "vmMain called through QMM wrappers", "QMM2", 0);
-	else
-		MessageBoxA(NULL, "vmMain called directly", "QMM2", 0);
+			MessageBoxA(NULL, "vmMain called through QMM wrappers", "QMM2", 0);
+		else
+			MessageBoxA(NULL, "vmMain called directly", "QMM2", 0);
 #endif
 
 	QMM_GET_VMMAIN_ARGS();
@@ -424,12 +423,16 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 intptr_t qmm_syscall(intptr_t cmd, ...) {
 	QMM_GET_SYSCALL_ARGS();
 
+#ifdef _DEBUG
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({} {}) called\n", g_gameinfo.game->eng_msg_names(cmd), cmd);
+#endif
 
 	// route call to plugins and mod
 	intptr_t ret = s_main_route_syscall(cmd, args);
 
+#ifdef _DEBUG
 	LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({} {}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), cmd, ret);
+#endif
 
 	return ret;
 }
@@ -735,9 +738,17 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 		// allow plugins to see the current final_ret value
 		g_plugin_globals.final_return = final_ret;
 
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_vmMain({} {}) called\n", p.plugininfo->name, g_gameinfo.game->mod_msg_names(cmd), cmd);
+#endif
+
 		// call plugin's vmMain and store return value
 		plugin_ret = p.QMM_vmMain(cmd, args);
-		
+
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_vmMain({} {}) returning {} with result {}\n", p.plugininfo->name, g_gameinfo.game->mod_msg_names(cmd), cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
+#endif
+
 		// set new max result
 		max_result = util_max(g_plugin_globals.plugin_result, max_result);
 		// store current max result in global for plugins
@@ -755,11 +766,25 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 
 	// call real vmMain function (unless a plugin resulted in QMM_SUPERCEDE)
 	if (max_result < QMM_SUPERCEDE) {
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Game vmMain({} {}) called\n", g_gameinfo.game->mod_msg_names(cmd), cmd);
+#endif
+
 		mod_ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Game vmMain({} {}) returning {}\n", g_gameinfo.game->mod_msg_names(cmd), cmd, mod_ret);
+#endif
+
 		// the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs. the
 		// char* is a string to print if the client should not be allowed to connect, so only bother if it's not NULL
 		if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && mod_ret && g_mod.vmbase)
 			mod_ret += g_mod.vmbase;
+	}
+	else {
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Game vmMain({} {}) superceded\n", g_gameinfo.game->mod_msg_names(cmd), cmd);
+#endif
 	}
 
 	// store mod_ret in global for plugins
@@ -775,8 +800,16 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 		// allow plugins to see the current final_ret value
 		g_plugin_globals.final_return = final_ret;
 
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_vmMain_Post({} {}) called\n", p.plugininfo->name, g_gameinfo.game->mod_msg_names(cmd), cmd);
+#endif
+
 		// call plugin's vmMain_Post and store return value
 		plugin_ret = p.QMM_vmMain_Post(cmd, args);
+
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_vmMain_Post({} {}) returning {} with result {}\n", p.plugininfo->name, g_gameinfo.game->mod_msg_names(cmd), cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
+#endif
 
 		// ignore QMM_UNUSED, but still show a message for QMM_ERROR
 		if (g_plugin_globals.plugin_result == QMM_ERROR)
@@ -808,9 +841,17 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 		// allow plugins to see the current final_ret value
 		g_plugin_globals.final_return = final_ret;
 
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_syscall({} {}) called\n", p.plugininfo->name, g_gameinfo.game->eng_msg_names(cmd), cmd);
+#endif
+
 		// call plugin's syscall and store return value
 		plugin_ret = p.QMM_syscall(cmd, args);
-		
+
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_syscall({} {}) returning {} with result {}\n", p.plugininfo->name, g_gameinfo.game->eng_msg_names(cmd), cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
+#endif
+
 		// set new max result
 		max_result = util_max(g_plugin_globals.plugin_result, max_result);
 		// store current max result in global for plugins
@@ -827,8 +868,22 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 	}
 
 	// call real syscall function (unless a plugin resulted in QMM_SUPERCEDE)
-	if (max_result < QMM_SUPERCEDE)
+	if (max_result < QMM_SUPERCEDE) {
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Engine syscall({} {}) called\n", g_gameinfo.game->eng_msg_names(cmd), cmd);
+#endif
+
 		eng_ret = g_gameinfo.pfnsyscall(cmd, QMM_PUT_SYSCALL_ARGS());
+
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Engine syscall({} {}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), cmd, eng_ret);
+#endif
+	}
+	else {
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Engine syscall({} {}) superceded\n", g_gameinfo.game->eng_msg_names(cmd), cmd);
+#endif
+	}
 
 	// store eng_ret in global for plugins
 	g_plugin_globals.orig_return = eng_ret;
@@ -843,8 +898,16 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 		// allow plugins to see the current final_ret value
 		g_plugin_globals.final_return = final_ret;
 
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_syscall_Post({} {}) called\n", p.plugininfo->name, g_gameinfo.game->eng_msg_names(cmd), cmd);
+#endif
+
 		// call plugin's syscall_Post and store return value
 		plugin_ret = p.QMM_syscall_Post(cmd, args);
+
+#ifdef _DEBUG
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_syscall_Post({} {}) returning {} with result {}\n", p.plugininfo->name, g_gameinfo.game->eng_msg_names(cmd), cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
+#endif
 
 		// ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR
 		if (g_plugin_globals.plugin_result == QMM_ERROR)
@@ -870,7 +933,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 */
 static mod_GetGameAPI_t mod_GetCGameAPI = nullptr;
 C_DLLEXPORT void* GetCGameAPI(void* import) {
-#ifdef DEBUG_MESSAGEBOX
+#ifdef _DEBUG
 	MessageBoxA(NULL, "GetCGameAPI called", "QMM2", 0);
 #endif
 
