@@ -29,7 +29,7 @@ static void s_main_detect_env();
 static void s_main_load_config(bool quiet = false);
 static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode);
 static bool s_main_load_mod(std::string cfg_mod);
-static void s_main_load_plugin(std::string plugin_path);
+static bool s_main_load_plugin(std::string plugin_path);
 static intptr_t s_main_handle_command_qmm(int arg_inc);
 static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args);
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
@@ -347,8 +347,11 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		// load plugins
 		LOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
 		for (auto plugin_path : cfg_get_array_str(g_cfg, "plugins")) {
-			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load plugin \"{}\"\n", plugin_path);
-			s_main_load_plugin(plugin_path);
+			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load plugin \"{}\"...\n", plugin_path);
+			if (s_main_load_plugin(plugin_path))
+				LOG(QMM_LOG_INFO, "QMM") << fmt::format("Plugin \"{}\" loaded\n", plugin_path);
+			else
+				LOG(QMM_LOG_INFO, "QMM") << fmt::format("Plugin \"{}\" not loaded\n", plugin_path);
 		}
 		LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} plugin(s)\n", g_plugins.size());
 
@@ -606,16 +609,16 @@ static bool s_main_load_mod(std::string cfg_mod) {
 
 
 // general code to find a plugin file to load
-static void s_main_load_plugin(std::string plugin_path) {
+static bool s_main_load_plugin(std::string plugin_path) {
 	plugin_t p;
 	// absolute path, just attempt to load it directly
 	if (!path_is_relative(plugin_path)) {
-		// if the plugin decides to cancel itself in QMM_Attach, then plugin_load returns success
-		// but we only want to only store the plugin if it really loaded
-		if (plugin_load(p, plugin_path) && p.dll) {
+		// plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
+		if (plugin_load(p, plugin_path) > 0) {
 			g_plugins.push_back(p);
+			return true;
 		}
-		return;
+		return false;
 	}
 	// relative path, try the following locations in order:
 	// "<qmmdir>/<plugin>"
@@ -627,14 +630,17 @@ static void s_main_load_plugin(std::string plugin_path) {
 		fmt::format("./{}/{}", g_gameinfo.moddir, plugin_path)
 	};
 	for (auto& try_path : try_paths) {
-		// if the plugin decides to cancel itself in QMM_Attach, then plugin_load returns success
-		// but we only want to only store the plugin if it really loaded
-		if (plugin_load(p, try_path)) {
-			if (p.dll)
-				g_plugins.push_back(p);
-			return;
+		// plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
+		int ret = plugin_load(p, try_path);
+		if (ret > 0) {
+			g_plugins.push_back(p);
+			return true;
 		}
+		if (ret < 0)
+			return false;
 	}
+
+	return false;
 }
 
 
