@@ -140,24 +140,28 @@ static game_import_t qmm_import = {
 // we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
 
 // track userinfo for our G_GET_USERINFO syscall
-static std::map<edict_t*, std::string> s_userinfo;
+static std::map<intptr_t, std::string> s_userinfo;
 static bool Q2R_ClientConnect(edict_t* ent, char* userinfo, const char* social_id, bool isBot) {
+	// get client number
+	intptr_t clientnum = ent->s.number - 1;
 	// if userinfo is null, remove entry in map. otherwise store in map
 	if (userinfo)
-		s_userinfo.emplace(ent, userinfo);
-	else if (s_userinfo.count(ent))
-		s_userinfo.erase(ent);
+		s_userinfo.emplace(clientnum, userinfo);
+	else if (s_userinfo.count(clientnum))
+		s_userinfo.erase(clientnum);
 	is_QMM_vmMain_call = true;
 	return vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
 }
 
 
 static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
+	// get client number
+	intptr_t clientnum = ent->s.number - 1;
 	// if userinfo is null, remove entry in map. otherwise store in map
 	if (userinfo)
-		s_userinfo.emplace(ent, userinfo);
-	else if (s_userinfo.count(ent))
-		s_userinfo.erase(ent);
+		s_userinfo.emplace(clientnum, userinfo);
+	else if (s_userinfo.count(clientnum))
+		s_userinfo.erase(clientnum);
 	is_QMM_vmMain_call = true;
 	vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
@@ -429,16 +433,13 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 			break;
 		}
 		case G_GET_USERINFO: {
-			// other games: void trap_GetUserinfo(int num, char *buffer, int bufferSize);
-			// q2r: g_syscall(G_GET_USERINFO, edict_t* ent, char* buffer, int bufferSize);
-			// q2r uses edict_t* ent for the first arg in client_connect and client_userinfo_changed, so this will
-			// also be edict_t* ent instead of int num
-			edict_t* ent = (edict_t*)args[0];
+			// void trap_GetUserinfo(int num, char *buffer, int bufferSize);
+			intptr_t num = args[0];
 			char* buffer = (char*)args[1];
 			intptr_t bufferSize = args[2];
 			*buffer = '\0';
-			if (s_userinfo.count(ent))
-				strncpyz(buffer, s_userinfo[ent].c_str(), bufferSize);
+			if (s_userinfo.count(num))
+				strncpyz(buffer, s_userinfo[num].c_str(), bufferSize);
 			break;
 		}
 		case G_GET_ENTITY_TOKEN: {
