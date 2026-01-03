@@ -101,8 +101,9 @@ static game_import_t qmm_import = {
 // track userinfo for our G_GET_USERINFO syscall
 static std::map<intptr_t, std::string> s_userinfo;
 static qboolean QUAKE2_ClientConnect(edict_t* ent, char* userinfo) {
-	// get client number
-	intptr_t clientnum = ent->s.number;
+	// get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
+	intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
+	intptr_t clientnum = entnum - 1;
 	// if userinfo is null, remove entry in map. otherwise store in map
 	if (userinfo)
 		s_userinfo.emplace(clientnum, userinfo);
@@ -114,8 +115,9 @@ static qboolean QUAKE2_ClientConnect(edict_t* ent, char* userinfo) {
 
 
 static void QUAKE2_ClientUserinfoChanged(edict_t* ent, char* userinfo) {
-	// get client number
-	intptr_t clientnum = ent->s.number;
+	// get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
+	intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
+	intptr_t clientnum = entnum - 1;
 	// if userinfo is null, remove entry in map. otherwise store in map
 	if (userinfo)
 		s_userinfo.emplace(clientnum, userinfo);
@@ -452,7 +454,6 @@ intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 	if (qmm_export.edicts != orig_export->edicts
 		|| qmm_export.edict_size != orig_export->edict_size
 		|| qmm_export.num_edicts != orig_export->num_edicts
-		|| (cmd >= GAME_CLIENT_CONNECT && cmd <= GAME_CLIENT_THINK)
 		) {
 
 		edict_t* edicts = orig_export->edicts;
