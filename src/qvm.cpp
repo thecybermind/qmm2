@@ -415,10 +415,12 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 			case OP_LEF:
 				FIF(<= );
 				break;
+
 			// if stack[1] > stack[0], goto address in param (float)
 			case OP_GTF:
 				FIF(> );
 				break;
+
 			// if stack[1] >= stack[0], goto address in param (float)
 			case OP_GEF:
 				FIF(>= );
