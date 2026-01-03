@@ -9,6 +9,7 @@ Created By:
 
 */
 
+#include <cstdint>
 #include <string.h>
 #include <stdlib.h>
 #include "log.h"
@@ -20,11 +21,11 @@ Created By:
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start = nullptr, void* end = nullptr);
 
 
-bool qvm_load(qvm_t& qvm, const std::vector<std::byte>& filemem, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data) {
+bool qvm_load(qvm_t& qvm, const std::vector<uint8_t>& filemem, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data) {
 	if (!qvm.memory.empty() || filemem.empty() || !vmsyscall)
 		return false;
 
-	const std::byte* codeoffset = nullptr;
+	const uint8_t* codeoffset = nullptr;
 
 	qvm.filesize = filemem.size();
 	qvm.vmsyscall = vmsyscall;
@@ -197,7 +198,7 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 		}
 		// verify stack pointer is in top half of stack segment. this could be malicious, or an accidental stack overflow
 		if (!qvm_validate_ptr(qvm, stack, qvm.stacksegment + (qvm.stackseglen / 2), qvm.stacksegment + qvm.stackseglen + 1)) {
-			intptr_t stacksize = qvm.stacksegment + qvm.stackseglen - (std::byte*)stack;
+			intptr_t stacksize = qvm.stacksegment + qvm.stackseglen - (uint8_t*)stack;
 			LOG(QMM_LOG_FATAL, "QMM") << fmt::format("qvm_exec({}) Stack overflow! Stack size is currently {}, max is {}. You may need to increase the \"stacksize\" config option.\n", vmMain_code, stacksize, qvm.stackseglen / 2);
 			goto fail;
 		}
@@ -226,6 +227,8 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 			// break to debugger?
 			case OP_BREAK:
 				// todo: dump stacks/memory?
+				LOG(QMM_LOG_FATAL, "QMM") << fmt::format("qvm_exec({}) Unhandled opcode {}\n", vmMain_code, opcodename[op]);
+				goto fail;
 
 			// anything else
 			default:
@@ -425,12 +428,12 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 
 			// store 1-byte value from stack[0] into address stored in stack[1]
 			case OP_STORE1: {
-				std::byte* dst = qvm.datasegment + stack[1];
+				uint8_t* dst = qvm.datasegment + stack[1];
 				if (qvm.verify_data && !qvm_validate_ptr(qvm, dst)) {
 					LOG(QMM_LOG_FATAL, "QMM") << fmt::format("qvm_exec({}) {} pointer validation failed! ptr = {}\n", vmMain_code, opcodename[op], (void*)dst);
 					goto fail;
 				}
-				*dst = (std::byte)(*stack & 0xFF);
+				*dst = (uint8_t)(*stack & 0xFF);
 				stack += 2;
 				break;
 			}
@@ -463,7 +466,7 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 			// and store back in stack[0]
 			// 1-byte
 			case OP_LOAD1: {
-				std::byte* src = qvm.datasegment + *stack;
+				uint8_t* src = qvm.datasegment + *stack;
 				if (qvm.verify_data && !qvm_validate_ptr(qvm, src)) {
 					LOG(QMM_LOG_FATAL, "QMM") << fmt::format("qvm_exec({}) {} pointer validation failed! ptr = {}\n", vmMain_code, opcodename[op], (void*)src);
 					goto fail;
@@ -497,8 +500,8 @@ int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 			// copy mem at address pointed to by stack[0] to address pointed to by stack[1]
 			// for 'param' number of bytes
 			case OP_BLOCK_COPY: {
-				std::byte* src = qvm.datasegment + *stack++;
-				std::byte* dst = qvm.datasegment + *stack++;
+				uint8_t* src = qvm.datasegment + *stack++;
+				uint8_t* dst = qvm.datasegment + *stack++;
 
 				// skip if src/dst are the same
 				if (src == dst)

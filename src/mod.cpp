@@ -105,7 +105,7 @@ static intptr_t s_mod_vmmain(intptr_t cmd, ...) {
 static bool s_mod_load_qvm(mod_t& mod) {
 	int fpk3;
 	int filelen;
-	std::vector<std::byte> filemem;
+	std::vector<uint8_t> filemem;
 	int stacksize;
 	bool verify_data;
 	bool loaded;
