@@ -645,13 +645,13 @@ static bool s_main_load_plugin(std::string plugin_path) {
 
 
 // handle "qmm" console command
-static intptr_t s_main_handle_command_qmm(int arg_inc) {
+static intptr_t s_main_handle_command_qmm(int arg_start) {
 	char arg1[10] = "", arg2[10] = "";
 
 	int argc = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
-	qmm_argv(1 + arg_inc, arg1, sizeof(arg1));
-	if (argc > 2 + arg_inc)
-		qmm_argv(2 + arg_inc, arg2, sizeof(arg2));
+	qmm_argv(arg_start + 1, arg1, sizeof(arg1));
+	if (argc > arg_start + 2)
+		qmm_argv(arg_start + 2, arg2, sizeof(arg2));
 	if (str_striequal("status", arg1)) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") loaded\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file").c_str());
@@ -678,14 +678,14 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 	else if (str_striequal("list", arg1)) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) id - plugin [version]\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) ---------------------\n");
+		int num = 1;
 		for (plugin_t& p : g_plugins) {
-			int num = 1;
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) {:>2} - {} [{}]\n", num, p.plugininfo->name, p.plugininfo->version).c_str());
-			++num;
+			num++;
 		}
 	}
 	else if (str_striequal("info", arg1)) {
-		if (argc == 2 + arg_inc) {
+		if (argc == arg_start + 2) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm info <id> - outputs info on plugin with id\n");
 			return 1;
 		}
@@ -706,7 +706,7 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 		}
 	}
 	else if (str_striequal("loglevel", arg1)) {
-		if (argc == 2 + arg_inc) {
+		if (argc == arg_start + 2) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
 			return 1;
 		}
@@ -721,7 +721,6 @@ static intptr_t s_main_handle_command_qmm(int arg_inc) {
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm list - displays information about loaded QMM plugins\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm info <id> - outputs info on plugin with id\n");
 		ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
-		return 1;
 	}
 	return 1;
 }
@@ -818,7 +817,7 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_vmMain_Post({} {}) returning {} with result {}\n", p.plugininfo->name, g_gameinfo.game->mod_msg_names(cmd), cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
 #endif
 
-		// ignore QMM_UNUSED, but still show a message for QMM_ERROR
+		// ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR
 		if (g_plugin_globals.plugin_result == QMM_ERROR)
 			LOG(QMM_LOG_ERROR, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name);
 
