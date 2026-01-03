@@ -280,8 +280,9 @@ intptr_t STVOYSP_vmMain(intptr_t cmd, ...) {
 		gentity_t* gentities = orig_export->gentities;
 
 		if (gentities) {
-			playerState_s* clients = gentities[1].client;
-			intptr_t clientsize = (std::byte*)(gentities[2].client) - (std::byte*)clients;
+			// single player only makes 1 client
+			playerState_s* clients = gentities->client;
+			intptr_t clientsize = 1;
 			// this will trigger this message to be fired to plugins, and then it will be handled
 			// by the empty "case G_LOCATE_GAME_DATA" above in QUAKE2_syscall
 			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)gentities, orig_export->num_entities, orig_export->gentitySize, (intptr_t)clients, clientsize);
