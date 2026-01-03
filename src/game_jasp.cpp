@@ -10,9 +10,6 @@ Created By:
 */
 
 #include <string.h>
-#ifdef __INTELLISENSE__
-#pragma diag_suppress 266
-#endif
 #include <jasp/game/q_shared.h>
 #include <jasp/game/g_public.h>
 #include "game_api.h"
