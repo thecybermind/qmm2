@@ -14,8 +14,11 @@ Created By:
 #include "log.h"
 #include "format.h"
 #include "qvm.h"
+#include "osdef.h"
+
 
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start = nullptr, void* end = nullptr);
+
 
 bool qvm_load(qvm_t& qvm, const std::vector<std::byte>& filemem, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data) {
 	if (!qvm.memory.empty() || filemem.empty() || !vmsyscall)
@@ -111,9 +114,7 @@ bool qvm_load(qvm_t& qvm, const std::vector<std::byte>& filemem, vmsyscall_t vms
 					LOG(QMM_LOG_ERROR, "QMM") << fmt::format("qvm_load(): Invalid target in jump/branch instruction: {} > {}\n", *(int*)codeoffset, qvm.header.numops);
 					goto fail;
 				}
-#ifdef _WIN32
-				[[fallthrough]];	// MSVC C26819: Unannotated fallthrough between switch labels
-#endif
+				SWITCH_FALLTHROUGH;	// MSVC C26819: Unannotated fallthrough between switch labels
 			case OP_ENTER:
 			case OP_LEAVE:
 			case OP_CONST:
@@ -147,9 +148,11 @@ fail:
 	return false;
 }
 
+
 void qvm_unload(qvm_t& qvm) {
 	qvm = qvm_t();
 }
+
 
 int qvm_exec(qvm_t& qvm, int argc, int* argv) {
 	if (qvm.memory.empty())
@@ -680,6 +683,7 @@ fail:
 	return 0;
 }
 
+
 // return a string name for the VM opcode
 const char* opcodename[] = {
 	"OP_UNDEF",
@@ -743,6 +747,7 @@ const char* opcodename[] = {
 	"OP_CVIF",
 	"OP_CVFI"
 };
+
 
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start, void* end) {
 	if (qvm.memory.empty())
