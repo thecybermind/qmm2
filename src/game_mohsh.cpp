@@ -217,8 +217,12 @@ static game_import_t qmm_import = {
 
 // track entstrings for our G_GET_ENTITY_TOKEN syscall
 static std::vector<std::string> s_entity_tokens;
+static size_t s_tokencount = 0;
 static void MOHSH_SpawnEntities(char* entstring, int levelTime) {
-	s_entity_tokens = util_parse_entstring(entstring);
+	if (entstring) {
+		s_entity_tokens = util_parse_entstring(entstring);
+		s_tokencount = 0;
+	}
 	is_QMM_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
 }
@@ -508,8 +512,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 		}
 		case G_GET_ENTITY_TOKEN: {
 			// qboolean trap_GetEntityToken(char *buffer, int bufferSize);
-			static size_t token = 0;
-			if (token >= s_entity_tokens.size()) {
+			if (s_tokencount >= s_entity_tokens.size()) {
 				ret = qfalse;
 				break;
 			}
@@ -517,7 +520,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 			char* buffer = (char*)args[0];
 			intptr_t bufferSize = args[1];
 
-			strncpyz(buffer, s_entity_tokens[token++].c_str(), bufferSize);
+			strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), bufferSize);
 			ret = qtrue;
 			break;
 		}
