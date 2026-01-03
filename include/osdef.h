@@ -47,6 +47,7 @@ constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14,  'r', 0x12 };
 #define dlclose(dll)		FreeLibrary((HMODULE)(dll))
 #define mkdir(path, x)		_mkdir(path)
 const char* dlerror();		// this will return the last error from any win32 function, not just library functions
+#define SWITCH_FALLTHROUGH	[[fallthrough]]
 
 #elif defined(__linux__)
 
@@ -73,6 +74,8 @@ constexpr const unsigned char MAGIC_QVM[] = {  'D', 0x14, 'r', 0x12 };
 
 #define NAKED				__attribute__((naked))
 #define my_vsnprintf		vsnprintf
+void MessageBoxA(void* handle, const char* message, const char* title, int flags);
+#define SWITCH_FALLTHROUGH	__attribute__((fallthrough))
 
 #else // !_WIN32 && !__linux__
 

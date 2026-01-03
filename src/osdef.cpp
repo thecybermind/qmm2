@@ -14,8 +14,9 @@ Created By:
 #include <string.h>
 #include "util.h"
 
-#ifdef _WIN32
 
+#ifdef _WIN32
+// return error string for GetLastError()
 const char* dlerror() {
 	static std::string str;
 	char* buf = nullptr;
@@ -30,8 +31,22 @@ const char* dlerror() {
 
 	return str.c_str();
 }
-
+#else
+// just output a big banner to stdout and stderr
+void MessageBoxA(void* handle, const char* message, const char* title, int flags) {
+	fprintf(stderr, "**************************************************************************\n");
+	fprintf(stderr, "%s\n", title);
+	fprintf(stderr, "**************************************************************************\n");
+	fprintf(stderr, "%s\n", message);
+	fprintf(stderr, "**************************************************************************\n");
+	printf("**************************************************************************\n");
+	printf("%s\n", title);
+	printf("**************************************************************************\n");
+	printf("%s\n", message);
+	printf("**************************************************************************\n");
+}
 #endif
+
 
 
 void* osdef_path_get_modulehandle(void* ptr) {
