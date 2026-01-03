@@ -102,13 +102,15 @@ static game_import_t qmm_import = {
 static std::map<intptr_t, std::string> s_userinfo;
 static qboolean QUAKE2_ClientConnect(edict_t* ent, char* userinfo) {
 	// get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
-	intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
-	intptr_t clientnum = entnum - 1;
-	// if userinfo is null, remove entry in map. otherwise store in map
-	if (userinfo)
-		s_userinfo.emplace(clientnum, userinfo);
-	else if (s_userinfo.count(clientnum))
-		s_userinfo.erase(clientnum);
+	if (orig_export && orig_export->edicts && orig_export->edict_size) {
+		intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
+		intptr_t clientnum = entnum - 1;
+		// if userinfo is null, remove entry in map. otherwise store in map
+		if (userinfo)
+			s_userinfo.emplace(clientnum, userinfo);
+		else if (s_userinfo.count(clientnum))
+			s_userinfo.erase(clientnum);
+	}
 	is_QMM_vmMain_call = true;
 	return vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
 }
@@ -116,13 +118,15 @@ static qboolean QUAKE2_ClientConnect(edict_t* ent, char* userinfo) {
 
 static void QUAKE2_ClientUserinfoChanged(edict_t* ent, char* userinfo) {
 	// get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
-	intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
-	intptr_t clientnum = entnum - 1;
-	// if userinfo is null, remove entry in map. otherwise store in map
-	if (userinfo)
-		s_userinfo.emplace(clientnum, userinfo);
-	else if (s_userinfo.count(clientnum))
-		s_userinfo.erase(clientnum);
+	if (orig_export && orig_export->edicts && orig_export->edict_size) {
+		intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
+		intptr_t clientnum = entnum - 1;
+		// if userinfo is null, remove entry in map. otherwise store in map
+		if (userinfo)
+			s_userinfo.emplace(clientnum, userinfo);
+		else if (s_userinfo.count(clientnum))
+			s_userinfo.erase(clientnum);
+	}
 	is_QMM_vmMain_call = true;
 	vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
