@@ -143,7 +143,7 @@ static game_import_t qmm_import = {
 static std::map<intptr_t, std::string> s_userinfo;
 static bool Q2R_ClientConnect(edict_t* ent, char* userinfo, const char* social_id, bool isBot) {
 	// get client number
-	intptr_t clientnum = ent->s.number - 1;
+	intptr_t clientnum = ent->s.number;
 	// if userinfo is null, remove entry in map. otherwise store in map
 	if (userinfo)
 		s_userinfo.emplace(clientnum, userinfo);
@@ -156,7 +156,7 @@ static bool Q2R_ClientConnect(edict_t* ent, char* userinfo, const char* social_i
 
 static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
 	// get client number
-	intptr_t clientnum = ent->s.number - 1;
+	intptr_t clientnum = ent->s.number;
 	// if userinfo is null, remove entry in map. otherwise store in map
 	if (userinfo)
 		s_userinfo.emplace(clientnum, userinfo);
@@ -535,21 +535,25 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 	if (qmm_export.edicts != orig_export->edicts
 		|| qmm_export.edict_size != orig_export->edict_size
 		|| qmm_export.num_edicts != orig_export->num_edicts
+		|| (cmd >= GAME_CLIENT_CONNECT && cmd <= GAME_CLIENT_THINK)
 		) {
 
 		edict_t* edicts = orig_export->edicts;
+		intptr_t edict_size = orig_export->edict_size;
 
 		if (edicts) {
 			gclient_t* clients = nullptr;
 			intptr_t clientsize = 0;
 			// only do clients if this isn't GAME_PREINIT or GAME_INIT
 			if (cmd != GAME_INIT && cmd != GAME_PREINIT) {
-				clients = edicts[1].client;
-				clientsize = (std::byte*)(edicts[2].client) - (std::byte*)clients;
+				edict_t* edict1 = (edict_t*)((intptr_t)edicts + edict_size);
+				edict_t* edict2 = (edict_t*)((intptr_t)edicts + edict_size * 2);
+				clients = edict1->client;
+				clientsize = (intptr_t)(edict2->client) - (intptr_t)clients;
 			}
 			// this will trigger this message to be fired to plugins, and then it will be handled
 			// by the empty "case G_LOCATE_GAME_DATA" above in QUAKE2_syscall
-			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)edicts, orig_export->num_edicts, orig_export->edict_size, (intptr_t)clients, clientsize);
+			qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)edicts, orig_export->num_edicts, edict_size, (intptr_t)clients, clientsize);
 		}
 	}
 
