@@ -12,6 +12,7 @@ Created By:
 #ifndef __QMM2_QMMAPI_H__
 #define __QMM2_QMMAPI_H__
 
+// a lot of game sdks use a "byte" typedef so try to avoid pulling in std::byte
 #ifdef _HAS_STD_BYTE
 #undef _HAS_STD_BYTE
 #endif

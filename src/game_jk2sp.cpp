@@ -9,7 +9,6 @@ Created By:
 
 */
 
-#include <cstddef> // std::byte (jk2sp headers are still weird with system headers, so include this at the top)
 #include <string.h>
 #include <jk2sp/game/q_shared.h>
 #include <jk2sp/game/g_public.h>

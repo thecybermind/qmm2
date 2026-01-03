@@ -12,14 +12,14 @@ Created By:
 #ifndef __QMM2_GAME_API_H__
 #define __QMM2_GAME_API_H__
 
-#include <cstddef>
+#include <cstdint>
 #include <vector>
 #include <string>
 #include <stdarg.h>
 #include "osdef.h"
 
 typedef const char* (*msgname_t)(intptr_t msg);
-typedef int (*vmsyscall_t)(std::byte* membase, int cmd, int* args);
+typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 typedef void* (*apientry_t)(void* import);
 
 // a list of all the mod messages used by QMM
@@ -89,7 +89,7 @@ extern supportedgame_t g_supportedgames[];
 							extern int game##_qmm_mod_msgs[]; \
 							const char* game##_eng_msg_names(intptr_t msg); \
 							const char* game##_mod_msg_names(intptr_t msg); \
-							int game##_vmsyscall(std::byte* membase, int cmd, int* args); \
+							int game##_vmsyscall(uint8_t* membase, int cmd, int* args); \
 							void* game##_GetGameAPI(void* import)
 
 // generate struct info for the short name, messages arrays, and message name functions

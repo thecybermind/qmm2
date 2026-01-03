@@ -12,7 +12,7 @@ Created By:
 #ifndef __QMM2_QVM_H__
 #define __QMM2_QVM_H__
 
-#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 // magic number is stored in file as 44 14 72 12
@@ -20,7 +20,7 @@ Created By:
 
 #define QMM_MAX_SYSCALL_ARGS_QVM	13	// change whenever a QVM mod has a bigger syscall list
 
-typedef int (*vmsyscall_t)(std::byte* membase, int cmd, int* args);
+typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
 typedef enum {
 	OP_UNDEF,
@@ -112,12 +112,12 @@ typedef struct {
 	size_t filesize;				// .qvm file size
 
 	// memory
-	std::vector<std::byte> memory;	// main block of memory
+	std::vector<uint8_t> memory;	// main block of memory
 
 	// segments (into memory vector)
 	qvmop_t* codesegment;			// code segment, each op is 8 bytes (4 op, 4 param)
-	std::byte* datasegment;			// data segment, partially filled on load
-	std::byte* stacksegment;		// stack segment
+	uint8_t* datasegment;			// data segment, partially filled on load
+	uint8_t* stacksegment;			// stack segment
 
 	// segment sizes
 	unsigned int codeseglen;		// size of code segment
@@ -136,7 +136,7 @@ typedef struct {
 } qvm_t;
 
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t& qvm, const std::vector<std::byte>& filemem, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data);
+bool qvm_load(qvm_t& qvm, const std::vector<uint8_t>& filemem, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data);
 void qvm_unload(qvm_t& qvm);
 int qvm_exec(qvm_t& qvm, int argc, int* argv);
 

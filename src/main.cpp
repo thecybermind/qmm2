@@ -117,7 +117,7 @@ static bool passthrough_shutdown = false;
    This is either determined by the config file, or by getting the filename of the QMM DLL itself.
 */
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
-#if defined(_WIN32) && defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
+#if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
 	MessageBoxA(NULL, "dllEntry called", "QMM2", 0);
 #endif
 
@@ -196,7 +196,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 	 - store variables from mod's real export struct into our qmm_export before returning out of mod
 */
 C_DLLEXPORT void* GetGameAPI(void* import) {
-#if defined(_WIN32) && defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
+#if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
 	MessageBoxA(NULL, "GetGameAPI called", "QMM2", 0);
 #endif
 
@@ -252,7 +252,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
    GAME_SHUTDOWN (post): handle game shutting down
 */
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
-#if defined(_WIN32) && defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
+#if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
 	if (is_QMM_vmMain_call)
 			MessageBoxA(NULL, "vmMain called through QMM wrappers", "QMM2", 0);
 		else
@@ -939,7 +939,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 */
 static mod_GetGameAPI_t mod_GetCGameAPI = nullptr;
 C_DLLEXPORT void* GetCGameAPI(void* import) {
-#if defined(_WIN32) && defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
+#if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
 	MessageBoxA(NULL, "GetCGameAPI called", "QMM2", 0);
 #endif
 
