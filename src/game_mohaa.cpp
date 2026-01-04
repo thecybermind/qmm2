@@ -904,11 +904,6 @@ const char* MOHAA_eng_msg_names(intptr_t cmd) {
 
 		GEN_CASE(G_FS_FOPEN_FILE);
 
-		GEN_CASE(G_FS_FOPEN_FILE_QMM);
-		GEN_CASE(G_FS_READ_QMM);
-		GEN_CASE(G_FS_WRITE_QMM);
-		GEN_CASE(G_FS_FCLOSE_FILE_QMM);
-
 		GEN_CASE(G_GET_ENTITY_TOKEN);
 
 		default:
