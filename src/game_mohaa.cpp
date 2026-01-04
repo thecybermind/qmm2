@@ -568,23 +568,6 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			ret = (intptr_t)total;
 			break;
 		}
-#if 0
-		case G_FS_WRITE_QMM: {
-			// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
-			// void orig_import.FS_Write(void* buffer, size_t len, fileHandle_t f);
-			char* buffer = (char*)args[0];
-			size_t len = args[1];
-			fileHandle_t f = (fileHandle_t)args[2];
-			size_t total = 0;
-			FILE* fp = (FILE*)f;
-			for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to write
-				total += fwrite(buffer + total, 1, len - total, fp);
-				if (total >= len || ferror(fp))
-					break;
-			}
-			break;
-		}
-#endif
 		case G_FS_FCLOSE_FILE: {
 			// void trap_FS_FCloseFile(fileHandle_t f);
 			// void orig_import.FS_FCloseFile(fileHandle_t fileHandle);
