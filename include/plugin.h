@@ -29,7 +29,7 @@ typedef intptr_t(*plugin_syscall)(intptr_t cmd, intptr_t* args);
 // QMM_vmMain
 typedef intptr_t(*plugin_vmmain)(intptr_t cmd, intptr_t* args);
 
-typedef struct plugin_s {
+struct plugin_t {
 	void* dll = nullptr;
 	std::string path;
 	plugin_query QMM_Query = nullptr;
@@ -41,14 +41,14 @@ typedef struct plugin_s {
 	plugin_syscall QMM_syscall_Post = nullptr;
 	plugin_pluginmessage QMM_PluginMessage = nullptr;
 	plugininfo_t* plugininfo = nullptr;
-} plugin_t;
+};
 
-typedef struct plugin_globals_s {
-	pluginres_t plugin_result;
-	intptr_t final_return;
-	intptr_t orig_return;
-	pluginres_t high_result;
-} plugin_globals_t;
+struct plugin_globals_t {
+	pluginres_t plugin_result = QMM_UNUSED;
+	intptr_t final_return = 0;
+	intptr_t orig_return = 0;
+	pluginres_t high_result = QMM_UNUSED;
+};
 
 extern plugin_globals_t g_plugin_globals;
 

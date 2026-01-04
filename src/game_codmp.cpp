@@ -12,8 +12,6 @@ Created By:
 #include <codmp/game/g_public.h>
 
 #include "game_api.h"
-#include "log.h"
-#include "main.h"
 
 // GAME_GET_APIVERSION gets called first, which is when QMM has to perform mod/plugin loading, but we
 // don't want to make plugins have to use separate code to handle the actual GAME_INIT message, so just

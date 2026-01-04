@@ -19,13 +19,13 @@ Created By:
 typedef void (*mod_dllEntry_t)(eng_syscall_t syscall);
 typedef void* (*mod_GetGameAPI_t)(void* import);
 
-typedef struct mod_s {
+struct mod_t {
 	void* dll = nullptr;
 	qvm_t qvm = {};
 	mod_vmMain_t pfnvmMain = nullptr;
 	intptr_t vmbase = 0;
 	std::string path;
-} mod_t;
+};
 
 extern mod_t g_mod;
 

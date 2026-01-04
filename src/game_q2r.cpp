@@ -16,11 +16,12 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <map>
 #include <string>
-#include <string.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 #include <q2r/rerelease/game.h>
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 // QMM-specific Q2R header
 #include "game_q2r.h"
 #include "main.h"

@@ -13,25 +13,24 @@ Created By:
 #define __QMM2_GAME_API_H__
 
 #include <cstdint>
+#include <cstdarg>
 #include <vector>
 #include <string>
-#include <stdarg.h>
-#include "osdef.h"
 
 typedef const char* (*msgname_t)(intptr_t msg);
 typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 typedef void* (*apientry_t)(void* import);
 
 // a list of all the mod messages used by QMM
-typedef enum {
+enum qmm_mod_msg_t {
 	QMM_GAME_INIT,
 	QMM_GAME_SHUTDOWN,
 	QMM_GAME_CONSOLE_COMMAND,
 	QMM_GAME_CLIENT_CONNECT
-} qmm_mod_msg_t;
+};
 
 // a list of all the engine messages used by QMM
-typedef enum {
+enum qmm_eng_msg_t {
 	QMM_G_PRINT,
 	QMM_G_ERROR,
 	QMM_G_ARGV,
@@ -55,10 +54,10 @@ typedef enum {
 	QMM_CVAR_ROM,
 
 	QMM_G_GET_CONFIGSTRING,
-} qmm_eng_msg_t;
+};
 
 // some information for each game engine supported by QMM
-typedef struct {
+struct supportedgame_t {
 	const char* dllname;				// default dll mod filename
 	const char* suffix;					// dll suffix
 	const char* qvmname;				// default qvm mod filename (NULL = qmm_<dllname>)
@@ -77,7 +76,7 @@ typedef struct {
 	int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
 	int max_vmmain_args;				// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
 	std::vector<std::string> exe_hints;	// array of hints that should appear in the executable filename to be considered a game match
-} supportedgame_t;
+};
 
 extern supportedgame_t g_supportedgames[];
 
@@ -117,7 +116,7 @@ extern supportedgame_t g_supportedgames[];
 // ----- API vararg stuff -----
 // ----------------------------
 
-#define QMM_MAX_VMMAIN_ARGS     9
+constexpr int QMM_MAX_VMMAIN_ARGS = 9;
 #define QMM_GET_VMMAIN_ARGS()   intptr_t args[QMM_MAX_VMMAIN_ARGS] = {}; \
                                 va_list arglist; \
                                 va_start(arglist, cmd); \
@@ -126,7 +125,7 @@ extern supportedgame_t g_supportedgames[];
                                 va_end(arglist)
 #define QMM_PUT_VMMAIN_ARGS()	args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]
 
-#define QMM_MAX_SYSCALL_ARGS    17
+constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 #define QMM_GET_SYSCALL_ARGS()  intptr_t args[QMM_MAX_SYSCALL_ARGS] = {}; \
                                 va_list arglist; \
                                 va_start(arglist, cmd); \

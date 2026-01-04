@@ -9,11 +9,11 @@ Created By:
 
 */
 
-#include <string.h>
 #include <stef2/game/q_shared.h>
 #define GAME_DLL
 #include <stef2/game/g_public.h>
 #undef GAME_DLL
+
 #include "game_api.h"
 #include "log.h"
 // QMM-specific STEF2 header

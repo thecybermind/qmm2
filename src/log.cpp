@@ -11,6 +11,7 @@ Created By:
 
 #include <string>
 #include "log.h"
+#include "format.h"
 
 #if defined(QMM_LOG_APPEND)
  #define QMM_LOG_FILE_TYPE SinkFileAppend

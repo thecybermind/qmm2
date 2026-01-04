@@ -9,11 +9,11 @@ Created By:
 
 */
 
-#include <string.h>
 #include <mohsh/qcommon/q_shared.h>
 #define GAME_DLL
 #include <mohsh/fgame/g_public.h>
 #undef GAME_DLL
+
 #include "game_api.h"
 #include "log.h"
 // QMM-specific MOHSH header

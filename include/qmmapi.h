@@ -58,7 +58,7 @@ typedef intptr_t (*mod_vmMain_t)(intptr_t cmd, ...);
 
 
 // holds plugin info to pass back to QMM
-typedef struct {
+typedef struct plugininfo_s {
     intptr_t pifv_major;	// major plugin interface version
     intptr_t pifv_minor;	// minor plugin interface version
     const char* name;		// name of plugin
@@ -98,7 +98,7 @@ typedef enum pluginres_e {
 } pluginres_t;
 
 // prototype struct for QMM plugin util funcs
-typedef struct {
+typedef struct pluginfuncs_s {
     void (*pfnWriteQMMLog)(plid_t plid, const char* text, int severity);                        // write to the QMM log
     char* (*pfnVarArgs)(plid_t plid, const char* format, ...);                                  // simple vsprintf helper with rotating buffer
     int (*pfnIsQVM)(plid_t plid);                                                               // returns 1 if the mod is QVM
@@ -119,7 +119,7 @@ typedef struct {
 } pluginfuncs_t;
 
 // struct of vars for QMM plugin utils
-typedef struct {
+typedef struct pluginvars_s {
     // base address of the QVM memory block (automatically added to pointer args in syscalls)
     intptr_t vmbase;
     // pointer to an int that holds the current value to be returned from a function call (updated by QMM_OVERRIDE/QMM_SUPERCEDE in all hooks)

@@ -10,14 +10,14 @@ Created By:
 */
 
 #define _CRT_SECURE_NO_WARNINGS 1
-#include <string.h>
-#include <stdio.h>
+#include <cstdio>
 #include <mohaa/qcommon/q_shared.h>
 #define GAME_DLL
 #include <mohaa/fgame/g_public.h>
 #undef GAME_DLL
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 // QMM-specific MOHAA header
 #include "game_mohaa.h"
 #include "main.h"

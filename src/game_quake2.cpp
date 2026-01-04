@@ -10,12 +10,13 @@ Created By:
 */
 
 #define _CRT_SECURE_NO_WARNINGS 1
-#include <string.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 #include <quake2/game/q_shared.h>
 #include <quake2/game/game.h>
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 // QMM-specific QUAKE2 header
 #include "game_quake2.h"
 #include "main.h"

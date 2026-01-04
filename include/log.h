@@ -15,6 +15,7 @@ Created By:
 // #define QMM_LOG_APPEND
 
 #include <aixlog/aixlog.hpp>
+#include <string>
 #include "format.h"
 
 #ifdef _DEBUG

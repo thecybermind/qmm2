@@ -10,8 +10,8 @@ Created By:
 */
 
 #include <cstdint>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <vector>
 #include "log.h"
 #include "format.h"
 #include "qvm.h"

@@ -11,8 +11,7 @@ Created By:
 
 #include "osdef.h"
 #include <string>
-#include <string.h>
-#include "util.h"
+#include <cstring>
 
 
 #ifdef _WIN32

@@ -10,18 +10,22 @@ Created By:
 */
 
 #define _CRT_SECURE_NO_WARNINGS
+#include "osdef.h"
+#include <cstdarg>
+#include <cstdio>
+#include <vector>
+#include <string>
+#include "qmmapi.h"
+#include "game_api.h"
 #include "log.h"
 #include "format.h"
 #include "config.h"
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
 #include "main.h"
 #include "mod.h"
 #include "plugin.h"
 #include "util.h"
 
-#define NUM_PLUGIN_STR_BUFFERS 12
+constexpr int NUM_PLUGIN_STR_BUFFERS = 12;
 
 static void s_plugin_helper_WriteQMMLog(plid_t plid, const char* text, int severity);
 static char* s_plugin_helper_VarArgs(plid_t plid, const char* format, ...);

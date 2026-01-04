@@ -9,9 +9,13 @@ Created By:
 
 */
 
-#include "log.h"
 #include "osdef.h"
-#include "format.h"
+#include <cstdint>
+#include <cstring>
+#include <vector>
+#include <string>
+#include "log.h"
+#include "qmmapi.h"
 #include "game_api.h"
 #include "main.h"
 #include "config.h"

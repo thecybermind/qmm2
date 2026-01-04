@@ -11,8 +11,9 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS
 #include "osdef.h"
-#include "format.h"
+#include <string>
 #include "log.h"
+#include "format.h"
 #include "config.h"
 #include "main.h"
 #include "game_api.h"
@@ -346,7 +347,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
 		// load plugins
 		LOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
-		for (auto plugin_path : cfg_get_array_str(g_cfg, "plugins")) {
+		for (auto& plugin_path : cfg_get_array_str(g_cfg, "plugins")) {
 			LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load plugin \"{}\"...\n", plugin_path);
 			if (s_main_load_plugin(plugin_path))
 				LOG(QMM_LOG_INFO, "QMM") << fmt::format("Plugin \"{}\" loaded\n", plugin_path);
@@ -537,7 +538,7 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 					return;
 				}
 				// if a hint array exists, check each for an exe file match
-				for (auto hint : game.exe_hints) {
+				for (auto& hint : game.exe_hints) {
 					if (str_stristr(g_gameinfo.exe_file, hint)) {
 						LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for exe hint \"{}\" - {}\n", hint, game.gamename_short);
 						g_gameinfo.game = &game;

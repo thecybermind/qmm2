@@ -9,16 +9,15 @@ Created By:
 
 */
 
-#include <string.h>
 #include <jasp/game/q_shared.h>
 #include <jasp/game/g_public.h>
+
 #include "game_api.h"
 #include "log.h"
 // QMM-specific JASP header
 #include "game_jasp.h"
 #include "main.h"
 #include "util.h"
-
 
 GEN_QMM_MSGS(JASP);
 GEN_EXTS(JASP);

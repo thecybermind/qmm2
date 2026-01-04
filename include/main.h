@@ -17,16 +17,16 @@ Created By:
 #include "game_api.h"
 
 // store pointers for GetGameAPI-based systems
-typedef struct api_info_s {
+struct api_info_t {
 	void* orig_import = nullptr;			// original import struct from engine
 	void* orig_export = nullptr;			// original export struct from mod
 	void* qmm_import = nullptr;				// import struct that is hooked by QMM and given to the mod
 	void* qmm_export = nullptr;				// export struct that is hooked by QMM and given to the engine
 	mod_vmMain_t orig_vmmain = nullptr;		// pointer to wrapper vmMain function that calls actual mod func from orig_export
-} api_info_t;
+};
 
 // store all currently-loaded game & game engine info
-typedef struct game_info_s {
+struct game_info_t {
 	eng_syscall_t pfnsyscall = nullptr;
 	supportedgame_t* game = nullptr;
 	bool isautodetected = false;
@@ -40,7 +40,7 @@ typedef struct game_info_s {
 	std::string moddir;
 	std::string cfg_path;
 	api_info_t api_info;
-} game_info_t;
+};
 
 extern game_info_t g_gameinfo;
 

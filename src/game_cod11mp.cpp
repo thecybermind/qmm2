@@ -12,8 +12,6 @@ Created By:
 #include <cod11mp/game/g_public.h>
 
 #include "game_api.h"
-#include "log.h"
-#include "main.h"
 
 GEN_QMM_MSGS(COD11MP);
 

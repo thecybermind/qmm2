@@ -11,8 +11,10 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include "osdef.h"
+#include <cctype>
+#include <cstring>
+#include <vector>
 #include <string>
-#include <string.h>
 #include "util.h"
 
 std::string path_normalize(std::string path) {

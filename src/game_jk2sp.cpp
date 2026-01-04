@@ -9,7 +9,6 @@ Created By:
 
 */
 
-#include <string.h>
 #include <jk2sp/game/q_shared.h>
 #include <jk2sp/game/g_public.h>
 #include "game_api.h"

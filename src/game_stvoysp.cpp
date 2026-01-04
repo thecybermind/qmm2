@@ -9,9 +9,9 @@ Created By:
 
 */
 
-#include <string.h>
 #include <stvoysp/game/q_shared.h>
 #include <stvoysp/game/g_public.h>
+
 #include "game_api.h"
 #include "log.h"
 // QMM-specific STVOYSP header
