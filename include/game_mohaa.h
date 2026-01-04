@@ -240,20 +240,13 @@ enum {
 	G_CVAR_VARIABLE_STRING_BUFFER,	// void (const char* var_name, char* buffer, int bufsize)
 	G_CVAR_VARIABLE_INTEGER_VALUE,	// int (const char* var_name)
 	G_SEND_CONSOLE_COMMAND,			// void (int ignored_exec_when, const char *text)
-	// file loading (write and append only, as those are the only fileHandle_t operations provided
+	// file opening (passes FS_WRITE and FS_APPEND to engine functions, FS_READ opens a FILE*)
 	G_FS_FOPEN_FILE,				// int (const char *qpath, fileHandle_t *f, fsMode_t mode)
-	// FILE*-based file loading
-	G_FS_FOPEN_FILE_QMM,			// int (const char *qpath, fileHandle_t *f, fsMode_t mode)
-	G_FS_READ_QMM,					// void (void* buffer, int len, fileHandle_t f)
-	G_FS_WRITE_QMM,					// void (const void* buffer, int len, fileHandle_t f)
-	G_FS_FCLOSE_FILE_QMM,			// void (fileHandle_t f)
 
 	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
 };
 
 // we need to store FILE* in fileHandle_t so change the underlying type
-#if defined(__LP64__) || defined(_WIN64)
 #define fileHandle_t intptr_t
-#endif
 
 #endif // __QMM2_GAME_MOHAA_H__

@@ -12,6 +12,7 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <cstdio>
 #include <mohaa/qcommon/q_shared.h>
+#include <mohaa/qcommon/qcommon.h>
 #define GAME_DLL
 #include <mohaa/fgame/g_public.h>
 #undef GAME_DLL
@@ -318,8 +319,9 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND);
 		ROUTE_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE);
 		ROUTE_IMPORT(FS_Write, G_FS_WRITE);
-		ROUTE_IMPORT(FS_Read, G_FS_READ);
-		ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
+		// handled below since we do special handling for these for FILE* access
+		// ROUTE_IMPORT(FS_Read, G_FS_READ);
+		// ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
 		ROUTE_IMPORT(FS_Tell, G_FS_TELL);
 		ROUTE_IMPORT(FS_Seek, G_FS_SEEK);
 		ROUTE_IMPORT(FS_Flush, G_FS_FLUSH);
@@ -506,7 +508,7 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 		// MOHAA is only missing FS_FOPEN_FILE for reading
 		// if mode == FS_WRITE, then just pass to FS_FOpenFileWrite.
 		// if mode == FS_APPEND(_SYNC), then just pass to FS_FOpenFileAppend.
-		// if mode == FS_READ, then return -1 since we can't do anything :(
+		// if mode == FS_READ, then return a FILE* that will get picked up by G_FS_READ and G_FS_FCLOSE_FILE handlers below
 		case G_FS_FOPEN_FILE: {
 			// MOHAA: fileHandle_t (*FS_FOpenFileAppend)(const char *fileName);
 			// MOHAA: fileHandle_t (*FS_FOpenFileWrite)(const char *fileName);
@@ -515,8 +517,15 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			fileHandle_t* f = (fileHandle_t*)args[1];
 			fsMode_t mode = (fsMode_t)args[2];
 			if (mode == FS_READ) {
-				ret = -1;
-				break;
+				std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+				FILE* fp = fopen(path.c_str(), "rb");
+				if (!fp || fseek(fp, 0, SEEK_END) != 0) {
+					ret = -1;
+					break;
+				}
+				ret = ftell(fp);
+				fseek(fp, 0, SEEK_SET);
+				*f = (fileHandle_t)fp;
 			}
 			else if (mode == FS_WRITE) {
 				*f = orig_import.FS_FOpenFileWrite(qpath);
@@ -526,8 +535,7 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 				}
 				ret = 0;
 			}
-			// mode == FS_APPEND(_SYNC)
-			else {
+			else { // mode == FS_APPEND(_SYNC)
 				*f = orig_import.FS_FOpenFileAppend(qpath);
 				if (!*f) {
 					ret = -1;
@@ -538,48 +546,18 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			}
 			break;
 		}
-		// since fileHandle_t-based functions don't exist in MOHAA when trying to READ a file, we can provide some help
-		// to plugins by offering the FILE* functions available to Q2R and QUAKE2, although the cmd name ends with _QMM
-		// (since MOHAA provides G_FS_READ, G_FS_WRITE, and G_FS_FCLOSE_FILE)
-		case G_FS_FOPEN_FILE_QMM: {
-			// int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
-			const char* qpath = (const char*)args[0];
-			fileHandle_t* f = (fileHandle_t*)args[1];
-			intptr_t mode = args[2];
-
-			const char* str_mode = "rb";
-			if (mode == FS_WRITE)
-				str_mode = "wb";
-			else if (mode == FS_APPEND || mode == FS_APPEND_SYNC)
-				str_mode = "ab";
-			std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
-			if (mode != FS_READ)
-				path_mkdir(path_dirname(path));
-			FILE* fp = fopen(path.c_str(), str_mode);
-			if (!fp) {
-				ret = -1;
+		case G_FS_READ: {
+			// void trap_FS_Read( void *buffer, int len, fileHandle_t f );
+			// void orig_import.FS_Read(void* buffer, size_t len, fileHandle_t f);
+			char* buffer = (char*)args[0];
+			size_t len = (size_t)args[1];
+			fileHandle_t f = (fileHandle_t)args[2];
+			// if this is actually a fileHandle_t, pass to real G_FS_READ (even though there's no G_FS_FOPEN_FILE for reading)
+			if (f < MAX_FILE_HANDLES) {
+				ret = orig_import.FS_Read(buffer, len, f);
 				break;
 			}
-			if (mode == FS_WRITE)
-				ret = 0;
-			else if (mode == FS_APPEND || mode == FS_APPEND_SYNC)
-				ret = ftell(fp);
-			else {
-				if (fseek(fp, 0, SEEK_END) != 0) {
-					ret = -1;
-					break;
-				}
-				ret = ftell(fp);
-				fseek(fp, 0, SEEK_SET);
-			}
-			*f = (fileHandle_t)fp;
-			break;
-		}
-		case G_FS_READ_QMM: {
-			// void trap_FS_Read(void* buffer, int len, fileHandle_t f);
-			char* buffer = (char*)args[0];
-			size_t len = args[1];
-			fileHandle_t f = (fileHandle_t)args[2];
+			// this is a FILE*
 			size_t total = 0;
 			FILE* fp = (FILE*)f;
 			for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
@@ -587,10 +565,13 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 				if (total >= len || ferror(fp) || feof(fp))
 					break;
 			}
+			ret = (intptr_t)total;
 			break;
 		}
+#if 0
 		case G_FS_WRITE_QMM: {
 			// void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
+			// void orig_import.FS_Write(void* buffer, size_t len, fileHandle_t f);
 			char* buffer = (char*)args[0];
 			size_t len = args[1];
 			fileHandle_t f = (fileHandle_t)args[2];
@@ -603,9 +584,17 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 			}
 			break;
 		}
-		case G_FS_FCLOSE_FILE_QMM: {
+#endif
+		case G_FS_FCLOSE_FILE: {
 			// void trap_FS_FCloseFile(fileHandle_t f);
+			// void orig_import.FS_FCloseFile(fileHandle_t fileHandle);
 			fileHandle_t f = (fileHandle_t)args[0];
+			// if this is actually a fileHandle_t, pass to real G_FS_FCLOSE_FILE
+			if (f < MAX_FILE_HANDLES) {
+				orig_import.FS_FCloseFile(f);
+				break;
+			}
+			// this is a FILE*
 			FILE* fp = (FILE*)f;
 			fclose(fp);
 			break;
