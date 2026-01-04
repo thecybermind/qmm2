@@ -12,7 +12,7 @@ Created By:
 #include "osdef.h"
 #include <string>
 #include <cstring>
-
+#include "util.h"
 
 #ifdef _WIN32
 // return error string for GetLastError()
