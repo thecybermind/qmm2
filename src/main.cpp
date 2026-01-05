@@ -373,7 +373,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		qmm_argv(argn, arg0, sizeof(arg0));
 
 		// if command is "sv", then get the next arg
-		// idTech2 games use "sv" on listen server to run a server command
+		// idTech2 games use "sv" to run a gamedll command
 		if (str_striequal("sv", arg0)) {
 			argn++;
 			qmm_argv(argn, arg0, sizeof(arg0));

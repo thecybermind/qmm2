@@ -72,7 +72,7 @@ struct supportedgame_t {
 	msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
 
 	vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
-	apientry_t apientry;				// pointer to a function that handles GetGameAPI entry for a game
+	apientry_t apientry;				// pointer to a function that handles GetGameAPI entry for a game (NULL = not required)
 	int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
 	int max_vmmain_args;				// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
 	std::vector<std::string> exe_hints;	// array of hints that should appear in the executable filename to be considered a game match
