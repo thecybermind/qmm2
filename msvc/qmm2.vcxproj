@@ -227,6 +227,7 @@
     <ClInclude Include="..\include\game_mohbt.h" />
     <ClInclude Include="..\include\game_mohsh.h" />
     <ClInclude Include="..\include\game_q2r.h" />
+    <ClInclude Include="..\include\game_q3a.h" />
     <ClInclude Include="..\include\game_quake2.h" />
     <ClInclude Include="..\include\game_sin.h" />
     <ClInclude Include="..\include\game_stef2.h" />

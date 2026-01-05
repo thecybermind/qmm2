@@ -87,6 +87,9 @@
     <ClInclude Include="..\include\game_sin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\game_q3a.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">

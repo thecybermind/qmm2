@@ -25,10 +25,10 @@ Created By:
 GEN_QMM_MSGS(QUAKE2);
 GEN_EXTS(QUAKE2);
 
-// a copy of the original import struct that comes from the game engine. this is given to plugins
+// a copy of the original import struct that comes from the game engine
 static game_import_t orig_import;
 
-// a copy of the original export struct pointer that comes from the mod. this is given to plugins
+// a copy of the original export struct pointer that comes from the mod
 static game_export_t* orig_export = nullptr;
 
 
@@ -506,15 +506,14 @@ void* QUAKE2_GetGameAPI(void* import) {
 	// fill in variables of our hooked import struct to pass to the mod
 	// qmm_import.x = orig_import.x;
 
-	// this gets passed to the mod's GetGameAPI() function in mod.cpp:mod_load()
+	// this gets passed to the mod's GetGameAPI() function in mod.cpp:s_mod_load_getgameapi()
 	g_gameinfo.api_info.qmm_import = &qmm_import;
 
 	// this isn't used anywhere except returning from this function, but store it in g_gameinfo.api_info for consistency
 	g_gameinfo.api_info.qmm_export = &qmm_export;
 
 	// pointer to wrapper vmMain function that calls actual mod func from orig_export
-	// this gets assigned to g_mod->pfnvmMain in mod.cpp:mod_load()
-	g_gameinfo.api_info.orig_vmmain = QUAKE2_vmMain;
+	g_gameinfo.pfnvmMain = QUAKE2_vmMain;
 
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
 	g_gameinfo.pfnsyscall = QUAKE2_syscall;
