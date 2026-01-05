@@ -11,6 +11,7 @@ Created By:
 
 #include <q3a/game/q_shared.h>
 #include <q3a/game/g_public.h>
+
 #include "game_api.h"
 #include "log.h"
 // QMM-specific Q3A header
@@ -22,7 +23,7 @@ GEN_QMM_MSGS(Q3A);
 GEN_EXTS(Q3A);
 
 // a copy of the original syscall pointer that comes from the game engine
-static eng_syscall_t orig_syscall = qmm_syscall;	// TODO : remove this default once all game-specific functions are done
+static eng_syscall_t orig_syscall = nullptr;
 
 // mod vmMain is access via g_mod.pfnvmMain
 
@@ -61,7 +62,6 @@ intptr_t Q3A_syscall(intptr_t cmd, ...) {
 		default:
 			ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
 	}
-
 
 	// do anything that needs to be done after function call here
 

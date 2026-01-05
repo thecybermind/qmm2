@@ -42,31 +42,31 @@ supportedgame_t g_supportedgames[] = {
 
 	// vmMain games
 	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseq3",		"Quake 3 Arena",								GEN_INFO(Q3A),		Q3A_vmsyscall,		Q3A_dllEntry,	nullptr,			13,		4,		{"q3", "quake3"}},
-	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseef",		"Star Trek Voyager: Elite Force (Holomatch)",	GEN_INFO(STVOYHM),	STVOYHM_vmsyscall,	nullptr,		nullptr,			13,		3,		{ "stvoy" } },
-	{ "qagame",		SUF_DLL,	nullptr,			".",			"Return to Castle Wolfenstein (SP)",			GEN_INFO(RTCWSP),	nullptr,			nullptr,		nullptr,			13,		5,		{ "sp" } },
-	{ "jampgame",	SUF_DLL,	nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		nullptr,			nullptr,		nullptr,			13,		6,		{ "ja" } },
-	{ "jk2mpgame",	SUF_DLL,	"vm/jk2mpgame.qvm",	"base",			"Jedi Knight 2: Jedi Outcast (MP)",				GEN_INFO(JK2MP),	JK2MP_vmsyscall,	nullptr,		nullptr,			13,		3,		{ "jk2" } },
-	{ "sof2mp_game",SUF_DLL,	"vm/sof2mp_game.qvm","base/mp",		"Soldier of Fortune 2: Double Helix (MP)",		GEN_INFO(SOF2MP),	SOF2MP_vmsyscall,	nullptr,		nullptr,			13,		6,		{ "mp" } },
+	{ "qagame",		SUF_DLL,	"vm/qagame.qvm",	"baseef",		"Star Trek Voyager: Elite Force (Holomatch)",	GEN_INFO(STVOYHM),	STVOYHM_vmsyscall,	STVOYHM_dllEntry,nullptr,			13,		3,		{ "stvoy" } },
+	{ "qagame",		SUF_DLL,	nullptr,			".",			"Return to Castle Wolfenstein (SP)",			GEN_INFO(RTCWSP),	nullptr,			RTCWSP_dllEntry,nullptr,			13,		5,		{ "sp" } },
+	{ "jampgame",	SUF_DLL,	nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		nullptr,			JAMP_dllEntry,	nullptr,			13,		6,		{ "ja" } },
+	{ "jk2mpgame",	SUF_DLL,	"vm/jk2mpgame.qvm",	"base",			"Jedi Knight 2: Jedi Outcast (MP)",				GEN_INFO(JK2MP),	JK2MP_vmsyscall,	JK2MP_dllEntry,	nullptr,			13,		3,		{ "jk2" } },
+	{ "sof2mp_game",SUF_DLL,	"vm/sof2mp_game.qvm","base/mp",		"Soldier of Fortune 2: Double Helix (MP)",		GEN_INFO(SOF2MP),	SOF2MP_vmsyscall,	SOF2MP_dllEntry,nullptr,			13,		6,		{ "mp" } },
 // COD, RTCWMP & WET filename changes on linux
 #if defined(_WIN32)
-	{ "qagame_mp_",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			nullptr,		nullptr,			13,		5,		{ "et" } },
-	{ "qagame_mp_",	SUF_DLL,	nullptr,			"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	nullptr,			nullptr,		nullptr,			13,		5,		{ "mp" } },
-	{ "game_mp_",	SUF_DLL,	nullptr,			"Main",			"Call of Duty (MP)",							GEN_INFO(CODMP),	nullptr,			nullptr,		nullptr,			8,		4,		{ "codmp", "cod_"} },
-	{ "uo_game_mp_",SUF_DLL,	nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(CODUOMP),	nullptr,			nullptr,		nullptr,			8,		4,		{ "coduo" } },
+	{ "qagame_mp_",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,			WET_dllEntry,	nullptr,			13,		5,		{ "et" } },
+	{ "qagame_mp_",	SUF_DLL,	nullptr,			"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	nullptr,			RTCWMP_dllEntry,nullptr,			13,		5,		{ "mp" } },
+	{ "game_mp_",	SUF_DLL,	nullptr,			"Main",			"Call of Duty (MP)",							GEN_INFO(CODMP),	nullptr,			CODMP_dllEntry,	nullptr,			8,		4,		{ "codmp", "cod_"} },
+	{ "uo_game_mp_",SUF_DLL,	nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(CODUOMP),	nullptr,			CODUOMP_dllEntry,nullptr,			8,		4,		{ "coduo" } },
 	// allow a user to choose "COD11MP" manually if they are playing an old version of CoD (fake exe hints so it won't auto-detect)
-	{ "game_mp_",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.1 (MP)",						GEN_INFO(COD11MP),	nullptr,			nullptr,		nullptr,			8,		4,		{ "zzz_no_auto" } },
+	{ "game_mp_",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.1 (MP)",						GEN_INFO(COD11MP),	nullptr,			COD11MP_dllEntry,nullptr,			8,		4,		{ "zzz_no_auto" } },
 #elif defined(__linux__)
-	{ "qagame.mp.",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,	 		nullptr,		nullptr,			13,		5,		{ "et" } },
-	{ "qagame.mp.",	SUF_DLL,	nullptr,			"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	nullptr,			nullptr,		nullptr,			13,		5,		{ "mp" } },
-	{ "game.mp.",	SUF_DLL,	nullptr,			"Main",			"Call of Duty (MP)",							GEN_INFO(CODMP),	nullptr,			nullptr,		nullptr,			8,		4,		{ "codmp", "cod_" } },
-	{ "game.mp.uo.",SUF_DLL,	nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(CODUOMP),	nullptr,			nullptr,		nullptr,			8,		4,		{ "coduo" } },
+	{ "qagame.mp.",	SUF_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		nullptr,	 		WET_dllEntry,	nullptr,			13,		5,		{ "et" } },
+	{ "qagame.mp.",	SUF_DLL,	nullptr,			"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	nullptr,			RTCWMP_dllEntry,nullptr,			13,		5,		{ "mp" } },
+	{ "game.mp.",	SUF_DLL,	nullptr,			"Main",			"Call of Duty (MP)",							GEN_INFO(CODMP),	nullptr,			CODMP_dllEntry,	nullptr,			8,		4,		{ "codmp", "cod_" } },
+	{ "game.mp.uo.",SUF_DLL,	nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(CODUOMP),	nullptr,			CODUOMP_dllEntry,nullptr,			8,		4,		{ "coduo" } },
 	// allow a user to choose "COD11MP" manually if they are playing an old version of CoD (fake exe hints so it won't auto-detect)
-	{ "game.mp.",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.1 (MP)",						GEN_INFO(COD11MP),	nullptr,			nullptr,		nullptr,			8,		4,		{ "zzz_no_auto" } },
+	{ "game.mp.",	SUF_DLL,	nullptr,			"Main",			"Call of Duty v1.1 (MP)",						GEN_INFO(COD11MP),	nullptr,			COD11MP_dllEntry,nullptr,			8,		4,		{ "zzz_no_auto" } },
 #endif
 // don't include CoD single players in linux
 #if 0 // defined(_WIN32)
-	{ "game",		SUF_DLL,	nullptr,			".",			"Call of Duty (SP)",							GEN_INFO(CODSP),	nullptr,			nullptr,		nullptr,			-1,		-1,		{ "cod" } },
-	{ "uo_game",	SUF_DLL,	nullptr,			".",			"Call of Duty: United Offensive (SP)",			GEN_INFO(CODUOSP),	nullptr,			nullptr,		nullptr,			-1,		-1,		{ "coduo" } },
+	{ "game",		SUF_DLL,	nullptr,			".",			"Call of Duty (SP)",							GEN_INFO(CODSP),	nullptr,			CODSP_dllEntry,	nullptr,			-1,		-1,		{ "cod" } },
+	{ "uo_game",	SUF_DLL,	nullptr,			".",			"Call of Duty: United Offensive (SP)",			GEN_INFO(CODUOSP),	nullptr,			CODUOSP_dllEntry,nullptr,			-1,		-1,		{ "coduo" } },
 #endif
 
 	// GetGameAPI games
