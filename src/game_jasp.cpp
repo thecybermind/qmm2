@@ -52,7 +52,7 @@ static game_import_t qmm_import = {
 		GEN_IMPORT(AppendToSaveGame, G_APPENDTOSAVEGAME),
 		GEN_IMPORT(ReadFromSaveGame, G_READFROMSAVEGAME),
 		GEN_IMPORT(ReadFromSaveGameOptional, G_READFROMSAVEGAMEOPTIONAL),
-		GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_EX),
+		GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
 		GEN_IMPORT(DropClient, G_DROP_CLIENT),
 		GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
 		GEN_IMPORT(SetConfigstring, G_SET_CONFIGSTRING),
@@ -245,7 +245,8 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT(AppendToSaveGame, G_APPENDTOSAVEGAME);
 		ROUTE_IMPORT(ReadFromSaveGame, G_READFROMSAVEGAME);
 		ROUTE_IMPORT(ReadFromSaveGameOptional, G_READFROMSAVEGAMEOPTIONAL);
-		ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_EX);
+		// handled below since we do special handling to deal with the "when" argument
+		// ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
 		ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
 		ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
 		ROUTE_IMPORT(SetConfigstring, G_SET_CONFIGSTRING);
@@ -369,10 +370,16 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
 		(void)orig_import.cvar(varName, defaultValue, flags);
 		break;
 	}
+	case G_SEND_CONSOLE_COMMAND_QMM:
 	case G_SEND_CONSOLE_COMMAND: {
 		// JASP: void (*SendConsoleCommand)(const char *text);
 		// qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+		// first arg may be exec_when, like EXEC_APPEND
+		intptr_t when = args[0];
 		const char* text = (const char*)(args[1]);
+		// EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
+		if (when > 100)
+			text = (const char*)when;
 		orig_import.SendConsoleCommand(text);
 		break;
 	}
@@ -541,7 +548,7 @@ const char* JASP_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_APPENDTOSAVEGAME);
 		GEN_CASE(G_READFROMSAVEGAME);
 		GEN_CASE(G_READFROMSAVEGAMEOPTIONAL);
-		GEN_CASE(G_SEND_CONSOLE_COMMAND_EX);
+		GEN_CASE(G_SEND_CONSOLE_COMMAND);
 		GEN_CASE(G_DROP_CLIENT);
 		GEN_CASE(G_SEND_SERVER_COMMAND);
 		GEN_CASE(G_SET_CONFIGSTRING);
@@ -654,7 +661,6 @@ const char* JASP_eng_msg_names(intptr_t cmd) {
 
 		// polyfills
 		GEN_CASE(G_CVAR_REGISTER);
-		GEN_CASE(G_SEND_CONSOLE_COMMAND);
 
 		GEN_CASE(G_LOCATE_GAME_DATA);
 		GEN_CASE(G_GET_ENTITY_TOKEN);

@@ -70,7 +70,7 @@ static game_import_t qmm_import = {
 	GEN_IMPORT(FS_ListFiles, G_FS_LISTFILES),
 	GEN_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST),
 	GEN_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME),
-	GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_EX),
+	GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
 	GEN_IMPORT_1(DebugGraph, G_DEBUGGRAPH, void, float),
 	GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
 	GEN_IMPORT(DropClient, G_DROP_CLIENT),
@@ -330,7 +330,8 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT(FS_ListFiles, G_FS_LISTFILES);
 		ROUTE_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST);
 		ROUTE_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME);
-		ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND_EX);
+		// handled below since we do special handling to deal with the "when" argument
+		// ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
 		ROUTE_IMPORT(DebugGraph, G_DEBUGGRAPH);
 		ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
 		ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
@@ -498,10 +499,16 @@ intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 				ret = cvar->integer;
 			break;
 		}
+		case G_SEND_CONSOLE_COMMAND_QMM:
 		case G_SEND_CONSOLE_COMMAND: {
 			// MOHAA: void (*SendConsoleCommand)(const char *text);
 			// qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+			// first arg may be exec_when, like EXEC_APPEND
+			intptr_t when = args[0];
 			const char* text = (const char*)(args[1]);
+			// EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
+			if (when > 100)
+				text = (const char*)when;
 			orig_import.SendConsoleCommand(text);
 			break;
 		}
@@ -765,7 +772,7 @@ const char* MOHAA_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_FS_LISTFILES);
 		GEN_CASE(G_FS_FREEFILELIST);
 		GEN_CASE(G_GETARCHIVEFILENAME);
-		GEN_CASE(G_SEND_CONSOLE_COMMAND_EX);
+		GEN_CASE(G_SEND_CONSOLE_COMMAND);
 		GEN_CASE(G_DEBUGGRAPH);
 		GEN_CASE(G_SEND_SERVER_COMMAND);
 		GEN_CASE(G_DROP_CLIENT);
@@ -900,7 +907,6 @@ const char* MOHAA_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_CVAR_REGISTER);
 		GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
 		GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
-		GEN_CASE(G_SEND_CONSOLE_COMMAND);
 
 		GEN_CASE(G_FS_FOPEN_FILE);
 

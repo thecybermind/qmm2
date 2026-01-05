@@ -48,7 +48,7 @@ enum {
 	G_FS_LISTFILES,
 	G_FS_FREEFILELIST,
 	G_GETARCHIVEFILENAME,
-	G_SEND_CONSOLE_COMMAND_EX,
+	G_SEND_CONSOLE_COMMAND,
 	G_DEBUGGRAPH,
 	G_SEND_SERVER_COMMAND,
 	G_DROP_CLIENT,
@@ -239,7 +239,7 @@ enum {
 	G_CVAR_REGISTER = -100,			// void (vmcvar_t* ignored_cvar, const char *varName, const char *defaultValue, int flags)
 	G_CVAR_VARIABLE_STRING_BUFFER,	// void (const char* var_name, char* buffer, int bufsize)
 	G_CVAR_VARIABLE_INTEGER_VALUE,	// int (const char* var_name)
-	G_SEND_CONSOLE_COMMAND,			// void (int ignored_exec_when, const char *text)
+	G_SEND_CONSOLE_COMMAND_QMM,		// void (int ignored_exec_when, const char *text)
 	// file opening (passes FS_WRITE and FS_APPEND to engine functions, FS_READ opens a FILE*)
 	G_FS_FOPEN_FILE,				// int (const char *qpath, fileHandle_t *f, fsMode_t mode)
 

@@ -53,7 +53,7 @@ enum {
 	G_FS_DELETEFILE,
 	G_FS_GETFILELIST,
 	G_GETARCHIVEFILENAME,
-	G_SEND_CONSOLE_COMMAND_EX,
+	G_SEND_CONSOLE_COMMAND,
 	G_DEBUGGRAPH,
 	G_SEND_SERVER_COMMAND,
 	G_GETNUMFREERELIABLESERVERCOMMANDS,
@@ -402,9 +402,9 @@ enum {
 
 // these import messages do not have an exact analogue in STEF2
 enum {
-	G_SEND_CONSOLE_COMMAND = -100,	// void (int exec_when, const char *text)
+	G_SEND_CONSOLE_COMMAND_QMM = -100,	// void (int exec_when, const char *text)
 
-	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
+	G_GET_ENTITY_TOKEN,					// qboolean (char *buffer, int bufferSize)
 };
 
 #endif // __QMM2_GAME_STEF2_H__
