@@ -36,13 +36,32 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args);
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
 
 
-/* About overall control flow:
+/* About overall control flow for dllEntry/vmMain games:
+   dllEntry (engine->mod) call flow:
+   1. engine calls QMM's dllEntry and passes syscall pointer
+   2. get environment info
+   3. load config file
+   4. open logfile
+   5. detect game engine
+   6. call game-specific dllEntry function to store syscall
+   7. return to engine
+
+   vmMain (engine->mod) call flow:
+   1. call is handled by vmMain()
+   2. call is passed to plugins' QMM_vmMain functions
+   3. if at least one plugin sets the result to QMM_SUPERCEDE, skip to step 6
+   4. call is passed to game-specific GAME_vmMain function
+   5. call is passed to actual mod vmMain function (or the QVM system is executed)
+   6. call is passed to plugins' QMM_vmMain_Post functions
+   7. mod vmMain return value (or a value given by last plugin which uses result QMM_SUPERCEDE or QMM_OVERRIDE)
+	  is returned to engine
+	  
    syscall (mod->engine) call flow for QVM mods only:
    1. QVM system calls <GAME>_vmsyscall function
    2. pointer arguments are converted: if not NULL, the QVM data segment base address is added
-   3. continue with next section as if it were a DLL mod
+   3. call qmm_syscall with converted arguments (continue with next section as if it were a DLL mod)
    
-   syscall (mod->engine) call flow for DLL mods:
+   syscall (mod->engine) call flow:
    1. call is handled by qmm_syscall()
    2. call is passed to plugins' QMM_syscall functions
    3. if at least one plugin sets the result to QMM_SUPERCEDE, skip to step 6
@@ -51,23 +70,6 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
    6. call is passed to plugins' QMM_syscall_Post functions
    7. engine syscall return value (or a value given by last plugin which uses result QMM_SUPERCEDE or QMM_OVERRIDE)
       is returned to mod
-   
-   vmMain (engine->mod) call flow:
-   1. call is handled by vmMain()
-   2. call is passed to plugins' QMM_vmMain functions
-   3. if at least one plugin sets the result to QMM_SUPERCEDE, skip to step X
-   4. call is passed to game-specific GAME_vmMain function
-   5. call is passed to actual mod vmMain function (or the QVM system is executed) 
-   6. call is passed to plugins' QMM_vmMain_Post functions
-   7. mod vmMain return value (or a value given by last plugin which uses result QMM_SUPERCEDE or QMM_OVERRIDE)
-      is returned to engine
-*/
-
-/* About syscall/mod constants (QMM_G_PRINT, QMM_GAME_INIT, etc):
-   Because some engine syscall and mod entry point constants might change between games, we store arrays of all the ones
-   QMM uses internally in each game's support file (game_XYZ.cpp). When the game is determined (automatically or via config),
-   that game-specific arrays are accessed with the QMM_ENG_MSG and QMM_MOD_MSG macros and they are indexed with a QMM_
-   constant, like: QMM_G_PRINT, QMM_GAME_CONSOLE_COMMAND, etc. This allows the code at point-of-use to be game-agnostic.
 */
 
 /* About cgame passthrough crap (not Quake 2 Remaster (Q2R), see comments before CGetGameAPI() for that):
@@ -114,9 +116,9 @@ static bool cgame_passthrough_shutdown = false;
 
 /* Entry point: engine->qmm
    This is the first function called when a vmMain DLL is loaded. The address of the engine's syscall callback is given,
-   but it is not guaranteed to be initialized and ready for calling until vmMain() is called later. For now, all
-   we can do is store the syscall, load the config file, and attempt to figure out what game engine we are in.
-   This is either determined by the config file, or by getting the filename of the QMM DLL itself.
+   but it is not guaranteed to be initialized and ready for calling until vmMain() is called later. For now, all we can
+   do is store the syscall, load the config file, and attempt to figure out what game engine we are in. This is either
+   determined by the config file, or by getting the filename of the QMM DLL itself.
 */
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 #if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
@@ -172,40 +174,57 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 		return;
 	}
 
-	// call the game-specific dllEntry function (e.g. Q3A_dllEntry) which will set up the functions to handle vmMain and syscalls
-	// from the mod, engine, and plugins
+	// call the game-specific dllEntry function (e.g. Q3A_dllEntry) which will set up the functions to handle vmMain
+	// and syscalls from the mod, engine, and plugins
 	g_gameinfo.game->pfndllEntry(syscall);
 }
 
 
+/* About overall control flow for GetGameAPI games:
+   GetGameAPI (engine->mod) call flow:
+   1. engine calls QMM's GetGameAPI and passes game_import_t pointer
+   2. get environment info
+   3. load config file
+   4. open logfile
+   5. detect game engine
+   6. call game-specific GetGameAPI function to store game_import_t pointer and generate game_export_t pointer
+   7. return game_export_t pointer to engine
+   8. engine stores qmm_export pointer, checks qmm_export->apiversion to match GAME_API_VERSION
+
+   export (engine->mod) call flow
+   1. call is handled by lambda inside game_export_t struct that was returned to engine
+   2. call is passed to vmMain with function-specific enum
+   3. call is passed to plugins' QMM_vmMain functions
+   4. if at least one plugin sets the result to QMM_SUPERCEDE, skip to step 7
+   5. call is passed to game-specific GAME_vmMain function
+   6. call is passed to actual mod game_export_t function
+   7. call is passed to plugins' QMM_vmMain_Post functions
+   8. mod game_export_t function return value (or a value given by last plugin which uses result QMM_SUPERCEDE or
+      QMM_OVERRIDE) is returned to engine
+
+   import (mod->engine) call flow
+   1. call is handled by lambda inside game_import_t struct that was given to QMM
+   2. call is passed to qmm_syscall with function-specific enum
+   3. call is passed to plugins' QMM_syscall functions
+   4. if at least one plugin sets the result to QMM_SUPERCEDE, skip to step 7
+   5. call is passed to game-specific GAME_syscall function
+   6. call is passed to actual engine game_import_t function
+   7. call is passed to plugins' QMM_syscall_Post functions
+   8. engine game_import_t function return value (or a value given by last plugin which uses result QMM_SUPERCEDE or
+	  QMM_OVERRIDE) is returned to mod
+*/
 /* Entry point: engine->qmm
-   This is the first function called when a GetGameAPI DLL is loaded. This system is based on the API model used by Quake 2,
-   where a struct of function pointers is given from the engine to the mod, and the mod returns a struct of function pointers
-   back to the engine.
-   To best integrate this with QMM, game_xyz.cpp/.h create an enum for each import (syscall) and export (vmMain) function/variable.
+   This is the first function called when a GetGameAPI DLL is loaded. This system is based on the API model used by
+   Quake 2, where a struct of function pointers is given from the engine to the mod, and the mod returns a struct of
+   function pointers back to the engine.
+   To best integrate this with QMM, game_xyz.cpp/.h create an enum for each import (syscall) and export (vmMain)
+   function/variable.
    A game_export_t is given to the engine which has lambdas for each pointer that calls QMM's vmMain(enum, ...).
    A game_import_t is given to the mod which has lambdas for each pointer that calls QMM's syscall(enum, ...).
 
-   The original import/export tables are stored. When QMM and plugins need to call the mod or engine, g_gameinfo.pfnvmMain or
-   g_gameinfo.pfnsyscall point to functions which will take the cmd, and route to the proper function pointer in the struct.
-
-   General flow:
-   * engine->GetGameAPI(import):
-     - load config file
-     - detect game engine
-   * GetGameAPI->XYZ_GetGameAPI(import):
-     - copy import struct
-	 - assign variables from import to qmm_import
-	 - assign default values for variables in qmm_export
-	 - return &qmm_export
-   * GetGameAPI:
-     - return &qmm_export to engine
-
-   * engine:
-     - stores qmm_export pointer, checks qmm_export->apiversion to match GAME_API_VERSION
-	 - calls qmm_export->Init
-	 - this eventually hits our vmMain(GAME_INIT) and we load the mod
-	 - store variables from mod's real export struct into our qmm_export before returning out of mod
+   The original import/export tables are stored. When QMM and plugins need to call the mod or engine,
+   g_gameinfo.pfnvmMain or g_gameinfo.pfnsyscall point to game-specific functions which will take the cmd, and route
+   to the proper function pointer in the struct.
 */
 C_DLLEXPORT void* GetGameAPI(void* import) {
 #if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
@@ -259,15 +278,21 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 
 
 /* Entry point: engine->qmm
-   This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the game info is not stored.
-   This means that the engine could not be determined, so we fail with G_ERROR and tell the user to set the game in the config file.
-   If the engine was determined, it performs some internal tasks on a few events, and then routes the function call according to the
-   "overall control flow" comment above.
+   This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the
+   game info is not stored. This means that the engine could not be determined, so we fail with G_ERROR and tell the
+   user to set the game in the config file. If the engine was determined, it performs some internal tasks on a few
+   events, and then routes the function call according to the "overall control flow" comment above.
 
    The internal events we track:
    GAME_INIT (pre): load mod file, load plugins, and optionally execute a cfg file
    GAME_CONSOLE_COMMAND (pre): handle "qmm" server command
    GAME_SHUTDOWN (post): handle game shutting down
+*/
+/* About syscall/mod constants (QMM_G_PRINT, QMM_GAME_INIT, etc):
+   Because some engine syscall and mod entry point constants might change between games, we store arrays of all the ones
+   QMM uses internally in each game's support file (game_XYZ.cpp). When the game is determined (automatically or via config),
+   that game-specific arrays are accessed with the QMM_ENG_MSG and QMM_MOD_MSG macros and they are indexed with a QMM_
+   constant, like: QMM_G_PRINT, QMM_GAME_CONSOLE_COMMAND, etc. This allows the code at point-of-use to be game-agnostic.
 */
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 #if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
