@@ -388,7 +388,7 @@ static void STEF2_SpawnEntities(const char* mapname, const char* entstring, int 
 		s_entity_tokens = util_parse_entstring(entstring);
 		s_tokencount = 0;
 	}
-	is_QMM_vmMain_call = true;
+	cgame_is_QMM_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, levelTime);
 }
 

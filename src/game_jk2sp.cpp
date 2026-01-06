@@ -148,7 +148,7 @@ static void JK2SP_Init(const char* mapname, const char* spawntarget, int checkSu
 		s_entity_tokens = util_parse_entstring(entstring);
 		s_tokencount = 0;
 	}
-	is_QMM_vmMain_call = true;
+	cgame_is_QMM_vmMain_call = true;
 	vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
 }
 

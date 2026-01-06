@@ -158,7 +158,7 @@ static qboolean SIN_ClientConnect(edict_t* ent, const char* userinfo) {
 		else if (s_userinfo.count(clientnum))
 			s_userinfo.erase(clientnum);
 	}
-	is_QMM_vmMain_call = true;
+	cgame_is_QMM_vmMain_call = true;
 	return vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
 }
 
@@ -174,7 +174,7 @@ static void SIN_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
 		else if (s_userinfo.count(clientnum))
 			s_userinfo.erase(clientnum);
 	}
-	is_QMM_vmMain_call = true;
+	cgame_is_QMM_vmMain_call = true;
 	vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
@@ -187,7 +187,7 @@ static void SIN_SpawnEntities(const char* mapname, const char* entstring, const 
 		s_entity_tokens = util_parse_entstring(entstring);
 		s_tokencount = 0;
 	}
-	is_QMM_vmMain_call = true;
+	cgame_is_QMM_vmMain_call = true;
 	vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 
