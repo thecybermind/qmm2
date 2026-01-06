@@ -234,7 +234,7 @@ static void s_plugin_helper_WriteQMMLog(plid_t plid, const char* text, int sever
 }
 
 
-static char* s_plugin_helper_VarArgs(plid_t plid, const char* format, ...) {
+static char* s_plugin_helper_VarArgs(plid_t plid [[maybe_unused]], const char* format, ...) {
 	va_list	argptr;
 	static char str[NUM_PLUGIN_STR_BUFFERS][1024];
 	static int index = 0;
@@ -350,7 +350,7 @@ static const char* s_plugin_helper_InfoValueForKey(plid_t plid, const char* user
 }
 
 
-static nlohmann::json s_plugin_cfg_get_node(plid_t plid, std::string key) {
+static nlohmann::json s_plugin_cfg_get_node(plid_t plid [[maybe_unused]], std::string key) {
 	if (key[0] == '/')
 		key = key.substr(1);
 
