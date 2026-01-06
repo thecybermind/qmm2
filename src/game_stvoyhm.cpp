@@ -45,8 +45,8 @@ intptr_t STVOYHM_syscall(intptr_t cmd, ...) {
 		case G_ARGS: {
 			// quake2: char* (*args)(void);
 			static std::string s;
+			static char buf[MAX_STRING_CHARS];
 			s = "";
-			char buf[MAX_STRING_CHARS];
 			int i = 1;
 			while (i < orig_syscall(G_ARGC)) {
 				orig_syscall(G_ARGV, buf, sizeof(buf));

@@ -41,25 +41,25 @@ intptr_t COD11MP_syscall(intptr_t cmd, ...) {
 
 	switch (cmd) {
 		// handle special cmds which QMM uses but COD11MP doesn't have an analogue for
-	case G_ARGS: {
-		// quake2: char* (*args)(void);
-		static std::string s;
-		s = "";
-		char buf[MAX_STRING_CHARS];
-		int i = 1;
-		while (i < orig_syscall(G_ARGC)) {
-			orig_syscall(G_ARGV, buf, sizeof(buf));
-			buf[sizeof(buf) - 1] = '\0';
-			if (i != 1)
-				s += " ";
-			s += buf;
+		case G_ARGS: {
+			// quake2: char* (*args)(void);
+			static std::string s;
+			static char buf[MAX_STRING_CHARS];
+			s = "";
+			int i = 1;
+			while (i < orig_syscall(G_ARGC)) {
+				orig_syscall(G_ARGV, buf, sizeof(buf));
+				buf[sizeof(buf) - 1] = '\0';
+				if (i != 1)
+					s += " ";
+				s += buf;
+			}
+			ret = (intptr_t)s.c_str();
+			break;
 		}
-		ret = (intptr_t)s.c_str();
-		break;
-	}
-			   // all normal engine functions go to engine
-	default:
-		ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+		// all normal engine functions go to engine
+		default:
+			ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
 	}
 
 	// do anything that needs to be done after function call here
