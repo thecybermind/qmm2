@@ -14,28 +14,103 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+// QMM-specific STVOYHM header
+#include "game_q3a.h"
 #include "main.h"
+#include "mod.h"
 
 GEN_QMM_MSGS(STVOYHM);
+GEN_EXTS(STVOYHM);
 
-// these function ids are defined either in the g_syscalls.asm file or in qcommon.h from ioef source,
-// but they do not appear in the enum in stvoyhm/game/g_public.h
-enum {
-	G_MEMSET = 100,
-	G_MEMCPY = 101,
-	G_STRNCPY = 102,
-	G_SIN = 103,
-	G_COS = 104,
-	G_ATAN2 = 105,
-	G_SQRT = 106,
-	G_MATRIXMULTIPLY = 107,
-	G_ANGLEVECTORS = 108,
-	G_PERPENDICULARVECTOR = 109,
-	G_FLOOR = 110,
-	G_CEIL = 111,
-	G_TESTPRINTINT = 112,
-	G_TESTPRINTFLOAT = 113
-};
+// a copy of the original syscall pointer that comes from the game engine
+static eng_syscall_t orig_syscall = nullptr;
+
+// mod vmMain is access via g_mod.pfnvmMain
+
+
+// wrapper syscall function that calls actual engine func from orig_import
+// this is how QMM and plugins will call into the engine
+intptr_t STVOYHM_syscall(intptr_t cmd, ...) {
+	QMM_GET_SYSCALL_ARGS();
+
+#ifdef _DEBUG
+	if (cmd != G_PRINT)
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYHM_syscall({} {}) called\n", STVOYHM_eng_msg_names(cmd), cmd);
+#endif
+
+	intptr_t ret = 0;
+
+	switch (cmd) {
+		// handle special cmds which QMM uses but STVOYHM doesn't have an analogue for
+		case G_ARGS: {
+			// quake2: char* (*args)(void);
+			static std::string s;
+			static char buf[MAX_STRING_CHARS];
+			s = "";
+			int i = 1;
+			while (i < orig_syscall(G_ARGC)) {
+				orig_syscall(G_ARGV, buf, sizeof(buf));
+				buf[sizeof(buf) - 1] = '\0';
+				if (i != 1)
+					s += " ";
+				s += buf;
+			}
+			ret = (intptr_t)s.c_str();
+			break;
+		}
+		// all normal engine functions go to engine
+		default:
+			ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+	}
+
+	// do anything that needs to be done after function call here
+
+#ifdef _DEBUG
+	if (cmd != G_PRINT)
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYHM_syscall({} {}) returning {}\n", STVOYHM_eng_msg_names(cmd), cmd, ret);
+#endif
+
+	return ret;
+}
+
+
+// wrapper vmMain function that calls actual mod func from orig_export
+// this is how QMM and plugins will call into the mod
+intptr_t STVOYHM_vmMain(intptr_t cmd, ...) {
+	QMM_GET_VMMAIN_ARGS();
+
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_vmMain({} {}) called\n", STVOYHM_mod_msg_names(cmd), cmd);
+
+	if (!g_mod.pfnvmMain)
+		return 0;
+
+	// store return value since we do some stuff after the function call is over
+	intptr_t ret = 0;
+
+	// all normal mod functions go to mod
+	ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_vmMain({} {}) returning {}\n", STVOYHM_mod_msg_names(cmd), cmd, ret);
+
+	return ret;
+}
+
+
+void STVOYHM_dllEntry(eng_syscall_t syscall) {
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_dllEntry({}) called\n", (void*)syscall);
+
+	// store original syscall from engine
+	orig_syscall = syscall;
+
+	// pointer to wrapper vmMain function that calls actual mod vmMain func g_mod.pfnvmMain
+	g_gameinfo.pfnvmMain = STVOYHM_vmMain;
+
+	// pointer to wrapper syscall function that calls actual engine syscall func
+	g_gameinfo.pfnsyscall = STVOYHM_syscall;
+
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_dllEntry({}) returning\n", (void*)syscall);
+}
+
 
 const char* STVOYHM_eng_msg_names(intptr_t cmd) {
 	switch(cmd) {
@@ -227,6 +302,10 @@ const char* STVOYHM_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_CEIL);
 		GEN_CASE(G_TESTPRINTINT);
 		GEN_CASE(G_TESTPRINTFLOAT);
+
+		// polyfills
+		GEN_CASE(G_ARGS);
+
 		default:
 			return "unknown";
 	}

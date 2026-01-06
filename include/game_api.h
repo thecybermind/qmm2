@@ -16,10 +16,10 @@ Created By:
 #include <cstdarg>
 #include <vector>
 #include <string>
+#include "qmmapi.h"
 
 typedef const char* (*msgname_t)(intptr_t msg);
 typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
-typedef void* (*apientry_t)(void* import);
 
 // a list of all the mod messages used by QMM
 enum qmm_mod_msg_t {
@@ -72,7 +72,8 @@ struct supportedgame_t {
 	msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
 
 	vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
-	apientry_t apientry;				// pointer to a function that handles GetGameAPI entry for a game
+	mod_dllEntry_t pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not required)
+	mod_GetGameAPI_t pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not required)
 	int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
 	int max_vmmain_args;				// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
 	std::vector<std::string> exe_hints;	// array of hints that should appear in the executable filename to be considered a game match
@@ -89,7 +90,8 @@ extern supportedgame_t g_supportedgames[];
 							const char* game##_eng_msg_names(intptr_t msg); \
 							const char* game##_mod_msg_names(intptr_t msg); \
 							int game##_vmsyscall(uint8_t* membase, int cmd, int* args); \
-							void* game##_GetGameAPI(void* import)
+							void* game##_GetGameAPI(void* import); \
+							void game##_dllEntry(eng_syscall_t syscall)
 
 // generate struct info for the short name, messages arrays, and message name functions
 #define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names

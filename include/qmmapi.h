@@ -33,6 +33,8 @@ Created By:
 
 typedef intptr_t (*eng_syscall_t)(intptr_t cmd, ...);
 typedef intptr_t (*mod_vmMain_t)(intptr_t cmd, ...);
+typedef void (*mod_dllEntry_t)(eng_syscall_t syscall);
+typedef void* (*mod_GetGameAPI_t)(void* import);
 
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, pluginfunc_t, or plugininfo_t
 #define QMM_PIFV_MAJOR  4

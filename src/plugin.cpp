@@ -195,7 +195,7 @@ int plugin_load(plugin_t& p, std::string file) {
 
 	// call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
 	// QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
-	if (!(p.QMM_Attach(g_gameinfo.pfnsyscall, g_mod.pfnvmMain, &g_plugin_globals.plugin_result, &s_pluginfuncs, &s_pluginvars))) {
+	if (!(p.QMM_Attach(g_gameinfo.pfnsyscall, g_gameinfo.pfnvmMain, &g_plugin_globals.plugin_result, &s_pluginfuncs, &s_pluginvars))) {
 		LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
 		// treat this failure specially. this is a valid plugin, but it decided on its own that it shouldn't be loaded
 		ret = -1;
@@ -234,7 +234,7 @@ static void s_plugin_helper_WriteQMMLog(plid_t plid, const char* text, int sever
 }
 
 
-static char* s_plugin_helper_VarArgs(plid_t plid, const char* format, ...) {
+static char* s_plugin_helper_VarArgs(plid_t plid [[maybe_unused]], const char* format, ...) {
 	va_list	argptr;
 	static char str[NUM_PLUGIN_STR_BUFFERS][1024];
 	static int index = 0;
@@ -350,7 +350,7 @@ static const char* s_plugin_helper_InfoValueForKey(plid_t plid, const char* user
 }
 
 
-static nlohmann::json s_plugin_cfg_get_node(plid_t plid, std::string key) {
+static nlohmann::json s_plugin_cfg_get_node(plid_t plid [[maybe_unused]], std::string key) {
 	if (key[0] == '/')
 		key = key.substr(1);
 

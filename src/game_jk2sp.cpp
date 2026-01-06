@@ -22,10 +22,10 @@ Created By:
 GEN_QMM_MSGS(JK2SP);
 GEN_EXTS(JK2SP);
 
-// a copy of the original import struct that comes from the game engine. this is given to plugins
+// a copy of the original import struct that comes from the game engine
 static game_import_t orig_import;
 
-// a copy of the original export struct pointer that comes from the mod. this is given to plugins
+// a copy of the original export struct pointer that comes from the mod
 static game_export_t* orig_export = nullptr;
 
 
@@ -347,6 +347,19 @@ intptr_t JK2SP_syscall(intptr_t cmd, ...) {
 			ret = qtrue;
 			break;
 		}
+		case G_ARGS: {
+			// quake2: char* (*args)(void);
+			static std::string s;
+			s = "";
+			int i = 1;
+			while (i < orig_import.argc()) {
+				if (i != 1)
+					s += " ";
+				s += orig_import.argv(i);
+			}
+			ret = (intptr_t)s.c_str();
+			break;
+		}
 
 		default:
 			break;
@@ -447,15 +460,14 @@ void* JK2SP_GetGameAPI(void* import) {
 	// fill in variables of our hooked import struct to pass to the mod
 	qmm_import.VoiceVolume = orig_import.VoiceVolume;
 
-	// this gets passed to the mod's GetGameAPI() function in mod.cpp:mod_load()
+	// this gets passed to the mod's GetGameAPI() function in mod.cpp:s_mod_load_getgameapi()
 	g_gameinfo.api_info.qmm_import = &qmm_import;
 
 	// this isn't used anywhere except returning from this function, but store it in g_gameinfo.api_info for consistency
 	g_gameinfo.api_info.qmm_export = &qmm_export;
 
 	// pointer to wrapper vmMain function that calls actual mod func from orig_export
-	// this gets assigned to g_mod->pfnvmMain in mod.cpp:mod_load()
-	g_gameinfo.api_info.orig_vmmain = JK2SP_vmMain;
+	g_gameinfo.pfnvmMain = JK2SP_vmMain;
 
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
 	g_gameinfo.pfnsyscall = JK2SP_syscall;

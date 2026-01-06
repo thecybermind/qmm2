@@ -181,6 +181,7 @@ enum {
 	// helper for plugins to not need separate logic
 	G_LOCATE_GAME_DATA,				// void (gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient)
 	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
+	G_ARGS,							// char* (void)
 };
 
 #endif // __QMM2_GAME_JASP_H__

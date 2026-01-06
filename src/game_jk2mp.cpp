@@ -14,9 +14,103 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+// QMM-specific JK2MP header
+#include "game_jk2mp.h"
 #include "main.h"
+#include "mod.h"
 
 GEN_QMM_MSGS(JK2MP);
+GEN_EXTS(JK2MP);
+
+// a copy of the original syscall pointer that comes from the game engine
+static eng_syscall_t orig_syscall = nullptr;
+
+// mod vmMain is access via g_mod.pfnvmMain
+
+
+// wrapper syscall function that calls actual engine func from orig_import
+// this is how QMM and plugins will call into the engine
+intptr_t JK2MP_syscall(intptr_t cmd, ...) {
+	QMM_GET_SYSCALL_ARGS();
+
+#ifdef _DEBUG
+	if (cmd != G_PRINT)
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_syscall({} {}) called\n", JK2MP_eng_msg_names(cmd), cmd);
+#endif
+
+	intptr_t ret = 0;
+
+	switch (cmd) {
+		// handle special cmds which QMM uses but JK2MP doesn't have an analogue for
+		case G_ARGS: {
+			// quake2: char* (*args)(void);
+			static std::string s;
+			static char buf[MAX_STRING_CHARS];
+			s = "";
+			int i = 1;
+			while (i < orig_syscall(G_ARGC)) {
+				orig_syscall(G_ARGV, buf, sizeof(buf));
+				buf[sizeof(buf) - 1] = '\0';
+				if (i != 1)
+					s += " ";
+				s += buf;
+			}
+			ret = (intptr_t)s.c_str();
+			break;
+		}
+		// all normal engine functions go to engine
+		default:
+			ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+	}
+
+	// do anything that needs to be done after function call here
+
+#ifdef _DEBUG
+	if (cmd != G_PRINT)
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_syscall({} {}) returning {}\n", JK2MP_eng_msg_names(cmd), cmd, ret);
+#endif
+
+	return ret;
+}
+
+
+// wrapper vmMain function that calls actual mod func from orig_export
+// this is how QMM and plugins will call into the mod
+intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
+	QMM_GET_VMMAIN_ARGS();
+
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_vmMain({} {}) called\n", JK2MP_mod_msg_names(cmd), cmd);
+
+	if (!g_mod.pfnvmMain)
+		return 0;
+
+	// store return value since we do some stuff after the function call is over
+	intptr_t ret = 0;
+
+	// all normal mod functions go to mod
+	ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_vmMain({} {}) returning {}\n", JK2MP_mod_msg_names(cmd), cmd, ret);
+
+	return ret;
+}
+
+
+void JK2MP_dllEntry(eng_syscall_t syscall) {
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_dllEntry({}) called\n", (void*)syscall);
+
+	// store original syscall from engine
+	orig_syscall = syscall;
+
+	// pointer to wrapper vmMain function that calls actual mod vmMain func g_mod.pfnvmMain
+	g_gameinfo.pfnvmMain = JK2MP_vmMain;
+
+	// pointer to wrapper syscall function that calls actual engine syscall func
+	g_gameinfo.pfnsyscall = JK2MP_syscall;
+
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_dllEntry({}) returning\n", (void*)syscall);
+}
+
 
 const char* JK2MP_eng_msg_names(intptr_t cmd) {
 	switch(cmd) {
@@ -247,6 +341,10 @@ const char* JK2MP_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_G2_REMOVEGHOUL2MODEL);
 		GEN_CASE(G_G2_CLEANMODELS);
 		GEN_CASE(G_G2_COLLISIONDETECT);
+
+		// polyfills
+		GEN_CASE(G_ARGS);
+
 		default:
 			return "unknown";
 	}

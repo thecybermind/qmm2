@@ -14,28 +14,103 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+// QMM-specific Q3A header
+#include "game_q3a.h"
 #include "main.h"
+#include "mod.h"
 
 GEN_QMM_MSGS(Q3A);
+GEN_EXTS(Q3A);
 
-// these function ids are defined either in the g_syscalls.asm file or in qcommon.h from q3 source,
-// but they do not appear in the enum in q3a/game/g_public.h
-enum {
-	G_MEMSET                = 100,
-	G_MEMCPY                = 101,
-	G_STRNCPY               = 102,
-	G_SIN                   = 103,
-	G_COS                   = 104,
-	G_ATAN2                 = 105,
-	G_SQRT                  = 106,
-	G_MATRIXMULTIPLY        = 107,
-	G_ANGLEVECTORS          = 108,
-	G_PERPENDICULARVECTOR   = 109,
-	G_FLOOR                 = 110,
-	G_CEIL                  = 111,
-	G_TESTPRINTINT          = 112,
-	G_TESTPRINTFLOAT        = 113
-};
+// a copy of the original syscall pointer that comes from the game engine
+static eng_syscall_t orig_syscall = nullptr;
+
+// mod vmMain is access via g_mod.pfnvmMain
+
+
+// wrapper syscall function that calls actual engine func from orig_import
+// this is how QMM and plugins will call into the engine
+intptr_t Q3A_syscall(intptr_t cmd, ...) {
+	QMM_GET_SYSCALL_ARGS();
+
+#ifdef _DEBUG
+	if (cmd != G_PRINT)
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q3A_syscall({} {}) called\n", Q3A_eng_msg_names(cmd), cmd);
+#endif
+
+	intptr_t ret = 0;
+
+	switch (cmd) {
+		// handle special cmds which QMM uses but Q3A doesn't have an analogue for
+		case G_ARGS: {
+			// quake2: char* (*args)(void);
+			static std::string s;
+			char buf[MAX_STRING_CHARS];
+			s = "";
+			int i = 1;
+			while (i < orig_syscall(G_ARGC)) {
+				orig_syscall(G_ARGV, buf, sizeof(buf));
+				buf[sizeof(buf) - 1] = '\0';
+				if (i != 1)
+					s += " ";
+				s += buf;
+			}
+			ret = (intptr_t)s.c_str();
+			break;
+		}
+		// all normal engine functions go to engine
+		default:
+			ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+	}
+
+	// do anything that needs to be done after function call here
+
+#ifdef _DEBUG
+	if (cmd != G_PRINT)
+		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q3A_syscall({} {}) returning {}\n", Q3A_eng_msg_names(cmd), cmd, ret);
+#endif
+
+	return ret;
+}
+
+
+// wrapper vmMain function that calls actual mod func from orig_export
+// this is how QMM and plugins will call into the mod
+intptr_t Q3A_vmMain(intptr_t cmd, ...) {
+	QMM_GET_VMMAIN_ARGS();
+
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_vmMain({} {}) called\n", Q3A_mod_msg_names(cmd), cmd);
+
+	if (!g_mod.pfnvmMain)
+		return 0;
+
+	// store return value since we do some stuff after the function call is over
+	intptr_t ret = 0;
+
+	// all normal mod functions go to mod
+	ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_vmMain({} {}) returning {}\n", Q3A_mod_msg_names(cmd), cmd, ret);
+
+	return ret;
+}
+
+
+void Q3A_dllEntry(eng_syscall_t syscall) {
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_dllEntry({}) called\n", (void*)syscall);
+
+	// store original syscall from engine
+	orig_syscall = syscall;
+
+	// pointer to wrapper vmMain function that calls actual mod vmMain func g_mod.pfnvmMain
+	g_gameinfo.pfnvmMain = Q3A_vmMain;
+
+	// pointer to wrapper syscall function that calls actual engine syscall func
+	g_gameinfo.pfnsyscall = Q3A_syscall;
+
+	LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_dllEntry({}) returning\n", (void*)syscall);
+}
+
 
 const char* Q3A_eng_msg_names(intptr_t cmd) {
 	switch(cmd) {
@@ -236,8 +311,12 @@ const char* Q3A_eng_msg_names(intptr_t cmd) {
 		GEN_CASE(G_CEIL);
 		GEN_CASE(G_TESTPRINTINT);
 		GEN_CASE(G_TESTPRINTFLOAT);
-		default:
-			return "unknown";
+
+		// polyfills
+		GEN_CASE(G_ARGS);
+
+	default:
+		return "unknown";
 	}
 }
 
@@ -264,7 +343,7 @@ const char* Q3A_mod_msg_names(intptr_t cmd) {
 /* Entry point: qvm mod->qmm
    This is the syscall function called by a QVM mod as a way to pass info to or get info from the engine.
    It modifies pointer arguments (if they are not NULL, the QVM data segment base address is added), and then
-   the call is passed to the normal syscall() function that DLL mods call.
+   the call is passed to the normal syscall function that DLL mods call.
 */
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
@@ -435,7 +514,7 @@ int Q3A_vmsyscall(uint8_t* membase, int cmd, int* args) {
 		case G_FS_FOPEN_FILE:			// (const char* qpath, fileHandle_t* file, fsMode_t mode);
 		case BOTLIB_LIBVAR_GET:			// (char* var_name, char* value, int size)
 		case BOTLIB_AI_STRING_CONTAINS:		// (char* str1, char* str2, int casesensitive)
-		case BOTLIB_AI_FIND_MATCH:		// (char* str, void /* struct bot_match_s* /* match, unsigned long int context)
+		case BOTLIB_AI_FIND_MATCH:		// (char* str, void /* struct bot_match_s* */ match, unsigned long int context)
 		case G_MEMCPY:				// (void* dest, const void* src, size_t count)
 		case G_STRNCPY:				// (char* strDest, const char* strSource, size_t count)
 			ret = qmm_syscall(cmd, vmptr(0), vmptr(1), vmarg(2));
@@ -497,8 +576,8 @@ int Q3A_vmsyscall(uint8_t* membase, int cmd, int* args) {
 		case BOTLIB_AI_CHARACTERISTIC_BINTEGER:	// (int character, int index, int min, int max)
 			ret = qmm_syscall(cmd, vmarg(0), vmarg(1), vmarg(2), vmarg(3));
 			break;
-		case BOTLIB_AI_MATCH_VARIABLE:		// (void /* struct bot_match_s* /* match, int variable, char* buf, int size)
-		case BOTLIB_AI_MOVE_TO_GOAL:		// (void /* struct bot_moveresult_s* /* result, int movestate, void /* struct bot_goal_s* */ goal, int travelflags)
+		case BOTLIB_AI_MATCH_VARIABLE:		// (void /* struct bot_match_s* */ match, int variable, char* buf, int size)
+		case BOTLIB_AI_MOVE_TO_GOAL:		// (void /* struct bot_moveresult_s* */ result, int movestate, void /* struct bot_goal_s* */ goal, int travelflags)
 			ret = qmm_syscall(cmd, vmptr(0), vmarg(1), vmptr(2), vmarg(3));
 			break;
 		case BOTLIB_AI_CHARACTERISTIC_STRING:	// (int character, int index, char* buf, int size)
@@ -534,13 +613,13 @@ int Q3A_vmsyscall(uint8_t* membase, int cmd, int* args) {
 		case BOTLIB_AI_INITIAL_CHAT:		// (int chatstate, char* type, int mcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7)
 			ret = qmm_syscall(cmd, vmarg(0), vmptr(1), vmarg(2), vmptr(3), vmptr(4), vmptr(5), vmptr(6), vmptr(7), vmptr(8), vmptr(9), vmptr(10));
 			break;
-		case BOTLIB_AAS_PREDICT_ROUTE:		// (void /*struct aas_predictroute_s*/* route, int areanum, vec3_t origin, int goalareanum, int travelflags, int maxareas, int maxtime, int stopevent, int stopcontents, int stoptfl, int stopareanum)
+		case BOTLIB_AAS_PREDICT_ROUTE:		// (void /* struct aas_predictroute_s* */ route, int areanum, vec3_t origin, int goalareanum, int travelflags, int maxareas, int maxtime, int stopevent, int stopcontents, int stoptfl, int stopareanum)
 			ret = qmm_syscall(cmd, vmptr(0), vmarg(1), vmptr(2), vmarg(3), vmarg(4), vmarg(5), vmarg(6), vmarg(7), vmarg(8), vmarg(9), vmarg(10), vmarg(11));
 			break;
 		case BOTLIB_AI_REPLY_CHAT:		// (int chatstate, char* message, int mcontext, int vcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7)
 			ret = qmm_syscall(cmd, vmarg(0), vmptr(1), vmarg(2), vmarg(3), vmptr(4), vmptr(5), vmptr(6), vmptr(7), vmptr(8), vmptr(9), vmptr(10), vmptr(11));
 			break;
-		case BOTLIB_AAS_PREDICT_CLIENT_MOVEMENT:	// (void /* struct aas_clientmove_s* /* move, int entnum, vec3_t origin, int presencetype, int onground, vec3_t velocity, vec3_t cmdmove, int cmdframes, int maxframes, float frametime, int stopevent, int stopareanum, int visualize)
+		case BOTLIB_AAS_PREDICT_CLIENT_MOVEMENT:	// (void /* struct aas_clientmove_s* */ move, int entnum, vec3_t origin, int presencetype, int onground, vec3_t velocity, vec3_t cmdmove, int cmdframes, int maxframes, float frametime, int stopevent, int stopareanum, int visualize)
 			ret = qmm_syscall(cmd, vmptr(0), vmarg(1), vmptr(2), vmarg(3), vmarg(4), vmptr(5), vmptr(6), vmarg(7), vmarg(8), vmarg(9), vmarg(10), vmarg(11), vmarg(12));
 			break;
 

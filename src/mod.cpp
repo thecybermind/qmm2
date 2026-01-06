@@ -25,7 +25,7 @@ Created By:
 
 mod_t g_mod;
 
-static intptr_t s_mod_vmmain(intptr_t cmd, ...);
+static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...);
 static bool s_mod_load_qvm(mod_t& mod);
 static bool s_mod_load_vmmain(mod_t& mod);
 static bool s_mod_load_getgameapi(mod_t& mod);
@@ -60,7 +60,7 @@ bool mod_load(mod_t& mod, std::string file) {
 		}
 
 		// pass off to engine-specific loading function
-		if (g_gameinfo.game->apientry)
+		if (g_gameinfo.game->pfnGetGameAPI)
 			return s_mod_load_getgameapi(mod);
 		else
 			return s_mod_load_vmmain(mod);
@@ -81,7 +81,7 @@ void mod_unload(mod_t& mod) {
 
 
 // entry point to store in mod_t->pfnvmMain for qvm mods
-static intptr_t s_mod_vmmain(intptr_t cmd, ...) {
+static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
 	// if qvm isn't loaded, we need to error
 	if (g_mod.qvm.memory.empty()) {
 		if (!g_shutdown) {
@@ -143,7 +143,7 @@ static bool s_mod_load_qvm(mod_t& mod) {
 		goto fail;
 	}
 
-	mod.pfnvmMain = s_mod_vmmain;
+	mod.pfnvmMain = s_mod_qvm_vmmain;
 	mod.vmbase = (intptr_t)mod.qvm.datasegment;
 
 	return true;
@@ -174,8 +174,6 @@ static bool s_mod_load_getgameapi(mod_t& mod) {
 		goto fail;
 	}
 
-	// this is a pointer to a wrapper vmMain function that calls actual mod func from orig_export
-	mod.pfnvmMain = g_gameinfo.api_info.orig_vmmain;
 	mod.vmbase = 0;
 
 	return true;
@@ -202,7 +200,7 @@ static bool s_mod_load_vmmain(mod_t& mod) {
 		goto fail;
 	}
 
-	// pass QMM's syscall to mod dllEntry function
+	// pass qmm_syscall to mod's dllEntry function
 	mod_dllEntry(qmm_syscall);
 	mod.vmbase = 0;
 

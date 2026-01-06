@@ -22,10 +22,10 @@ Created By:
 GEN_QMM_MSGS(JASP);
 GEN_EXTS(JASP);
 
-// a copy of the original import struct that comes from the game engine. this is given to plugins
+// a copy of the original import struct that comes from the game engine
 static game_import_t orig_import;
 
-// a copy of the original export struct pointer that comes from the mod. this is given to plugins
+// a copy of the original export struct pointer that comes from the mod
 static game_export_t* orig_export = nullptr;
 
 
@@ -360,52 +360,65 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
 		ROUTE_IMPORT_VAR(VoiceVolume, GVP_VOICEVOLUME);
 
 		// handle special cmds which QMM uses but JASP doesn't have an analogue for
-	case G_CVAR_REGISTER: {
-		// jasp: cvar_t* (*cvar)(const char* varName, const char* varValue, int varFlags)
-		// q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
-		// qmm always passes NULL for vmCvar so don't worry about it
-		const char* varName = (const char*)(args[1]);
-		const char* defaultValue = (const char*)(args[2]);
-		int flags = args[3];
-		(void)orig_import.cvar(varName, defaultValue, flags);
-		break;
-	}
-	case G_SEND_CONSOLE_COMMAND_QMM:
-	case G_SEND_CONSOLE_COMMAND: {
-		// JASP: void (*SendConsoleCommand)(const char *text);
-		// qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
-		// first arg may be exec_when, like EXEC_APPEND
-		intptr_t when = args[0];
-		const char* text = (const char*)(args[1]);
-		// EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
-		if (when > 100)
-			text = (const char*)when;
-		orig_import.SendConsoleCommand(text);
-		break;
-	}
-	// help plugins not need separate logic for entity/client pointers
-	case G_LOCATE_GAME_DATA: {
-		// void trap_LocateGameData(gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient);
-		// this is just to be hooked by plugins, so ignore everything
-		break;
-	}
-	case G_GET_ENTITY_TOKEN: {
-		// qboolean trap_GetEntityToken(char *buffer, int bufferSize);
-		if (s_tokencount >= s_entity_tokens.size()) {
-			ret = qfalse;
+		case G_CVAR_REGISTER: {
+			// jasp: cvar_t* (*cvar)(const char* varName, const char* varValue, int varFlags)
+			// q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
+			// qmm always passes NULL for vmCvar so don't worry about it
+			const char* varName = (const char*)(args[1]);
+			const char* defaultValue = (const char*)(args[2]);
+			int flags = args[3];
+			(void)orig_import.cvar(varName, defaultValue, flags);
+			break;
+		}
+		case G_SEND_CONSOLE_COMMAND_QMM:
+		case G_SEND_CONSOLE_COMMAND: {
+			// JASP: void (*SendConsoleCommand)(const char *text);
+			// qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+			// first arg may be exec_when, like EXEC_APPEND
+			intptr_t when = args[0];
+			const char* text = (const char*)(args[1]);
+			// EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
+			if (when > 100)
+				text = (const char*)when;
+			orig_import.SendConsoleCommand(text);
+			break;
+		}
+		// help plugins not need separate logic for entity/client pointers
+		case G_LOCATE_GAME_DATA: {
+			// void trap_LocateGameData(gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient);
+			// this is just to be hooked by plugins, so ignore everything
+			break;
+		}
+		case G_GET_ENTITY_TOKEN: {
+			// qboolean trap_GetEntityToken(char *buffer, int bufferSize);
+			if (s_tokencount >= s_entity_tokens.size()) {
+				ret = qfalse;
+				break;
+			}
+
+			char* buffer = (char*)args[0];
+			intptr_t bufferSize = args[1];
+
+			strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), bufferSize);
+			ret = qtrue;
+			break;
+		}
+		case G_ARGS: {
+			// quake2: char* (*args)(void);
+			static std::string s;
+			s = "";
+			int i = 1;
+			while (i < orig_import.argc()) {
+				if (i != 1)
+					s += " ";
+				s += orig_import.argv(i);
+			}
+			ret = (intptr_t)s.c_str();
 			break;
 		}
 
-		char* buffer = (char*)args[0];
-		intptr_t bufferSize = args[1];
-
-		strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), bufferSize);
-		ret = qtrue;
-		break;
-	}
-
-	default:
-		break;
+		default:
+			break;
 	};
 
 	// do anything that needs to be done after function call here
@@ -503,15 +516,14 @@ void* JASP_GetGameAPI(void* import) {
 	// fill in variables of our hooked import struct to pass to the mod
 	qmm_import.VoiceVolume = orig_import.VoiceVolume;
 
-	// this gets passed to the mod's GetGameAPI() function in mod.cpp:mod_load()
+	// this gets passed to the mod's GetGameAPI() function in mod.cpp:s_mod_load_getgameapi()
 	g_gameinfo.api_info.qmm_import = &qmm_import;
 
 	// this isn't used anywhere except returning from this function, but store it in g_gameinfo.api_info for consistency
 	g_gameinfo.api_info.qmm_export = &qmm_export;
 
 	// pointer to wrapper vmMain function that calls actual mod func from orig_export
-	// this gets assigned to g_mod->pfnvmMain in mod.cpp:mod_load()
-	g_gameinfo.api_info.orig_vmmain = JASP_vmMain;
+	g_gameinfo.pfnvmMain = JASP_vmMain;
 
 	// pointer to wrapper syscall function that calls actual engine func from orig_import
 	g_gameinfo.pfnsyscall = JASP_syscall;

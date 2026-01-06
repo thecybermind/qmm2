@@ -35,11 +35,6 @@ static intptr_t s_main_handle_command_qmm(int arg_inc);
 static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args);
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
 
-// flags to pass to the is_GetGameAPI_mode arg of s_main_detect_game()
-// these are to make the arg more clear at the call sites
-constexpr bool QMM_DETECT_GETGAMEAPI = true;
-constexpr bool QMM_DETECT_DLLENTRY = false;
-
 
 /* About overall control flow:
    syscall (mod->engine) call flow for QVM mods only:
@@ -111,6 +106,7 @@ static mod_vmMain_t passthrough_mod_vmMain = nullptr;
 // GAME_SHUTDOWN has been called, but mod DLL was kept loaded so cgame shutdown can run
 static bool passthrough_shutdown = false;
 
+
 /* Entry point: engine->qmm
    This is the first function called when a vmMain DLL is loaded. The address of the engine's syscall callback is given,
    but it is not guaranteed to be initialized and ready for calling until vmMain() is called later. For now, all
@@ -146,9 +142,6 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 		return;
 	}
 
-	// save syscall pointer
-	g_gameinfo.pfnsyscall = syscall;
-
 	s_main_load_config();
 
 	// update log severity for file output
@@ -157,13 +150,27 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
 		log_set_severity(log_severity_from_name(cfg_loglevel));
 
 	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
-	s_main_detect_game(cfg_game, QMM_DETECT_DLLENTRY);
+	s_main_detect_game(cfg_game, false);	// false = not looking for GetGameAPI
 
 	// failed to get engine information
 	if (!g_gameinfo.game) {
 		LOG(QMM_LOG_FATAL, "QMM") << fmt::format("dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_game);
 		return;
 	}
+
+	// TODO : remove this once all game-specific functions are done
+	// save syscall pointer
+	g_gameinfo.pfnsyscall = syscall;
+
+	// supported games table is missing game-specific dllEntry handler?
+	if (!g_gameinfo.game->pfndllEntry) {
+		LOG(QMM_LOG_FATAL, "QMM") << fmt::format("dllEntry(): pfndllEntry handler for game \"{}\" is NULL!\n", g_gameinfo.game->gamename_short);
+		return;
+	}
+
+	// call the game-specific dllEntry function (e.g. Q3A_dllEntry) which will set up the functions to handle vmMain and syscalls
+	// from the mod, engine, and plugins
+	g_gameinfo.game->pfndllEntry(syscall);
 }
 
 
@@ -175,7 +182,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
    A game_export_t is given to the engine which has lambdas for each pointer that calls QMM's vmMain(enum, ...).
    A game_import_t is given to the mod which has lambdas for each pointer that calls QMM's syscall(enum, ...).
 
-   The original import/export tables are stored. When QMM and plugins need to call the mod or engine, g_mod.pfnvmMain or
+   The original import/export tables are stored. When QMM and plugins need to call the mod or engine, g_gameinfo.pfnvmMain or
    g_gameinfo.pfnsyscall point to functions which will take the cmd, and route to the proper function pointer in the struct.
 
    General flow:
@@ -224,7 +231,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 		log_set_severity(log_severity_from_name(cfg_loglevel));
 
 	std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
-	s_main_detect_game(cfg_game, QMM_DETECT_GETGAMEAPI);
+	s_main_detect_game(cfg_game, true);	// true = looking for GetGameAPI
 
 	// failed to get engine information
 	// by returning nullptr, the engine will error out and so we don't have to worry about it ourselves in GAME_INIT
@@ -233,9 +240,15 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 		return nullptr;
 	}
 
+	// supported games table is missing game-specific GetGameAPI handler?
+	if (!g_gameinfo.game->pfnGetGameAPI) {
+		LOG(QMM_LOG_FATAL, "QMM") << fmt::format("GetGameAPI(): pfnGetGameAPI handler for game \"{}\" is NULL!\n", g_gameinfo.game->gamename_short);
+		return nullptr;
+	}
+
 	// call the game-specific GetGameAPI function (e.g. MOHAA_GetGameAPI) which will set up the exports for
 	// returning here back to the game engine, as well as save the imports in preparation of loading the mod
-	void* qmm_export = g_gameinfo.game->apientry(import);
+	void* qmm_export = g_gameinfo.game->pfnGetGameAPI(import);
 
 	return qmm_export;
 }
@@ -331,6 +344,9 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 			return 0;
 		}
 		LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} mod \"{}\"\n", g_mod.vmbase ? "VM" : "DLL", g_mod.path);
+		// TODO : remove this once all game-specific functions are done
+		if (!g_gameinfo.pfnvmMain)
+			g_gameinfo.pfnvmMain = g_mod.pfnvmMain;
 
 		// cgame passthrough crap:
 		// JASP (and others?) calls into the cgame syscall before a cgame vmMain GAME_INIT call is made
@@ -373,7 +389,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 		qmm_argv(argn, arg0, sizeof(arg0));
 
 		// if command is "sv", then get the next arg
-		// idTech2 games use "sv" on listen server to run a server command
+		// idTech2 games use "sv" to run a gamedll command
 		if (str_striequal("sv", arg0)) {
 			argn++;
 			qmm_argv(argn, arg0, sizeof(arg0));
@@ -514,7 +530,7 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
 	for (int i = 0; g_supportedgames[i].dllname; i++) {
 		supportedgame_t& game = g_supportedgames[i];
 		// only check games with apientry based on GetGameAPI_mode
-		if (is_GetGameAPI_mode != !!game.apientry)
+		if (is_GetGameAPI_mode != !!game.pfnGetGameAPI)
 			continue;
 
 		// if short name matches config option, we found it!
@@ -672,8 +688,11 @@ static intptr_t s_main_handle_command_qmm(int arg_start) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM stack size: {}\n", g_mod.qvm.stackseglen).c_str());
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM data validation: {}\n", g_mod.qvm.verify_data ? "on" : "off").c_str());
 		}
-		else {
+		else if (g_mod.pfnvmMain) {
 			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Mod vmMain() offset: {}\n", (void*)g_mod.pfnvmMain).c_str());
+		}
+		else {
+			ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Mod game_export: {}\n", g_gameinfo.api_info.orig_export).c_str());
 		}
 	}
 	else if (str_striequal("list", arg1)) {
@@ -776,7 +795,7 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Game vmMain({} {}) called\n", g_gameinfo.game->mod_msg_names(cmd), cmd);
 #endif
 
-		mod_ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+		mod_ret = g_gameinfo.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
 		LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Game vmMain({} {}) returning {}\n", g_gameinfo.game->mod_msg_names(cmd), cmd, mod_ret);

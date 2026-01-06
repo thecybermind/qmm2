@@ -16,9 +16,6 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-typedef void (*mod_dllEntry_t)(eng_syscall_t syscall);
-typedef void* (*mod_GetGameAPI_t)(void* import);
-
 struct mod_t {
 	void* dll = nullptr;
 	qvm_t qvm = {};
