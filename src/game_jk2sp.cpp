@@ -347,6 +347,19 @@ intptr_t JK2SP_syscall(intptr_t cmd, ...) {
 			ret = qtrue;
 			break;
 		}
+		case G_ARGS: {
+			// quake2: char* (*args)(void);
+			static std::string s;
+			s = "";
+			int i = 1;
+			while (i < orig_import.argc()) {
+				if (i != 1)
+					s += " ";
+				s += orig_import.argv(i);
+			}
+			ret = (intptr_t)s.c_str();
+			break;
+		}
 
 		default:
 			break;
