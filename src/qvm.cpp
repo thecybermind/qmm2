@@ -21,18 +21,23 @@ Created By:
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start = nullptr, void* end = nullptr);
 
 
-bool qvm_load(qvm_t& qvm, const std::vector<uint8_t>& filemem, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data) {
-    if (!qvm.memory.empty() || filemem.empty() || !vmsyscall)
+bool qvm_load(qvm_t& qvm, const uint8_t* filemem, unsigned int filesize, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data) {
+    if (!qvm.memory.empty() || !filemem || !filesize || !vmsyscall)
         return false;
 
     const uint8_t* codeoffset = nullptr;
 
-    qvm.filesize = filemem.size();
+    if (filesize < sizeof(qvmheader_t)) {
+        LOG(QMM_LOG_ERROR, "QMM") << "qvm_load(): Invalid QVM file: too small for header\n";
+        goto fail;
+    }
+    
+    qvm.filesize = filesize;
     qvm.vmsyscall = vmsyscall;
     qvm.verify_data = verify_data;
 
     // grab a copy of the header
-    memcpy(&qvm.header, filemem.data(), sizeof(qvmheader_t));
+    memcpy(&qvm.header, filemem, sizeof(qvmheader_t));
 
     // check header
     if (qvm.header.magic != QVM_MAGIC ||
@@ -52,6 +57,7 @@ bool qvm_load(qvm_t& qvm, const std::vector<uint8_t>& filemem, vmsyscall_t vmsys
     qvm.codeseglen = qvm.header.numops * sizeof(qvmop_t);
     // just add each data segment up
     qvm.dataseglen = qvm.header.datalen + qvm.header.litlen + qvm.header.bsslen;
+    // calculate stack size from config option in MiB 
     if (!stacksize)
         stacksize = 1;
     qvm.stackseglen = stacksize * (1 << 20);
@@ -78,7 +84,7 @@ bool qvm_load(qvm_t& qvm, const std::vector<uint8_t>& filemem, vmsyscall_t vmsys
     // this means that the argstack needs to be located just after the data segment, with the stack to follow
 
     // start loading ops from the code offset to VM
-    codeoffset = filemem.data() + qvm.header.codeoffset;
+    codeoffset = filemem + qvm.header.codeoffset;
 
     // loop through each op
     for (unsigned int i = 0; i < qvm.header.numops; ++i) {
@@ -138,7 +144,7 @@ bool qvm_load(qvm_t& qvm, const std::vector<uint8_t>& filemem, vmsyscall_t vmsys
     }
 
     // copy data segment (including literals) to VM
-    memcpy(qvm.datasegment, filemem.data() + qvm.header.dataoffset, qvm.header.datalen + qvm.header.litlen);
+    memcpy(qvm.datasegment, filemem + qvm.header.dataoffset, qvm.header.datalen + qvm.header.litlen);
 
     // a winner is us
     return true;

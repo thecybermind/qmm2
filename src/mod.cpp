@@ -137,7 +137,7 @@ static bool s_mod_load_qvm(mod_t& mod) {
         verify_data = false;
 
     // attempt to load mod
-    loaded = qvm_load(mod.qvm, filemem, g_gameinfo.game->vmsyscall, stacksize, verify_data);
+    loaded = qvm_load(mod.qvm, filemem.data(), filemem.size(), g_gameinfo.game->vmsyscall, stacksize, verify_data);
     if (!loaded) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", mod.path);
         goto fail;

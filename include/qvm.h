@@ -136,7 +136,7 @@ struct qvm_t {
 };
 
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t& qvm, const std::vector<uint8_t>& filemem, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data);
+bool qvm_load(qvm_t& qvm, const uint8_t* filemem, unsigned int filesize, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data);
 void qvm_unload(qvm_t& qvm);
 int qvm_exec(qvm_t& qvm, int argc, int* argv);
 
