@@ -5,7 +5,7 @@ https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
 
 Created By:
-	Kevin Masterson < k.m.masterson@gmail.com >
+    Kevin Masterson < k.m.masterson@gmail.com >
 
 */
 
@@ -18,28 +18,28 @@ Created By:
 
 // store pointers for GetGameAPI-based systems
 struct api_info_t {
-	void* orig_import = nullptr;			// original import struct from engine
-	void* orig_export = nullptr;			// original export struct from mod
-	void* qmm_import = nullptr;				// import struct that is hooked by QMM and given to the mod
-	void* qmm_export = nullptr;				// export struct that is hooked by QMM and given to the engine
+    void* orig_import = nullptr;			// original import struct from engine
+    void* orig_export = nullptr;			// original export struct from mod
+    void* qmm_import = nullptr;				// import struct that is hooked by QMM and given to the mod
+    void* qmm_export = nullptr;				// export struct that is hooked by QMM and given to the engine
 };
 
 // store all currently-loaded game & game engine info
 struct game_info_t {
-	eng_syscall_t pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
-	mod_vmMain_t pfnvmMain = nullptr;		// game-specific wrapper for vmMain. given to plugins and called by QMM
-	supportedgame_t* game = nullptr;		// loaded engine from supported games table from game_api.cpp
-	bool isautodetected = false;			// was this engine auto-detected?
-	std::string exe_path;					// full path of running server binary
-	std::string exe_dir;					// directory of running server binary
-	std::string exe_file;					// filename of running server binary
-	std::string qmm_path;					// full path of qmm dll
-	std::string qmm_dir;					// directory of qmm dll
-	std::string qmm_file;					// filename of qmm dll
-	void* qmm_module_ptr = nullptr;			// qmm module pointer
-	std::string moddir;						// active mod dir
-	std::string cfg_path;					// qmm config file path
-	api_info_t api_info;					// some pointers utilized by GetGameAPI games
+    eng_syscall_t pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
+    mod_vmMain_t pfnvmMain = nullptr;		// game-specific wrapper for vmMain. given to plugins and called by QMM
+    supportedgame_t* game = nullptr;		// loaded engine from supported games table from game_api.cpp
+    bool isautodetected = false;			// was this engine auto-detected?
+    std::string exe_path;					// full path of running server binary
+    std::string exe_dir;					// directory of running server binary
+    std::string exe_file;					// filename of running server binary
+    std::string qmm_path;					// full path of qmm dll
+    std::string qmm_dir;					// directory of qmm dll
+    std::string qmm_file;					// filename of qmm dll
+    void* qmm_module_ptr = nullptr;			// qmm module pointer
+    std::string moddir;						// active mod dir
+    std::string cfg_path;					// qmm config file path
+    api_info_t api_info;					// some pointers utilized by GetGameAPI games
 };
 
 extern game_info_t g_gameinfo;

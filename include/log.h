@@ -5,7 +5,7 @@ https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
 
 Created By:
-	Kevin Masterson < k.m.masterson@gmail.com >
+    Kevin Masterson < k.m.masterson@gmail.com >
 
 */
 
@@ -33,19 +33,19 @@ void log_set_severity(AixLog::Severity severity);
 
 template <typename T>
 void log_add_sink(T func, AixLog::Severity level = AixLog::Severity::notice) {
-	AixLog::Log::instance().add_logsink<AixLog::SinkCallback>(level, func);
+    AixLog::Log::instance().add_logsink<AixLog::SinkCallback>(level, func);
 }
 
 std::string log_format(const AixLog::Metadata& metadata, const std::string& message, bool timestamp = true);
 
 enum {
-	QMM_LOG_TRACE,
-	QMM_LOG_DEBUG,
-	QMM_LOG_INFO,
-	QMM_LOG_NOTICE,
-	QMM_LOG_WARNING,
-	QMM_LOG_ERROR,
-	QMM_LOG_FATAL
+    QMM_LOG_TRACE,
+    QMM_LOG_DEBUG,
+    QMM_LOG_INFO,
+    QMM_LOG_NOTICE,
+    QMM_LOG_WARNING,
+    QMM_LOG_ERROR,
+    QMM_LOG_FATAL
 };
 
 // class like AixLog's SinkFile except it will not truncate the file on opening

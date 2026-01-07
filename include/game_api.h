@@ -5,7 +5,7 @@ https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
 
 Created By:
-	Kevin Masterson < k.m.masterson@gmail.com >
+    Kevin Masterson < k.m.masterson@gmail.com >
 
 */
 
@@ -23,60 +23,60 @@ typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
 // a list of all the mod messages used by QMM
 enum qmm_mod_msg_t {
-	QMM_GAME_INIT,
-	QMM_GAME_SHUTDOWN,
-	QMM_GAME_CONSOLE_COMMAND,
-	QMM_GAME_CLIENT_CONNECT
+    QMM_GAME_INIT,
+    QMM_GAME_SHUTDOWN,
+    QMM_GAME_CONSOLE_COMMAND,
+    QMM_GAME_CLIENT_CONNECT
 };
 
 // a list of all the engine messages used by QMM
 enum qmm_eng_msg_t {
-	QMM_G_PRINT,
-	QMM_G_ERROR,
-	QMM_G_ARGV,
-	QMM_G_ARGC,
-	QMM_G_SEND_CONSOLE_COMMAND,
+    QMM_G_PRINT,
+    QMM_G_ERROR,
+    QMM_G_ARGV,
+    QMM_G_ARGC,
+    QMM_G_SEND_CONSOLE_COMMAND,
 
-	QMM_G_CVAR_REGISTER,
-	QMM_G_CVAR_SET,
-	QMM_G_CVAR_VARIABLE_STRING_BUFFER,
-	QMM_G_CVAR_VARIABLE_INTEGER_VALUE,
+    QMM_G_CVAR_REGISTER,
+    QMM_G_CVAR_SET,
+    QMM_G_CVAR_VARIABLE_STRING_BUFFER,
+    QMM_G_CVAR_VARIABLE_INTEGER_VALUE,
 
-	QMM_G_FS_FOPEN_FILE,
-	QMM_G_FS_READ,
-	QMM_G_FS_WRITE,
-	QMM_G_FS_FCLOSE_FILE,
-	
-	QMM_EXEC_APPEND,
-	QMM_FS_READ,
+    QMM_G_FS_FOPEN_FILE,
+    QMM_G_FS_READ,
+    QMM_G_FS_WRITE,
+    QMM_G_FS_FCLOSE_FILE,
 
-	QMM_CVAR_SERVERINFO,
-	QMM_CVAR_ROM,
+    QMM_EXEC_APPEND,
+    QMM_FS_READ,
 
-	QMM_G_GET_CONFIGSTRING,
+    QMM_CVAR_SERVERINFO,
+    QMM_CVAR_ROM,
+
+    QMM_G_GET_CONFIGSTRING,
 };
 
 // some information for each game engine supported by QMM
 struct supportedgame_t {
-	const char* dllname;				// default dll mod filename
-	const char* suffix;					// dll suffix
-	const char* qvmname;				// default qvm mod filename (NULL = qmm_<dllname>)
-	const char* moddir;					// default moddir name
-	const char* gamename_long;			// long, descriptive, game name
+    const char* dllname;				// default dll mod filename
+    const char* suffix;					// dll suffix
+    const char* qvmname;				// default qvm mod filename (NULL = qmm_<dllname>)
+    const char* moddir;					// default moddir name
+    const char* gamename_long;			// long, descriptive, game name
 
-	// this section is made by GEN_INFO(GAME)
-	const char* gamename_short;			// short initials for game
-	int* qmm_eng_msgs;					// array of engine messages used by QMM
-	int* qmm_mod_msgs;					// array of mod messages used by QMM
-	msgname_t eng_msg_names;			// pointer to a function that returns a string for a given engine message
-	msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
+    // this section is made by GEN_INFO(GAME)
+    const char* gamename_short;			// short initials for game
+    int* qmm_eng_msgs;					// array of engine messages used by QMM
+    int* qmm_mod_msgs;					// array of mod messages used by QMM
+    msgname_t eng_msg_names;			// pointer to a function that returns a string for a given engine message
+    msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
 
-	vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
-	mod_dllEntry_t pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not required)
-	mod_GetGameAPI_t pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not required)
-	int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
-	int max_vmmain_args;				// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
-	std::vector<std::string> exe_hints;	// array of hints that should appear in the executable filename to be considered a game match
+    vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
+    mod_dllEntry_t pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not required)
+    mod_GetGameAPI_t pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not required)
+    int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
+    int max_vmmain_args;				// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
+    std::vector<std::string> exe_hints;	// array of hints that should appear in the executable filename to be considered a game match
 };
 
 extern supportedgame_t g_supportedgames[];
@@ -98,7 +98,7 @@ extern supportedgame_t g_supportedgames[];
 
 // generate a case/string line for the message name functions
 #define GEN_CASE(x)			case x: return #x
- 
+
 // macro to easily output game-specific message values to match the qmm_eng_msg_t and qmm_mod_msg_t enums above
 // this macro goes in game_*.cpp
 #define GEN_QMM_MSGS(game) \

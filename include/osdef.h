@@ -5,7 +5,7 @@ https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
 
 Created By:
-	Kevin Masterson < k.m.masterson@gmail.com >
+    Kevin Masterson < k.m.masterson@gmail.com >
 
 */
 
@@ -34,7 +34,7 @@ Created By:
 #define EXT_QVM "qvm"
 
 constexpr const unsigned char MAGIC_DLL[] = { 'M',  'Z', 0x90, 0x00 };
-constexpr const unsigned char MAGIC_SO[]  = { 'M',  'Z', 0x90, 0x00 };
+constexpr const unsigned char MAGIC_SO[] = { 'M',  'Z', 0x90, 0x00 };
 constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14,  'r', 0x12 };
 
 #define NAKED				__declspec(naked)
@@ -68,8 +68,8 @@ const char* dlerror();		// this will return the last error from any win32 functi
 #define EXT_QVM "qvm"
 
 constexpr const unsigned char MAGIC_DLL[] = { 0x7F,  'E', 'L',  'F' };
-constexpr const unsigned char MAGIC_SO[]  = { 0x7F,  'E', 'L',  'F' };
-constexpr const unsigned char MAGIC_QVM[] = {  'D', 0x14, 'r', 0x12 };
+constexpr const unsigned char MAGIC_SO[] = { 0x7F,  'E', 'L',  'F' };
+constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14, 'r', 0x12 };
 
 #define NAKED				__attribute__((naked))
 #define my_vsnprintf		vsnprintf

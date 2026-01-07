@@ -5,7 +5,7 @@ https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
 
 Created By:
-	Kevin Masterson < k.m.masterson@gmail.com >
+    Kevin Masterson < k.m.masterson@gmail.com >
 
 */
 
@@ -30,24 +30,24 @@ typedef intptr_t(*plugin_syscall)(intptr_t cmd, intptr_t* args);
 typedef intptr_t(*plugin_vmmain)(intptr_t cmd, intptr_t* args);
 
 struct plugin_t {
-	void* dll = nullptr;
-	std::string path;
-	plugin_query QMM_Query = nullptr;
-	plugin_attach QMM_Attach = nullptr;
-	plugin_detach QMM_Detach = nullptr;
-	plugin_vmmain QMM_vmMain = nullptr;
-	plugin_vmmain QMM_vmMain_Post = nullptr;
-	plugin_syscall QMM_syscall = nullptr;
-	plugin_syscall QMM_syscall_Post = nullptr;
-	plugin_pluginmessage QMM_PluginMessage = nullptr;
-	plugininfo_t* plugininfo = nullptr;
+    void* dll = nullptr;
+    std::string path;
+    plugin_query QMM_Query = nullptr;
+    plugin_attach QMM_Attach = nullptr;
+    plugin_detach QMM_Detach = nullptr;
+    plugin_vmmain QMM_vmMain = nullptr;
+    plugin_vmmain QMM_vmMain_Post = nullptr;
+    plugin_syscall QMM_syscall = nullptr;
+    plugin_syscall QMM_syscall_Post = nullptr;
+    plugin_pluginmessage QMM_PluginMessage = nullptr;
+    plugininfo_t* plugininfo = nullptr;
 };
 
 struct plugin_globals_t {
-	pluginres_t plugin_result = QMM_UNUSED;
-	intptr_t final_return = 0;
-	intptr_t orig_return = 0;
-	pluginres_t high_result = QMM_UNUSED;
+    pluginres_t plugin_result = QMM_UNUSED;
+    intptr_t final_return = 0;
+    intptr_t orig_return = 0;
+    pluginres_t high_result = QMM_UNUSED;
 };
 
 extern plugin_globals_t g_plugin_globals;

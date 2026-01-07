@@ -5,7 +5,7 @@ https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
 
 Created By:
-	Kevin Masterson < k.m.masterson@gmail.com >
+    Kevin Masterson < k.m.masterson@gmail.com >
 
 */
 
@@ -17,11 +17,11 @@ Created By:
 #include "qvm.h"
 
 struct mod_t {
-	void* dll = nullptr;
-	qvm_t qvm = {};
-	mod_vmMain_t pfnvmMain = nullptr;
-	intptr_t vmbase = 0;
-	std::string path;
+    void* dll = nullptr;
+    qvm_t qvm = {};
+    mod_vmMain_t pfnvmMain = nullptr;
+    intptr_t vmbase = 0;
+    std::string path;
 };
 
 extern mod_t g_mod;
