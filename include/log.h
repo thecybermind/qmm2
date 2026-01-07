@@ -25,7 +25,7 @@ Created By:
 #endif
 
 
-void log_init(std::string file, AixLog::Severity severity = QMM2_LOG_DEFAULT_SEVERITY);
+void log_init(std::string file, AixLog::Severity severity = QMM2_LOG_DEFAULT_SEVERITY, bool append = false);
 
 AixLog::Severity log_severity_from_name(std::string severity);
 std::string log_name_from_severity(AixLog::Severity severity);
@@ -48,7 +48,6 @@ enum {
 	QMM_LOG_FATAL
 };
 
-#if defined(QMM_LOG_APPEND)
 // class like AixLog's SinkFile except it will not truncate the file on opening
 struct SinkFileAppend : public AixLog::SinkFormat
 {
@@ -71,6 +70,5 @@ struct SinkFileAppend : public AixLog::SinkFormat
 protected:
     mutable std::ofstream ofs;
 };
-#endif
 
 #endif // __QMM2_LOG_H__
