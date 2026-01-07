@@ -72,7 +72,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
       is returned to mod
 */
 
-/* About cgame passthrough crap (not Quake 2 Remaster (Q2R), see comments before CGetGameAPI() for that):
+/* About cgame passthrough crap (not Quake 2 Remaster (Q2R), see comments before GetCGameAPI() for that):
    Some single player games, like Star Trek Voyager: Elite Force (STVOYSP), Jedi Knight 2 (JK2SP) and Jedi Academy (JASP),
    place the game (server side) and cgame (client side) in the same DLL. The game system uses GetGameAPI and the cgame
    system uses dllEntry/vmMain/syscall.
@@ -121,10 +121,6 @@ static bool cgame_passthrough_shutdown = false;
    determined by the config file, or by getting the filename of the QMM DLL itself.
 */
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
-#if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
-	MessageBoxA(NULL, "dllEntry called", "QMM2", 0);
-#endif
-
 	// cgame passthrough crap:
 	// QMM is already loaded, so this is a cgame passthrough situation. since the mod DLL isn't loaded yet, we can
 	// just store the syscall pointer and pass it to the mod once it's loaded in vmMain(GAME_INIT)
@@ -227,10 +223,6 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
    to the proper function pointer in the struct.
 */
 C_DLLEXPORT void* GetGameAPI(void* import) {
-#if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
-	MessageBoxA(NULL, "GetGameAPI called", "QMM2", 0);
-#endif
-
 	s_main_detect_env();
 
 	log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
@@ -241,6 +233,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	LOG(QMM_LOG_INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
 
 	// ???
+	// return nullptr to error out now, Init() will never be called
 	if (!import) {
 		LOG(QMM_LOG_FATAL, "QMM") << "GetGameAPI(): import is NULL!\n";
 		return nullptr;
@@ -257,7 +250,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 	s_main_detect_game(cfg_game, true);	// true = looking for GetGameAPI
 
 	// failed to get engine information
-	// by returning nullptr, the engine will error out and so we don't have to worry about it ourselves in GAME_INIT
+	// return nullptr to error out now, Init() will never be called
 	if (!g_gameinfo.game) {
 		LOG(QMM_LOG_FATAL, "QMM") << fmt::format("GetGameAPI(): Unable to determine game engine using \"{}\"\n", cfg_game);
 		return nullptr;
@@ -271,9 +264,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 
 	// call the game-specific GetGameAPI function (e.g. MOHAA_GetGameAPI) which will set up the exports for
 	// returning here back to the game engine, as well as save the imports in preparation of loading the mod
-	void* qmm_export = g_gameinfo.game->pfnGetGameAPI(import);
-
-	return qmm_export;
+	return g_gameinfo.game->pfnGetGameAPI(import);
 }
 
 
@@ -295,13 +286,6 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
    constant, like: QMM_G_PRINT, QMM_GAME_CONSOLE_COMMAND, etc. This allows the code at point-of-use to be game-agnostic.
 */
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
-#if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
-	if (cgame_is_QMM_vmMain_call)
-			MessageBoxA(NULL, "vmMain called through QMM wrappers", "QMM2", 0);
-		else
-			MessageBoxA(NULL, "vmMain called directly", "QMM2", 0);
-#endif
-
 	QMM_GET_VMMAIN_ARGS();
 
 	// if this is a call from cgame and we need to pass this call onto the mod
@@ -979,48 +963,39 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 #ifdef _WIN64
 /* Entry point: engine->qmm (Q2R only)
    Quake 2 Remastered has a heavily modified engine + API, and includes Game and CGame in the same DLL, with this GetCGameAPI as
-   the entry point. This is the first function called when a Q2R mod DLL is loaded. Since QMM does not care about CGame, this
-   function simply attempts to detect the environment (QMM+EXE paths), load the config, and get the mod from the config. If
-   the setting is "auto", it uses the current QMM DLL filename and appends it to "qmm_", and then loads it from the QMM directory.
-   It loads the DLL, calls the GetCGameAPI function with the same import pointer arg, then returns the return value of that
-   function. It is a direct passing of pointers between the engine and CGame systems. After this function returns, there is no
-   further interaction between QMM and the CGame system until this function is called again as a reload.
-*/
-static mod_GetGameAPI_t mod_GetCGameAPI = nullptr;
-C_DLLEXPORT void* GetCGameAPI(void* import) {
-#if defined(_DEBUG) && defined(_DEBUG_MESSAGEBOX)
-	MessageBoxA(NULL, "GetCGameAPI called", "QMM2", 0);
-#endif
+   the entry point. This is the first function called when a Q2R mod DLL is loaded. The only thing the engine does at first,
+   however, is get the export struct returned from this function, and then calls export->Init() and export->Shutdown(). After
+   this, the engine unloads QMM. Then, it loads it again as a server DLL through GetGameAPI, and then when a game is started, it
+   calls GetCGameAPI to load the DLL as a client. Since at this point, QMM has everything loaded already, it just grabs the
+   function from g_mod.dll and gets the GetCGameAPI function easily.
 
-	// if client needs to be reloaded, just call the same entry point in the DLL (it's still loaded)
-	if (mod_GetCGameAPI)
-		return mod_GetCGameAPI(import);
-	
+   Since QMM does not care about CGame, we check if QMM has already loaded things. If it has, QMM has already loaded
+   the mod DLL so we can easily route to the mod's GetCGameAPI function. If not, we load the mod DLL and find GetCGameAPI, 
+   pass the import pointer to it, and return the mod's export pointer. If QMM has not loaded things, then we have 2 situations:
+   this is the initial load at startup where just Init() and Shutdown() are called, or the player is joining a remote server to
+   play. Either way, QMM won't be loaded at all during this load so just do a quick DLL load, with no config, no logfile, etc.
+*/
+C_DLLEXPORT void* GetCGameAPI(void* import) {
+	// Q2R cgame passthrough crap:
+	// if the game is already detected, then this is the later GetCGameAPI load which takes place in the menus after QMM
+	// is loaded, so just get the return value from the mod's GetCGameAPI() function directly
+	if (g_gameinfo.game) {
+		LOG(QMM_LOG_NOTICE, "QMM") << "GetCGameAPI() called! Passing on call to mod DLL.\n";
+		mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(g_mod.dll, "GetCGameAPI");
+		return mod_GetCGameAPI ? mod_GetCGameAPI(import) : nullptr;
+	}
+
+	// client-side-only load. just get file info and slap "qmm_" in front of the qmm filename
 	s_main_detect_env();
 
-	// ???
-	if (!import)
+	std::string modpath = fmt::format("{}/qmm_{}", g_gameinfo.qmm_dir, g_gameinfo.qmm_file);
+	void* dll = dlopen(modpath.c_str(), RTLD_NOW);
+	if (!dll)
 		return nullptr;
 
-	// quiet = true, stops the message from appearing in console whenever the client reloads (which is a lot)
-	s_main_load_config(true);
-
-	// load mod
-	std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
-	if (str_striequal(cfg_mod, "auto"))
-		cfg_mod = fmt::format("qmm_{}", g_gameinfo.qmm_file);
-	if (path_is_relative(cfg_mod))
-		cfg_mod = fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod);
-
-	void* mod_handle = dlopen(cfg_mod.c_str(), RTLD_NOW);
-	if (!mod_handle)
-		return nullptr;
-
-	mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(mod_handle, "GetCGameAPI");
+	mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(dll, "GetCGameAPI");
 	if (!mod_GetCGameAPI)
 		return nullptr;
-
-	// DLL needs to stay loaded, so no dlclose
 
 	return mod_GetCGameAPI(import);
 }

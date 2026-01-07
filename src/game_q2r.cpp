@@ -613,6 +613,7 @@ void* Q2R_GetGameAPI(void* import) {
 	return &qmm_export;
 }
 
+
 const char* Q2R_eng_msg_names(intptr_t cmd) {
 	switch (cmd) {
 		GEN_CASE(G_BROADCAST_PRINT);
