@@ -10,6 +10,7 @@ Created By:
 */
 
 #include <string>
+#include <cstdarg>
 #include "log.h"
 #include "format.h"
 
@@ -57,4 +58,17 @@ std::string log_format(const AixLog::Metadata& metadata, const std::string& mess
     if (timestamp && metadata.timestamp)
         output = fmt::format("{} {}", metadata.timestamp.to_string(), output);
     return output;
+}
+
+
+// so qvm.c can log stuff
+void log_c(int severity, const char* tag, const char* fmt, ...) {
+    va_list	argptr;
+    static char buf[1024];
+
+    va_start(argptr, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, argptr);
+    va_end(argptr);
+
+    LOG(severity, tag) << buf;
 }

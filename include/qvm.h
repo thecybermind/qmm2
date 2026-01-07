@@ -13,7 +13,8 @@ Created By:
 #define __QMM2_QVM_H__
 
 #include <stdint.h>
-#include <vector>
+#include <stddef.h>
+#include <stdbool.h>
 
 // magic number is stored in file as 44 14 72 12
 #define	QVM_MAGIC       0x12721444
@@ -28,7 +29,7 @@ Created By:
 
 typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
-enum qvmopcode_t {
+typedef enum qvmopcode_e {
     OP_UNDEF,
     OP_NOP,
     OP_BREAK,
@@ -89,17 +90,17 @@ enum qvmopcode_t {
     OP_MULF,
     OP_CVIF,
     OP_CVFI,
-};
+} qvmopcode_t;
 
 extern const char* opcodename[];
 
 // a single opcode in memory
-struct qvmop_t {
+typedef struct qvmop_s {
     qvmopcode_t op;
     int param;
-};
+} qvmop_t;
 
-struct qvmheader_t {
+typedef struct qvmheader_s {
     int magic;
     unsigned int numops;
     unsigned int codeoffset;
@@ -108,42 +109,60 @@ struct qvmheader_t {
     unsigned int datalen;
     unsigned int litlen;
     unsigned int bsslen;
-};
+} qvmheader_t;
+
+// allocator type for custom allocation
+typedef struct qvm_alloc_s {
+    void* (*alloc)(ptrdiff_t size, void* ctx);
+    void  (*free)(void* ptr, ptrdiff_t size, void* ctx);
+    void* ctx;
+} qvm_alloc_t;
+
+extern qvm_alloc_t qvm_allocator_default;
 
 // all the info for a single QVM object
-struct qvm_t {
-    qvmheader_t header = {};		// header information
+typedef struct qvm_s {
+    qvm_alloc_t* alloc;             // allocator
+
+    qvmheader_t header;     		// header information
 
     // extra
-    size_t filesize = 0;			// .qvm file size
+    size_t filesize;    			// .qvm file size
 
     // memory
-    std::vector<uint8_t> memory;	// main block of memory
+    uint8_t* memory;	            // main block of memory
+    unsigned int memorysize;        // size of memory block
 
     // segments (into memory vector)
-    qvmop_t* codesegment = nullptr;	// code segment, each op is 8 bytes (4 op, 4 param)
-    uint8_t* datasegment = nullptr;	// data segment, partially filled on load
-    uint8_t* stacksegment = nullptr;// stack segment
+    qvmop_t* codesegment;	        // code segment, each op is 8 bytes (4 op, 4 param)
+    uint8_t* datasegment;	        // data segment, partially filled on load
+    uint8_t* stacksegment;          // stack segment
 
     // segment sizes
-    unsigned int codeseglen = 0;	// size of code segment
-    unsigned int dataseglen = 0;	// size of data segment
-    unsigned int stackseglen = 0;	// size of stack segment
+    unsigned int codeseglen;    	// size of code segment
+    unsigned int dataseglen;	    // size of data segment
+    unsigned int stackseglen;	    // size of stack segment
 
     // "registers"
-    qvmop_t* opptr = nullptr;		// current op in code segment
-    int* stackptr = nullptr;		// pointer to current location in stack
-    int argbase = 0;				// lower end of arg heap
+    qvmop_t* opptr;		            // current op in code segment
+    int* stackptr;		            // pointer to current location in stack
+    int argbase;				    // lower end of arg heap
 
     // syscall
-    vmsyscall_t vmsyscall = nullptr;// e.g. Q3A_vmsyscall function from game_q3a.cpp
+    vmsyscall_t vmsyscall;          // e.g. Q3A_vmsyscall function from game_q3a.cpp
 
-    bool verify_data = true;		// verify data access is inside the memory block
-};
+    bool verify_data;		        // verify data access is inside the memory block
+} qvm_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t& qvm, const uint8_t* filemem, unsigned int filesize, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data);
-void qvm_unload(qvm_t& qvm);
-int qvm_exec(qvm_t& qvm, int argc, int* argv);
+bool qvm_load(qvm_t* qvm, const uint8_t* filemem, unsigned int filesize, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data, qvm_alloc_t* alloc);
+void qvm_unload(qvm_t* qvm);
+int qvm_exec(qvm_t* qvm, int argc, int* argv);
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // __QMM2_QVM_H__

@@ -214,7 +214,9 @@
     <ClCompile Include="..\src\mod.cpp" />
     <ClCompile Include="..\src\osdef.cpp" />
     <ClCompile Include="..\src\plugin.cpp" />
-    <ClCompile Include="..\src\qvm.cpp" />
+    <ClCompile Include="..\src\qvm.c">
+      <LanguageStandard_C Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdclatest</LanguageStandard_C>
+    </ClCompile>
     <ClCompile Include="..\src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
