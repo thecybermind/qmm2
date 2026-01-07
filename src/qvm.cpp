@@ -9,13 +9,12 @@ Created By:
 
 */
 
-#include <cstdint>
-#include <cstring>
+#include <stdint.h>
+#include <string.h>
 #include <vector>
 #include "log.h"
 #include "format.h"
 #include "qvm.h"
-#include "osdef.h"
 
 
 static bool qvm_validate_ptr(qvm_t& qvm, void* ptr, void* start = nullptr, void* end = nullptr);

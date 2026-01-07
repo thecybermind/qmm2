@@ -12,13 +12,19 @@ Created By:
 #ifndef __QMM2_QVM_H__
 #define __QMM2_QVM_H__
 
-#include <cstdint>
+#include <stdint.h>
 #include <vector>
 
 // magic number is stored in file as 44 14 72 12
 #define	QVM_MAGIC       0x12721444
 
 #define QMM_MAX_SYSCALL_ARGS_QVM	13	// change whenever a QVM mod has a bigger syscall list
+
+#ifdef _WIN32
+#define SWITCH_FALLTHROUGH	[[fallthrough]]
+#else
+#define SWITCH_FALLTHROUGH	__attribute__((fallthrough))
+#endif
 
 typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
