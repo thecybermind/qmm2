@@ -133,20 +133,22 @@ typedef struct qvm_s {
     uint8_t* memory;	            // main block of memory
     unsigned int memorysize;        // size of memory block
 
-    // segments (into memory vector)
+    // segments (into memory block)
     qvmop_t* codesegment;	        // code segment, each op is 8 bytes (4 op, 4 param)
     uint8_t* datasegment;	        // data segment, partially filled on load
+    uint8_t* argstacksegment;       // arg stack segment
     uint8_t* stacksegment;          // stack segment
 
     // segment sizes
     unsigned int codeseglen;    	// size of code segment
     unsigned int dataseglen;	    // size of data segment
+    unsigned int argstackseglen;	// size of argstack segment
     unsigned int stackseglen;	    // size of stack segment
 
     // "registers"
     qvmop_t* opptr;		            // current op in code segment
-    int* stackptr;		            // pointer to current location in stack
-    int argbase;				    // lower end of arg heap
+    uint8_t* argstackptr;           // pointer to current location in argstack (OP_ENTER/OP_LEAVE/OP_LOCAL args in bytes)
+    int* stackptr;		            // pointer to current location in stack (all pushes/pops are 4-bytes at a time)
 
     // syscall
     vmsyscall_t vmsyscall;          // e.g. Q3A_vmsyscall function from game_q3a.cpp
