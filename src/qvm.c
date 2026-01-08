@@ -280,7 +280,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
         case OP_LOCAL:
             // pushes a specified local variable address (relative to start of data segment) onto the stack
             --stack;
-            *stack = &argstack[param] - qvm->datasegment;
+            *stack = (int)(&argstack[param] - qvm->datasegment);
             break;
 
         case OP_ARG:
@@ -372,82 +372,82 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         case OP_EQ:
             // if stack[1] == stack[0], goto address in param
-            SIF(== );
+            SIF( == );
             break;
 
         case OP_NE:
             // if stack[1] != stack[0], goto address in param
-            SIF(!= );
+            SIF( != );
             break;
 
         case OP_LTI:
             // if stack[1] < stack[0], goto address in param
-            SIF(< );
+            SIF( < );
             break;
 
         case OP_LEI:
             // if stack[1] <= stack[0], goto address in param
-            SIF(<= );
+            SIF( <= );
             break;
 
         case OP_GTI:
             // if stack[1] > stack[0], goto address in param
-            SIF(> );
+            SIF( > );
             break;
 
         case OP_GEI:
             // if stack[1] >= stack[0], goto address in param
-            SIF(>= );
+            SIF( >= );
             break;
 
         case OP_LTU:
             // if stack[1] < stack[0], goto address in param (unsigned)
-            UIF(< );
+            UIF( < );
             break;
 
         case OP_LEU:
             // if stack[1] <= stack[0], goto address in param (unsigned)
-            UIF(<= );
+            UIF( <= );
             break;
 
         case OP_GTU:
             // if stack[1] > stack[0], goto address in param (unsigned)
-            UIF(> );
+            UIF( > );
             break;
 
         case OP_GEU:
             // if stack[1] >= stack[0], goto address in param (unsigned)
-            UIF(>= );
+            UIF( >= );
             break;
 
         case OP_EQF:
             // if stack[1] == stack[0], goto address in param (float)
-            FIF(== );
+            FIF( == );
             break;
 
         case OP_NEF:
             // if stack[1] != stack[0], goto address in param (float)
-            FIF(!= );
+            FIF( != );
             break;
 
         case OP_LTF:
             // if stack[1] < stack[0], goto address in param (float)
-            FIF(< );
+            FIF( < );
             break;
 
         case OP_LEF:
             // if stack[1] <= stack[0], goto address in param (float)
-            FIF(<= );
+            FIF( <= );
             break;
 
         case OP_GTF:
             // if stack[1] > stack[0], goto address in param (float)
-            FIF(> );
+            FIF( > );
             break;
 
         case OP_GEF:
             // if stack[1] >= stack[0], goto address in param (float)
-            FIF(>= );
+            FIF( >= );
             break;
 
         // memory/pointer management
@@ -564,107 +564,107 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         case OP_NEGI:
             // negation
-            SSOP(-);
+            SSOP( - );
             break;
 
         case OP_ADD:
             // addition
-            SOP(+= );
+            SOP( += );
             break;
 
         case OP_SUB:
             // subtraction
-            SOP(-= );
+            SOP( -= );
             break;
 
         case OP_MULI:
             // multiplication
-            SOP(*= );
+            SOP( *= );
             break;
 
         case OP_MULU:
             // unsigned multiplication
-            UOP(*= );
+            UOP( *= );
             break;
 
         case OP_DIVI:
             // division
-            SOP(/= );
+            SOP( /= );
             break;
 
         case OP_DIVU:
             // unsigned division
-            UOP(/= );
+            UOP( /= );
             break;
 
         case OP_MODI:
             // modulus
-            SOP(%= );
+            SOP( %= );
             break;
 
         case OP_MODU:
             // unsigned modulus
-            UOP(%= );
+            UOP( %= );
             break;
 
         case OP_BAND:
             // bitwise AND
-            SOP(&= );
+            SOP( &= );
             break;
 
         case OP_BOR:
             // bitwise OR
-            SOP(|= );
+            SOP( |= );
             break;
 
         case OP_BXOR:
             // bitwise XOR
-            SOP(^= );
+            SOP( ^= );
             break;
 
         case OP_BCOM:
             // bitwise one's compliment
-            SSOP(~);
+            SSOP( ~ );
             break;
 
         case OP_LSH:
             // unsigned bitwise LEFTSHIFT
-            UOP(<<= );
+            UOP( <<= );
             break;
 
         case OP_RSHI:
             // bitwise RIGHTSHIFT
-            SOP(>>= );
+            SOP( >>= );
             break;
 
         case OP_RSHU:
             // unsigned bitwise RIGHTSHIFT
-            UOP(>>= );
+            UOP( >>= );
             break;
 
         case OP_NEGF:
             // float negation
-            SFOP(-);
+            SFOP( - );
             break;
 
         case OP_ADDF:
             // float addition
-            FOP(+= );
+            FOP( += );
             break;
 
         case OP_SUBF:
             // float subtraction
-            FOP(-= );
+            FOP( -= );
             break;
 
         case OP_MULF:
             // float multiplication
-            FOP(*= );
+            FOP( *= );
             break;
 
         case OP_DIVF:
             // float division
-            FOP(/= );
+            FOP( /= );
             break;
 
         // sign extensions
