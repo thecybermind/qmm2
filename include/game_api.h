@@ -17,9 +17,9 @@ Created By:
 #include <vector>
 #include <string>
 #include "qmmapi.h"
+#include "qvm.h"
 
 typedef const char* (*msgname_t)(intptr_t msg);
-typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
 // a list of all the mod messages used by QMM
 enum qmm_mod_msg_t {
@@ -210,4 +210,5 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 #define vmptr(x)	(args[x] ? membase + args[x] : nullptr)
 // this subtracts the base VM address pointer from a value, for returning from syscall (this should evaluate to an int)
 #define vmret(x)	(int)(x ? (intptr_t)x - (intptr_t)membase : 0)
+
 #endif // __QMM2_GAME_API_H__

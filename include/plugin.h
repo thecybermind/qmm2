@@ -44,10 +44,10 @@ struct plugin_t {
 };
 
 struct plugin_globals_t {
-    pluginres_t plugin_result = QMM_UNUSED;
     intptr_t final_return = 0;
     intptr_t orig_return = 0;
     pluginres_t high_result = QMM_UNUSED;
+    pluginres_t plugin_result = QMM_UNUSED;
 };
 
 extern plugin_globals_t g_plugin_globals;

@@ -495,11 +495,11 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
         // q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
         const char* varName = (const char*)(args[0]);
         char* buffer = (char*)(args[1]);
-        int bufsize = args[2];
+        intptr_t bufsize = args[2];
         *buffer = '\0';
         cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
         if (cvar)
-            strncpyz(buffer, cvar->string, bufsize);
+            strncpyz(buffer, cvar->string, (size_t)bufsize);
         break;
     }
     case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -538,7 +538,7 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), bufferSize);
+        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }

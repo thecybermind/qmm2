@@ -41,6 +41,8 @@ std::string log_format(const AixLog::Metadata& metadata, const std::string& mess
 // class like AixLog's SinkFile except it will not truncate the file on opening
 struct SinkFileAppend : public AixLog::SinkFormat
 {
+    SinkFileAppend(const SinkFileAppend&) = delete;
+    SinkFileAppend& operator=(const SinkFileAppend&) = delete;
     SinkFileAppend(const AixLog::Filter& filter, const std::string& filename, const std::string& format = "%Y-%m-%d %H:%M:%S.#ms [#severity] (#tag_func)")
         : SinkFormat(filter, format)
     {

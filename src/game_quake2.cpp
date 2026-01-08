@@ -252,11 +252,11 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
         // q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
         char* var_name = (char*)(args[0]);
         char* buffer = (char*)(args[1]);
-        int bufsize = (int)args[2];
+        intptr_t bufsize = args[2];
         *buffer = '\0';
         cvar_t* cvar = orig_import.cvar(var_name, (char*)"", 0);
         if (cvar)
-            strncpyz(buffer, cvar->string, bufsize);
+            strncpyz(buffer, cvar->string, (size_t)bufsize);
         break;
     }
     case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -320,7 +320,7 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
     case G_FS_READ: {
         // void trap_FS_Read(void* buffer, int len, fileHandle_t f);
         char* buffer = (char*)args[0];
-        size_t len = args[1];
+        size_t len = (size_t)args[1];
         fileHandle_t f = (fileHandle_t)args[2];
         size_t total = 0;
         FILE* fp = (FILE*)f;
@@ -334,7 +334,7 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
     case G_FS_WRITE: {
         // void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
         char* buffer = (char*)args[0];
-        size_t len = args[1];
+        size_t len = (size_t)args[1];
         fileHandle_t f = (fileHandle_t)args[2];
         size_t total = 0;
         FILE* fp = (FILE*)f;
@@ -371,7 +371,7 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
         intptr_t bufferSize = args[2];
         *buffer = '\0';
         if (s_userinfo.count(num))
-            strncpyz(buffer, s_userinfo[num].c_str(), bufferSize);
+            strncpyz(buffer, s_userinfo[num].c_str(), (size_t)bufferSize);
         break;
     }
     case G_GET_ENTITY_TOKEN: {
@@ -384,7 +384,7 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), bufferSize);
+        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), (size_t)bufferSize);
         ret = true;
         break;
     }

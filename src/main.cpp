@@ -478,7 +478,7 @@ void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
     // (or true?), we probably are in an api game, and need to get the arg from the return value instead
     intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn, buf, buflen);
     if (ret > 1)
-        strncpyz(buf, (const char*)ret, buflen);
+        strncpyz(buf, (const char*)ret, (size_t)buflen);
 }
 
 
@@ -723,7 +723,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm info <id> - outputs info on plugin with id\n");
             return 1;
         }
-		unsigned int pid = atoi(arg2);
+		size_t pid = (size_t)atoi(arg2);
         if (pid > 0 && pid <= g_plugins.size()) {
             plugin_t& p = g_plugins[pid - 1];
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Plugin info for #{}:\n", arg2).c_str());

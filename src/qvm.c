@@ -24,7 +24,7 @@ static bool qvm_validate_ptr_stack(qvm_t* qvm, void* ptr);
 static bool qvm_validate_ptr_argstack(qvm_t* qvm, void* ptr);
 
 
-bool qvm_load(qvm_t* qvm, const uint8_t* filemem, unsigned int filesize, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data, qvm_alloc_t* allocator) {
+bool qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, size_t stacksize, bool verify_data, qvm_alloc_t* allocator) {
     if (!qvm || qvm->memory || !filemem || !filesize || !vmsyscall)
         return false;
 
@@ -35,26 +35,39 @@ bool qvm_load(qvm_t* qvm, const uint8_t* filemem, unsigned int filesize, vmsysca
         goto fail;
     }
     
-    qvm->alloc = allocator ? allocator : &qvm_allocator_default;
-
+    // store args
     qvm->filesize = filesize;
     qvm->vmsyscall = vmsyscall;
     qvm->verify_data = verify_data;
+    qvm->alloc = allocator ? allocator : &qvm_allocator_default;
 
     // grab a copy of the header
     memcpy(&qvm->header, filemem, sizeof(qvmheader_t));
 
-    // check header
-    if (qvm->header.magic != QVM_MAGIC ||
-        qvm->header.numops <= 0 ||
-        qvm->header.codelen <= 0 ||
-        qvm->filesize != (sizeof(qvm->header) + qvm->header.codelen + qvm->header.datalen + qvm->header.litlen) ||
-        qvm->header.codeoffset < sizeof(qvm->header) ||
-        qvm->header.dataoffset < sizeof(qvm->header) ||
+    // check header fields for oddities
+    if (qvm->header.magic != QVM_MAGIC) {
+        log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: incorrect magic number\n");
+        goto fail;
+    }
+    if (qvm->filesize != sizeof(qvm->header) + qvm->header.codelen + qvm->header.datalen + qvm->header.litlen) {
+        log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: filesize doesn't match segment sizes\n");
+        goto fail;
+    }
+    if (qvm->header.codeoffset < sizeof(qvm->header) ||
         qvm->header.codeoffset > qvm->filesize ||
-        qvm->header.dataoffset > qvm->filesize
-        ) {
-        log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: incorrect field(s)\n");
+        qvm->header.codeoffset + qvm->header.codelen > qvm->filesize) {
+        log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: code offset/length has invalid value\n");
+        goto fail;
+    }
+    if (qvm->header.dataoffset < sizeof(qvm->header) ||
+        qvm->header.dataoffset > qvm->filesize ||
+        qvm->header.dataoffset + qvm->header.datalen + qvm->header.litlen > qvm->filesize) {
+        log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: data offset/length has invalid value\n");
+        goto fail;
+    }
+    if (qvm->header.numops < qvm->header.codelen / 5 || // assume each op in the code segment is 5 bytes for a minimum
+        qvm->header.numops > qvm->header.codelen) {
+        log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: numops has invalid value\n");
         goto fail;
     }
 
@@ -98,6 +111,10 @@ bool qvm_load(qvm_t* qvm, const uint8_t* filemem, unsigned int filesize, vmsysca
     for (unsigned int i = 0; i < qvm->header.numops; ++i) {
         // get the opcode
         qvmopcode_t opcode = (qvmopcode_t)*codeoffset;
+        if (codeoffset > filemem + qvm->header.codeoffset + qvm->header.codelen) {
+            log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: numops value too large\n");
+            goto fail;
+        }
 
         codeoffset++;
 
@@ -127,13 +144,13 @@ bool qvm_load(qvm_t* qvm, const uint8_t* filemem, unsigned int filesize, vmsysca
                 log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid target in jump/branch instruction: %d -> %d\n", *(int*)codeoffset, qvm->header.numops);
                 goto fail;
             }
-            //SWITCH_FALLTHROUGH;	// MSVC C26819: Unannotated fallthrough between switch labels
+            // explicit fallthrough
         case OP_ENTER:
         case OP_LEAVE:
         case OP_CONST:
         case OP_LOCAL:
         case OP_BLOCK_COPY:
-            // these ops all have full 4-byte params
+            // all the above ops all have full 4-byte params
             qvm->codesegment[i].param = *(int*)codeoffset;
             codeoffset += 4;
             break;
@@ -198,10 +215,9 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
         memcpy(&args[2], argv, argc * sizeof(int));
 
     // vmMain's OP_ENTER will grab this return address and store it on the argstack.
-    // when it is added to this->codesegment in vmMain's OP_LEAVE, it will result in
-    // opptr being NULL, terminating the execution loop
+    // when it is pulled in OP_LEAVE, it will signal to exit the instruction loop
     --qvm->stackptr;
-    qvm->stackptr[0] = (int)((qvmop_t*)NULL - qvm->codesegment);
+    qvm->stackptr[0] = -1;
 
     // start at beginning of code segment
     qvmop_t* opptr = qvm->codesegment;
@@ -246,6 +262,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         case OP_UNDEF:
             // undefined
+            // explicit fallthrough
 
         case OP_BREAK:
             // break to debugger?
@@ -258,7 +275,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
             log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): Unhandled opcode %d\n", vmMain_cmd, op);
             goto fail;
 
-            // stack opcodes
+        // stack opcodes
 
         case OP_PUSH:
             // pushes a blank value onto the stack
@@ -289,8 +306,8 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
             ++stack;
             break;
 
-
         // functions / code flow
+
 #define JUMP(x) opptr = qvm->codesegment + (x)
 
         case OP_CALL: {
@@ -344,15 +361,18 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
             // argstack[1]. verify argstack[1] matches param, and then clean up argstack frame
             // retrieve the code return address from the argstack
             int* arg = (int*)argstack;
-            opptr = qvm->codesegment + arg[0];
             // compare param with the OP_ENTER param stored on the argstack
             if (arg[1] != param) {
                 log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): OP_LEAVE param (%d) does not match OP_ENTER param (%d)\n", vmMain_cmd, param, arg[1]);
                 goto fail;
             }
+            // if return instruction pointer is our negative sentinel, signal end of instruction loop
+            if (arg[0] < 0)
+                opptr = NULL;
+            else
+                opptr = qvm->codesegment + arg[0];
             // offset argstack to cleanup frame
             argstack += param;
-
             break;
         }
 
@@ -831,6 +851,7 @@ static void* qvm_alloc_default(ptrdiff_t size, void* ctx) {
 
 
 static void qvm_free_default(void* ptr, ptrdiff_t size, void* ctx) {
+    (void)ctx; (void)size;
     free(ptr);
 }
 

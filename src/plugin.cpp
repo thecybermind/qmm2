@@ -67,10 +67,10 @@ static pluginfuncs_t s_pluginfuncs = {
 
 // struct to store all the globals available to plugins
 plugin_globals_t g_plugin_globals = {
-    QMM_UNUSED,	// plugin_result
     0,			// final_return
     0,			// orig_return
     QMM_UNUSED,	// high_result
+    QMM_UNUSED,	// plugin_result
 };
 
 std::vector<plugin_t> g_plugins;
@@ -445,7 +445,7 @@ static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t argn, char* bu
     // instead
     intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], argn, buf, buflen);
     if (ret > 1)
-        strncpyz(buf, (const char*)ret, buflen);
+        strncpyz(buf, (const char*)ret, (size_t)buflen);
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, argn, buf);
 }
 

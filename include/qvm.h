@@ -21,12 +21,6 @@ Created By:
 
 #define QMM_MAX_SYSCALL_ARGS_QVM	13	// change whenever a QVM mod has a bigger syscall list
 
-#ifdef _WIN32
-#define SWITCH_FALLTHROUGH	[[fallthrough]]
-#else
-#define SWITCH_FALLTHROUGH	__attribute__((fallthrough))
-#endif
-
 typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
 typedef enum qvmopcode_e {
@@ -101,14 +95,14 @@ typedef struct qvmop_s {
 } qvmop_t;
 
 typedef struct qvmheader_s {
-    int magic;
-    unsigned int numops;
-    unsigned int codeoffset;
-    unsigned int codelen;
-    unsigned int dataoffset;
-    unsigned int datalen;
-    unsigned int litlen;
-    unsigned int bsslen;
+    uint32_t magic;
+    uint32_t numops;
+    uint32_t codeoffset;
+    uint32_t codelen;
+    uint32_t dataoffset;
+    uint32_t datalen;
+    uint32_t litlen;
+    uint32_t bsslen;
 } qvmheader_t;
 
 // allocator type for custom allocation
@@ -122,16 +116,14 @@ extern qvm_alloc_t qvm_allocator_default;
 
 // all the info for a single QVM object
 typedef struct qvm_s {
-    qvm_alloc_t* alloc;             // allocator
-
     qvmheader_t header;     		// header information
 
-    // extra
-    size_t filesize;    			// .qvm file size
+    // syscall
+    vmsyscall_t vmsyscall;          // e.g. Q3A_vmsyscall function from game_q3a.cpp
 
     // memory
     uint8_t* memory;	            // main block of memory
-    unsigned int memorysize;        // size of memory block
+    size_t memorysize;              // size of memory block
 
     // segments (into memory block)
     qvmop_t* codesegment;	        // code segment, each op is 8 bytes (4 op, 4 param)
@@ -140,29 +132,31 @@ typedef struct qvm_s {
     uint8_t* stacksegment;          // stack segment
 
     // segment sizes
-    unsigned int codeseglen;    	// size of code segment
-    unsigned int dataseglen;	    // size of data segment
-    unsigned int argstackseglen;	// size of argstack segment
-    unsigned int stackseglen;	    // size of stack segment
+    size_t codeseglen;    	        // size of code segment
+    size_t dataseglen;	            // size of data segment
+    size_t argstackseglen;	        // size of argstack segment
+    size_t stackseglen;	            // size of stack segment
 
     // "registers"
     qvmop_t* opptr;		            // current op in code segment
     uint8_t* argstackptr;           // pointer to current location in argstack (OP_ENTER/OP_LEAVE/OP_LOCAL args in bytes)
     int* stackptr;		            // pointer to current location in stack (all pushes/pops are 4-bytes at a time)
 
-    // syscall
-    vmsyscall_t vmsyscall;          // e.g. Q3A_vmsyscall function from game_q3a.cpp
-
+    // extra
+    size_t filesize;    			// .qvm file size
+    qvm_alloc_t* alloc;             // allocator
     bool verify_data;		        // verify data access is inside the memory block
+    char padding[sizeof(intptr_t) - 1];
 } qvm_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t* qvm, const uint8_t* filemem, unsigned int filesize, vmsyscall_t vmsyscall, unsigned int stacksize, bool verify_data, qvm_alloc_t* alloc);
+bool qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, size_t stacksize, bool verify_data, qvm_alloc_t* alloc);
 void qvm_unload(qvm_t* qvm);
 int qvm_exec(qvm_t* qvm, int argc, int* argv);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
