@@ -145,7 +145,7 @@ static std::map<intptr_t, std::string> s_userinfo;
 static bool Q2R_ClientConnect(edict_t* ent, char* userinfo, const char* social_id, bool isBot) {
     // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
     if (orig_export && orig_export->edicts && orig_export->edict_size) {
-        intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
+        intptr_t entnum = (intptr_t)(((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size);
         intptr_t clientnum = entnum - 1;
         // if userinfo is null, remove entry in map. otherwise store in map
         if (userinfo)
@@ -154,14 +154,14 @@ static bool Q2R_ClientConnect(edict_t* ent, char* userinfo, const char* social_i
             s_userinfo.erase(clientnum);
     }
     cgame_is_QMM_vmMain_call = true;
-    return vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
+    return (bool)vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
 }
 
 
 static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
     // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
     if (orig_export && orig_export->edicts && orig_export->edict_size) {
-        intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
+        intptr_t entnum = (intptr_t)(((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size);
         intptr_t clientnum = entnum - 1;
         // if userinfo is null, remove entry in map. otherwise store in map
         if (userinfo)
@@ -337,11 +337,11 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
         // qmm: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
         char* var_name = (char*)(args[0]);
         char* buffer = (char*)(args[1]);
-        int bufsize = (int)args[2];
+        intptr_t bufsize = args[2];
         *buffer = '\0';
         cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
         if (cvar)
-            strncpyz(buffer, cvar->string, bufsize);
+            strncpyz(buffer, cvar->string, (size_t)bufsize);
         break;
     }
     case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -398,7 +398,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
     case G_FS_READ: {
         // void trap_FS_Read(void* buffer, int len, fileHandle_t f);
         char* buffer = (char*)args[0];
-        size_t len = args[1];
+        size_t len = (size_t)args[1];
         fileHandle_t f = (fileHandle_t)args[2];
         size_t total = 0;
         FILE* fp = (FILE*)f;
@@ -412,7 +412,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
     case G_FS_WRITE: {
         // void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
         char* buffer = (char*)args[0];
-        size_t len = args[1];
+        size_t len = (size_t)args[1];
         fileHandle_t f = (fileHandle_t)args[2];
         size_t total = 0;
         FILE* fp = (FILE*)f;
@@ -449,7 +449,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
         intptr_t bufferSize = args[2];
         *buffer = '\0';
         if (s_userinfo.count(num))
-            strncpyz(buffer, s_userinfo[num].c_str(), bufferSize);
+            strncpyz(buffer, s_userinfo[num].c_str(), (size_t)bufferSize);
         break;
     }
     case G_GET_ENTITY_TOKEN: {
@@ -462,7 +462,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), bufferSize);
+        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), (size_t)bufferSize);
         ret = true;
         break;
     }
@@ -547,7 +547,7 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
         ) {
 
         edict_t* edicts = orig_export->edicts;
-        intptr_t edict_size = orig_export->edict_size;
+        intptr_t edict_size = (intptr_t)orig_export->edict_size;
 
         if (edicts) {
             gclient_t* clients = nullptr;

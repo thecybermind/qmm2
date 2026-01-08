@@ -26,20 +26,21 @@ struct api_info_t {
 
 // store all currently-loaded game & game engine info
 struct game_info_t {
-    eng_syscall_t pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
-    mod_vmMain_t pfnvmMain = nullptr;		// game-specific wrapper for vmMain. given to plugins and called by QMM
-    supportedgame_t* game = nullptr;		// loaded engine from supported games table from game_api.cpp
-    bool isautodetected = false;			// was this engine auto-detected?
     std::string exe_path;					// full path of running server binary
     std::string exe_dir;					// directory of running server binary
     std::string exe_file;					// filename of running server binary
     std::string qmm_path;					// full path of qmm dll
     std::string qmm_dir;					// directory of qmm dll
     std::string qmm_file;					// filename of qmm dll
-    void* qmm_module_ptr = nullptr;			// qmm module pointer
     std::string moddir;						// active mod dir
     std::string cfg_path;					// qmm config file path
+    eng_syscall_t pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
+    mod_vmMain_t pfnvmMain = nullptr;		// game-specific wrapper for vmMain. given to plugins and called by QMM
+    supportedgame_t* game = nullptr;		// loaded engine from supported games table from game_api.cpp
+    void* qmm_module_ptr = nullptr;			// qmm module pointer
     api_info_t api_info;					// some pointers utilized by GetGameAPI games
+    bool isautodetected = false;			// was this engine auto-detected?
+    char padding[sizeof(intptr_t) - 1];     // padding
 };
 
 extern game_info_t g_gameinfo;

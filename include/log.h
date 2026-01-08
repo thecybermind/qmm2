@@ -12,7 +12,7 @@ Created By:
 #ifndef __QMM2_LOG_H__
 #define __QMM2_LOG_H__
 
-// #define QMM_LOG_APPEND
+#ifdef __cplusplus
 
 #include <aixlog/aixlog.hpp>
 #include <string>
@@ -38,19 +38,11 @@ void log_add_sink(T func, AixLog::Severity level = AixLog::Severity::notice) {
 
 std::string log_format(const AixLog::Metadata& metadata, const std::string& message, bool timestamp = true);
 
-enum {
-    QMM_LOG_TRACE,
-    QMM_LOG_DEBUG,
-    QMM_LOG_INFO,
-    QMM_LOG_NOTICE,
-    QMM_LOG_WARNING,
-    QMM_LOG_ERROR,
-    QMM_LOG_FATAL
-};
-
 // class like AixLog's SinkFile except it will not truncate the file on opening
 struct SinkFileAppend : public AixLog::SinkFormat
 {
+    SinkFileAppend(const SinkFileAppend&) = delete;
+    SinkFileAppend& operator=(const SinkFileAppend&) = delete;
     SinkFileAppend(const AixLog::Filter& filter, const std::string& filename, const std::string& format = "%Y-%m-%d %H:%M:%S.#ms [#severity] (#tag_func)")
         : SinkFormat(filter, format)
     {
@@ -70,5 +62,26 @@ struct SinkFileAppend : public AixLog::SinkFormat
 protected:
     mutable std::ofstream ofs;
 };
+
+#endif // __cplusplus
+
+enum {
+    QMM_LOG_TRACE,
+    QMM_LOG_DEBUG,
+    QMM_LOG_INFO,
+    QMM_LOG_NOTICE,
+    QMM_LOG_WARNING,
+    QMM_LOG_ERROR,
+    QMM_LOG_FATAL
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+// so qvm.c can log stuff
+void log_c(int severity, const char* tag, const char* fmt, ...);
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // __QMM2_LOG_H__

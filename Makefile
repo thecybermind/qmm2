@@ -6,13 +6,15 @@
 
 # QMM2 Makefile
 
-CC := g++
+CC := gcc
+CXXC := g++
 
 SRC_DIR := src
 OBJ_DIR := obj
 BIN_DIR := bin
 
-SRC := $(wildcard $(SRC_DIR)/*.cpp)
+SRC_C   := $(wildcard $(SRC_DIR)/*.c)
+SRC_CXX := $(wildcard $(SRC_DIR)/*.cpp)
 
 OBJ_DIR_REL    := $(OBJ_DIR)/release
 OBJ_DIR_REL_32 := $(OBJ_DIR_REL)/x86
@@ -33,13 +35,14 @@ BIN_REL_64 := $(BIN_DIR_REL_64)/qmm2_x86_64.so
 BIN_DBG_32 := $(BIN_DIR_DBG_32)/qmm2.so
 BIN_DBG_64 := $(BIN_DIR_DBG_64)/qmm2_x86_64.so
 
-OBJ_REL_32 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL_32)/%.o)
-OBJ_REL_64 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL_64)/%.o)
-OBJ_DBG_32 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_32)/%.o)
-OBJ_DBG_64 := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_64)/%.o)
+OBJ_REL_32 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL_32)/%.o) $(SRC_C:$(SRC_DIR)/%.c=$(OBJ_DIR_REL_32)/%.o)
+OBJ_REL_64 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL_64)/%.o) $(SRC_C:$(SRC_DIR)/%.c=$(OBJ_DIR_REL_64)/%.o)
+OBJ_DBG_32 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_32)/%.o) $(SRC_C:$(SRC_DIR)/%.c=$(OBJ_DIR_DBG_32)/%.o)
+OBJ_DBG_64 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_64)/%.o) $(SRC_C:$(SRC_DIR)/%.c=$(OBJ_DIR_DBG_64)/%.o)
 
-CPPFLAGS := -MMD -MP -I ./include -isystem ../qmm_sdks
-CFLAGS   := -Wall -pipe -fPIC -std=c++17
+CPPFLAGS  := -MMD -MP -I ./include -isystem ../qmm_sdks
+CFLAGS   := -Wall -pipe -fPIC -std=gnu17
+CXXFLAGS := -Wall -pipe -fPIC -std=c++17
 LDFLAGS  := -shared -fPIC
 LDLIBS   :=
 
@@ -50,6 +53,11 @@ REL_CFLAGS_32 := $(CFLAGS) -m32 -O2 -ffast-math -falign-loops=2 -falign-jumps=2 
 REL_CFLAGS_64 := $(CFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
 DBG_CFLAGS_32 := $(CFLAGS) -m32 -g -pg
 DBG_CFLAGS_64 := $(CFLAGS) -g -pg
+
+REL_CXXFLAGS_32 := $(CXXFLAGS) -m32 -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
+REL_CXXFLAGS_64 := $(CXXFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
+DBG_CXXFLAGS_32 := $(CXXFLAGS) -m32 -g -pg
+DBG_CXXFLAGS_64 := $(CXXFLAGS) -g -pg
 
 REL_LDFLAGS_32 := $(LDFLAGS) -m32
 REL_LDFLAGS_64 := $(LDFLAGS)
@@ -85,35 +93,51 @@ debug64: $(BIN_DBG_64)
 
 $(BIN_REL_32): $(OBJ_REL_32)
 	mkdir -p $(@D)
-	$(CC) $(REL_LDFLAGS_32) -o $@ $(LDLIBS) $^
+	$(CXXC) $(REL_LDFLAGS_32) -o $@ $(LDLIBS) $^
 
 $(BIN_REL_64): $(OBJ_REL_64)
 	mkdir -p $(@D)
-	$(CC) $(REL_LDFLAGS_64) -o $@ $(LDLIBS) $^
+	$(CXXC) $(REL_LDFLAGS_64) -o $@ $(LDLIBS) $^
 
 $(BIN_DBG_32): $(OBJ_DBG_32)
 	mkdir -p $(@D)
-	$(CC) $(DBG_LDFLAGS_32) -o $@ $(LDLIBS) $^
+	$(CXXC) $(DBG_LDFLAGS_32) -o $@ $(LDLIBS) $^
 
 $(BIN_DBG_64): $(OBJ_DBG_64)
 	mkdir -p $(@D)
-	$(CC) $(DBG_LDFLAGS_64) -o $@ $(LDLIBS) $^
+	$(CXXC) $(DBG_LDFLAGS_64) -o $@ $(LDLIBS) $^
 
-$(OBJ_DIR_REL_32)/%.o: $(SRC_DIR)/%.cpp
+$(OBJ_DIR_REL_32)/%.o: $(SRC_DIR)/%.c
 	mkdir -p $(@D)
 	$(CC) $(REL_CPPFLAGS) $(REL_CFLAGS_32) -c $< -o $@
 
-$(OBJ_DIR_REL_64)/%.o: $(SRC_DIR)/%.cpp
+$(OBJ_DIR_REL_32)/%.o: $(SRC_DIR)/%.cpp
+	mkdir -p $(@D)
+	$(CXXC) $(REL_CPPFLAGS) $(REL_CXXFLAGS_32) -c $< -o $@
+
+$(OBJ_DIR_REL_64)/%.o: $(SRC_DIR)/%.c
 	mkdir -p $(@D)
 	$(CC) $(REL_CPPFLAGS) $(REL_CFLAGS_64) -c $< -o $@
 
-$(OBJ_DIR_DBG_32)/%.o: $(SRC_DIR)/%.cpp
+$(OBJ_DIR_REL_64)/%.o: $(SRC_DIR)/%.cpp
+	mkdir -p $(@D)
+	$(CXXC) $(REL_CPPFLAGS) $(REL_CXXFLAGS_64) -c $< -o $@
+
+$(OBJ_DIR_DBG_32)/%.o: $(SRC_DIR)/%.c
 	mkdir -p $(@D)
 	$(CC) $(DBG_CPPFLAGS) $(DBG_CFLAGS_32) -c $< -o $@
 
-$(OBJ_DIR_DBG_64)/%.o: $(SRC_DIR)/%.cpp
+$(OBJ_DIR_DBG_32)/%.o: $(SRC_DIR)/%.cpp
+	mkdir -p $(@D)
+	$(CXXC) $(DBG_CPPFLAGS) $(DBG_CXXFLAGS_32) -c $< -o $@
+
+$(OBJ_DIR_DBG_64)/%.o: $(SRC_DIR)/%.c
 	mkdir -p $(@D)
 	$(CC) $(DBG_CPPFLAGS) $(DBG_CFLAGS_64) -c $< -o $@
+
+$(OBJ_DIR_DBG_64)/%.o: $(SRC_DIR)/%.cpp
+	mkdir -p $(@D)
+	$(CXXC) $(DBG_CPPFLAGS) $(DBG_CXXFLAGS_64) -c $< -o $@
 
 clean:
 	@$(RM) -rv $(BIN_DIR) $(OBJ_DIR)
