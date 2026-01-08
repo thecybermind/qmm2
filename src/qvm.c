@@ -86,7 +86,10 @@ bool qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t v
     qvm->memorysize = qvm->codeseglen + qvm->dataseglen + qvm->argstackseglen + qvm->stackseglen;
     qvm->memory = (uint8_t*)qvm->alloc->alloc(qvm->memorysize, qvm->alloc->ctx);
 
-    // set pointers
+    // set segment pointers
+    // NOTE: memory segments are laid out like this:
+    // | CODE | DATA | <ARGSTACK< | <STACK< |
+    // both stacks grow downward from highest address
     qvm->codesegment = (qvmop_t*)qvm->memory;
     qvm->datasegment = qvm->memory + qvm->codeseglen;
     qvm->argstacksegment = qvm->datasegment + qvm->dataseglen;
@@ -99,10 +102,6 @@ bool qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t v
     qvm->argstackptr = (qvm->argstacksegment + qvm->argstackseglen);
     // stack is for general operations. it starts at end of stack segment and grows down
     qvm->stackptr = (int*)(qvm->stacksegment + qvm->stackseglen);
-    // NOTE: memory segments are laid out like this:
-    // | CODE | DATA | ARGSTACK | STACK |
-    // OP_LOADx loads 1/2/4-bytes from datasegment+stack[0]
-    // OP_LOCAL stores (argstackptr - datasegment)+param into *stack
 
     // start loading ops from the code offset to VM
     codeoffset = filemem + qvm->header.codeoffset;
@@ -111,8 +110,10 @@ bool qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t v
     for (unsigned int i = 0; i < qvm->header.numops; ++i) {
         // get the opcode
         qvmopcode_t opcode = (qvmopcode_t)*codeoffset;
-        if (codeoffset > filemem + qvm->header.codeoffset + qvm->header.codelen) {
-            log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: numops value too large\n");
+        
+        // make sure we're not reading past the end of the codesegment in the file
+        if (codeoffset >= filemem + qvm->header.codeoffset + qvm->header.codelen) {
+            log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: numops value too large: %d\n", qvm->header.numops);
             goto fail;
         }
 
@@ -823,7 +824,8 @@ static bool qvm_validate_ptr_data(qvm_t* qvm, void* ptr) {
         return false;
     if (!qvm->verify_data)
         return true;
-    return qvm_validate_ptr(qvm, ptr, qvm->datasegment, qvm->memory + qvm->memorysize);
+    // data access can include argstack but not op stack
+    return qvm_validate_ptr(qvm, ptr, qvm->datasegment, qvm->argstacksegment + qvm->argstackseglen);
 }
 
 
