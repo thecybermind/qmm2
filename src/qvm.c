@@ -10,23 +10,22 @@ Created By:
 */
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include "qvm.h"
 #include "log.h"
 
 
-static bool qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start, void* end);
-static bool qvm_validate_ptr_data(qvm_t* qvm, void* ptr);
-static bool qvm_validate_ptr_code(qvm_t* qvm, void* ptr);
-static bool qvm_validate_ptr_stack(qvm_t* qvm, void* ptr);
-static bool qvm_validate_ptr_argstack(qvm_t* qvm, void* ptr);
+static int qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start, void* end);
+static int qvm_validate_ptr_data(qvm_t* qvm, void* ptr);
+static int qvm_validate_ptr_code(qvm_t* qvm, void* ptr);
+static int qvm_validate_ptr_stack(qvm_t* qvm, void* ptr);
+static int qvm_validate_ptr_argstack(qvm_t* qvm, void* ptr);
 
 
-bool qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, size_t stacksize, bool verify_data, qvm_alloc_t* allocator) {
+int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, size_t stacksize, int verify_data, qvm_alloc_t* allocator) {
     if (!qvm || qvm->memory || !filemem || !filesize || !vmsyscall)
-        return false;
+        return 0;
 
     const uint8_t* codeoffset = NULL;
 
@@ -173,11 +172,11 @@ bool qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t v
     memcpy(qvm->datasegment, filemem + qvm->header.dataoffset, qvm->header.datalen + qvm->header.litlen);
 
     // a winner is us
-    return true;
+    return 1;
 
 fail:
     qvm_unload(qvm);
-    return false;
+    return 0;
 }
 
 
@@ -811,36 +810,36 @@ const char* opcodename[] = {
 };
 
 
-static bool qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start, void* end) {
+static int qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start, void* end) {
     if (!qvm || !qvm->memory)
-        return false;
+        return 0;
 
     return (ptr >= start && ptr < end);
 }
 
 
-static bool qvm_validate_ptr_data(qvm_t* qvm, void* ptr) {
+static int qvm_validate_ptr_data(qvm_t* qvm, void* ptr) {
     if (!qvm || !qvm->memory)
-        return false;
+        return 0;
     if (!qvm->verify_data)
-        return true;
+        return 1;
     // data access can include argstack but not op stack
     return qvm_validate_ptr(qvm, ptr, qvm->datasegment, qvm->argstacksegment + qvm->argstackseglen);
 }
 
 
-static bool qvm_validate_ptr_code(qvm_t* qvm, void* ptr) {
+static int qvm_validate_ptr_code(qvm_t* qvm, void* ptr) {
     return qvm_validate_ptr(qvm, ptr, qvm->codesegment, qvm->memory + qvm->codeseglen);
 }
 
 
-static bool qvm_validate_ptr_argstack(qvm_t* qvm, void* ptr) {
+static int qvm_validate_ptr_argstack(qvm_t* qvm, void* ptr) {
     // stacks start off pointing just above the segment and are immediately subtracted on first use. +1 to allow exec to start
     return qvm_validate_ptr(qvm, ptr, qvm->argstacksegment, qvm->argstacksegment + qvm->argstackseglen + 1);
 }
 
 
-static bool qvm_validate_ptr_stack(qvm_t* qvm, void* ptr) {
+static int qvm_validate_ptr_stack(qvm_t* qvm, void* ptr) {
     // stacks start off pointing just above the segment and are immediately subtracted on first use. +1 to allow exec to start
     return qvm_validate_ptr(qvm, ptr, qvm->stacksegment, qvm->stacksegment + qvm->stackseglen + 1);
 }

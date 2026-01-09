@@ -14,7 +14,6 @@ Created By:
 
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
 
 // magic number is stored in file as 44 14 72 12
 #define	QVM_MAGIC       0x12721444
@@ -143,15 +142,14 @@ typedef struct qvm_s {
     // extra
     size_t filesize;    			// .qvm file size
     qvm_alloc_t* alloc;             // allocator
-    bool verify_data;		        // verify data access is inside the memory block
-    char padding[sizeof(intptr_t) - 1];
+    int verify_data;		        // verify data access is inside the memory block
 } qvm_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 // entry point for qvms (given to plugins to call for qvm mods)
-bool qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, size_t stacksize, bool verify_data, qvm_alloc_t* alloc);
+int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, size_t stacksize, int verify_data, qvm_alloc_t* alloc);
 void qvm_unload(qvm_t* qvm);
 int qvm_exec(qvm_t* qvm, int argc, int* argv);
 

@@ -40,7 +40,6 @@ struct game_info_t {
     void* qmm_module_ptr = nullptr;			// qmm module pointer
     api_info_t api_info;					// some pointers utilized by GetGameAPI games
     bool isautodetected = false;			// was this engine auto-detected?
-    char padding[sizeof(intptr_t) - 1];     // padding
 };
 
 extern game_info_t g_gameinfo;
