@@ -95,13 +95,13 @@ static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
     // generate new int array from the intptr_t args, and also include cmd at the front
-    int qvmargs[QMM_MAX_VMMAIN_ARGS + 1] = { (int)cmd };
-    for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; i++) {
+    int qvmargs[QVM_MAX_VMMAIN_ARGS + 1] = { (int)cmd };
+    for (int i = 0; i < QVM_MAX_VMMAIN_ARGS; i++) {
         qvmargs[i + 1] = (int)args[i];
     }
 
     // pass array and size to qvm
-    return qvm_exec(&g_mod.qvm, QMM_MAX_VMMAIN_ARGS + 1, qvmargs);
+    return qvm_exec(&g_mod.qvm, QVM_MAX_VMMAIN_ARGS + 1, qvmargs);
 }
 
 

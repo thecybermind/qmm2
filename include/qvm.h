@@ -19,8 +19,6 @@ Created By:
 // magic number is stored in file as 44 14 72 12
 #define	QVM_MAGIC       0x12721444
 
-#define QMM_MAX_SYSCALL_ARGS_QVM	13	// change whenever a QVM mod has a bigger syscall list
-
 typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
 typedef enum qvmopcode_e {

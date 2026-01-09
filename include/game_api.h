@@ -118,6 +118,8 @@ extern supportedgame_t g_supportedgames[];
 // ----- API vararg stuff -----
 // ----------------------------
 
+constexpr int QVM_MAX_VMMAIN_ARGS = 6; // change whenever a QVM game has a vmMain call with more args
+
 constexpr int QMM_MAX_VMMAIN_ARGS = 9;
 #define QMM_GET_VMMAIN_ARGS()   intptr_t args[QMM_MAX_VMMAIN_ARGS] = {}; \
                                 va_list arglist; \
