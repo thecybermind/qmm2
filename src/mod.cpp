@@ -132,10 +132,6 @@ static bool s_mod_load_qvm(mod_t& mod) {
     // get data verification setting from config
     verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
 
-    // disable data verification for SOF2MP
-    if (!strcmp(g_gameinfo.game->gamename_short, "SOF2MP"))
-        verify_data = false;
-
     // attempt to load mod
     loaded = qvm_load(&mod.qvm, filemem.data(), filemem.size(), g_gameinfo.game->vmsyscall, stacksize, verify_data, nullptr);
     if (!loaded) {

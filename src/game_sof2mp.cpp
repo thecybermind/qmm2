@@ -86,6 +86,10 @@ intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
     if (!g_mod.pfnvmMain)
         return 0;
 
+    // we cannot verify data in the QVM since this engine provides malloc functionality so data access may be outside the QVM
+    if (g_mod.qvm.memory)
+        g_mod.qvm.verify_data = false;
+
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
