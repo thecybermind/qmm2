@@ -18,8 +18,13 @@ Created By:
 // magic number is stored in file as 44 14 72 12
 #define	QVM_MAGIC       0x12721444
 
+// amount of ints the opstack can hold
+#define OPSTACK_SIZE    1024
+
+// function to receive syscalls (engine traps) out of VM
 typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
+// list of VM instructions
 typedef enum qvmopcode_e {
     OP_UNDEF,
     OP_NOP,
@@ -81,8 +86,11 @@ typedef enum qvmopcode_e {
     OP_MULF,
     OP_CVIF,
     OP_CVFI,
+
+    OP_NUM_OPS,
 } qvmopcode_t;
 
+// array of strings of opcode names
 extern const char* opcodename[];
 
 // a single opcode in memory
@@ -91,6 +99,7 @@ typedef struct qvmop_s {
     int param;
 } qvmop_t;
 
+// QVM file header
 typedef struct qvmheader_s {
     uint32_t magic;
     uint32_t numops;
@@ -109,6 +118,7 @@ typedef struct qvm_alloc_s {
     void* ctx;
 } qvm_alloc_t;
 
+// default vm allocator (uses malloc/free)
 extern qvm_alloc_t qvm_allocator_default;
 
 // all the info for a single QVM object
@@ -125,33 +135,57 @@ typedef struct qvm_s {
     // segments (into memory block)
     qvmop_t* codesegment;	        // code segment, each op is 8 bytes (4 op, 4 param)
     uint8_t* datasegment;	        // data segment, partially filled on load
-    uint8_t* argstacksegment;       // arg stack segment
     uint8_t* stacksegment;          // stack segment
 
     // segment sizes
     size_t codeseglen;    	        // size of code segment
     size_t dataseglen;	            // size of data segment
-    size_t argstackseglen;	        // size of argstack segment
     size_t stackseglen;	            // size of stack segment
 
-    // "registers"
-    qvmop_t* opptr;		            // current op in code segment
-    uint8_t* argstackptr;           // pointer to current location in argstack (OP_ENTER/OP_LEAVE/OP_LOCAL args in bytes)
-    int* stackptr;		            // pointer to current location in stack (all pushes/pops are 4-bytes at a time)
+    // registers
+    uint8_t* stackptr;              // pointer to current location in program stack
 
     // extra
     size_t filesize;    			// .qvm file size
-    qvm_alloc_t* alloc;             // allocator
+    qvm_alloc_t* allocator;         // allocator
     int verify_data;		        // verify data access is inside the memory block
+    int exec_layer;                 // current depth of recursive execution
 } qvm_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-// entry point for qvms (given to plugins to call for qvm mods)
-int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, size_t stacksize, int verify_data, qvm_alloc_t* alloc);
-void qvm_unload(qvm_t* qvm);
+
+/**
+* Create and initialize a new VM from a QVM file
+* 
+* @param [qvm_t*] qvm - Pointer to qvm_t object to store VM information
+* @param [const uint8_t*] filemem - Buffer with QVM file contents
+* @param [size_t] filesize - Size of the filemem buffer
+* @param [vmsyscall_t] vmsyscall - Function to be called for engine traps
+* @param [size_t] stacksize - Size of QVM program stack in MiB
+* @param [int] verify_data - (Boolean) Should data segment reads and writes be validated?
+* @param [qvm_alloc_t*] allocator - Pointer to a qvm_alloc_t object which contains custom alloc/free function pointers (pass NULL for default)
+* @returns [int] - (Boolean) 1 if success, 0 if failure
+*/
+int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, size_t stacksize, int verify_data, qvm_alloc_t* allocator);
+
+/**
+* Begin execution in a VM
+*
+* @param [qvm_t*] qvm - Pointer to qvm_t object to execute
+* @param [int] argc - Number of arguments to pass to VM entry point
+* @param [int*] argv - Array of arguments to pass to VM entry point
+* @returns [int] - Return value from VM entry point
+*/
 int qvm_exec(qvm_t* qvm, int argc, int* argv);
+
+/**
+* Unload a VM
+*
+* @param [qvm_t*] qvm - Pointer to qvm_t object to unload
+*/
+void qvm_unload(qvm_t* qvm);
 
 #ifdef __cplusplus
 }
