@@ -41,7 +41,7 @@ intptr_t Q3A_syscall(intptr_t cmd, ...) {
     intptr_t ret = 0;
 
     switch (cmd) {
-        // handle special cmds which QMM uses but Q3A doesn't have an analogue for
+    // handle special cmds which QMM uses but Q3A doesn't have an analogue for
     case G_ARGS: {
         // quake2: char* (*args)(void);
         static std::string s;
@@ -58,8 +58,8 @@ intptr_t Q3A_syscall(intptr_t cmd, ...) {
         ret = (intptr_t)s.c_str();
         break;
     }
-               // all normal engine functions go to engine
     default:
+        // all normal engine functions go to engine
         ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
