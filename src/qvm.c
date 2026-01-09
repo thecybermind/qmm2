@@ -204,31 +204,31 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     if (!qvm || !qvm->memory)
         return 0;
 
-    // store vmMain cmd for logging
+    // cmd that vmMain was called with
     int vmMain_cmd = argv[0];
 
     // increment exec_layer
     qvm->exec_layer++;
 
-    // start instruction pointer at beginning of code segment
+    // instruction pointer
     qvmop_t* opptr = qvm->codesegment;
 
-    // get current stack pointer into a local "register"
+    // local "register" copy of programstack pointer
     uint8_t* programstack = qvm->stackptr;
     // iprogramstack is an int view of programstack to set/check args
     int* iprogramstack = (int*)programstack;
 
 // macro to manage stack frame and keep iprogramstack locked to programstack
-#define PROGRAMSTACK_FRAME(size) (programstack -= (size), iprogramstack = (int*)programstack)
+#define QVM_PROGRAMSTACK_FRAME(size) (programstack -= (size), iprogramstack = (int*)programstack)
 
-    // amount to grow stack
+    // amount to grow stack for vmMain args
     int argsize = (argc + 2) * sizeof(argv[0]);
 
     // grow program stack for new arguments
-    PROGRAMSTACK_FRAME(argsize);
+    QVM_PROGRAMSTACK_FRAME(argsize);
 
-    // push args into the new program stack space
-    // sentinel return pointer to signal end of execution. this will be overwritten anyway by the first OP_ENTER
+    // push args into the new programstack frame
+    // this is normally where the return instruction index goes, but this is our "fake" frame with args for vmMain
     iprogramstack[0] = -1;
     // store the arg size like param in OP_ENTER
     iprogramstack[1] = argsize;
@@ -240,15 +240,17 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     int opstack[OPSTACK_SIZE];
     memset(opstack, 0, sizeof(opstack));
 
-    // start stack just past the end of the block
+    // opstack pointer (starts at end of block, grows down)
     int* stack = opstack + OPSTACK_SIZE;
 
-    // vmMain's OP_ENTER will grab this return address and store it in programstack[0].
+    // vmMain's OP_ENTER will grab this return address and store it in programstack[0] in the new vmMain stack frame.
     // when it is pulled in OP_LEAVE, it will signal to exit the instruction loop
     --stack;
     stack[0] = -1;
 
+    // current op
     qvmopcode_t op;
+    // hardcoded param for op
     int param;
 
     do {
@@ -328,22 +330,22 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
             ++stack;
             break;
 
-        // functions / code flow
+        // functions
 
-#define JUMP(x) opptr = qvm->codesegment + (x)
+#define QVM_JUMP(x) opptr = qvm->codesegment + (x)
 
         case OP_CALL: {
             // call a function, instruction index in stack[0]. store return value in stack[0]
-            int jmp_to = stack[0];
+            int jump_to = stack[0];
 
             // negative means an engine trap
-            if (jmp_to < 0) {
+            if (jump_to < 0) {
                 // save local registers for possible recursive execution
                 qvm->stackptr = programstack;
 
                 // pass call to game-specific syscall handler which will adjust pointer arguments
                 // and then call the normal QMM syscall entry point so it can be routed to plugins
-                int ret = qvm->vmsyscall(qvm->datasegment, -jmp_to - 1, &iprogramstack[2]);
+                int ret = qvm->vmsyscall(qvm->datasegment, -jump_to - 1, &iprogramstack[2]);
 
                 // restore local registers
                 programstack = qvm->stackptr;
@@ -355,135 +357,131 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
                 break;
             }
 
-            // replace top of stack with the current instruction index (number of ops from start of code segment)
+            // replace top of stack with the return instruction index. this gets put into new stack frame
+            // in OP_ENTER
             stack[0] = (int)(opptr - qvm->codesegment);
             // jump to VM function at address
-            JUMP(jmp_to);
+            QVM_JUMP(jump_to);
             break;
         }
 
-        case OP_ENTER: {
-            // enter a function, prepare local variable program stack space (length=param).
-            // store the instruction return index (at top of stack from OP_CALL) in program stack and
-            // store the param in the next program stack slot. this gets verified to match in OP_LEAVE
-            PROGRAMSTACK_FRAME(param);
+        case OP_ENTER:
+            // enter a function: prepare stack frame on programstack (size=param). then store the
+            // return instruction index (at top of stack from OP_CALL) in programstack[0] and store
+            // param in the programstack[ slot]1]. this gets verified to match in OP_LEAVE.
+            QVM_PROGRAMSTACK_FRAME(param);
             iprogramstack[0] = stack[0];
             iprogramstack[1] = param;
             ++stack;
             break;
-        }
 
-        case OP_LEAVE: {
-            // leave a function, get previous instruction index from top of program stack and OP_ENTER
-            // param from programstack[1]. verify programstack[1] matches param, then retrieve the code
-            // return address from programstack[0]. remove stack frame by adding param.
+        case OP_LEAVE:
+            // leave a function: get return instruction index from programstack[0] and the saved OP_ENTER
+            // param from programstack[1]. verify programstack[1] matches param, then jump to return
+            // instruction index. remove stack frame (size=param).
             if (iprogramstack[1] != param) {
                 log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): OP_LEAVE param (%d) does not match OP_ENTER param (%d)\n", vmMain_cmd, param, iprogramstack[1]);
                 goto fail;
             }
-            // if return instruction pointer is our negative sentinel, signal end of instruction loop
-            if (iprogramstack[0] < 0)
-                opptr = NULL;
-            else
-                opptr = qvm->codesegment + iprogramstack[0];
-            // offset stack to cleanup frame
-            PROGRAMSTACK_FRAME(-param);
+            // if return instruction pointer is our negative sentinel, signal end of instruction loop (NULL)
+            opptr = (iprogramstack[0] < 0) ? NULL : (qvm->codesegment + iprogramstack[0]);
+            // clean up stack frame
+            QVM_PROGRAMSTACK_FRAME(-param);
             break;
-        }
 
         // branching
 
 // signed integer comparison
-#define SIF(o) if (stack[1] o stack[0]) JUMP(param); stack += 2
+#define QVM_JUMP_SIF(o) if (stack[1] o stack[0]) QVM_JUMP(param); stack += 2
 // unsigned integer comparison
-#define UIF(o) if (*(unsigned int*)&stack[1] o *(unsigned int*)&stack[0]) JUMP(param); stack += 2
+#define QVM_JUMP_UIF(o) if (*(unsigned int*)&stack[1] o *(unsigned int*)&stack[0]) QVM_JUMP(param); stack += 2
 // floating point comparison
-#define FIF(o) if (*(float*)&stack[1] o *(float*)&stack[0]) JUMP(param); stack += 2
+#define QVM_JUMP_FIF(o) if (*(float*)&stack[1] o *(float*)&stack[0]) QVM_JUMP(param); stack += 2
 
         case OP_JUMP:
             // jump to address in stack[0]
-            JUMP(stack[0]);
+            QVM_JUMP(stack[0]);
             ++stack;
             break;
 
         case OP_EQ:
             // if stack[1] == stack[0], goto address in param
-            SIF( == );
+            QVM_JUMP_SIF( == );
             break;
 
         case OP_NE:
             // if stack[1] != stack[0], goto address in param
-            SIF( != );
+            QVM_JUMP_SIF( != );
             break;
 
         case OP_LTI:
             // if stack[1] < stack[0], goto address in param
-            SIF( < );
+            QVM_JUMP_SIF( < );
             break;
 
         case OP_LEI:
             // if stack[1] <= stack[0], goto address in param
-            SIF( <= );
+            QVM_JUMP_SIF( <= );
             break;
 
         case OP_GTI:
             // if stack[1] > stack[0], goto address in param
-            SIF( > );
+            QVM_JUMP_SIF( > );
             break;
 
         case OP_GEI:
             // if stack[1] >= stack[0], goto address in param
-            SIF( >= );
+            QVM_JUMP_SIF( >= );
             break;
 
         case OP_LTU:
             // if stack[1] < stack[0], goto address in param (unsigned)
-            UIF( < );
+            QVM_JUMP_UIF( < );
             break;
 
         case OP_LEU:
             // if stack[1] <= stack[0], goto address in param (unsigned)
-            UIF( <= );
+            QVM_JUMP_UIF( <= );
             break;
 
         case OP_GTU:
             // if stack[1] > stack[0], goto address in param (unsigned)
-            UIF( > );
+            QVM_JUMP_UIF( > );
             break;
 
         case OP_GEU:
             // if stack[1] >= stack[0], goto address in param (unsigned)
-            UIF( >= );
+            QVM_JUMP_UIF( >= );
             break;
 
         case OP_EQF:
             // if stack[1] == stack[0], goto address in param (float)
-            FIF( == );
+            QVM_JUMP_FIF( == );
             break;
 
         case OP_NEF:
             // if stack[1] != stack[0], goto address in param (float)
-            FIF( != );
+            QVM_JUMP_FIF( != );
             break;
 
         case OP_LTF:
             // if stack[1] < stack[0], goto address in param (float)
-            FIF( < );
+            QVM_JUMP_FIF( < );
             break;
 
         case OP_LEF:
             // if stack[1] <= stack[0], goto address in param (float)
-            FIF( <= );
+            QVM_JUMP_FIF( <= );
             break;
 
         case OP_GTF:
             // if stack[1] > stack[0], goto address in param (float)
-            FIF( > );
+            QVM_JUMP_FIF( > );
             break;
 
         case OP_GEF:
             // if stack[1] >= stack[0], goto address in param (float)
-            FIF( >= );
+            QVM_JUMP_FIF( >= );
             break;
 
         // memory/pointer management
@@ -560,7 +558,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
         }
 
         case OP_BLOCK_COPY: {
-            // copy mem at address pointed to by stack[0] to address pointed to by stack[1]
+            // copy mem from address in stack[0] to address in stack[1]
             // for 'param' number of bytes
             uint8_t* src = qvm->datasegment + stack[0];
             uint8_t* dst = qvm->datasegment + stack[1];
@@ -590,119 +588,119 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
         // arithmetic/operators
 
 // signed integer (stack[0] done to stack[1], stored in stack[1])
-#define SOP(o) stack[1] o stack[0]; ++stack
+#define QVM_SOP(o) stack[1] o stack[0]; ++stack
 // unsigned integer (stack[0] done to stack[1], stored in stack[1])
-#define UOP(o) *(unsigned int*)&stack[1] o *(unsigned int*)&stack[0]; ++stack
+#define QVM_UOP(o) *(unsigned int*)&stack[1] o *(unsigned int*)&stack[0]; ++stack
 // floating point (stack[0] done to stack[1], stored in stack[1])
-#define FOP(o) *(float*)&stack[1] o *(float*)&stack[0]; ++stack
+#define QVM_FOP(o) *(float*)&stack[1] o *(float*)&stack[0]; ++stack
 // signed integer (done to self)
-#define SSOP(o) stack[0] = o stack[0]
+#define QVM_SSOP(o) stack[0] = o stack[0]
 // floating point (done to self)
-#define SFOP(o) *(float*)&stack[0] = o *(float*)&stack[0]
+#define QVM_SFOP(o) *(float*)&stack[0] = o *(float*)&stack[0]
 
         case OP_NEGI:
             // negation
-            SSOP( - );
+            QVM_SSOP( - );
             break;
 
         case OP_ADD:
             // addition
-            SOP( += );
+            QVM_SOP( += );
             break;
 
         case OP_SUB:
             // subtraction
-            SOP( -= );
+            QVM_SOP( -= );
             break;
 
         case OP_MULI:
             // multiplication
-            SOP( *= );
+            QVM_SOP( *= );
             break;
 
         case OP_MULU:
             // unsigned multiplication
-            UOP( *= );
+            QVM_UOP( *= );
             break;
 
         case OP_DIVI:
             // division
-            SOP( /= );
+            QVM_SOP( /= );
             break;
 
         case OP_DIVU:
             // unsigned division
-            UOP( /= );
+            QVM_UOP( /= );
             break;
 
         case OP_MODI:
             // modulus
-            SOP( %= );
+            QVM_SOP( %= );
             break;
 
         case OP_MODU:
             // unsigned modulus
-            UOP( %= );
+            QVM_UOP( %= );
             break;
 
         case OP_BAND:
             // bitwise AND
-            SOP( &= );
+            QVM_SOP( &= );
             break;
 
         case OP_BOR:
             // bitwise OR
-            SOP( |= );
+            QVM_SOP( |= );
             break;
 
         case OP_BXOR:
             // bitwise XOR
-            SOP( ^= );
+            QVM_SOP( ^= );
             break;
 
         case OP_BCOM:
             // bitwise one's compliment
-            SSOP( ~ );
+            QVM_SSOP( ~ );
             break;
 
         case OP_LSH:
             // unsigned bitwise LEFTSHIFT
-            UOP( <<= );
+            QVM_UOP( <<= );
             break;
 
         case OP_RSHI:
             // bitwise RIGHTSHIFT
-            SOP( >>= );
+            QVM_SOP( >>= );
             break;
 
         case OP_RSHU:
             // unsigned bitwise RIGHTSHIFT
-            UOP( >>= );
+            QVM_UOP( >>= );
             break;
 
         case OP_NEGF:
             // float negation
-            SFOP( - );
+            QVM_SFOP( - );
             break;
 
         case OP_ADDF:
             // float addition
-            FOP( += );
+            QVM_FOP( += );
             break;
 
         case OP_SUBF:
             // float subtraction
-            FOP( -= );
+            QVM_FOP( -= );
             break;
 
         case OP_MULF:
             // float multiplication
-            FOP( *= );
+            QVM_FOP( *= );
             break;
 
         case OP_DIVF:
             // float division
-            FOP( /= );
+            QVM_FOP( /= );
             break;
 
         // sign extensions
@@ -740,7 +738,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     }
 
     // remove arguments from program stack like in OP_LEAVE
-    PROGRAMSTACK_FRAME(-argsize);
+    QVM_PROGRAMSTACK_FRAME(-argsize);
 
     // update persistent stack pointer with the temp register one
     qvm->stackptr = programstack;
