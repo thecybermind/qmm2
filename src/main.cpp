@@ -457,16 +457,12 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 intptr_t qmm_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({} {}) called\n", g_gameinfo.game->eng_msg_names(cmd), cmd);
-#endif
 
     // route call to plugins and mod
     intptr_t ret = s_main_route_syscall(cmd, args);
 
-#ifdef _DEBUG
     LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({} {}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), cmd, ret);
-#endif
 
     return ret;
 }
