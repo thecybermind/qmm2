@@ -123,33 +123,33 @@ extern qvm_alloc_t qvm_allocator_default;
 
 // all the info for a single QVM object
 typedef struct qvm_s {
-    qvmheader_t header;     		// header information
+    qvmheader_t header;             // header information
 
     // syscall
     vmsyscall_t vmsyscall;          // e.g. Q3A_vmsyscall function from game_q3a.cpp
 
     // memory
-    uint8_t* memory;	            // main block of memory
+    uint8_t* memory;                // main block of memory
     size_t memorysize;              // size of memory block
 
     // segments (into memory block)
-    qvmop_t* codesegment;	        // code segment, each op is 8 bytes (4 op, 4 param)
-    uint8_t* datasegment;	        // data segment, partially filled on load
+    qvmop_t* codesegment;           // code segment, each op is 8 bytes (4 op, 4 param)
+    uint8_t* datasegment;           // data segment, partially filled on load
     uint8_t* stacksegment;          // stack segment
 
     // segment sizes
-    size_t codeseglen;    	        // size of code segment
-    size_t dataseglen;	            // size of data segment
+    size_t codeseglen;              // size of code segment
+    size_t dataseglen;              // size of data segment
     size_t stackseglen;	            // size of stack segment
 
     // registers
-    uint8_t* stackptr;              // pointer to current location in program stack
+    int* stackptr;                  // pointer to current location in program stack
 
     // extra
-    size_t filesize;    			// .qvm file size
+    size_t filesize;                // .qvm file size
     qvm_alloc_t* allocator;         // allocator
-    int verify_data;		        // verify data access is inside the memory block
-    int exec_layer;                 // current depth of recursive execution
+    int verify_data;                // verify data access is inside the memory block
+    int exec_depth;                 // current depth of recursive execution
 } qvm_t;
 
 #ifdef __cplusplus
