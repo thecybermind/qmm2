@@ -129,6 +129,7 @@ typedef struct qvm_s {
     uint8_t* datasegment;           // data segment, partially filled on load
 
     // segment sizes
+    size_t numops;                  // number of instructions, from qvm header
     size_t codeseglen;              // size of code segment
     size_t dataseglen;              // size of data segment
     size_t stacksize;               // size of stack in bss segment

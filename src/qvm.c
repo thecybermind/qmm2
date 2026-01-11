@@ -15,6 +15,7 @@ Created By:
 #include <stdlib.h>
 #include <string.h>
 #include "qvm.h"
+
 #ifdef QMM_LOGGING
 #include "log.h"
 #else
@@ -23,20 +24,12 @@ Created By:
 
 // magic number is stored in file as 44 14 72 12
 #define	QVM_MAGIC                       0x12721444
-
 // amount of operands the opstack can hold (same amount used by Q3 engine)
 #define QVM_OPSTACK_SIZE                1024
-
 // max size of program stack (this is set by q3asm for ALL QVM-compatible games)
 #define QVM_PROGRAMSTACK_SIZE           0x10000     // 64KiB
-
 // allow extra space to be allocated to the data segment for additional stack space
 #define QVM_EXTRA_PROGRAMSTACK_SIZE     0
-
-// check to make sure ptr is within the range [start, end)
-// if NULL, start will default to qvm->memory
-// if NULL, end will default to qvm->memory + qvm->memorysize
-static int qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start, void* end);
 
 
 int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, int verify_data, qvm_alloc_t* allocator) {
@@ -87,20 +80,33 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
         goto fail;
     }
 
+    // store numops in qvm object
+    qvm->numops = header.numops;
+
+// round number up to next power of 2: https://stackoverflow.com/a/1322548/809900
+#define QVM_NEXT_POW_2(val) do { val--; \
+                                 val |= val >> 1; val |= val >> 2; val |= val >> 4; val |= val >> 8; val |= val >> 16; \
+                                 val++; \
+                            } while(0);
+
     // each opcode is 8 bytes long, calculate total size of instructions
-    qvm->codeseglen = header.numops * sizeof(qvmop_t);
+    size_t codeseglen = header.numops * sizeof(qvmop_t);
+    // the q3 engine rounds the data segment size up to the next power of 2 for masking data accesses,
+    // but we can also do that with code segment too. the remainder of the code segment will be filled
+    // out with byte 0 (QVM_OP_UNDEF) which will immediately fail if the instruction pointer ends up
+    // in that space
+    QVM_NEXT_POW_2(codeseglen);
+    qvm->codeseglen = codeseglen;
     
     // data segment is all the data segment lengths combined (plus optional extra stack space)
     size_t dataseglen = header.datalen + header.litlen + header.bsslen + QVM_EXTRA_PROGRAMSTACK_SIZE;
-    // the q3 engine rounds up to the next power of 2 for masking data accesses. we will do the same
-    // https://stackoverflow.com/a/1322548/809900
-    dataseglen--;
-    dataseglen |= dataseglen >> 1; dataseglen |= dataseglen >> 2; dataseglen |= dataseglen >> 4;
-    dataseglen |= dataseglen >> 8; dataseglen |= dataseglen >> 16;
-    qvm->dataseglen = dataseglen + 1;
+    size_t orig_dataseglen = dataseglen;
+    // round data segment size up to next power of 2 for masking data accesses
+    QVM_NEXT_POW_2(dataseglen);
+    qvm->dataseglen = dataseglen;
 
-    // stack exists at end of data segment
-    qvm->stacksize = QVM_PROGRAMSTACK_SIZE + QVM_EXTRA_PROGRAMSTACK_SIZE;
+    // allow stack to use any extra rounding space
+    qvm->stacksize = QVM_PROGRAMSTACK_SIZE + (dataseglen - orig_dataseglen) + QVM_EXTRA_PROGRAMSTACK_SIZE;
 
     // allocate vm memory
     qvm->memorysize = qvm->codeseglen + qvm->dataseglen;
@@ -221,30 +227,29 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     // increment exec_depth
     qvm->exec_depth++;
 
-    // data mask - disable if verify_data is off by masking with all bits 1
-    size_t datamask = qvm->verify_data ? qvm->dataseglen - 1 : 0xFFFFFFFF;
-
     // instruction pointer
     qvmop_t* opptr = qvm->codesegment;
+    // code mask
+    size_t codemask = qvm->codeseglen - 1;
+    // data mask - disable if verify_data is off by using a mask with all bits 1
+    size_t datamask = qvm->verify_data ? qvm->dataseglen - 1 : 0xFFFFFFFF;
 
     // local "register" copy of stack pointer. this is purely for locality/speed.
     // it gets synced to qvm object before syscalls and restored after syscalls
-    // it also gets synced to qvm object after execution completes
+    // it also gets synced back to qvm object after execution completes
     int* programstack = qvm->stackptr;
 
 // macro to manage stack frame in bytes
 #define QVM_PROGRAMSTACK_FRAME(size) programstack = (int*)((uint8_t*)programstack - (size))
 
-    // amount to grow stack for storing RII, framesize, and vmMain args
+    // size of new stack frame, need to store RII, framesize, and vmMain args
     int framesize = (argc + 2) * sizeof(argv[0]);
-
-    // grow program stack for new arguments
+    // create new stack frame
     QVM_PROGRAMSTACK_FRAME(framesize);
-
-    // push args into the new programstack frame
+    // set up new stack frame
     programstack[0] = -1;           // sentinel return instruction index (RII)
     programstack[1] = framesize;    // store the frame size like we store param in QVM_OP_ENTER
-    // copy qvm_exec arguments onto stack starting at programstack[2]
+    // copy qvm_exec arguments onto program stack starting at programstack[2]
     if (argv && argc > 0)
         memcpy(&programstack[2], argv, argc * sizeof(argv[0]));
 
@@ -268,11 +273,10 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     //
     // within a function, arguments are loaded by just accessing the "arg#" values from the previous stack frame.
 
-    // stack for math/comparison/temp/etc operations (instead of using registers)
-    // +2 for some extra space to "harmlessly" read 2 values (like QVM_OP_BLOCK_COPY) if stack is empty (like at start)
+    // opstack for math/comparison/temp/etc operations (instead of using registers)
+    // +2 for some extra space to "harmlessly" read 2 values (like QVM_OP_BLOCK_COPY) if opstack is empty (like at start)
     int opstack[QVM_OPSTACK_SIZE + 2];
     memset(opstack, 0, sizeof(opstack));
-
     // opstack pointer (starts at end of block, grows down)
     int* stack = opstack + QVM_OPSTACK_SIZE;
 
@@ -285,20 +289,17 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     qvmopcode_t op;
     // hardcoded param for op
     int param;
-    // current instruction index (for logging)
+    // current instruction index
     int instr_index;
 
     // main instruction loop
     do {
-        // verify code pointer is in code segment
-        if (!qvm_validate_ptr(qvm, opptr, qvm->codesegment, qvm->memory + qvm->codeseglen)) {
-            log_c(QMM_LOG_ERROR, "QMM", "qvm_exec(%d): Runtime error: execution outside the VM code segment (%p-%p): %p\n", vmMain_cmd, qvm->codesegment, qvm->codesegment + qvm->codeseglen - 1, opptr);
-            goto fail;
-        }
-        // store instruction index (for logging)
+        // store instruction index
         instr_index = (int)(opptr - qvm->codesegment);
-        // verify program stack pointer is in stack segment (+1 to allow starting at 1 past the end of block)
-        if (!qvm_validate_ptr(qvm, programstack, qvm->datasegment + qvm->dataseglen - qvm->stacksize, qvm->datasegment + qvm->dataseglen + 1)) {
+
+        // verify program stack pointer is in stack within bss segment (+1 to allow starting at 1 past the end of block)
+        if ((uint8_t*)programstack < qvm->datasegment + qvm->dataseglen - qvm->stacksize ||
+            (uint8_t*)programstack > qvm->datasegment + qvm->dataseglen) {
             intptr_t stackusage = qvm->datasegment + qvm->dataseglen - (uint8_t*)programstack;
             log_c(QMM_LOG_ERROR, "QMM", "qvm_exec(%d): Runtime error at %d: program stack overflow! Program stack size is currently %d, max is %d.\n", vmMain_cmd, instr_index, stackusage, qvm->stacksize);
             goto fail;
@@ -321,9 +322,6 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
         switch (op) {
         // miscellaneous opcodes
 
-        case QVM_OP_UNDEF:
-            // undefined - used as alignment padding at end of codesegment in file, treat as no op
-            // explicit fallthrough
         case QVM_OP_NOP:
             // no op
             // explicit fallthrough
@@ -332,6 +330,9 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
             // todo: dump stacks/memory?
             break;
 
+        case QVM_OP_UNDEF:
+            // undefined - used as alignment padding at end of codesegment. treat as error
+            // explicit fallthrough
         default:
             // anything else
             log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): Runtime error at %d: unhandled opcode %d\n", vmMain_cmd, instr_index, op);
@@ -339,7 +340,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         // functions
 
-#define QVM_JUMP(x) opptr = qvm->codesegment + (x)
+#define QVM_JUMP(x) opptr = qvm->codesegment + ((x) & codemask)
 
         case QVM_OP_ENTER:
             // enter a function:
@@ -393,7 +394,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
             // otherwise, normal VM function call
 
             // place RII in top slot of program stack
-            programstack[0] = (int)(opptr - qvm->codesegment);
+            programstack[0] = (int)(opptr - qvm->codesegment) & codemask;
 
             // jump to VM function at address
             QVM_JUMP(jump_to);
@@ -641,7 +642,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         case QVM_OP_DIVI:
             // division
-            if (!stack[0]) {
+            if (stack[0] == 0) {
                 log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): Runtime error at %d: %s division by 0!\n", vmMain_cmd, instr_index, opcodename[op]);
                 goto fail;
             }
@@ -650,7 +651,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         case QVM_OP_DIVU:
             // unsigned division
-            if (!stack[0]) {
+            if (stack[0] == 0) {
                 log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): Runtime error at %d: %s division by 0!\n", vmMain_cmd, instr_index, opcodename[op]);
                 goto fail;
             }
@@ -659,7 +660,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         case QVM_OP_MODI:
             // modulus
-            if (!stack[0]) {
+            if (stack[0] == 0) {
                 log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): Runtime error at %d: %s division by 0!\n", vmMain_cmd, instr_index, opcodename[op]);
                 goto fail;
             }
@@ -668,7 +669,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         case QVM_OP_MODU:
             // unsigned modulus
-            if (!stack[0]) {
+            if (stack[0] == 0) {
                 log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): Runtime error at %d: %s division by 0!\n", vmMain_cmd, instr_index, opcodename[op]);
                 goto fail;
             }
@@ -737,7 +738,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         case QVM_OP_DIVF:
             // float division
-            // float 0s are all 0s but with either sign bit
+            // float 0s are all 0 bits but with either sign bit
             if (stack[0] == 0 || stack[0] == 0x80000000) {
                 log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): Runtime error at %d: %s division by 0!\n", vmMain_cmd, instr_index, opcodename[op]);
                 goto fail;
@@ -764,9 +765,9 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
         } // switch (op)
     } while (opptr);
 
-    // compare stored argsize like in QVM_OP_LEAVE
+    // compare stored frame size like in QVM_OP_LEAVE
     if (programstack[1] != framesize) {
-        log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): exit argsize (%d) does not match enter argsize (%d)\n", vmMain_cmd, programstack[1], framesize);
+        log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): Runtime error after execution: stack frame size (%d) does not match entry stack frame size (%d)\n", vmMain_cmd, programstack[1], framesize);
         goto fail;
     }
 
@@ -851,17 +852,6 @@ const char* opcodename[] = {
     "QVM_OP_CVIF",
     "QVM_OP_CVFI"
 };
-
-
-static int qvm_validate_ptr(qvm_t* qvm, void* ptr, void* start, void* end) {
-    if (!qvm || !qvm->memory)
-        return 0;
-    if (!start)
-        start = qvm->memory;
-    if (!end)
-        end = qvm->memory + qvm->memorysize + 1;
-    return ((intptr_t)ptr >= (intptr_t)start && (intptr_t)ptr < (intptr_t)end);
-}
 
 
 static void* qvm_alloc_default(ptrdiff_t size, void* ctx) {
