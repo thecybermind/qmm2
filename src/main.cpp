@@ -692,12 +692,11 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM file size      : {}\n", g_mod.qvm.filesize).c_str());
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory base    : {}\n", (void*)g_mod.qvm.memory).c_str());
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory size    : {}\n", g_mod.qvm.memorysize).c_str());
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM instr count    : {}\n", g_mod.qvm.numops).c_str());
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM instr count    : {}\n", g_mod.qvm.instructioncount).c_str());
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM codeseg size   : {}\n", g_mod.qvm.codeseglen).c_str());
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM dataseg size   : {}\n", g_mod.qvm.dataseglen).c_str());
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM stack size     : {}\n", g_mod.qvm.stacksize).c_str());
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM data validation: {}\n", g_mod.qvm.verify_data ? "on" : "off").c_str());
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM max exec depth : {}\n", g_mod.qvm.max_exec_depth).c_str());
         }
         else if (g_mod.pfnvmMain) {
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Mod vmMain() offset: {}\n", (void*)g_mod.pfnvmMain).c_str());

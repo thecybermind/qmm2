@@ -35,8 +35,6 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
     qvm->filesize = filesize;
     qvm->vmsyscall = vmsyscall;
     qvm->verify_data = verify_data;
-    qvm->exec_depth = 0;
-    qvm->max_exec_depth = 0;
     // if null, use default allocator (uses malloc/free)
     qvm->allocator = allocator ? allocator : &qvm_allocator_default;
 
@@ -66,17 +64,17 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
         log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: data offset/length has invalid value\n");
         goto fail;
     }
-    if (header.numops < header.codelen / 5 || // assume each op in the code segment is 5 bytes for a minimum
-        header.numops > header.codelen) {
+    if (header.instructioncount < header.codelen / 5 || // assume each op in the code segment is 5 bytes for a minimum
+        header.instructioncount > header.codelen) {
         log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: numops has invalid value\n");
         goto fail;
     }
 
     // store numops in qvm object
-    qvm->numops = header.numops;
+    qvm->instructioncount = header.instructioncount;
 
     // each opcode is 8 bytes long, calculate total size of instructions
-    size_t codeseglen = header.numops * sizeof(qvmop_t);
+    size_t codeseglen = header.instructioncount * sizeof(qvmop_t);
     // the q3 engine rounds the data segment size up to the next power of 2 for masking data accesses,
     // but we can also do that with code segment too. the remainder of the code segment will be filled
     // out with byte 0 (QVM_OP_UNDEF) which will immediately fail if the instruction pointer ends up
@@ -113,7 +111,13 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
     const uint8_t* codeoffset = filemem + header.codeoffset;
 
     // loop through each op
-    for (uint32_t i = 0; i < header.numops; ++i) {
+    for (uint32_t i = 0; i < header.instructioncount; ++i) {
+        // make sure we're not reading past the end of the codesegment in the file
+        if (codeoffset >= filemem + header.codeoffset + header.codelen) {
+            log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: can't read instruction at %d, reached end of file\n", i);
+            goto fail;
+        }
+
         // get the opcode
         qvmopcode_t opcode = (qvmopcode_t)*codeoffset;
 
@@ -123,16 +127,11 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
             goto fail;
         }
         
-        // make sure we're not reading past the end of the codesegment in the file
-        if (codeoffset >= filemem + header.codeoffset + header.codelen) {
-            log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: can't write instruction at %d, VM code segment is full\n", i);
-            goto fail;
-        }
-
-        codeoffset++;
-
         // write opcode (to qvmop_t)
         qvm->codesegment[i].op = opcode;
+
+        // move to next byte
+        codeoffset++;
 
         switch (opcode) {
         case QVM_OP_EQ:
@@ -151,25 +150,28 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
         case QVM_OP_LEF:
         case QVM_OP_GTF:
         case QVM_OP_GEF:
-            // this first group of ops all have an instruction index param,
-            // so perform a sanity check to make sure the param is within range
-            if (*(unsigned int*)codeoffset > header.numops) {
-                log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid target in jump/branch instruction %s at %d: %d > %d\n", opcodename[opcode], i, *(unsigned int*)codeoffset, header.numops);
-                goto fail;
-            }
-            // explicit fallthrough
         case QVM_OP_ENTER:
         case QVM_OP_LEAVE:
         case QVM_OP_CONST:
         case QVM_OP_LOCAL:
         case QVM_OP_BLOCK_COPY:
             // all the above instructions have 4-byte params
+            // make sure we're not reading an int past the end of the codesegment in the file
+            if (codeoffset + 3 >= filemem + header.codeoffset + header.codelen) {
+                log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: can't read instruction %d, reached end of file\n", i);
+                goto fail;
+            }
             qvm->codesegment[i].param = *(int*)codeoffset;
             codeoffset += 4;
             break;
 
         case QVM_OP_ARG:
             // this instruction has a 1-byte param
+            // make sure we're not reading past the end of the codesegment in the file
+            if (codeoffset >= filemem + header.codeoffset + header.codelen) {
+                log_c(QMM_LOG_ERROR, "QMM", "qvm_load(): Invalid QVM file: can't read instruction %d, reached end of file\n", i);
+                goto fail;
+            }
             qvm->codesegment[i].param = (int)*codeoffset;
             codeoffset++;
             break;
@@ -210,10 +212,6 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
     // cmd that vmMain was called with
     int vmMain_cmd = argv[0];
-
-    // increment exec_depth
-    qvm->exec_depth++;
-    qvm->max_exec_depth = QVM_MAX(qvm->exec_depth, qvm->max_exec_depth);
 
     // instruction pointer
     qvmop_t* opptr = qvm->codesegment;
@@ -740,9 +738,6 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
     // save our local stack pointer back into the qvm object
     qvm->stackptr = programstack;
-
-    // decrement exec_depth
-    qvm->exec_depth--;
 
     // return value is stored on the top of the stack (pushed just before QVM_OP_LEAVE)
     return stack[0];

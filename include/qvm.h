@@ -26,11 +26,8 @@ Created By:
 // allow extra space to be allocated to the data segment for additional stack space
 #define QVM_EXTRA_PROGRAMSTACK_SIZE     0
 
-// standard max function
-#define QVM_MAX(a, b)   ((a) > (b) ? (a) : (b))
-
 // round number up to next power of 2: https://stackoverflow.com/a/1322548/809900
-#define QVM_NEXT_POW_2(val) val--; val |= val >> 1; val |= val >> 2; val |= val >> 4; val |= val >> 8; val |= val >> 16; val++;
+#define QVM_NEXT_POW_2(var) var--; var |= var >> 1; var |= var >> 2; var |= var >> 4; var |= var >> 8; var |= var >> 16; var++;
 
 // macro to manage stack frame in bytes
 #define QVM_STACKFRAME(size) programstack = (int*)((uint8_t*)programstack - (size))
@@ -146,7 +143,7 @@ typedef struct qvmop_s {
 // QVM file header
 typedef struct qvmheader_s {
     uint32_t magic;
-    uint32_t numops;
+    uint32_t instructioncount;
     uint32_t codeoffset;
     uint32_t codelen;
     uint32_t dataoffset;
@@ -179,7 +176,7 @@ typedef struct qvm_s {
     uint8_t* datasegment;           // data segment, partially filled on load
 
     // segment sizes
-    size_t numops;                  // number of instructions, from qvm header
+    size_t instructioncount;        // number of instructions, from qvm header
     size_t codeseglen;              // size of code segment
     size_t dataseglen;              // size of data segment
     size_t stacksize;               // size of stack in bss segment
@@ -191,10 +188,6 @@ typedef struct qvm_s {
     size_t filesize;                // .qvm file size
     qvm_alloc_t* allocator;         // allocator
     int verify_data;                // verify data access is inside the memory block
-
-    // debug/stats
-    int exec_depth;                 // current depth of recursive execution
-    int max_exec_depth;             // max depth of recursive execution
 } qvm_t;
 
 #ifdef __cplusplus
