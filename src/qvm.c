@@ -22,15 +22,6 @@ Created By:
 #define log_c(...) /* */
 #endif
 
-// magic number is stored in file as 44 14 72 12
-#define	QVM_MAGIC                       0x12721444
-// amount of operands the opstack can hold (same amount used by Q3 engine)
-#define QVM_OPSTACK_SIZE                1024
-// max size of program stack (this is set by q3asm for ALL QVM-compatible games)
-#define QVM_PROGRAMSTACK_SIZE           0x10000     // 64KiB
-// allow extra space to be allocated to the data segment for additional stack space
-#define QVM_EXTRA_PROGRAMSTACK_SIZE     0
-
 
 int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, int verify_data, qvm_alloc_t* allocator) {
     if (!qvm || qvm->memory || !filemem || !filesize || !vmsyscall)
@@ -45,6 +36,7 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
     qvm->vmsyscall = vmsyscall;
     qvm->verify_data = verify_data;
     qvm->exec_depth = 0;
+    qvm->max_exec_depth = 0;
     // if null, use default allocator (uses malloc/free)
     qvm->allocator = allocator ? allocator : &qvm_allocator_default;
 
@@ -83,12 +75,6 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
     // store numops in qvm object
     qvm->numops = header.numops;
 
-// round number up to next power of 2: https://stackoverflow.com/a/1322548/809900
-#define QVM_NEXT_POW_2(val) do { val--; \
-                                 val |= val >> 1; val |= val >> 2; val |= val >> 4; val |= val >> 8; val |= val >> 16; \
-                                 val++; \
-                            } while(0);
-
     // each opcode is 8 bytes long, calculate total size of instructions
     size_t codeseglen = header.numops * sizeof(qvmop_t);
     // the q3 engine rounds the data segment size up to the next power of 2 for masking data accesses,
@@ -100,12 +86,13 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
     
     // data segment is all the data segment lengths combined (plus optional extra stack space)
     size_t dataseglen = header.datalen + header.litlen + header.bsslen + QVM_EXTRA_PROGRAMSTACK_SIZE;
+    // save actual dataseglen before rounding up
     size_t orig_dataseglen = dataseglen;
     // round data segment size up to next power of 2 for masking data accesses
     QVM_NEXT_POW_2(dataseglen);
     qvm->dataseglen = dataseglen;
 
-    // allow stack to use any extra rounding space
+    // allow stack to use any extra space from rounding up
     qvm->stacksize = QVM_PROGRAMSTACK_SIZE + (dataseglen - orig_dataseglen) + QVM_EXTRA_PROGRAMSTACK_SIZE;
 
     // allocate vm memory
@@ -122,7 +109,7 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
     qvm->datasegment = qvm->memory + qvm->codeseglen;
     qvm->stackptr = (int*)(qvm->datasegment + qvm->dataseglen);
 
-    // start loading ops from the file's code offset into VM memory block
+    // start loading instructions from the file's code offset into VM memory block
     const uint8_t* codeoffset = filemem + header.codeoffset;
 
     // loop through each op
@@ -226,26 +213,26 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
     // increment exec_depth
     qvm->exec_depth++;
+    qvm->max_exec_depth = QVM_MAX(qvm->exec_depth, qvm->max_exec_depth);
 
     // instruction pointer
     qvmop_t* opptr = qvm->codesegment;
+
+    // set up bitmasks for safety
     // code mask
     size_t codemask = qvm->codeseglen - 1;
     // data mask - disable if verify_data is off by using a mask with all bits 1
     size_t datamask = qvm->verify_data ? qvm->dataseglen - 1 : 0xFFFFFFFF;
 
     // local "register" copy of stack pointer. this is purely for locality/speed.
-    // it gets synced to qvm object before syscalls and restored after syscalls
+    // it gets synced to qvm object before syscalls and restored after syscalls.
     // it also gets synced back to qvm object after execution completes
     int* programstack = qvm->stackptr;
-
-// macro to manage stack frame in bytes
-#define QVM_PROGRAMSTACK_FRAME(size) programstack = (int*)((uint8_t*)programstack - (size))
 
     // size of new stack frame, need to store RII, framesize, and vmMain args
     int framesize = (argc + 2) * sizeof(argv[0]);
     // create new stack frame
-    QVM_PROGRAMSTACK_FRAME(framesize);
+    QVM_STACKFRAME(framesize);
     // set up new stack frame
     programstack[0] = -1;           // sentinel return instruction index (RII)
     programstack[1] = framesize;    // store the frame size like we store param in QVM_OP_ENTER
@@ -253,25 +240,30 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     if (argv && argc > 0)
         memcpy(&programstack[2], argv, argc * sizeof(argv[0]));
 
-    // program stack frame example:
-    // a "|" separates stack items
-    // a "||" separates stack frames
-    // || RII | size | arg0 | arg1 | local0 | local1 || RII | size | arg0 | local0 || -1 | size | cmd | arg0 | arg1 | ...
-    // when a function is to be called, the arguments are set in the local stack frame in the slots marked "arg#".
-    // then the address of the function to be called is placed onto the top of the opstack. then, the QVM_OP_CALL
-    // instruction is used. QVM_OP_CALL will place the current instruction index into the RII slot (programstack[0]),
-    // then it will pop the function instruction index from the opstack and jump to it.
-    // 
-    // the next instruction should be the callee's QVM_OP_ENTER instruction. QVM_OP_ENTER will add a new stack frame with
-    // a hardcoded size param, then stores that size in programstack[1] and leaves programstack[0] empty.
-    // 
-    // just before a function exits, a return value is pushed onto the top of the opstack. then, the final
-    // instruction in a function is QVM_OP_LEAVE. QVM_OP_LEAVE will check programstack[1] to see if it matches its own
-    // hardcoded size param, and then remove the stack frame of the given size. it then looks in programstack[0] of
-    // the previous frame (now topmost) for the RII and jumps to it. if the RII is <0 (-1 is set in the first stack
-    // frame created before execution), it signals to end VM execution.
-    //
-    // within a function, arguments are loaded by just accessing the "arg#" values from the previous stack frame.
+    /* programstack frame example: a "|" separates stack cells, while a "||" separates stack frames
+     *
+     * || RII | size | arg0 | arg1 | local0 | local1 || RII | size | arg0 | local0 || -1 | size | cmd | arg0 | arg1 | ...
+     * ^ "top" of stack, lowest address                     "bottom" of stack or "end of block", highest address --->
+     *
+     * When a function is to be called, the arguments are set in the current stack frame using QVM_OP_ARG in the slots
+     * marked "arg#". Then the address of the function to be called is placed onto the top of the opstack (either by
+     * loading a function pointer with QVM_OP_LOCAL or QVM_OP_LOADx or a real function with QVM_OP_CONST). Then, the
+     * QVM_OP_CALL instruction is used. QVM_OP_CALL will place the current instruction index into the RII slot of the
+     * current stack frame (programstack[0]), then it will pop the function instruction index from the opstack and
+     * jump to it.
+     *
+     * The next instruction should be the callee's QVM_OP_ENTER instruction. QVM_OP_ENTER will add a new stack frame
+     * with a hardcoded size param, then stores that size in programstack[1] and leaves programstack[0] (RII) empty.
+     *
+     * Just before a function exits, a return value is pushed onto the top of the opstack. The final instruction in a
+     * function is QVM_OP_LEAVE. QVM_OP_LEAVE will check programstack[1] to see if it matches its own hardcoded size
+     * param, and then remove the stack frame of the given size. It then looks in programstack[0] of the previous
+     * frame (now topmost) for the RII and jumps to it. If the RII is <0 (-1 is set in the first stack frame created
+     * before execution), it signals to end VM execution.
+     *
+     * Within a function, arguments are loaded by just accessing the "arg#" values from the previous stack frame with
+     * QVM_OP_LOCAL.
+     */
 
     // opstack for math/comparison/temp/etc operations (instead of using registers)
     // +2 for some extra space to "harmlessly" read 2 values (like QVM_OP_BLOCK_COPY) if opstack is empty (like at start)
@@ -279,11 +271,6 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     memset(opstack, 0, sizeof(opstack));
     // opstack pointer (starts at end of block, grows down)
     int* stack = opstack + QVM_OPSTACK_SIZE;
-
-// macros to manage opstack
-#define QVM_POPN(n)    stack += (n)
-#define QVM_POP()      QVM_POPN(1)
-#define QVM_PUSH()     --stack
 
     // current op
     qvmopcode_t op;
@@ -322,6 +309,15 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
         switch (op) {
         // miscellaneous opcodes
 
+        case QVM_OP_UNDEF:
+            // undefined - used as alignment padding at end of codesegment. treat as error
+            // explicit fallthrough
+        default:
+            // anything else
+            // todo: dump stacks/memory?
+            log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): Runtime error at %d: unhandled opcode %d\n", vmMain_cmd, instr_index, op);
+            goto fail;
+
         case QVM_OP_NOP:
             // no op
             // explicit fallthrough
@@ -330,23 +326,13 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
             // todo: dump stacks/memory?
             break;
 
-        case QVM_OP_UNDEF:
-            // undefined - used as alignment padding at end of codesegment. treat as error
-            // explicit fallthrough
-        default:
-            // anything else
-            log_c(QMM_LOG_FATAL, "QMM", "qvm_exec(%d): Runtime error at %d: unhandled opcode %d\n", vmMain_cmd, instr_index, op);
-            goto fail;
-
         // functions
-
-#define QVM_JUMP(x) opptr = qvm->codesegment + ((x) & codemask)
 
         case QVM_OP_ENTER:
             // enter a function:
             // prepare new stack frame on program stack (size=param).
             // store param in programstack[1]. this gets verified to match in QVM_OP_LEAVE.
-            QVM_PROGRAMSTACK_FRAME(param);
+            QVM_STACKFRAME(param);
             programstack[0] = 0; // leave blank. an QVM_OP_CALL within this function will place RII here
             programstack[1] = param;
             break;
@@ -360,7 +346,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
                 goto fail;
             }
             // clean up stack frame
-            QVM_PROGRAMSTACK_FRAME(-param);
+            QVM_STACKFRAME(-param);
             // if RII from previous frame is our negative sentinel, signal end of instruction loop
             if (programstack[0] < 0)
                 opptr = NULL;
@@ -387,14 +373,13 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
                 programstack = qvm->stackptr;
 
                 // place return value on top of stack like a VM function return value
-                QVM_PUSH();
-                stack[0] = ret;
+                QVM_PUSH(ret);
                 break;
             }
             // otherwise, normal VM function call
 
             // place RII in top slot of program stack
-            programstack[0] = (int)(opptr - qvm->codesegment) & codemask;
+            programstack[0] = (int)(opptr - qvm->codesegment);
 
             // jump to VM function at address
             QVM_JUMP(jump_to);
@@ -405,8 +390,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         case QVM_OP_PUSH:
             // pushes an unused value onto the stack (mostly for unused return values)
-            QVM_PUSH();
-            stack[0] = 0;
+            QVM_PUSH(0);
             break;
 
         case QVM_OP_POP:
@@ -416,24 +400,15 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         case QVM_OP_CONST:
             // pushes a hardcoded value onto the stack
-            QVM_PUSH();
-            stack[0] = param;
+            QVM_PUSH(param);
             break;
 
         case QVM_OP_LOCAL:
             // pushes a specified local variable address (relative to start of data segment) onto the stack
-            QVM_PUSH();
-            stack[0] = (int)((uint8_t*)programstack + param - qvm->datasegment);
+            QVM_PUSH( (int)((uint8_t*)programstack + param - qvm->datasegment) );
             break;
 
         // branching
-
-// signed integer comparison
-#define QVM_JUMP_SIF(o) if (stack[1] o stack[0]) { QVM_JUMP(param); } QVM_POPN(2)
-// unsigned integer comparison
-#define QVM_JUMP_UIF(o) if (*(unsigned int*)&stack[1] o *(unsigned int*)&stack[0]) { QVM_JUMP(param); } QVM_POPN(2)
-// floating point comparison
-#define QVM_JUMP_FIF(o) if (*(float*)&stack[1] o *(float*)&stack[0]) { QVM_JUMP(param); } QVM_POPN(2)
 
         case QVM_OP_JUMP:
             // jump to address in stack[0]
@@ -614,17 +589,6 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
         // arithmetic/operators
 
-// signed integer (stack[0] done to stack[1], stored in stack[1])
-#define QVM_SOP(o) stack[1] o stack[0]; QVM_POP()
-// unsigned integer (stack[0] done to stack[1], stored in stack[1])
-#define QVM_UOP(o) *(unsigned int*)&stack[1] o *(unsigned int*)&stack[0]; QVM_POP()
-// floating point (stack[0] done to stack[1], stored in stack[1])
-#define QVM_FOP(o) *(float*)&stack[1] o *(float*)&stack[0]; QVM_POP()
-// signed integer (done to self)
-#define QVM_SSOP(o) stack[0] = o stack[0]
-// floating point (done to self)
-#define QVM_SFOP(o) *(float*)&stack[0] = o *(float*)&stack[0]
-
         case QVM_OP_NEGI:
             // negation
             QVM_SSOP( - );
@@ -772,7 +736,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     }
 
     // remove initial stack frame like in QVM_OP_LEAVE
-    QVM_PROGRAMSTACK_FRAME(-framesize);
+    QVM_STACKFRAME(-framesize);
 
     // save our local stack pointer back into the qvm object
     qvm->stackptr = programstack;
@@ -856,7 +820,7 @@ const char* opcodename[] = {
 
 static void* qvm_alloc_default(ptrdiff_t size, void* ctx) {
     (void)ctx;
-    return (void*)malloc(size);
+    return malloc(size);
 }
 
 
