@@ -15,79 +15,73 @@ Created By:
 #include <stdint.h>
 #include <stddef.h>
 
-// magic number is stored in file as 44 14 72 12
-#define	QVM_MAGIC       0x12721444
-
-// amount of ints the opstack can hold
-#define OPSTACK_SIZE    1024
-
 // function to receive syscalls (engine traps) out of VM
 typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
 // list of VM instructions
 typedef enum qvmopcode_e {
-    OP_UNDEF,
-    OP_NOP,
-    OP_BREAK,
-    OP_ENTER,
-    OP_LEAVE,
-    OP_CALL,
-    OP_PUSH,
-    OP_POP,
-    OP_CONST,
-    OP_LOCAL,
-    OP_JUMP,
-    OP_EQ,
-    OP_NE,
-    OP_LTI,
-    OP_LEI,
-    OP_GTI,
-    OP_GEI,
-    OP_LTU,
-    OP_LEU,
-    OP_GTU,
-    OP_GEU,
-    OP_EQF,
-    OP_NEF,
-    OP_LTF,
-    OP_LEF,
-    OP_GTF,
-    OP_GEF,
-    OP_LOAD1,
-    OP_LOAD2,
-    OP_LOAD4,
-    OP_STORE1,
-    OP_STORE2,
-    OP_STORE4,
-    OP_ARG,
-    OP_BLOCK_COPY,
-    OP_SEX8,
-    OP_SEX16,
-    OP_NEGI,
-    OP_ADD,
-    OP_SUB,
-    OP_DIVI,
-    OP_DIVU,
-    OP_MODI,
-    OP_MODU,
-    OP_MULI,
-    OP_MULU,
-    OP_BAND,
-    OP_BOR,
-    OP_BXOR,
-    OP_BCOM,
-    OP_LSH,
-    OP_RSHI,
-    OP_RSHU,
-    OP_NEGF,
-    OP_ADDF,
-    OP_SUBF,
-    OP_DIVF,
-    OP_MULF,
-    OP_CVIF,
-    OP_CVFI,
+    QVM_OP_UNDEF,
+    QVM_OP_NOP,
+    QVM_OP_BREAK,
+    QVM_OP_ENTER,
+    QVM_OP_LEAVE,
+    QVM_OP_CALL,
+    QVM_OP_PUSH,
+    QVM_OP_POP,
+    QVM_OP_CONST,
+    QVM_OP_LOCAL,
+    QVM_OP_JUMP,
+    QVM_OP_EQ,
+    QVM_OP_NE,
+    QVM_OP_LTI,
+    QVM_OP_LEI,
+    QVM_OP_GTI,
+    QVM_OP_GEI,
+    QVM_OP_LTU,
+    QVM_OP_LEU,
+    QVM_OP_GTU,
+    QVM_OP_GEU,
+    QVM_OP_EQF,
+    QVM_OP_NEF,
+    QVM_OP_LTF,
+    QVM_OP_LEF,
+    QVM_OP_GTF,
+    QVM_OP_GEF,
+    QVM_OP_LOAD1,
+    QVM_OP_LOAD2,
+    QVM_OP_LOAD4,
+    QVM_OP_STORE1,
+    QVM_OP_STORE2,
+    QVM_OP_STORE4,
+    QVM_OP_ARG,
+    QVM_OP_BLOCK_COPY,
+    QVM_OP_SEX8,
+    QVM_OP_SEX16,
+    QVM_OP_NEGI,
+    QVM_OP_ADD,
+    QVM_OP_SUB,
+    QVM_OP_DIVI,
+    QVM_OP_DIVU,
+    QVM_OP_MODI,
+    QVM_OP_MODU,
+    QVM_OP_MULI,
+    QVM_OP_MULU,
+    QVM_OP_BAND,
+    QVM_OP_BOR,
+    QVM_OP_BXOR,
+    QVM_OP_BCOM,
+    QVM_OP_LSH,
+    QVM_OP_RSHI,
+    QVM_OP_RSHU,
+    QVM_OP_NEGF,
+    QVM_OP_ADDF,
+    QVM_OP_SUBF,
+    QVM_OP_DIVF,
+    QVM_OP_MULF,
+    QVM_OP_CVIF,
+    QVM_OP_CVFI,
 
-    OP_NUM_OPS,
+    QVM_OP_NUM_OPS,
 } qvmopcode_t;
 
 // array of strings of opcode names
@@ -123,8 +117,6 @@ extern qvm_alloc_t qvm_allocator_default;
 
 // all the info for a single QVM object
 typedef struct qvm_s {
-    qvmheader_t header;             // header information
-
     // syscall
     vmsyscall_t vmsyscall;          // e.g. Q3A_vmsyscall function from game_q3a.cpp
 
@@ -135,12 +127,11 @@ typedef struct qvm_s {
     // segments (into memory block)
     qvmop_t* codesegment;           // code segment, each op is 8 bytes (4 op, 4 param)
     uint8_t* datasegment;           // data segment, partially filled on load
-    uint8_t* stacksegment;          // stack segment
 
     // segment sizes
     size_t codeseglen;              // size of code segment
     size_t dataseglen;              // size of data segment
-    size_t stackseglen;	            // size of stack segment
+    size_t stacksize;               // size of stack in bss segment
 
     // registers
     int* stackptr;                  // pointer to current location in program stack
@@ -168,7 +159,7 @@ extern "C" {
 * @param [qvm_alloc_t*] allocator - Pointer to a qvm_alloc_t object which contains custom alloc/free function pointers (pass NULL for default)
 * @returns [int] - (Boolean) 1 if success, 0 if failure
 */
-int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, size_t stacksize, int verify_data, qvm_alloc_t* allocator);
+int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, int verify_data, qvm_alloc_t* allocator);
 
 /**
 * Begin execution in a VM

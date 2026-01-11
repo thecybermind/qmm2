@@ -110,7 +110,6 @@ static bool s_mod_load_qvm(mod_t& mod) {
     int fpk3;
     intptr_t filelen;
     std::vector<uint8_t> filemem;
-    size_t stacksize;
     bool verify_data;
     bool loaded;
 
@@ -126,14 +125,11 @@ static bool s_mod_load_qvm(mod_t& mod) {
     ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem.data(), filelen, fpk3);
     ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
 
-    // load stack size from config
-    stacksize = (size_t)cfg_get_int(g_cfg, "stacksize", 1);
-
     // get data verification setting from config
     verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
 
     // attempt to load mod
-    loaded = qvm_load(&mod.qvm, filemem.data(), filemem.size(), g_gameinfo.game->vmsyscall, stacksize, verify_data, nullptr);
+    loaded = qvm_load(&mod.qvm, filemem.data(), filemem.size(), g_gameinfo.game->vmsyscall, verify_data, nullptr);
     if (!loaded) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", mod.path);
         goto fail;
