@@ -10,8 +10,6 @@
 		// "qmmaddons/plugin2/plugin2_qmm.dll"
 	],
 	
-	"qvmstacksize": 1,
-	
 	"qvmverifydata": true,
 
 	"loglevel": "",
