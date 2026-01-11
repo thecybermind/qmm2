@@ -457,16 +457,12 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 intptr_t qmm_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({} {}) called\n", g_gameinfo.game->eng_msg_names(cmd), cmd);
-#endif
 
     // route call to plugins and mod
     intptr_t ret = s_main_route_syscall(cmd, args);
 
-#ifdef _DEBUG
     LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({} {}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), cmd, ret);
-#endif
 
     return ret;
 }
@@ -693,13 +689,13 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Plugin interface: {}:{}\n", QMM_PIFV_MAJOR, QMM_PIFV_MINOR).c_str());
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Loaded mod file: {}\n", g_mod.path).c_str());
         if (g_mod.vmbase) {
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM file size: {}\n", g_mod.qvm.filesize).c_str());
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM instr count: {}\n", g_mod.qvm.header.numops).c_str());
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory base: {}\n", (void*)g_mod.qvm.memory).c_str());
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory size: {}\n", g_mod.qvm.memorysize).c_str());
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM codeseg size: {}\n", g_mod.qvm.codeseglen).c_str());
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM dataseg size: {}\n", g_mod.qvm.dataseglen).c_str());
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM stackseg size: {}\n", g_mod.qvm.stackseglen).c_str());
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM file size      : {}\n", g_mod.qvm.filesize).c_str());
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory base    : {}\n", (void*)g_mod.qvm.memory).c_str());
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM memory size    : {}\n", g_mod.qvm.memorysize).c_str());
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM instr count    : {}\n", g_mod.qvm.instructioncount).c_str());
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM codeseg size   : {}\n", g_mod.qvm.codeseglen).c_str());
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM dataseg size   : {}\n", g_mod.qvm.dataseglen).c_str());
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM stack size     : {}\n", g_mod.qvm.stacksize).c_str());
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM data validation: {}\n", g_mod.qvm.verify_data ? "on" : "off").c_str());
         }
         else if (g_mod.pfnvmMain) {
