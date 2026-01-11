@@ -15,6 +15,56 @@ Created By:
 #include <stdint.h>
 #include <stddef.h>
 
+// macros used throughout qvm_load or qvm_exec
+
+// magic number is stored in file as 44 14 72 12
+#define QVM_MAGIC                       0x12721444
+// amount of operands the opstack can hold (same amount used by Q3 engine)
+#define QVM_OPSTACK_SIZE                1024
+// max size of program stack (this is set by q3asm for ALL QVM-compatible games)
+#define QVM_PROGRAMSTACK_SIZE           0x10000     // 64KiB
+// allow extra space to be allocated to the data segment for additional stack space
+#define QVM_EXTRA_PROGRAMSTACK_SIZE     0
+
+// standard max function
+#define QVM_MAX(a, b)   ((a) > (b) ? (a) : (b))
+
+// round number up to next power of 2: https://stackoverflow.com/a/1322548/809900
+#define QVM_NEXT_POW_2(val) val--; val |= val >> 1; val |= val >> 2; val |= val >> 4; val |= val >> 8; val |= val >> 16; val++;
+
+// macro to manage stack frame in bytes
+#define QVM_STACKFRAME(size) programstack = (int*)((uint8_t*)programstack - (size))
+
+// macros to manage opstack
+#define QVM_POPN(n) stack += (n)
+#define QVM_POP()   QVM_POPN(1)
+#define QVM_PUSH(v) --stack; stack[0] = (v)
+
+// move instruction pointer to a given index, masked to code segment
+#define QVM_JUMP(x) opptr = qvm->codesegment + ((x) & codemask)
+
+// branch comparisons
+// signed integer comparison
+#define QVM_JUMP_SIF(o) if (stack[1] o stack[0]) { QVM_JUMP(param); } QVM_POPN(2)
+// unsigned integer comparison
+#define QVM_JUMP_UIF(o) if (*(unsigned int*)&stack[1] o *(unsigned int*)&stack[0]) { QVM_JUMP(param); } QVM_POPN(2)
+// floating point comparison
+#define QVM_JUMP_FIF(o) if (*(float*)&stack[1] o *(float*)&stack[0]) { QVM_JUMP(param); } QVM_POPN(2)
+
+// math operations
+// signed integer (stack[0] done to stack[1], stored in stack[1])
+#define QVM_SOP(o) stack[1] o stack[0]; QVM_POP()
+// unsigned integer (stack[0] done to stack[1], stored in stack[1])
+#define QVM_UOP(o) *(unsigned int*)&stack[1] o *(unsigned int*)&stack[0]; QVM_POP()
+// floating point (stack[0] done to stack[1], stored in stack[1])
+#define QVM_FOP(o) *(float*)&stack[1] o *(float*)&stack[0]; QVM_POP()
+// signed integer (done to self)
+#define QVM_SSOP(o) stack[0] = o stack[0]
+// floating point (done to self)
+#define QVM_SFOP(o) *(float*)&stack[0] = o *(float*)&stack[0]
+
+
+
 // function to receive syscalls (engine traps) out of VM
 typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
@@ -141,7 +191,10 @@ typedef struct qvm_s {
     size_t filesize;                // .qvm file size
     qvm_alloc_t* allocator;         // allocator
     int verify_data;                // verify data access is inside the memory block
+
+    // debug/stats
     int exec_depth;                 // current depth of recursive execution
+    int max_exec_depth;             // max depth of recursive execution
 } qvm_t;
 
 #ifdef __cplusplus
