@@ -1,7 +1,7 @@
 # QMM2
 Q3 MultiMod 2  
 QMM2 - Q3 MultiMod 2  
-Copyright 2004-2025  
+Copyright 2004-2026  
 https://github.com/thecybermind/qmm2/  
 3-clause BSD license: https://opensource.org/license/bsd-3-clause  
 
