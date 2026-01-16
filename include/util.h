@@ -21,8 +21,9 @@ std::string path_basename(std::string path);
 std::string path_baseext(std::string path);
 bool path_is_relative(std::string path);
 
-std::string util_get_modulepath(void* ptr);
-void* util_get_modulehandle(void* ptr);
+std::string util_get_proc_path();
+std::string util_get_qmm_path();
+void* util_get_qmm_handle();
 
 void path_mkdir(std::string path);
 

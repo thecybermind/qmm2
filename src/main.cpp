@@ -481,17 +481,17 @@ void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
 // general code to get path/module/binary/etc information
 static void s_main_detect_env() {
     // save exe module path
-    g_gameinfo.exe_path = util_get_modulepath(nullptr);
+    g_gameinfo.exe_path = util_get_proc_path();
     g_gameinfo.exe_dir = path_dirname(g_gameinfo.exe_path);
     g_gameinfo.exe_file = path_basename(g_gameinfo.exe_path);
 
     // save qmm module path
-    g_gameinfo.qmm_path = util_get_modulepath(&g_gameinfo);
+    g_gameinfo.qmm_path = util_get_qmm_path();
     g_gameinfo.qmm_dir = path_dirname(g_gameinfo.qmm_path);
     g_gameinfo.qmm_file = path_basename(g_gameinfo.qmm_path);
 
     // save qmm module pointer
-    g_gameinfo.qmm_module_ptr = util_get_modulehandle(&g_gameinfo);
+    g_gameinfo.qmm_module_ptr = util_get_qmm_handle();
 
     // since we don't have the mod directory yet (can only officially get it using engine functions), we can
     // attempt to get the mod directory from the qmm path. if the qmm dir is the same as the exe dir, it's

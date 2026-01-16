@@ -48,46 +48,43 @@ void MessageBoxA(void* handle, const char* message, const char* title, int flags
 
 
 
-void* osdef_path_get_modulehandle(void* ptr) {
-    void* handle = nullptr;
-
 #if defined(_WIN32)
-    MEMORY_BASIC_INFORMATION MBI;
+static HMODULE s_dll = nullptr;
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD, LPVOID) {
+    s_dll = hinstDLL;
+    return TRUE;
+}
+#endif
 
-    if (!VirtualQuery(ptr, &MBI, sizeof(MBI)) || MBI.State != MEM_COMMIT || !MBI.AllocationBase)
-        return nullptr;
 
-    handle = (void*)MBI.AllocationBase;
+void* osdef_path_get_qmm_handle() {
+#if defined(_WIN32)
+    return s_dll;
 #elif defined(__linux__)
+    void* handle = nullptr;
     Dl_info dli;
     memset(&dli, 0, sizeof(dli));
 
-    if (!dladdr(ptr, &dli))
+    if (!dladdr(&dli, &dli))
         return nullptr;
 
-    handle = dli.dli_fbase;
+    return dli.dli_fbase;
 #endif
-    return handle;
 }
 
 
-const char* osdef_path_get_modulepath(void* ptr) {
+const char* osdef_path_get_qmm_path() {
     static char path[PATH_MAX] = "";
     memset(path, 0, sizeof(path));
 
 #if defined(_WIN32)
-    MEMORY_BASIC_INFORMATION MBI;
-
-    if (!VirtualQuery(ptr, &MBI, sizeof(MBI)) || MBI.State != MEM_COMMIT || !MBI.AllocationBase)
-        return "";
-
-    if (!GetModuleFileName((HMODULE)MBI.AllocationBase, path, sizeof(path)))
+    if (!GetModuleFileName(s_dll, path, sizeof(path)))
         return "";
 #elif defined(__linux__)
     Dl_info dli;
     memset(&dli, 0, sizeof(dli));
 
-    if (!dladdr(ptr, &dli))
+    if (!dladdr(&dli, &dli))
         return "";
 
     strncpyz(path, dli.dli_fname, sizeof(path));
@@ -96,7 +93,7 @@ const char* osdef_path_get_modulepath(void* ptr) {
 }
 
 
-const char* osdef_path_get_procpath() {
+const char* osdef_path_get_proc_path() {
     static char path[PATH_MAX] = "";
     memset(path, 0, sizeof(path));
 
@@ -106,7 +103,7 @@ const char* osdef_path_get_procpath() {
 #elif defined(__linux__)
     // readlink does NOT null terminate at all
     // we pass sizeof-1 to guarantee the \0 from memset is still present at the end of the string
-    // as  a null terminator. also we write a \0 at the specific end of the written buffer.
+    // as a null terminator. also we write a \0 at the specific end of the written buffer.
     ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
     if (len != -1)
         path[len] = '\0';

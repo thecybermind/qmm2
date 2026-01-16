@@ -84,13 +84,18 @@ bool path_is_relative(std::string path) {
 }
 
 
-std::string util_get_modulepath(void* ptr) {
-    return ptr ? osdef_path_get_modulepath(ptr) : osdef_path_get_procpath();
+std::string util_get_proc_path() {
+    return osdef_path_get_proc_path();
 }
 
 
-void* util_get_modulehandle(void* ptr) {
-    return osdef_path_get_modulehandle(ptr);
+std::string util_get_qmm_path() {
+    return osdef_path_get_qmm_path();
+}
+
+
+void* util_get_qmm_handle() {
+    return osdef_path_get_qmm_handle();
 }
 
 

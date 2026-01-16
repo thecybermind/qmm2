@@ -80,8 +80,8 @@ void MessageBoxA(void* handle, const char* message, const char* title, int flags
 
 #endif
 
-void* osdef_path_get_modulehandle(void* ptr);
-const char* osdef_path_get_modulepath(void* ptr);
-const char* osdef_path_get_procpath();
+void* osdef_path_get_qmm_handle();
+const char* osdef_path_get_qmm_path();
+const char* osdef_path_get_proc_path();
 
 #endif // __QMM2_OSDEF_H__
