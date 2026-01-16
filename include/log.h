@@ -75,13 +75,4 @@ enum {
     QMM_LOG_FATAL
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-// so qvm.c can log stuff
-void log_c(int severity, const char* tag, const char* fmt, ...);
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
 #endif // __QMM2_LOG_H__

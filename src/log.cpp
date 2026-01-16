@@ -62,7 +62,7 @@ std::string log_format(const AixLog::Metadata& metadata, const std::string& mess
 
 
 // so qvm.c can log stuff
-void log_c(int severity, const char* tag, const char* fmt, ...) {
+extern "C" void log_c(int severity, const char* tag, const char* fmt, ...) {
     va_list	argptr;
     static char buf[1024];
 

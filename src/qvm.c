@@ -17,7 +17,8 @@ Created By:
 #include "qvm.h"
 
 #ifdef QMM_LOGGING
-#include "log.h"
+void log_c(int severity, const char* tag, const char* fmt, ...);
+enum { QMM_LOG_TRACE, QMM_LOG_DEBUG, QMM_LOG_INFO, QMM_LOG_NOTICE, QMM_LOG_WARNING, QMM_LOG_ERROR, QMM_LOG_FATAL };
 #else
 #define log_c(...) /* */
 #endif
