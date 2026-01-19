@@ -61,7 +61,6 @@ void* osdef_path_get_qmm_handle() {
 #if defined(_WIN32)
     return s_dll;
 #elif defined(__linux__)
-    void* handle = nullptr;
     Dl_info dli;
     memset(&dli, 0, sizeof(dli));
 
