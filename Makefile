@@ -42,8 +42,8 @@ OBJ_DBG_64 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_64)/%.o) $(SRC_C:$(SRC_DI
 
 CPPFLAGS  := -MMD -MP -I ./include -isystem ../qmm_sdks
 CFLAGS   := -Wall -pipe -fPIC -std=gnu17
-CXXFLAGS := -Wall -pipe -fPIC -std=c++17 --disable-gnu-unique-object
-LDFLAGS  := -shared -fPIC
+CXXFLAGS := -Wall -pipe -fPIC -std=c++17
+LDFLAGS  := -shared -fPIC --disable-gnu-unique-object
 LDLIBS   :=
 
 REL_CPPFLAGS := $(CPPFLAGS)
