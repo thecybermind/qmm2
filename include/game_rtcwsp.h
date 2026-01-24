@@ -9,12 +9,12 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_RTCWSP_H__
-#define __QMM2_GAME_RTCWSP_H__
+#ifndef QMM2_GAME_RTCWSP_H
+#define QMM2_GAME_RTCWSP_H
 
 // these import messages do not have an exact analogue in RTCWSP
 enum {
 	G_ARGS = -100,					// char* (void)
 };
 
-#endif // __QMM2_GAME_RTCWSP_H__
+#endif // QMM2_GAME_RTCWSP_H

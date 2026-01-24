@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_UTIL_H__
-#define __QMM2_UTIL_H__
+#ifndef QMM2_UTIL_H
+#define QMM2_UTIL_H
 
 #include <vector>
 #include <string>
@@ -44,4 +44,4 @@ T util_max(T a, T b) {
     return (a > b ? a : b);
 }
 
-#endif // __QMM2_UTIL_H__
+#endif // QMM2_UTIL_H

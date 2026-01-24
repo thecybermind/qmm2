@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_QMMAPI_H__
-#define __QMM2_QMMAPI_H__
+#ifndef QMM2_QMMAPI_H
+#define QMM2_QMMAPI_H
 
 // a lot of game sdks use a "byte" typedef so try to avoid pulling in std::byte
 #if defined(_HAS_STD_BYTE)
@@ -205,4 +205,4 @@ C_DLLEXPORT intptr_t QMM_syscall_Post(intptr_t cmd, intptr_t* args);
 #define CLIENT_FROM_NUM(index)  ((gclient_t*)((unsigned char*)g_clients + g_clientsize * (index)))
 #define NUM_FROM_CLIENT(client) ((int)((unsigned char*)(client) - (unsigned char*)g_clients) / g_clientsize)
 
-#endif // __QMM2_QMMAPI_H__
+#endif // QMM2_QMMAPI_H

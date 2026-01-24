@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_CONFIG_H__
-#define __QMM2_CONFIG_H__
+#ifndef QMM2_CONFIG_H
+#define QMM2_CONFIG_H
 
 #include <string>
 #include <vector>
@@ -27,4 +27,4 @@ std::vector<std::string> cfg_get_array_str(nlohmann::json& j, std::string key, s
 std::vector<int> cfg_get_array_int(nlohmann::json& j, std::string key, std::vector<int> def = {});
 nlohmann::json cfg_get_object(nlohmann::json& j, std::string key, nlohmann::json def = nlohmann::json());
 
-#endif // __QMM2_CONFIG_H__
+#endif // QMM2_CONFIG_H

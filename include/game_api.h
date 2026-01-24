@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_API_H__
-#define __QMM2_GAME_API_H__
+#ifndef QMM2_GAME_API_H
+#define QMM2_GAME_API_H
 
 #include <cstdint>
 #include <cstdarg>
@@ -213,4 +213,4 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 // this subtracts the base VM address pointer from a value, for returning from syscall (this should evaluate to an int)
 #define vmret(ptr)	(int)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
 
-#endif // __QMM2_GAME_API_H__
+#endif // QMM2_GAME_API_H

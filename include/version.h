@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_VERSION_H__
-#define __QMM2_VERSION_H__
+#ifndef QMM2_VERSION_H
+#define QMM2_VERSION_H
 
 #define STRINGIFY(x) STRINGIFY2(x)
 #define STRINGIFY2(x) #x
@@ -43,4 +43,4 @@ Created By:
 
 #define QMM_VERSION_DWORD	QMM_VERSION_MAJOR , QMM_VERSION_MINOR , QMM_VERSION_REV , 0
 
-#endif // __QMM2_VERSION_H__
+#endif // QMM2_VERSION_H

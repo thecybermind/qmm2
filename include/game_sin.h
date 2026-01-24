@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_SIN_H__
-#define __QMM2_GAME_SIN_H__
+#ifndef QMM2_GAME_SIN_H
+#define QMM2_GAME_SIN_H
 
 // import ("syscall") cmds
 enum {
@@ -185,4 +185,4 @@ enum {
 	CVAR_ROM = CVAR_NOSET,
 };
 
-#endif // __QMM2_GAME_SIN_H__
+#endif // QMM2_GAME_SIN_H
