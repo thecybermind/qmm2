@@ -227,6 +227,9 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     // it gets synced to qvm object before syscalls and restored after syscalls.
     // it also gets synced back to qvm object after execution completes
     int* programstack = qvm->stackptr;
+    // these only exist for quicker calculation for stack pointer bounds checking
+    uint8_t* programstack_high = qvm->datasegment + qvm->dataseglen;
+    uint8_t* programstack_low = programstack_high - qvm->stacksize;
 
     // size of new stack frame, need to store RII, framesize, and vmMain args
     int framesize = (argc + 2) * sizeof(argv[0]);
@@ -268,8 +271,10 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
     // +2 for some extra space to "harmlessly" read 2 values (like QVM_OP_BLOCK_COPY) if opstack is empty (like at start)
     int opstack[QVM_OPSTACK_SIZE + 2];
     memset(opstack, 0, sizeof(opstack));
+    // used for opstack pointer bounds checking
+    int* opstack_high = opstack + QVM_OPSTACK_SIZE;
     // opstack pointer (starts at end of block, grows down)
-    int* stack = opstack + QVM_OPSTACK_SIZE;
+    int* stack = opstack_high;
 
     // current op
     qvmopcode_t op;
@@ -284,15 +289,15 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
         instr_index = (int)(opptr - qvm->codesegment);
 
         // verify program stack pointer is in stack within bss segment (+1 to allow starting at 1 past the end of block)
-        if ((uint8_t*)programstack < qvm->datasegment + qvm->dataseglen - qvm->stacksize ||
-            (uint8_t*)programstack > qvm->datasegment + qvm->dataseglen) {
+        // using > to allow starting at 1 past the end of block
+        if ((uint8_t*)programstack < programstack_low || (uint8_t*)programstack > programstack_high) {
             intptr_t stackusage = qvm->datasegment + qvm->dataseglen - (uint8_t*)programstack;
             log_c(QMM_LOG_ERROR, "QMM", "qvm_exec(%d): Runtime error at %d: program stack overflow! Program stack size is currently %d, max is %d.\n", vmMain_cmd, instr_index, stackusage, qvm->stacksize);
             goto fail;
         }
         // verify op stack pointer is in op stack
         // using > to allow starting at 1 past the end of block
-        if (stack <= opstack || stack > opstack + QVM_OPSTACK_SIZE) {
+        if (stack <= opstack || stack > opstack_high) {
             intptr_t stackusage = opstack + QVM_OPSTACK_SIZE - stack;
             log_c(QMM_LOG_ERROR, "QMM", "qvm_exec(%d): Runtime error at %d: opstack overflow! Opstack size is currently %d, max is %d.\n", vmMain_cmd, instr_index, stackusage, QVM_OPSTACK_SIZE);
             goto fail;

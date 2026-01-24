@@ -301,14 +301,13 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain({}) returning {}\n", cmd, ret);
 
         if (cgame_passthrough_shutdown) {
-            // unload mod (dlclose)
+            // unload mod
             LOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
             mod_unload(g_mod);
         }
 
         return ret;
     }
-
     // clear passthrough flag
     cgame_is_QMM_vmMain_call = false;
 
