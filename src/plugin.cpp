@@ -28,7 +28,7 @@ Created By:
 constexpr int NUM_PLUGIN_STR_BUFFERS = 12;
 
 static void s_plugin_helper_WriteQMMLog(plid_t plid, const char* text, int severity);
-static char* s_plugin_helper_VarArgs(plid_t plid, const char* format, ...);
+static char* s_plugin_helper_VarArgs(plid_t plid [[maybe_unused]], const char* format, ...);
 static int s_plugin_helper_IsQVM(plid_t plid);
 static const char* s_plugin_helper_EngMsgName(plid_t plid, intptr_t msg);
 static const char* s_plugin_helper_ModMsgName(plid_t plid, intptr_t msg);
@@ -43,8 +43,8 @@ static int s_plugin_helper_ConfigGetBool(plid_t plid, const char* key);
 static const char** s_plugin_helper_ConfigGetArrayStr(plid_t plid, const char* key);
 static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid, const char* key);
 static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t argn, char* buf, intptr_t buflen);
-static void s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen);
-static void s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen);
+static int s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen);
+static int s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen);
 
 static pluginfuncs_t s_pluginfuncs = {
     s_plugin_helper_WriteQMMLog,
@@ -453,7 +453,7 @@ static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t argn, char* bu
 
 
 // broadcast a message to plugins' QMM_PluginMessage() functions
-static void s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen) {
+static int s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen) {
     // count how many plugins were called
     int total = 0;
     for (plugin_t& p : g_plugins) {
@@ -463,27 +463,30 @@ static void s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, vo
         // skip if the plugin doesn't have the function
         if (!p.QMM_PluginMessage)
             continue;
-        p.QMM_PluginMessage(plid, message, buf, buflen);
+        p.QMM_PluginMessage(plid, message, buf, buflen, 1); // 1 = is_broadcast
         total++;
     }
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnPluginBroadcast(\"{}\", \"{}\", {}, {}) = {} plugins called\n", ((plugininfo_t*)plid)->name, message, buf, buflen, total);
+    return total;
 }
 
 
 // send a message to a specific plugin's QMM_PluginMessage() functions
-static void s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen) {
+static int s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen) {
+    // don't let a plugin call itself
+    if (plid == to_plid)
+        return 0;
+
     for (plugin_t& p : g_plugins) {
-        // skip the calling plugin (i.e. plid cannot be to_plid)
-        if (p.plugininfo == (plugininfo_t*)plid)
-            continue;
-        // skip if not the destination plugin
-        if (p.plugininfo != (plugininfo_t*)to_plid)
-            continue;
-        // skip if the plugin doesn't have the function
-        if (!p.QMM_PluginMessage)
-            continue;
-        p.QMM_PluginMessage(plid, message, buf, buflen);
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnPluginSend(\"{}\", \"{}\", \"{}\", {}, {}) called\n", ((plugininfo_t*)plid)->name, ((plugininfo_t*)to_plid)->name, message, buf, buflen);
-        return;
+        // if this is the destination plugin
+        if (p.plugininfo == (plugininfo_t*)to_plid) {
+            // if the plugin doesn't have the message function
+            if (!p.QMM_PluginMessage)
+                return 0;
+            p.QMM_PluginMessage(plid, message, buf, buflen, 0); // 0 = is_broadcast
+            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnPluginSend(\"{}\", \"{}\", \"{}\", {}, {}) called\n", ((plugininfo_t*)plid)->name, ((plugininfo_t*)to_plid)->name, message, buf, buflen);
+            return 1;
+        }
     }
+    return 0;
 }

@@ -23,7 +23,7 @@ typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, plugin
 // QMM_Detach
 typedef void (*plugin_detach)();
 // QMM_PluginMessage
-typedef void (*plugin_pluginmessage)(plid_t from_plid, const char* message, void* buf, intptr_t buflen);
+typedef void (*plugin_pluginmessage)(plid_t from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
 // QMM_syscall
 typedef intptr_t(*plugin_syscall)(intptr_t cmd, intptr_t* args);
 // QMM_vmMain

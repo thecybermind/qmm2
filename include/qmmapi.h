@@ -59,6 +59,8 @@ typedef void* (*mod_GetGameAPI_t)(void* import);
 // - renamed QMM_GET_RETURN to QMM_VAR_RETURN
 // 4:1
 // - added QMM_PLUGIN_SEND
+// - added is_broadcast argument to QMM_PluginMessage
+// - QMM_PLUGIN_BROADCAST now returns int with how many plugins were called
 
 
 // holds plugin info to pass back to QMM
@@ -119,8 +121,8 @@ typedef struct pluginfuncs_s {
     const char** (*pfnConfigGetArrayStr)(plid_t plid, const char* key);                                  // get an array-of-strings config entry (array terminated with a null pointer)
     int* (*pfnConfigGetArrayInt)(plid_t plid, const char* key);                                          // get an array-of-ints config entry (array starts with remaining length)
     void (*pfnGetConfigString)(plid_t plid, intptr_t argn, char* buf, intptr_t buflen);                  // call G_GET_CONFIGSTRING, but can handle both engine styles
-    void (*pfnPluginBroadcast)(plid_t plid, const char* message, void* buf, intptr_t buflen);            // broadcast a message to plugins' QMM_PluginMessage functions
-    void (*pfnPluginSend)(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen); // send a message to a specific plugin's QMM_PluginMessage function
+    int (*pfnPluginBroadcast)(plid_t plid, const char* message, void* buf, intptr_t buflen);             // broadcast a message to plugins' QMM_PluginMessage functions
+    int (*pfnPluginSend)(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen);  // send a message to a specific plugin's QMM_PluginMessage function
 } pluginfuncs_t;
 
 // macros for QMM plugin util funcs
@@ -181,7 +183,7 @@ extern pluginvars_t* g_pluginvars;      // set to 'pluginvars' in QMM_Attach
 C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
 C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, pluginvars_t* pluginvars);
 C_DLLEXPORT void QMM_Detach();
-C_DLLEXPORT void QMM_PluginMessage(plid_t from_plid, const char* message, void* buf, intptr_t buflen);
+C_DLLEXPORT void QMM_PluginMessage(plid_t from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
 C_DLLEXPORT intptr_t QMM_vmMain(intptr_t cmd, intptr_t* args);
 C_DLLEXPORT intptr_t QMM_vmMain_Post(intptr_t cmd, intptr_t* args);
 C_DLLEXPORT intptr_t QMM_syscall(intptr_t cmd, intptr_t* args);
