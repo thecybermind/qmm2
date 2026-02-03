@@ -810,12 +810,6 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 #ifdef _DEBUG
         LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Game vmMain({} {}) returning {}\n", g_gameinfo.game->mod_msg_names(cmd), cmd, mod_ret);
 #endif
-
-        // the return value for GAME_CLIENT_CONNECT in some games is a char* so we have to modify the pointer value for QVMs.
-        // the char* is a string to print if the client should not be allowed to connect, so only bother if it's not NULL.
-        // quake 2 games use a bool for this instead, but they also don't support QVM so if they return true, this will add 0.
-        if (cmd == QMM_MOD_MSG[QMM_GAME_CLIENT_CONNECT] && mod_ret && g_mod.vmbase)
-            mod_ret += g_mod.vmbase;
     }
     else {
 #ifdef _DEBUG

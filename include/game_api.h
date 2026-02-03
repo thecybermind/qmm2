@@ -26,7 +26,6 @@ enum qmm_mod_msg_t {
     QMM_GAME_INIT,
     QMM_GAME_SHUTDOWN,
     QMM_GAME_CONSOLE_COMMAND,
-    QMM_GAME_CLIENT_CONNECT
 };
 
 // a list of all the engine messages used by QMM
@@ -111,7 +110,7 @@ extern supportedgame_t g_supportedgames[];
 		G_GET_CONFIGSTRING, \
 	}; \
 	int game##_qmm_mod_msgs[] = { \
-		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, GAME_CLIENT_CONNECT \
+		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
 	}
 
 // ----------------------------
@@ -207,10 +206,12 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 // these macros handle qvm syscall arguments in GAME_vmsyscall functions in game_*.cpp
 
 // this gets an argument value (evaluate to an intptr_t)
-#define vmarg(arg)	(intptr_t)args[arg]
+#define VMARG(arg)	(intptr_t)args[arg]
+
 // this adds the base VM address pointer to an argument value (evaluate to a pointer)
-#define vmptr(arg)	(args[arg] ? membase + args[arg] : nullptr)
-// this subtracts the base VM address pointer from a value, for returning from syscall (this should evaluate to an int)
-#define vmret(ptr)	(int)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
+#define VMPTR(arg)	(args[arg] ? membase + args[arg] : nullptr)
+
+// this subtracts the base VM address pointer from a value, for returning a pointer from syscall (this should evaluate to an int)
+#define VMRET(ptr)	(int)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
 
 #endif // __QMM2_GAME_API_H__
