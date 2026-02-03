@@ -11,6 +11,7 @@ Created By:
 
 #include <sof2mp/game/q_shared.h>
 #include <sof2mp/game/g_public.h>
+#include <sof2mp/gametype/gt_public.h>
 
 #include "game_api.h"
 #include "log.h"
@@ -93,8 +94,45 @@ intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
+    // some of the args passed to GAME_GAMETYPE_COMMAND are pointers from the gametype VM. while both the SOF2MP engine
+    // and the SOF2GT_QMM plugin will convert them from QVM pointers to real pointers on the way in from the QVM, these
+    // are going back into the game QVM, so we need to subtract the game vmbase from them, much like the return values
+    // from G_G2_GETGLANAME, G_BOT_GET_MEMORY, G_VM_LOCALALLOC, G_VM_LOCALALLOCUNALIGNED, G_VM_LOCALTEMPALLOC, and
+    // G_VM_LOCALSTRINGALLOC syscalls
+    if (cmd == GAME_GAMETYPE_COMMAND && g_mod.vmbase) {
+        switch (args[0]) {
+        case GTCMD_REGISTERSOUND:       // int  ( const char* soundFile );
+        case GTCMD_REGISTEREFFECT:      // int	( const char* name );
+        case GTCMD_REGISTERICON:        // int  ( const char* icon );
+        case GTCMD_USETARGETS:          // void ( const char* targetname );
+            args[1] = (args[1] ? args[1] - g_mod.vmbase : 0);
+            break;
+        case GTCMD_SPAWNITEM:           // void ( int itemid, vec3_t origin, vec3_t angles );
+        case GTCMD_PLAYEFFECT:          // void ( int effect, vec3_t origin, vec3_t angles );
+        case GTCMD_REGISTERITEM:        // int  ( int itemid, const char* name, gtItemDef_t* def );
+        case GTCMD_REGISTERTRIGGER:     // bool ( int triggerid, const char* message, gtTriggerDef_t* def );
+            args[3] = (args[3] ? args[3] - g_mod.vmbase : 0);
+            [[fallthrough]];
+        case GTCMD_TEXTMESSAGE:         // void ( int client, const char* message );
+        case GTCMD_RADIOMESSAGE:        // void ( int clientid, const char* message );
+        case GTCMD_STARTSOUND:          // void ( int soundid, vec3_t origin );
+        case GTCMD_GETCLIENTNAME:       // void ( int clientid, char* buffer, int buffersize );
+        case GTCMD_GETTRIGGERTARGET:    // void ( int triggerid, char* bufferr, int buffersize );
+        case GTCMD_GETCLIENTORIGIN:     // void ( int clientid, vec3_t origin );
+        case GTCMD_GETCLIENTLIST:       // int  ( team_t team, int* clients, int clientcount );
+            args[2] = (args[2] ? args[2] - g_mod.vmbase : 0);
+            break;
+        }
+    }
+
     // all normal mod functions go to mod
     ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+
+    // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
+    // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
+    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vmbase) {
+        ret += g_mod.vmbase;
+    }
 
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_vmMain({} {}) returning {}\n", SOF2MP_mod_msg_names(cmd), cmd, ret);
 

@@ -26,7 +26,6 @@ enum qmm_mod_msg_t {
     QMM_GAME_INIT,
     QMM_GAME_SHUTDOWN,
     QMM_GAME_CONSOLE_COMMAND,
-    QMM_GAME_CLIENT_CONNECT
 };
 
 // a list of all the engine messages used by QMM
@@ -111,7 +110,7 @@ extern supportedgame_t g_supportedgames[];
 		G_GET_CONFIGSTRING, \
 	}; \
 	int game##_qmm_mod_msgs[] = { \
-		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, GAME_CLIENT_CONNECT \
+		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
 	}
 
 // ----------------------------

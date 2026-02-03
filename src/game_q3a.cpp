@@ -90,6 +90,12 @@ intptr_t Q3A_vmMain(intptr_t cmd, ...) {
     // all normal mod functions go to mod
     ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
+    // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
+    // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
+    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vmbase) {
+        ret += g_mod.vmbase;
+    }
+
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_vmMain({} {}) returning {}\n", Q3A_mod_msg_names(cmd), cmd, ret);
 
     return ret;
