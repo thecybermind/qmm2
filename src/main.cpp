@@ -223,7 +223,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
    g_gameinfo.pfnvmMain or g_gameinfo.pfnsyscall point to game-specific functions which will take the cmd, and route
    to the proper function pointer in the struct.
 */
-C_DLLEXPORT void* GetGameAPI(void* import) {
+C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
     s_main_detect_env();
 
     log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
@@ -265,7 +265,7 @@ C_DLLEXPORT void* GetGameAPI(void* import) {
 
     // call the game-specific GetGameAPI function (e.g. MOHAA_GetGameAPI) which will set up the exports for
     // returning here back to the game engine, as well as save the imports in preparation of loading the mod
-    return g_gameinfo.game->pfnGetGameAPI(import);
+    return g_gameinfo.game->pfnGetGameAPI(import, extra);
 }
 
 

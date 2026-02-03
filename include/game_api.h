@@ -86,11 +86,11 @@ extern supportedgame_t g_supportedgames[];
 // generate externs for each game's msg arrays and functions
 #define GEN_EXTS(game)		extern int game##_qmm_eng_msgs[]; \
 							extern int game##_qmm_mod_msgs[]; \
-							const char* game##_eng_msg_names(intptr_t msg); \
-							const char* game##_mod_msg_names(intptr_t msg); \
-							int game##_vmsyscall(uint8_t* membase, int cmd, int* args); \
-							void* game##_GetGameAPI(void* import); \
-							void game##_dllEntry(eng_syscall_t syscall)
+							const char* game##_eng_msg_names(intptr_t); \
+							const char* game##_mod_msg_names(intptr_t); \
+							int game##_vmsyscall(uint8_t*, int, int*); \
+							void* game##_GetGameAPI(void*, void*); \
+							void game##_dllEntry(eng_syscall_t)
 
 // generate struct info for the short name, messages arrays, and message name functions
 #define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names
