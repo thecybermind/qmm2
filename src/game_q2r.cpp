@@ -41,7 +41,6 @@ static game_import_t orig_import;
 // a copy of the original export struct pointer that comes from the mod
 static game_export_t* orig_export = nullptr;
 
-
 /*
    The sound() import gets messed up because the volume float arg doesn't get passed properly. Server-generated
    sound (i.e. anything from the world like item pickup or another player attacking) would be silent. After
@@ -237,10 +236,6 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
     if (cmd != G_PRINT)
         LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q2R_syscall({} {}) called\n", Q2R_eng_msg_names(cmd), cmd);
 #endif
-
-    // store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
-    // or set to nullptr in mod_unload()
-    orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
 
     intptr_t ret = 0;
 
@@ -489,9 +484,6 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) called\n", Q2R_mod_msg_names(cmd), cmd);
 
-    // store copy of mod's export pointer. this is stored in g_gameinfo.api_info in s_mod_load_getgameapi(),
-    // or set to nullptr in mod_unload()
-    orig_export = (game_export_t*)(g_gameinfo.api_info.orig_export);
     if (!orig_export)
         return 0;
 
@@ -579,7 +571,7 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 }
 
 
-void* Q2R_GetGameAPI(void* import) {
+void* Q2R_GetGameAPI(void* import, void*) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_GetGameAPI({}) called\n", import);
 
     // original import struct from engine
@@ -593,12 +585,6 @@ void* Q2R_GetGameAPI(void* import) {
     qmm_import.frame_time_ms = orig_import.frame_time_ms;
     // qmm_import.sound = orig_import.sound;
 
-    // this gets passed to the mod's GetGameAPI() function in mod.cpp:s_mod_load_getgameapi()
-    g_gameinfo.api_info.qmm_import = &qmm_import;
-
-    // this isn't used anywhere except returning from this function, but store it in g_gameinfo.api_info for consistency
-    g_gameinfo.api_info.qmm_export = &qmm_export;
-
     // pointer to wrapper vmMain function that calls actual mod func from orig_export
     g_gameinfo.pfnvmMain = Q2R_vmMain;
 
@@ -611,6 +597,19 @@ void* Q2R_GetGameAPI(void* import) {
     // this gets returned to the game engine, but we haven't loaded the mod yet.
     // the only thing in this struct the engine uses before calling Init is the apiversion
     return &qmm_export;
+}
+
+
+bool Q2R_mod_load(void* entry) {
+    mod_GetGameAPI_t mod_GetGameAPI = (mod_GetGameAPI_t)entry;
+    orig_export = (game_export_t*)mod_GetGameAPI(&qmm_import, nullptr);
+
+    return !!orig_export;
+}
+
+
+void Q2R_mod_unload() {
+    orig_export = nullptr;
 }
 
 

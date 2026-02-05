@@ -207,6 +207,7 @@
     <ClCompile Include="..\src\game_rtcwsp.cpp" />
     <ClCompile Include="..\src\game_sin.cpp" />
     <ClCompile Include="..\src\game_sof2mp.cpp" />
+    <ClCompile Include="..\src\game_sof2sp.cpp" />
     <ClCompile Include="..\src\game_stef2.cpp" />
     <ClCompile Include="..\src\game_stvoyhm.cpp" />
     <ClCompile Include="..\src\game_stvoysp.cpp" />
@@ -245,6 +246,7 @@
     <ClInclude Include="..\include\game_rtcwsp.h" />
     <ClInclude Include="..\include\game_sin.h" />
     <ClInclude Include="..\include\game_sof2mp.h" />
+    <ClInclude Include="..\include\game_sof2sp.h" />
     <ClInclude Include="..\include\game_stef2.h" />
     <ClInclude Include="..\include\game_stvoyhm.h" />
     <ClInclude Include="..\include\game_stvoysp.h" />

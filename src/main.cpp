@@ -73,7 +73,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
       is returned to mod
 */
 
-/* About cgame passthrough crap (not Quake 2 Remaster (Q2R), see comments before GetCGameAPI() for that):
+/* About cgame passthrough hack (not Quake 2 Remaster (Q2R), see comments before GetCGameAPI() for that):
    Some single player games, like Star Trek Voyager: Elite Force (STVOYSP), Jedi Knight 2 (JK2SP) and Jedi Academy (JASP),
    place the game (server side) and cgame (client side) in the same DLL. The game system uses GetGameAPI and the cgame
    system uses dllEntry/vmMain/syscall.
@@ -122,7 +122,7 @@ static bool cgame_passthrough_shutdown = false;
    determined by the config file, or by getting the filename of the QMM DLL itself.
 */
 C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
-    // cgame passthrough crap:
+    // cgame passthrough hack:
     // QMM is already loaded, so this is a cgame passthrough situation. since the mod DLL isn't loaded yet, we can
     // just store the syscall pointer and pass it to the mod once it's loaded in vmMain(GAME_INIT)
     if (g_gameinfo.game) {
@@ -161,9 +161,6 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
         LOG(QMM_LOG_FATAL, "QMM") << fmt::format("dllEntry(): Unable to determine game engine using \"{}\"\n", cfg_game);
         return;
     }
-
-    // save syscall pointer (in case of no game-specific dllEntry)
-    g_gameinfo.pfnsyscall = syscall;
 
     // supported games table is missing game-specific dllEntry handler?
     if (!g_gameinfo.game->pfndllEntry) {
@@ -331,11 +328,13 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         LOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") initializing\n";
 
+#ifndef QMM_FEATURE_SOF2SP
         // get mod dir from engine
         char moddir[256];
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], "fs_game", moddir, (intptr_t)sizeof(moddir));
         moddir[sizeof(moddir) - 1] = '\0';
         g_gameinfo.moddir = moddir;
+#endif // !QMM_FEATURE_SOF2SP
 
         // the default mod (including all singleplayer games) return "" for the fs_game, so grab the default mod dir from game info instead
         if (g_gameinfo.moddir.empty())
@@ -348,8 +347,10 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         LOG(QMM_LOG_INFO, "QMM") << "Built: " QMM_COMPILE " by " QMM_BUILDER "\n";
         LOG(QMM_LOG_INFO, "QMM") << "URL: " QMM_URL "\n";
 
+#ifndef QMM_FEATURE_SOF2SP
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_REGISTER], nullptr, "qmm_version", QMM_VERSION, QMM_ENG_MSG[QMM_CVAR_ROM] | QMM_ENG_MSG[QMM_CVAR_SERVERINFO]);
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_SET], "qmm_version", QMM_VERSION);
+#endif // !QMM_FEATURE_SOF2SP
 
         // load mod
         std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
@@ -358,11 +359,8 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
             return 0;
         }
         LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} mod \"{}\"\n", g_mod.vmbase ? "VM" : "DLL", g_mod.path);
-        // set vmmain pointer to mod's actual vmmain (in case of no game-specific code)
-        if (!g_gameinfo.pfnvmMain)
-            g_gameinfo.pfnvmMain = g_mod.pfnvmMain;
 
-        // cgame passthrough crap:
+        // cgame passthrough hack:
         // JASP (and others?) calls into the cgame syscall before a cgame vmMain GAME_INIT call is made
         // so if we have a passthrough situation, init the mod's cgame functions now
         if (cgame_passthrough_syscall) {
@@ -386,30 +384,33 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         }
         LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} plugin(s)\n", g_plugins.size());
 
+#ifndef QMM_FEATURE_SOF2SP
         // exec the qmmexec cfg
         std::string cfg_execcfg = cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
         if (!cfg_execcfg.empty()) {
             LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Executing config file \"{}\"\n", cfg_execcfg);
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], QMM_ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
         }
+#endif // !QMM_FEATURE_SOF2SP
+
         // we're done!
         LOG(QMM_LOG_NOTICE, "QMM") << "Startup successful!\n";
     }
 
     else if (cmd == QMM_MOD_MSG[QMM_GAME_CONSOLE_COMMAND]) {
-        char arg0[10];
+        char arg_cmd[10];
         int argn = 0;
         // get command
-        qmm_argv(argn, arg0, sizeof(arg0));
+        qmm_argv(argn, arg_cmd, sizeof(arg_cmd));
 
         // if command is "sv", then get the next arg
         // idTech2 games use "sv" to run a gamedll command
-        if (str_striequal("sv", arg0)) {
+        if (str_striequal("sv", arg_cmd)) {
             argn++;
-            qmm_argv(argn, arg0, sizeof(arg0));
+            qmm_argv(argn, arg_cmd, sizeof(arg_cmd));
         }
         // check for "qmm" command
-        if (str_striequal("qmm", arg0))
+        if (str_striequal("qmm", arg_cmd))
             // pass 0 or 1 which gets added to argn in the handler function
             return s_main_handle_command_qmm(argn);
     }
@@ -421,7 +422,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     if (cmd == QMM_MOD_MSG[QMM_GAME_SHUTDOWN]) {
         LOG(QMM_LOG_NOTICE, "QMM") << "Shutdown initiated!\n";
 
-        // cgame passthrough crap:
+        // cgame passthrough hack:
         // hack to keep single player games shutting down correctly between levels/cutscenes/etc
         if (cgame_passthrough_syscall) {
             cgame_passthrough_shutdown = true;
@@ -679,6 +680,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
     qmm_argv(arg_start + 1, arg1, sizeof(arg1));
     if (argc > arg_start + 2)
         qmm_argv(arg_start + 2, arg2, sizeof(arg2));
+
     if (str_striequal("status", arg1)) {
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") loaded\n");
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file").c_str());
@@ -698,12 +700,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM stack size     : {}\n", g_mod.qvm.stacksize).c_str());
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) QVM data validation: {}\n", g_mod.qvm.verify_data ? "on" : "off").c_str());
         }
-        else if (g_mod.pfnvmMain) {
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Mod vmMain() offset: {}\n", (void*)g_mod.pfnvmMain).c_str());
-        }
-        else {
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Mod game_export: {}\n", g_gameinfo.api_info.orig_export).c_str());
-        }
+        return 1;
     }
     else if (str_striequal("list", arg1)) {
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) id - plugin [version]\n");
@@ -713,6 +710,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) {:>2} - {} [{}]\n", num, p.plugininfo->name, p.plugininfo->version).c_str());
             num++;
         }
+        return 1;
     }
     else if (str_striequal("info", arg1)) {
         if (argc == arg_start + 2) {
@@ -734,6 +732,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
         else {
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Unable to find plugin #{}\n", arg2).c_str());
         }
+        return 1;
     }
     else if (str_striequal("loglevel", arg1)) {
         if (argc == arg_start + 2) {
@@ -743,6 +742,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
         AixLog::Severity severity = log_severity_from_name(arg2);
         log_set_severity(severity);
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], fmt::format("(QMM) Log level set to {}\n", log_name_from_severity(severity)).c_str());
+        return 1;
     }
     else {
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) Usage: qmm <command> [params]\n");
@@ -751,6 +751,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm list - displays information about loaded QMM plugins\n");
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm info <id> - outputs info on plugin with id\n");
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
+        return 1;
     }
     return 1;
 }
@@ -967,7 +968,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
    play. Either way, QMM won't be loaded at all during this load so just do a quick DLL load, with no config, no logfile, etc.
 */
 C_DLLEXPORT void* GetCGameAPI(void* import) {
-    // Q2R cgame passthrough crap:
+    // Q2R cgame hack:
     // if the game is already detected, then this is the later GetCGameAPI load which takes place in the menus after QMM
     // is loaded, so just get the return value from the mod's GetCGameAPI() function directly
     if (g_gameinfo.game) {
@@ -976,7 +977,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
             return nullptr;
         LOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Passing on call to mod DLL.\n";
         mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(g_mod.dll, "GetCGameAPI");
-        return mod_GetCGameAPI ? mod_GetCGameAPI(import) : nullptr;
+        return mod_GetCGameAPI ? mod_GetCGameAPI(import, nullptr) : nullptr;
     }
 
     // client-side-only load. just get file info and slap "qmm_" in front of the qmm filename
@@ -988,6 +989,6 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
         return nullptr;
 
     mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(dll, "GetCGameAPI");
-    return mod_GetCGameAPI ? mod_GetCGameAPI(import) : nullptr;
+    return mod_GetCGameAPI ? mod_GetCGameAPI(import, nullptr) : nullptr;
 }
 #endif // _WIN64

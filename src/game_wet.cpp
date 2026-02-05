@@ -22,11 +22,11 @@ Created By:
 GEN_QMM_MSGS(WET);
 GEN_EXTS(WET);
 
-// a copy of the original syscall pointer that comes from the game engine
+// original syscall pointer that comes from the game engine
 static eng_syscall_t orig_syscall = nullptr;
 
-// mod vmMain is access via g_mod.pfnvmMain
-
+// pointer to vmMain that comes from the mod
+static mod_vmMain_t orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
@@ -82,14 +82,14 @@ intptr_t WET_vmMain(intptr_t cmd, ...) {
 
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) called\n", WET_mod_msg_names(cmd), cmd);
 
-    if (!g_mod.pfnvmMain)
+    if (!orig_vmMain)
         return 0;
 
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
     // all normal mod functions go to mod
-    ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) returning {}\n", WET_mod_msg_names(cmd), cmd, ret);
 
@@ -110,6 +110,18 @@ void WET_dllEntry(eng_syscall_t syscall) {
     g_gameinfo.pfnsyscall = WET_syscall;
 
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_dllEntry({}) returning\n", (void*)syscall);
+}
+
+
+bool WET_mod_load(void* entry) {
+    orig_vmMain = (mod_vmMain_t)entry;
+
+    return !!orig_vmMain;
+}
+
+
+void WET_mod_unload() {
+    orig_vmMain = nullptr;
 }
 
 

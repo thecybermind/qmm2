@@ -19,8 +19,6 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-typedef const char* (*msgname_t)(intptr_t msg);
-
 // a list of all the mod messages used by QMM
 enum qmm_mod_msg_t {
     QMM_GAME_INIT,
@@ -55,6 +53,9 @@ enum qmm_eng_msg_t {
     QMM_G_GET_CONFIGSTRING,
 };
 
+typedef const char* (*msgname_t)(intptr_t);
+typedef bool (*mod_load_t)(void*);
+typedef void (*mod_unload_t)();
 // some information for each game engine supported by QMM
 struct supportedgame_t {
     const char* dllname;				// default dll mod filename
@@ -70,9 +71,11 @@ struct supportedgame_t {
     msgname_t eng_msg_names;			// pointer to a function that returns a string for a given engine message
     msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
 
-    vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
+    vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a QVM (NULL = not required)	
     mod_dllEntry_t pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not required)
     mod_GetGameAPI_t pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not required)
+    mod_load_t pfnModLoad;	        	// pointer to a function that handles mod loading logic after a DLL is loaded (NULL = not required)
+    mod_unload_t pfnModUnload;	        // pointer to a function that handles mod unloading logic before a DLL is unloaded (NULL = not required)
     int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
     int max_vmmain_args;				// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
     std::vector<std::string> exe_hints;	// array of hints that should appear in the executable filename to be considered a game match
@@ -89,11 +92,18 @@ extern supportedgame_t g_supportedgames[];
 							const char* game##_eng_msg_names(intptr_t); \
 							const char* game##_mod_msg_names(intptr_t); \
 							int game##_vmsyscall(uint8_t*, int, int*); \
-							void* game##_GetGameAPI(void*, void*); \
-							void game##_dllEntry(eng_syscall_t)
+							void game##_dllEntry(eng_syscall_t); \
+                            void* game##_GetGameAPI(void*, void*); \
+                            bool game##_mod_load(void*); \
+                            void game##_mod_unload();
 
 // generate struct info for the short name, messages arrays, and message name functions
 #define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names
+
+// generate struct info for the game-specific entry functions
+#define GEN_DLLQVM(game)    game##_vmsyscall, game##_dllEntry, nullptr, game##_mod_load, game##_mod_unload
+#define GEN_DLL(game)       nullptr, game##_dllEntry, nullptr, game##_mod_load, game##_mod_unload
+#define GEN_GGA(game)       nullptr, nullptr, game##_GetGameAPI, game##_mod_load, game##_mod_unload
 
 // generate a case/string line for the message name functions
 #define GEN_CASE(x)			case x: return #x
