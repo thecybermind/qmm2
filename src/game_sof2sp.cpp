@@ -470,7 +470,7 @@ void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
-    // the only thing in this struct the engine uses before calling Init is the apiversion
+    // nothing in this struct is used by the engine before calling Init
     return &qmm_export;
 }
 
