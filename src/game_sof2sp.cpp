@@ -36,118 +36,118 @@ static game_export_t* orig_export = nullptr;
 // struct with lambdas that call QMM's syscall function. this is given to the mod
 static game_import_t qmm_import = {
     GEN_IMPORT(Printf, G_PRINTF),
-    GEN_IMPORT(ptr1, 1),
-    GEN_IMPORT(ptr2, 2),
-    GEN_IMPORT(ptr3, 3),
-    GEN_IMPORT(ptr4, 4),
-    GEN_IMPORT(ptr5, 5),
-    GEN_IMPORT(ptr6, 6),
-    GEN_IMPORT(ptr7, 7),
-    GEN_IMPORT(ptr8, 8),
-    GEN_IMPORT(ptr9, 9),
-    GEN_IMPORT(ptr10, 10),
-    GEN_IMPORT(ptr11, 11),
-    GEN_IMPORT(ptr12, 12),
-    GEN_IMPORT(ptr13, 13),
-    GEN_IMPORT(ptr14, 14),
-    GEN_IMPORT(ptr15, 15),
-    GEN_IMPORT(ptr16, 16),
-    GEN_IMPORT(ptr17, 17),
-    GEN_IMPORT(ptr18, 18),
-    GEN_IMPORT(ptr19, 19),
-    GEN_IMPORT(ptr20, 20),
-    GEN_IMPORT(ptr21, 21),
-    GEN_IMPORT(ptr22, 22),
-    GEN_IMPORT(ptr23, 23),
-    GEN_IMPORT(ptr24, 24),
-    GEN_IMPORT(ptr25, 25),
-    GEN_IMPORT(ptr26, 26),
-    GEN_IMPORT(ptr27, 27),
-    GEN_IMPORT(ptr28, 28),
-    GEN_IMPORT(ptr29, 29),
-    GEN_IMPORT(ptr30, 30),
-    GEN_IMPORT(ptr31, 31),
-    GEN_IMPORT(ptr32, 32),
-    GEN_IMPORT(ptr33, 33),
-    GEN_IMPORT(ptr34, 34),
-    GEN_IMPORT(ptr35, 35),
-    GEN_IMPORT(ptr36, 36),
-    GEN_IMPORT(ptr37, 37),
-    GEN_IMPORT(ptr38, 38),
-    GEN_IMPORT(ptr39, 39),
-    GEN_IMPORT(ptr40, 40),
-    GEN_IMPORT(ptr41, 41),
-    GEN_IMPORT(ptr42, 42),
-    GEN_IMPORT(ptr43, 43),
-    GEN_IMPORT(ptr44, 44),
-    GEN_IMPORT(ptr45, 45),
-    GEN_IMPORT(ptr46, 46),
-    GEN_IMPORT(ptr47, 47),
-    GEN_IMPORT(ptr48, 48),
-    GEN_IMPORT(ptr49, 49),
-    GEN_IMPORT(ptr50, 50),
-    GEN_IMPORT(ptr51, 51),
-    GEN_IMPORT(ptr52, 52),
-    GEN_IMPORT(ptr53, 53),
-    GEN_IMPORT(ptr54, 54),
-    GEN_IMPORT(ptr55, 55),
-    GEN_IMPORT(ptr56, 56),
-    GEN_IMPORT(ptr57, 57),
-    GEN_IMPORT(ptr58, 58),
-    GEN_IMPORT(ptr59, 59),
-    GEN_IMPORT(ptr60, 60),
-    GEN_IMPORT(ptr61, 61),
-    GEN_IMPORT(ptr62, 62),
-    GEN_IMPORT(ptr63, 63),
-    GEN_IMPORT(ptr64, 64),
-    GEN_IMPORT(ptr65, 65),
-    GEN_IMPORT(ptr66, 66),
-    GEN_IMPORT(ptr67, 67),
-    GEN_IMPORT(ptr68, 68),
-    GEN_IMPORT(ptr69, 69),
-    GEN_IMPORT(ptr70, 70),
-    GEN_IMPORT(ptr71, 71),
-    GEN_IMPORT(ptr72, 72),
-    GEN_IMPORT(ptr73, 73),
-    GEN_IMPORT(ptr74, 74),
-    GEN_IMPORT(ptr75, 75),
-    GEN_IMPORT(ptr76, 76),
-    GEN_IMPORT(ptr77, 77),
-    GEN_IMPORT(ptr78, 78),
-    GEN_IMPORT(ptr79, 79),
-    GEN_IMPORT(ptr80, 80),
-    GEN_IMPORT(ptr81, 81),
-    GEN_IMPORT(ptr82, 82),
-    GEN_IMPORT(ptr83, 83),
-    GEN_IMPORT(ptr84, 84),
-    GEN_IMPORT(ptr85, 85),
-    GEN_IMPORT(ptr86, 86),
-    GEN_IMPORT(ptr87, 87),
-    GEN_IMPORT(ptr88, 88),
-    GEN_IMPORT(ptr89, 89),
-    GEN_IMPORT(ptr90, 90),
-    GEN_IMPORT(ptr91, 91),
-    GEN_IMPORT(ptr92, 92),
-    GEN_IMPORT(ptr93, 93),
-    GEN_IMPORT(ptr94, 94),
-    GEN_IMPORT(ptr95, 95),
-    GEN_IMPORT(ptr96, 96),
-    GEN_IMPORT(ptr97, 97),
-    GEN_IMPORT(ptr98, 98),
-    GEN_IMPORT(ptr99, 99),
-    GEN_IMPORT(ptr100, 100),
-    GEN_IMPORT(ptr101, 101),
-    GEN_IMPORT(ptr102, 102),
-    GEN_IMPORT(ptr103, 103),
-    GEN_IMPORT(ptr104, 104),
-    GEN_IMPORT(ptr105, 105),
-    GEN_IMPORT(ptr106, 106),
-    GEN_IMPORT(ptr107, 107),
-    GEN_IMPORT(ptr108, 108),
-    GEN_IMPORT(ptr109, 109),
-    GEN_IMPORT(ptr110, 110),
-    GEN_IMPORT(ptr111, 111),
-    GEN_IMPORT(ptr112, 112),
+    GEN_IMPORT(DPrintf, G_DPRINTF),
+    GEN_IMPORT(DPrintf2, G_DPRINTF2),
+    GEN_IMPORT(snprintf, G_SNPRINTF),
+    GEN_IMPORT(ErrorF, G_ERRORF),
+    GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
+    GEN_IMPORT(FS_Read, G_FS_READ),
+    GEN_IMPORT(FS_FileForHandle, G_FS_FILE_FOR_HANDLE),
+    GEN_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE),
+    GEN_IMPORT(FS_ReadFile, G_FS_READFILE),
+    GEN_IMPORT(FS_FreeFile, G_FS_FREEFILE),
+    GEN_IMPORT(FS_FileAvailable, G_FS_FILEAVAILABLE),
+    GEN_IMPORT(FS_BuildOSPath, G_FS_BUILDOSPATH),
+    GEN_IMPORT(unknown13, G_UNKNOWN13),
+    GEN_IMPORT(unknown14, G_UNKNOWN14),
+    GEN_IMPORT(Milliseconds, G_MILLISECONDS),
+    GEN_IMPORT(unknown16, G_UNKNOWN16),
+    GEN_IMPORT(unknown17, G_UNKNOWN17),
+    GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
+    GEN_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND),
+    GEN_IMPORT(unknown20, G_UNKNOWN20),
+    GEN_IMPORT(unknown21, G_UNKNOWN21),
+    GEN_IMPORT(unknown22, G_UNKNOWN22),
+    GEN_IMPORT(Cvar_Get, G_CVAR_GET),
+    GEN_IMPORT(Cvar_Register, G_CVAR_REGISTER),
+    GEN_IMPORT(Cvar_Update, G_CVAR_UPDATE),
+    GEN_IMPORT(Cvar_Set2, G_CVAR_SET2),
+    GEN_IMPORT(unknown27, G_UNKNOWN27),
+    GEN_IMPORT(Cvar_Set, G_CVAR_SET),
+    GEN_IMPORT(unknown29, G_UNKNOWN29),
+    GEN_IMPORT(unknown30, G_UNKNOWN30),
+    GEN_IMPORT(unknown31, G_UNKNOWN31),
+    GEN_IMPORT(Malloc, G_MALLOC),
+    GEN_IMPORT(Free, G_FREE),
+    GEN_IMPORT(unknown34, G_UNKNOWN34),
+    GEN_IMPORT(CM_RegisterTerrain, G_CM_REGISTERTERRAIN),
+    GEN_IMPORT(unknown36, 36),
+    GEN_IMPORT(unknown37, 37),
+    GEN_IMPORT(unknown38, 38),
+    GEN_IMPORT(unknown39, 39),
+    GEN_IMPORT(unknown40, 40),
+    GEN_IMPORT(unknown41, 41),
+    GEN_IMPORT(unknown42, 42),
+    GEN_IMPORT(unknown43, 43),
+    GEN_IMPORT(unknown44, 44),
+    GEN_IMPORT(unknown45, 45),
+    GEN_IMPORT(unknown46, 46),
+    GEN_IMPORT(unknown47, 47),
+    GEN_IMPORT(unknown48, 48),
+    GEN_IMPORT(unknown49, 49),
+    GEN_IMPORT(unknown50, 50),
+    GEN_IMPORT(unknown51, 51),
+    GEN_IMPORT(unknown52, 52),
+    GEN_IMPORT(unknown53, 53),
+    GEN_IMPORT(unknown54, 54),
+    GEN_IMPORT(unknown55, 55),
+    GEN_IMPORT(unknown56, 56),
+    GEN_IMPORT(unknown57, 57),
+    GEN_IMPORT(unknown58, 58),
+    GEN_IMPORT(unknown59, 59),
+    GEN_IMPORT(unknown60, 60),
+    GEN_IMPORT(unknown61, 61),
+    GEN_IMPORT(unknown62, 62),
+    GEN_IMPORT(unknown63, 63),
+    GEN_IMPORT(unknown64, 64),
+    GEN_IMPORT(unknown65, 65),
+    GEN_IMPORT(unknown66, 66),
+    GEN_IMPORT(unknown67, 67),
+    GEN_IMPORT(unknown68, 68),
+    GEN_IMPORT(unknown69, 69),
+    GEN_IMPORT(unknown70, 70),
+    GEN_IMPORT(unknown71, 71),
+    GEN_IMPORT(unknown72, 72),
+    GEN_IMPORT(unknown73, 73),
+    GEN_IMPORT(unknown74, 74),
+    GEN_IMPORT(unknown75, 75),
+    GEN_IMPORT(unknown76, 76),
+    GEN_IMPORT(unknown77, 77),
+    GEN_IMPORT(unknown78, 78),
+    GEN_IMPORT(unknown79, 79),
+    GEN_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE),
+    GEN_IMPORT(unknown81, 81),
+    GEN_IMPORT(unknown82, 82),
+    GEN_IMPORT(unknown83, 83),
+    GEN_IMPORT(unknown84, 84),
+    GEN_IMPORT(TIKI_RegisterModel, G_TIKI_REGISTERMODEL),
+    GEN_IMPORT(unknown86, 86),
+    GEN_IMPORT(unknown87, 87),
+    GEN_IMPORT(unknown88, 88),
+    GEN_IMPORT(unknown89, 89),
+    GEN_IMPORT(unknown90, 90),
+    GEN_IMPORT(unknown91, 91),
+    GEN_IMPORT(unknown92, 92),
+    GEN_IMPORT(unknown93, 93),
+    GEN_IMPORT(unknown94, 94),
+    GEN_IMPORT(unknown95, 95),
+    GEN_IMPORT(unknown96, 96),
+    GEN_IMPORT(unknown97, 97),
+    GEN_IMPORT(unknown98, 98),
+    GEN_IMPORT(unknown99, 99),
+    GEN_IMPORT(unknown100, 100),
+    GEN_IMPORT(unknown101, 101),
+    GEN_IMPORT(unknown102, 102),
+    GEN_IMPORT(unknown103, 103),
+    GEN_IMPORT(unknown104, 104),
+    GEN_IMPORT(unknown105, 105),
+    GEN_IMPORT(unknown106, 106),
+    GEN_IMPORT(unknown107, 107),
+    GEN_IMPORT(unknown108, 108),
+    GEN_IMPORT(unknown109, 109),
+    GEN_IMPORT(unknown110, 110),
+    GEN_IMPORT(CM_TM_Upload, G_CM_TM_UPLOAD),
+    GEN_IMPORT(SaveTerrainImageToDisk, G_SAVETERRAINIMAGETODISK),
 };
 
 
@@ -211,16 +211,174 @@ intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
 
     intptr_t ret = 0;
 
-    if (cmd < 200) {
-        switch (cmd) {
-            ROUTE_IMPORT(Printf, G_PRINTF);
-        default: {
-            pfn_call_t* p = (pfn_call_t*)&orig_import.Printf;
-            ret = (p[cmd])(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]);
+    switch (cmd) {
+        ROUTE_IMPORT(Printf, G_PRINTF);
+        ROUTE_IMPORT(DPrintf, G_DPRINTF);
+        ROUTE_IMPORT(DPrintf2, G_DPRINTF2);
+        ROUTE_IMPORT(snprintf, G_SNPRINTF);
+        ROUTE_IMPORT(ErrorF, G_ERRORF);
+        ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
+        ROUTE_IMPORT(FS_Read, G_FS_READ);
+        ROUTE_IMPORT(FS_FileForHandle, G_FS_FILE_FOR_HANDLE);
+        ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
+        ROUTE_IMPORT(FS_ReadFile, G_FS_READFILE);
+        ROUTE_IMPORT(FS_FreeFile, G_FS_FREEFILE);
+        ROUTE_IMPORT(FS_FileAvailable, G_FS_FILEAVAILABLE);
+        ROUTE_IMPORT(FS_BuildOSPath, G_FS_BUILDOSPATH);
+        ROUTE_IMPORT(unknown13, G_UNKNOWN13);
+        ROUTE_IMPORT(unknown14, G_UNKNOWN14);
+        ROUTE_IMPORT(Milliseconds, G_MILLISECONDS);
+        ROUTE_IMPORT(unknown16, G_UNKNOWN16);
+        ROUTE_IMPORT(unknown17, G_UNKNOWN17);
+        // handled below since we do special handling to deal with the "when" argument
+        //ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
+        //ROUTE_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND);
+        ROUTE_IMPORT(unknown20, G_UNKNOWN20);
+        ROUTE_IMPORT(unknown21, G_UNKNOWN21);
+        ROUTE_IMPORT(unknown22, G_UNKNOWN22);
+        ROUTE_IMPORT(Cvar_Get, G_CVAR_GET);
+        ROUTE_IMPORT(Cvar_Register, G_CVAR_REGISTER);
+        ROUTE_IMPORT(Cvar_Update, G_CVAR_UPDATE);
+        ROUTE_IMPORT(Cvar_Set2, G_CVAR_SET2);
+        ROUTE_IMPORT(unknown27, G_UNKNOWN27);
+        ROUTE_IMPORT(Cvar_Set, G_CVAR_SET);
+        ROUTE_IMPORT(unknown29, G_UNKNOWN29);
+        ROUTE_IMPORT(unknown30, G_UNKNOWN30);
+        ROUTE_IMPORT(unknown31, G_UNKNOWN31);
+        ROUTE_IMPORT(Malloc, G_MALLOC);
+        ROUTE_IMPORT(Free, G_FREE);
+        ROUTE_IMPORT(unknown34, G_UNKNOWN34);
+        ROUTE_IMPORT(CM_RegisterTerrain, G_CM_REGISTERTERRAIN);
+        ROUTE_IMPORT(unknown36, G_UNKNOWN36);
+        ROUTE_IMPORT(unknown37, G_UNKNOWN37);
+        ROUTE_IMPORT(unknown38, G_UNKNOWN38);
+        ROUTE_IMPORT(unknown39, G_UNKNOWN39);
+        ROUTE_IMPORT(unknown40, G_UNKNOWN40);
+        ROUTE_IMPORT(unknown41, G_UNKNOWN41);
+        ROUTE_IMPORT(unknown42, G_UNKNOWN42);
+        ROUTE_IMPORT(unknown43, G_UNKNOWN43);
+        ROUTE_IMPORT(unknown44, G_UNKNOWN44);
+        ROUTE_IMPORT(unknown45, G_UNKNOWN45);
+        ROUTE_IMPORT(unknown46, G_UNKNOWN46);
+        ROUTE_IMPORT(unknown47, G_UNKNOWN47);
+        ROUTE_IMPORT(unknown48, G_UNKNOWN48);
+        ROUTE_IMPORT(unknown49, G_UNKNOWN49);
+        ROUTE_IMPORT(unknown50, G_UNKNOWN50);
+        ROUTE_IMPORT(unknown51, G_UNKNOWN51);
+        ROUTE_IMPORT(unknown52, G_UNKNOWN52);
+        ROUTE_IMPORT(unknown53, G_UNKNOWN53);
+        ROUTE_IMPORT(unknown54, G_UNKNOWN54);
+        ROUTE_IMPORT(unknown55, G_UNKNOWN55);
+        ROUTE_IMPORT(unknown56, G_UNKNOWN56);
+        ROUTE_IMPORT(unknown57, G_UNKNOWN57);
+        ROUTE_IMPORT(unknown58, G_UNKNOWN58);
+        ROUTE_IMPORT(unknown59, G_UNKNOWN59);
+        ROUTE_IMPORT(unknown60, G_UNKNOWN60);
+        ROUTE_IMPORT(unknown61, G_UNKNOWN61);
+        ROUTE_IMPORT(unknown62, G_UNKNOWN62);
+        ROUTE_IMPORT(unknown63, G_UNKNOWN63);
+        ROUTE_IMPORT(unknown64, G_UNKNOWN64);
+        ROUTE_IMPORT(unknown65, G_UNKNOWN65);
+        ROUTE_IMPORT(unknown66, G_UNKNOWN66);
+        ROUTE_IMPORT(unknown67, G_UNKNOWN67);
+        ROUTE_IMPORT(unknown68, G_UNKNOWN68);
+        ROUTE_IMPORT(unknown69, G_UNKNOWN69);
+        ROUTE_IMPORT(unknown70, G_UNKNOWN70);
+        ROUTE_IMPORT(unknown71, G_UNKNOWN71);
+        ROUTE_IMPORT(unknown72, G_UNKNOWN72);
+        ROUTE_IMPORT(unknown73, G_UNKNOWN73);
+        ROUTE_IMPORT(unknown74, G_UNKNOWN74);
+        ROUTE_IMPORT(unknown75, G_UNKNOWN75);
+        ROUTE_IMPORT(unknown76, G_UNKNOWN76);
+        ROUTE_IMPORT(unknown77, G_UNKNOWN77);
+        ROUTE_IMPORT(unknown78, G_UNKNOWN78);
+        ROUTE_IMPORT(unknown79, G_UNKNOWN79);
+        ROUTE_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE);
+        ROUTE_IMPORT(unknown81, G_UNKNOWN81);
+        ROUTE_IMPORT(unknown82, G_UNKNOWN82);
+        ROUTE_IMPORT(unknown83, G_UNKNOWN83);
+        ROUTE_IMPORT(unknown84, G_UNKNOWN84);
+        ROUTE_IMPORT(TIKI_RegisterModel, G_TIKI_REGISTERMODEL);
+        ROUTE_IMPORT(unknown86, G_UNKNOWN86);
+        ROUTE_IMPORT(unknown87, G_UNKNOWN87);
+        ROUTE_IMPORT(unknown88, G_UNKNOWN88);
+        ROUTE_IMPORT(unknown89, G_UNKNOWN89);
+        ROUTE_IMPORT(unknown90, G_UNKNOWN90);
+        ROUTE_IMPORT(unknown91, G_UNKNOWN91);
+        ROUTE_IMPORT(unknown92, G_UNKNOWN92);
+        ROUTE_IMPORT(unknown93, G_UNKNOWN93);
+        ROUTE_IMPORT(unknown94, G_UNKNOWN94);
+        ROUTE_IMPORT(unknown95, G_UNKNOWN95);
+        ROUTE_IMPORT(unknown96, G_UNKNOWN96);
+        ROUTE_IMPORT(unknown97, G_UNKNOWN97);
+        ROUTE_IMPORT(unknown98, G_UNKNOWN98);
+        ROUTE_IMPORT(unknown99, G_UNKNOWN99);
+        ROUTE_IMPORT(unknown100, G_UNKNOWN100);
+        ROUTE_IMPORT(unknown101, G_UNKNOWN101);
+        ROUTE_IMPORT(unknown102, G_UNKNOWN102);
+        ROUTE_IMPORT(unknown103, G_UNKNOWN103);
+        ROUTE_IMPORT(unknown104, G_UNKNOWN104);
+        ROUTE_IMPORT(unknown105, G_UNKNOWN105);
+        ROUTE_IMPORT(unknown106, G_UNKNOWN106);
+        ROUTE_IMPORT(unknown107, G_UNKNOWN107);
+        ROUTE_IMPORT(unknown108, G_UNKNOWN108);
+        ROUTE_IMPORT(unknown109, G_UNKNOWN109);
+        ROUTE_IMPORT(unknown110, G_UNKNOWN110);
+        ROUTE_IMPORT(CM_TM_Upload, G_CM_TM_UPLOAD);
+        ROUTE_IMPORT(SaveTerrainImageToDisk, G_SAVETERRAINIMAGETODISK);
+
+    // handle special cmds which QMM uses but SOF2SP doesn't have an analogue for
+    case G_ERROR: {
+        // sof2sp: void(*ErrorF)(int code, const char* fmt, ...);
+        // q3a: void trap_Error(const char* fmt, ...);
+        const char* fmt = (const char*)(args[1]);
+        (void)orig_import.ErrorF(0, fmt, args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]);
+        break;
+    }
+    case G_CVAR_VARIABLE_STRING_BUFFER: {
+        // sof2sp: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
+        // q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
+        const char* varName = (const char*)(args[0]);
+        char* buffer = (char*)(args[1]);
+        intptr_t bufsize = args[2];
+        *buffer = '\0';
+        cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
+        if (cvar)
+            strncpyz(buffer, cvar->string, (size_t)bufsize);
+        break;
+    }
+    case G_CVAR_VARIABLE_INTEGER_VALUE: {
+        // sof2sp: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
+        // q3a: int trap_Cvar_VariableIntegerValue(const char* var_name)
+        const char* varName = (const char*)(args[0]);
+        cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
+        if (cvar)
+            ret = cvar->integer;
+        break;
+    }
+    case G_EXECUTE_CONSOLE_COMMAND:
+    case G_SEND_CONSOLE_COMMAND: {
+        // SOF2SP: void (*SendConsoleCommand)(const char *text);
+        // SOF2SP: void (*ExecuteConsoleCommand)(int exec_when, const char *text);
+        // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+        // first arg may be exec_when, like EXEC_APPEND
+        intptr_t when = args[0];
+        const char* text = (const char*)(args[1]);
+        // EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
+        if (when > 100) {
+            text = (const char*)when;
+            orig_import.SendConsoleCommand(text);
             break;
         }
-        };
+        orig_import.ExecuteConsoleCommand(when, text);
+        break;
     }
+
+    default: {
+        break;
+    }
+
+    };
 
     // do anything that needs to be done after function call here
 
@@ -245,11 +403,6 @@ intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
 
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
-
-    if (cmd == GAME_INIT) {
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Init({}, {}, {})\n", args[0], args[1], args[2]);
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Init({}, {}, {})\n", (void*)args[0], (void*)args[1], (void*)args[2]);
-    }
 
     switch (cmd) {
         ROUTE_EXPORT(Init, GAME_INIT);
@@ -307,8 +460,6 @@ void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
     // fill in variables of our hooked import struct to pass to the mod
     // qmm_import.unknown = orig_import.unknown;
 
-    //memcpy(&qmm_import, &orig_import, sizeof(qmm_import));
-
     // pointer to wrapper vmMain function that calls actual mod func from orig_export
     g_gameinfo.pfnvmMain = SOF2SP_vmMain;
 
@@ -341,144 +492,131 @@ void SOF2SP_mod_unload() {
 const char* SOF2SP_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
-        /*
-        GEN_CASE(G_WRITECAM);
-        GEN_CASE(G_FLUSHCAMFILE);
-        GEN_CASE(G_ERROR);
-        GEN_CASE(G_MILLISECONDS);
-        GEN_CASE(G_CVAR);
-        GEN_CASE(G_CVAR_SET);
-        GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
-        GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
-        GEN_CASE(G_ARGC);
-        GEN_CASE(G_ARGV);
+        GEN_CASE(G_DPRINTF);
+        GEN_CASE(G_DPRINTF2);
+        GEN_CASE(G_SNPRINTF);
+        GEN_CASE(G_ERRORF);
         GEN_CASE(G_FS_FOPEN_FILE);
         GEN_CASE(G_FS_READ);
-        GEN_CASE(G_FS_WRITE);
+        GEN_CASE(G_FS_FILE_FOR_HANDLE);
         GEN_CASE(G_FS_FCLOSE_FILE);
         GEN_CASE(G_FS_READFILE);
         GEN_CASE(G_FS_FREEFILE);
-        GEN_CASE(G_FS_GETFILELIST);
-        GEN_CASE(G_APPENDTOSAVEGAME);
-        GEN_CASE(G_READFROMSAVEGAME);
-        GEN_CASE(G_READFROMSAVEGAMEOPTIONAL);
+        GEN_CASE(G_FS_FILEAVAILABLE);
+        GEN_CASE(G_FS_BUILDOSPATH);
+        GEN_CASE(G_UNKNOWN13);
+        GEN_CASE(G_UNKNOWN14);
+        GEN_CASE(G_MILLISECONDS);
+        GEN_CASE(G_UNKNOWN16);
+        GEN_CASE(G_UNKNOWN17);
         GEN_CASE(G_SEND_CONSOLE_COMMAND);
-        GEN_CASE(G_DROP_CLIENT);
-        GEN_CASE(G_SEND_SERVER_COMMAND);
-        GEN_CASE(G_SET_CONFIGSTRING);
-        GEN_CASE(G_GET_CONFIGSTRING);
-        GEN_CASE(G_GET_USERINFO);
-        GEN_CASE(G_SET_USERINFO);
-        GEN_CASE(G_GET_SERVERINFO);
-        GEN_CASE(G_SET_BRUSH_MODEL);
-        GEN_CASE(G_TRACE);
-        GEN_CASE(G_POINT_CONTENTS);
-        GEN_CASE(G_TOTALMAPCONTENTS);
-        GEN_CASE(G_IN_PVS);
-        GEN_CASE(G_IN_PVS_IGNOREPORTALS);
-        GEN_CASE(G_ADJUSTAREAPORTALSTATE);
-        GEN_CASE(G_AREAS_CONNECTED);
-        GEN_CASE(G_LINKENTITY);
-        GEN_CASE(G_UNLINKENTITY);
-        GEN_CASE(G_ENTITIES_IN_BOX);
-        GEN_CASE(G_ENTITY_CONTACT);
-        GEN_CASE(GVP_VOICEVOLUME);
+        GEN_CASE(G_EXECUTE_CONSOLE_COMMAND);
+        GEN_CASE(G_UNKNOWN20);
+        GEN_CASE(G_UNKNOWN21);
+        GEN_CASE(G_UNKNOWN22);
+        GEN_CASE(G_CVAR_GET);
+        GEN_CASE(G_CVAR_REGISTER);
+        GEN_CASE(G_CVAR_UPDATE);
+        GEN_CASE(G_CVAR_SET2);
+        GEN_CASE(G_UNKNOWN27);
+        GEN_CASE(G_CVAR_SET);
+        GEN_CASE(G_UNKNOWN29);
+        GEN_CASE(G_UNKNOWN30);
+        GEN_CASE(G_UNKNOWN31);
         GEN_CASE(G_MALLOC);
         GEN_CASE(G_FREE);
-        GEN_CASE(G_BISFROMZONE);
-        GEN_CASE(G_G2API_PRECACHEGHOUL2MODEL);
-        GEN_CASE(G_G2API_INITGHOUL2MODEL);
-        GEN_CASE(G_G2API_SETSKIN);
-        GEN_CASE(G_G2API_SETBONEANIM);
-        GEN_CASE(G_G2API_SETBONEANGLES);
-        GEN_CASE(G_G2API_SETBONEANGLESINDEX);
-        GEN_CASE(G_G2API_SETBONEANGLESMATRIX);
-        GEN_CASE(G_G2API_COPYGHOUL2INSTANCE);
-        GEN_CASE(G_G2API_SETBONEANIMINDEX);
-        GEN_CASE(G_G2API_SETLODBIAS);
-        GEN_CASE(G_G2API_SETSHADER);
-        GEN_CASE(G_G2API_REMOVEGHOUL2MODEL);
-        GEN_CASE(G_G2API_SETSURFACEONOFF);
-        GEN_CASE(G_G2API_SETROOTSURFACE);
-        GEN_CASE(G_G2API_REMOVESURFACE);
-        GEN_CASE(G_G2API_ADDSURFACE);
-        GEN_CASE(G_G2API_GETBONEANIM);
-        GEN_CASE(G_G2API_GETBONEANIMINDEX);
-        GEN_CASE(G_G2API_GETANIMRANGE);
-        GEN_CASE(G_G2API_GETANIMRANGEINDEX);
-        GEN_CASE(G_G2API_PAUSEBONEANIM);
-        GEN_CASE(G_G2API_PAUSEBONEANIMINDEX);
-        GEN_CASE(G_G2API_ISPAUSED);
-        GEN_CASE(G_G2API_STOPBONEANIM);
-        GEN_CASE(G_G2API_STOPBONEANGLES);
-        GEN_CASE(G_G2API_REMOVEBONE);
-        GEN_CASE(G_G2API_REMOVEBOLT);
-        GEN_CASE(G_G2API_ADDBOLT);
-        GEN_CASE(G_G2API_ADDBOLTSURFNUM);
-        GEN_CASE(G_G2API_ATTACHG2MODEL);
-        GEN_CASE(G_G2API_DETACHG2MODEL);
-        GEN_CASE(G_G2API_ATTACHENT);
-        GEN_CASE(G_G2API_DETACHENT);
-        GEN_CASE(G_G2API_GETBOLTMATRIX);
-        GEN_CASE(G_G2API_LISTSURFACES);
-        GEN_CASE(G_G2API_LISTBONES);
-        GEN_CASE(G_G2API_HAVEWEGHOUL2MODELS);
-        GEN_CASE(G_G2API_SETGHOUL2MODELFLAGS);
-        GEN_CASE(G_G2API_GETGHOUL2MODELFLAGS);
-        GEN_CASE(G_G2API_GETANIMFILENAME);
-        GEN_CASE(G_G2API_COLLISIONDETECT);
-        GEN_CASE(G_G2API_GIVEMEVECTORFROMMATRIX);
-        GEN_CASE(G_G2API_CLEANGHOUL2MODELS);
-        GEN_CASE(G_THEGHOUL2INFOARRAY);
-        GEN_CASE(G_G2API_GETPARENTSURFACE);
-        GEN_CASE(G_G2API_GETSURFACEINDEX);
-        GEN_CASE(G_G2API_GETSURFACENAME);
-        GEN_CASE(G_G2API_GETGLANAME);
-        GEN_CASE(G_G2API_SETNEWORIGIN);
-        GEN_CASE(G_G2API_GETBONEINDEX);
-        GEN_CASE(G_G2API_STOPBONEANGLESINDEX);
-        GEN_CASE(G_G2API_STOPBONEANIMINDEX);
-        GEN_CASE(G_G2API_SETBONEANGLESMATRIXINDEX);
-        GEN_CASE(G_G2API_SETANIMINDEX);
-        GEN_CASE(G_G2API_GETANIMINDEX);
-        GEN_CASE(G_G2API_SAVEGHOUL2MODELS);
-        GEN_CASE(G_G2API_LOADGHOUL2MODELS);
-        GEN_CASE(G_G2API_LOADSAVECODEDESTRUCTGHOUL2INFO);
-        GEN_CASE(G_G2API_GETANIMFILENAMEINDEX);
-        GEN_CASE(G_G2API_GETANIMFILEINTERNALNAMEINDEX);
-        GEN_CASE(G_G2API_GETSURFACERENDERSTATUS);
-        GEN_CASE(G_G2API_SETRAGDOLL);
-        GEN_CASE(G_G2API_ANIMATEG2MODELS);
-        GEN_CASE(G_G2API_RAGPCJCONSTRAINT);
-        GEN_CASE(G_G2API_RAGPCJGRADIENTSPEED);
-        GEN_CASE(G_G2API_RAGEFFECTORGOAL);
-        GEN_CASE(G_G2API_GETRAGBONEPOS);
-        GEN_CASE(G_G2API_RAGEFFECTORKICK);
-        GEN_CASE(G_G2API_RAGFORCESOLVE);
-        GEN_CASE(G_G2API_SETBONEIKSTATE);
-        GEN_CASE(G_G2API_IKMOVE);
-        GEN_CASE(G_G2API_ADDSKINGORE);
-        GEN_CASE(G_G2API_CLEARSKINGORE);
-        GEN_CASE(G_RMG_INIT);
+        GEN_CASE(G_UNKNOWN34);
         GEN_CASE(G_CM_REGISTERTERRAIN);
-        GEN_CASE(G_SET_ACTIVE_SUBBSP);
-        GEN_CASE(G_RE_REGISTERSKIN);
-        GEN_CASE(G_RE_GETANIMATIONCFG);
-        GEN_CASE(G_WE_GETWINDVECTOR);
-        GEN_CASE(G_WE_GETWINDGUSTING);
-        GEN_CASE(G_WE_ISOUTSIDE);
-        GEN_CASE(G_WE_ISOUTSIDECAUSINGPAIN);
-        GEN_CASE(G_WE_GETCHANCEOFSABERFIZZ);
-        GEN_CASE(G_WE_ISSHAKING);
-        GEN_CASE(G_WE_ADDWEATHERZONE);
-        GEN_CASE(G_WE_SETTEMPGLOBALFOGCOLOR);
+        GEN_CASE(G_UNKNOWN36);
+        GEN_CASE(G_UNKNOWN37);
+        GEN_CASE(G_UNKNOWN38);
+        GEN_CASE(G_UNKNOWN39);
+        GEN_CASE(G_UNKNOWN40);
+        GEN_CASE(G_UNKNOWN41);
+        GEN_CASE(G_UNKNOWN42);
+        GEN_CASE(G_UNKNOWN43);
+        GEN_CASE(G_UNKNOWN44);
+        GEN_CASE(G_UNKNOWN45);
+        GEN_CASE(G_UNKNOWN46);
+        GEN_CASE(G_UNKNOWN47);
+        GEN_CASE(G_UNKNOWN48);
+        GEN_CASE(G_UNKNOWN49);
+        GEN_CASE(G_UNKNOWN50);
+        GEN_CASE(G_UNKNOWN51);
+        GEN_CASE(G_UNKNOWN52);
+        GEN_CASE(G_UNKNOWN53);
+        GEN_CASE(G_UNKNOWN54);
+        GEN_CASE(G_UNKNOWN55);
+        GEN_CASE(G_UNKNOWN56);
+        GEN_CASE(G_UNKNOWN57);
+        GEN_CASE(G_UNKNOWN58);
+        GEN_CASE(G_UNKNOWN59);
+        GEN_CASE(G_UNKNOWN60);
+        GEN_CASE(G_UNKNOWN61);
+        GEN_CASE(G_UNKNOWN62);
+        GEN_CASE(G_UNKNOWN63);
+        GEN_CASE(G_UNKNOWN64);
+        GEN_CASE(G_UNKNOWN65);
+        GEN_CASE(G_UNKNOWN66);
+        GEN_CASE(G_UNKNOWN67);
+        GEN_CASE(G_UNKNOWN68);
+        GEN_CASE(G_UNKNOWN69);
+        GEN_CASE(G_UNKNOWN70);
+        GEN_CASE(G_UNKNOWN71);
+        GEN_CASE(G_UNKNOWN72);
+        GEN_CASE(G_UNKNOWN73);
+        GEN_CASE(G_UNKNOWN74);
+        GEN_CASE(G_UNKNOWN75);
+        GEN_CASE(G_UNKNOWN76);
+        GEN_CASE(G_UNKNOWN77);
+        GEN_CASE(G_UNKNOWN78);
+        GEN_CASE(G_UNKNOWN79);
+        GEN_CASE(G_ADJUSTAREAPORTALSTATE);
+        GEN_CASE(G_UNKNOWN81);
+        GEN_CASE(G_UNKNOWN82);
+        GEN_CASE(G_UNKNOWN83);
+        GEN_CASE(G_UNKNOWN84);
+        GEN_CASE(G_TIKI_REGISTERMODEL);
+        GEN_CASE(G_UNKNOWN86);
+        GEN_CASE(G_UNKNOWN87);
+        GEN_CASE(G_UNKNOWN88);
+        GEN_CASE(G_UNKNOWN89);
+        GEN_CASE(G_UNKNOWN90);
+        GEN_CASE(G_UNKNOWN91);
+        GEN_CASE(G_UNKNOWN92);
+        GEN_CASE(G_UNKNOWN93);
+        GEN_CASE(G_UNKNOWN94);
+        GEN_CASE(G_UNKNOWN95);
+        GEN_CASE(G_UNKNOWN96);
+        GEN_CASE(G_UNKNOWN97);
+        GEN_CASE(G_UNKNOWN98);
+        GEN_CASE(G_UNKNOWN99);
+        GEN_CASE(G_UNKNOWN100);
+        GEN_CASE(G_UNKNOWN101);
+        GEN_CASE(G_UNKNOWN102);
+        GEN_CASE(G_UNKNOWN103);
+        GEN_CASE(G_UNKNOWN104);
+        GEN_CASE(G_UNKNOWN105);
+        GEN_CASE(G_UNKNOWN106);
+        GEN_CASE(G_UNKNOWN107);
+        GEN_CASE(G_UNKNOWN108);
+        GEN_CASE(G_UNKNOWN109);
+        GEN_CASE(G_UNKNOWN110);
+        GEN_CASE(G_CM_TM_UPLOAD);
+        GEN_CASE(G_SAVETERRAINIMAGETODISK);
 
         // polyfills
-        GEN_CASE(G_CVAR_REGISTER);
+        GEN_CASE(G_ERROR);
+        GEN_CASE(G_ARGV);
+        GEN_CASE(G_ARGC);
+        GEN_CASE(G_ARGS);
+        GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
+        GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
+        GEN_CASE(G_FS_WRITE);
+        GEN_CASE(G_GET_CONFIGSTRING);
 
         GEN_CASE(G_LOCATE_GAME_DATA);
         GEN_CASE(G_GET_ENTITY_TOKEN);
-*/
 
     default:
         return "unknown";
