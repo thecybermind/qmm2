@@ -520,7 +520,7 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
             orig_import.SendConsoleCommand(text);
             break;
         }
-        orig_import.ExecuteConsoleCommand(when, text);
+        orig_import.ExecuteConsoleCommand((int)when, text);
         break;
     }
     case G_GET_ENTITY_TOKEN: {

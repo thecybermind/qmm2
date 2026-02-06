@@ -370,7 +370,7 @@ intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
             orig_import.SendConsoleCommand(text);
             break;
         }
-        orig_import.ExecuteConsoleCommand(when, text);
+        orig_import.ExecuteConsoleCommand((int)when, text);
         break;
     }
 
