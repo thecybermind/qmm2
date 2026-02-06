@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_JASP_H__
-#define __QMM2_GAME_JASP_H__
+#ifndef QMM2_GAME_JASP_H
+#define QMM2_GAME_JASP_H
 
 // import ("syscall") cmds
 enum {
@@ -184,4 +184,4 @@ enum {
 	G_ARGS,							// char* (void)
 };
 
-#endif // __QMM2_GAME_JASP_H__
+#endif // QMM2_GAME_JASP_H

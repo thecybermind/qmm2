@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_OSDEF_H__
-#define __QMM2_OSDEF_H__
+#ifndef QMM2_OSDEF_H
+#define QMM2_OSDEF_H
 
 #if defined(_WIN32)
 
@@ -84,4 +84,4 @@ void* osdef_path_get_qmm_handle();
 const char* osdef_path_get_qmm_path();
 const char* osdef_path_get_proc_path();
 
-#endif // __QMM2_OSDEF_H__
+#endif // QMM2_OSDEF_H

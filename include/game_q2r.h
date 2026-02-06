@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_Q2R_H__
-#define __QMM2_GAME_Q2R_H__
+#ifndef QMM2_GAME_Q2R_H
+#define QMM2_GAME_Q2R_H
 
 // AFAIK Quake 2 Remastered is only available on 64-bit Windows, so skip the whole file otherwise.
 // The game entry in game_api is similarly conditionally compiled.
@@ -178,4 +178,4 @@ enum {
 
 #endif // _WIN64
 
-#endif // __QMM2_GAME_Q2R_H__
+#endif // QMM2_GAME_Q2R_H

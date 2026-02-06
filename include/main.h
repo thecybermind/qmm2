@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_MAIN_H__
-#define __QMM2_MAIN_H__
+#ifndef QMM2_MAIN_H
+#define QMM2_MAIN_H
 
 #include <string>
 #include "qmmapi.h"
@@ -59,4 +59,4 @@ intptr_t qmm_syscall(intptr_t cmd, ...);
 // get a given argument with G_ARGV, based on game engine type
 void qmm_argv(intptr_t argn, char* buf, intptr_t buflen);
 
-#endif // __QMM2_MAIN_H__
+#endif // QMM2_MAIN_H

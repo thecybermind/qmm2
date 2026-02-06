@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_QVM_H__
-#define __QMM2_QVM_H__
+#ifndef QMM2_QVM_H
+#define QMM2_QVM_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -229,4 +229,4 @@ void qvm_unload(qvm_t* qvm);
 }
 #endif // __cplusplus
 
-#endif // __QMM2_QVM_H__
+#endif // QMM2_QVM_H

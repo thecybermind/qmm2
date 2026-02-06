@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_Q3A_H__
-#define __QMM2_GAME_Q3A_H__
+#ifndef QMM2_GAME_Q3A_H
+#define QMM2_GAME_Q3A_H
 
 // these function ids are defined either in the g_syscalls.asm file or in qcommon.h from q3 source,
 // but they do not appear in the enum in q3a/game/g_public.h
@@ -36,4 +36,4 @@ enum {
 	G_ARGS = -100,					// char* (void)
 };
 
-#endif // __QMM2_GAME_Q3A_H__
+#endif // QMM2_GAME_Q3A_H

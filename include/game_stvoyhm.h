@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_STVOYMP_H__
-#define __QMM2_GAME_STVOYMP_H__
+#ifndef QMM2_GAME_STVOYMP_H
+#define QMM2_GAME_STVOYMP_H
 
 
 // these function ids are defined either in the g_syscalls.asm file or in qcommon.h from ioef source,
@@ -37,4 +37,4 @@ enum {
 	G_ARGS = -100,					// char* (void)
 };
 
-#endif // __QMM2_GAME_STVOYMP_H__
+#endif // QMM2_GAME_STVOYMP_H

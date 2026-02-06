@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_LOG_H__
-#define __QMM2_LOG_H__
+#ifndef QMM2_LOG_H
+#define QMM2_LOG_H
 
 #ifdef __cplusplus
 
@@ -75,4 +75,4 @@ enum {
     QMM_LOG_FATAL
 };
 
-#endif // __QMM2_LOG_H__
+#endif // QMM2_LOG_H

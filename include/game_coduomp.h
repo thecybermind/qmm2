@@ -9,12 +9,12 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_CODUOMP_H__
-#define __QMM2_GAME_CODUOMP_H__
+#ifndef QMM2_GAME_CODUOMP_H
+#define QMM2_GAME_CODUOMP_H
 
 // these import messages do not have an exact analogue in CODUOMP
 enum {
 	G_ARGS = -100,					// char* (void)
 };
 
-#endif // __QMM2_GAME_CODUOMP_H__
+#endif // QMM2_GAME_CODUOMP_H
