@@ -138,7 +138,7 @@ static bool s_mod_load_qvm(mod_t& mod) {
     }
 
     // pass the qvm vmMain function pointer to the game-specific mod load handler
-    if (!g_gameinfo.game->pfnModLoad(s_mod_qvm_vmmain)) {
+    if (!g_gameinfo.game->pfnModLoad((void*)s_mod_qvm_vmmain)) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Mod load failed?\n", mod.path);
         goto fail;
     }
@@ -163,7 +163,7 @@ static bool s_mod_load_getgameapi(mod_t& mod) {
     }
 
     // pass the GetGameAPI function pointer to the game-specific mod load handler
-    if (!g_gameinfo.game->pfnModLoad(mod_GetGameAPI)) {
+    if (!g_gameinfo.game->pfnModLoad((void*)mod_GetGameAPI)) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): \"GetGameAPI\" function failed\n", mod.path);
         goto fail;
     }
@@ -199,7 +199,7 @@ static bool s_mod_load_vmmain(mod_t& mod) {
     mod_dllEntry(qmm_syscall);
     
     // pass the vmMain function pointer to the game-specific mod load handler
-    if (!g_gameinfo.game->pfnModLoad(mod_vmMain)) {
+    if (!g_gameinfo.game->pfnModLoad((void*)mod_vmMain)) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Mod load failed?\n", mod.path);
         goto fail;
     }
