@@ -13,6 +13,7 @@ Created By:
 #include "osdef.h"
 #include <cctype>
 #include <cstring>
+#include <cstdint>
 #include <vector>
 #include <string>
 #include "util.h"
