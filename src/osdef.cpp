@@ -112,7 +112,7 @@ const char* osdef_path_get_proc_path() {
 
 
 #ifdef __linux__
-static uint64_t osdef_get_milliseconds() {
+uint64_t osdef_get_milliseconds() {
     struct timeval tp;
     struct timezone tzp;
 
