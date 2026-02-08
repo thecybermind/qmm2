@@ -9,6 +9,8 @@ Created By:
 
 */
 
+#define QMM_FEATURE_SOF2SP
+
 #include "osdef.h"
 #include "game_api.h"
 

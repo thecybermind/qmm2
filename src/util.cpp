@@ -99,6 +99,11 @@ void* util_get_qmm_handle() {
 }
 
 
+intptr_t util_get_milliseconds() {
+    return osdef_get_milliseconds();
+}
+
+
 void path_mkdir(std::string path) {
     unsigned int i = 1; // start after a possible /
 #ifdef _WIN32

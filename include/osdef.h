@@ -53,7 +53,9 @@ const char* dlerror();		// this will return the last error from any win32 functi
 #include <unistd.h> 
 #include <limits.h>
 #include <ctype.h>
+#include <sys/time.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #ifdef __LP64__
 #define SUF_DLL "x86_64"
@@ -83,5 +85,5 @@ void MessageBoxA(void* handle, const char* message, const char* title, int flags
 void* osdef_path_get_qmm_handle();
 const char* osdef_path_get_qmm_path();
 const char* osdef_path_get_proc_path();
-
+intptr_t osdef_get_milliseconds();
 #endif // QMM2_OSDEF_H

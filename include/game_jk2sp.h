@@ -119,6 +119,7 @@ enum {
 	G_RE_GETANIMATIONCFG,
 
 	G_PRINT = G_PRINTF,
+	G_FS_LISTFILES = G_FS_GETFILELIST,
 };
 
 // export ("vmMain") cmds

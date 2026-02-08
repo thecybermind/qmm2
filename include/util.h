@@ -24,6 +24,7 @@ bool path_is_relative(std::string path);
 std::string util_get_proc_path();
 std::string util_get_qmm_path();
 void* util_get_qmm_handle();
+intptr_t util_get_milliseconds();
 
 void path_mkdir(std::string path);
 

@@ -184,6 +184,7 @@ enum {
 	GVP_FSDEBUG,
 
 	G_PRINT = G_PRINTF,
+	G_FS_GETFILELIST = G_FS_LISTFILES,
 };
 
 // export ("vmMain") cmds

@@ -19,40 +19,6 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-// a list of all the mod messages used by QMM
-enum qmm_mod_msg_t {
-    QMM_GAME_INIT,
-    QMM_GAME_SHUTDOWN,
-    QMM_GAME_CONSOLE_COMMAND,
-};
-
-// a list of all the engine messages used by QMM
-enum qmm_eng_msg_t {
-    QMM_G_PRINT,
-    QMM_G_ERROR,
-    QMM_G_ARGV,
-    QMM_G_ARGC,
-    QMM_G_SEND_CONSOLE_COMMAND,
-
-    QMM_G_CVAR_REGISTER,
-    QMM_G_CVAR_SET,
-    QMM_G_CVAR_VARIABLE_STRING_BUFFER,
-    QMM_G_CVAR_VARIABLE_INTEGER_VALUE,
-
-    QMM_G_FS_FOPEN_FILE,
-    QMM_G_FS_READ,
-    QMM_G_FS_WRITE,
-    QMM_G_FS_FCLOSE_FILE,
-
-    QMM_EXEC_APPEND,
-    QMM_FS_READ,
-
-    QMM_CVAR_SERVERINFO,
-    QMM_CVAR_ROM,
-
-    QMM_G_GET_CONFIGSTRING,
-};
-
 typedef const char* (*msgname_t)(intptr_t);
 typedef bool (*mod_load_t)(void*);
 typedef void (*mod_unload_t)();
@@ -108,16 +74,27 @@ extern supportedgame_t g_supportedgames[];
 // generate a case/string line for the message name functions
 #define GEN_CASE(x)			case x: return #x
 
+
+// a list of all the engine messages/constants used by QMM. if you change this, update the GEN_QMM_MSGS macro
+enum qmm_eng_msg_t {
+    // general purpose
+    QMM_G_PRINT, QMM_G_ERROR, QMM_G_ARGV, QMM_G_ARGC, QMM_G_SEND_CONSOLE_COMMAND, QMM_G_GET_CONFIGSTRING,
+    // cvars
+    QMM_G_CVAR_REGISTER, QMM_G_CVAR_SET, QMM_G_CVAR_VARIABLE_STRING_BUFFER, QMM_G_CVAR_VARIABLE_INTEGER_VALUE, QMM_CVAR_SERVERINFO, QMM_CVAR_ROM,
+    // files
+    QMM_G_FS_FOPEN_FILE, QMM_G_FS_READ, QMM_G_FS_WRITE, QMM_G_FS_FCLOSE_FILE, QMM_EXEC_APPEND, QMM_FS_READ,
+};
+
+// a list of all the mod messages used by QMM. if you change this, update the GEN_QMM_MSGS macro
+enum qmm_mod_msg_t { QMM_GAME_INIT, QMM_GAME_SHUTDOWN, QMM_GAME_CONSOLE_COMMAND, };
+
 // macro to easily output game-specific message values to match the qmm_eng_msg_t and qmm_mod_msg_t enums above
 // this macro goes in game_*.cpp
 #define GEN_QMM_MSGS(game) \
 	int game##_qmm_eng_msgs[] = { \
-		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, \
-		G_CVAR_REGISTER, G_CVAR_SET, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, \
-		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, \
-		EXEC_APPEND, FS_READ, \
-		CVAR_SERVERINFO, CVAR_ROM, \
-		G_GET_CONFIGSTRING, \
+		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING, \
+		G_CVAR_REGISTER, G_CVAR_SET, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, \
+		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, \
 	}; \
 	int game##_qmm_mod_msgs[] = { \
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
