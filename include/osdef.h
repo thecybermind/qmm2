@@ -87,11 +87,9 @@ const char* osdef_path_get_qmm_path();
 const char* osdef_path_get_proc_path();
 
 #ifdef __linux__
-time_t osdef_get_milliseconds();
-#elif defined(_WIN64)
-#define osdef_get_milliseconds GetTickCount64
+uint64_t osdef_get_milliseconds();
 #elif defined(_WIN32)
-#define osdef_get_milliseconds (intptr_t)GetTickCount64
+#define osdef_get_milliseconds GetTickCount64
 #endif
 
 #endif // QMM2_OSDEF_H

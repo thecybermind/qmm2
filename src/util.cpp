@@ -101,12 +101,12 @@ void* util_get_qmm_handle() {
 
 intptr_t util_get_milliseconds() {
     static bool initialized = false;
-    static intptr_t startTime = 0;
+    static uint64_t startTime = 0;
     if (!initialized) {
         initialized = true;
         startTime = osdef_get_milliseconds();
     }
-    return (osdef_get_milliseconds() - startTime);
+    return (intptr_t)(osdef_get_milliseconds() - startTime);
 }
 
 
