@@ -321,25 +321,22 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     }
 
     if (cmd == QMM_MOD_MSG[QMM_GAME_INIT]) {
+        // initialize our polyfill milliseconds tracker so that now is 0
+        (void)util_get_milliseconds();
+
         // add engine G_PRINT logger (info level)
         log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], log_format(metadata, message, false).c_str());
             }, AixLog::Severity::info);
 
-        // initialize our polyfill milliseconds tracker so that now is 0
-        (void)util_get_milliseconds();
-
         LOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") initializing\n";
-
-        ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_REGISTER], nullptr, "qmm_version", QMM_VERSION, QMM_ENG_MSG[QMM_CVAR_ROM] | QMM_ENG_MSG[QMM_CVAR_SERVERINFO]);
-        ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_SET], "qmm_version", QMM_VERSION);
 
         // get mod dir from engine
         char moddir[256];
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], "fs_game", moddir, (intptr_t)sizeof(moddir));
         moddir[sizeof(moddir) - 1] = '\0';
         g_gameinfo.moddir = moddir;
-        // the default mod (including all singleplayer games) return "" for the fs_game, so grab the default mod dir from game info instead
+        // the default mod (including all singleplayer games) returns "" for the fs_game, so grab the default mod dir from game info instead
         if (g_gameinfo.moddir.empty())
             g_gameinfo.moddir = g_gameinfo.game->moddir;
 
@@ -349,6 +346,9 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         LOG(QMM_LOG_INFO, "QMM") << "Built: " QMM_COMPILE " by " QMM_BUILDER "\n";
         LOG(QMM_LOG_INFO, "QMM") << "URL: " QMM_URL "\n";
+
+        // create qmm_version cvar
+        ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_REGISTER], nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG[QMM_CVAR_ROM] | QMM_ENG_MSG[QMM_CVAR_SERVERINFO]);
 
         // load mod
         std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
