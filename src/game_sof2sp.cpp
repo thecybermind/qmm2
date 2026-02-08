@@ -190,11 +190,6 @@ intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
 
     intptr_t ret = 0;
 
-    if (cmd == G_CVAR_REGISTER) {
-        //void(vmCvar_t* vmCvar, const char* varName, const char* defaultValue, int flags)
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Cvar_Register(vmCvar={}, varName=\"{}\", defaultValue=\"{}\", flags={}) called\n", args[0], (char*)args[1], (char*)args[2], args[3]);
-    }
-
     switch (cmd) {
         ROUTE_IMPORT(Printf, G_PRINTF);
         ROUTE_IMPORT(DPrintf, G_DPRINTF);

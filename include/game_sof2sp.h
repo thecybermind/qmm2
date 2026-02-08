@@ -14,6 +14,8 @@ Created By:
 
 #include <cstdint>
 
+#define	MAX_STRING_CHARS	1024
+
 typedef int fileHandle_t;
 typedef enum { FS_READ, FS_WRITE, FS_APPEND, FS_APPEND_SYNC,
                FS_READ_TEXT, FS_WRITE_TEXT, FS_APPEND_TEXT, FS_APPEND_SYNC_TEXT, } fsMode_t;
@@ -21,6 +23,7 @@ typedef enum { EXEC_NOW, EXEC_INSERT, EXEC_APPEND, } cbufExec_t;
 
 typedef enum { qfalse, qtrue }	qboolean;
 typedef struct gentity_s gentity_t;
+typedef struct gclient_s gclient_t;
 typedef struct playerState_s playerState_t;
 typedef struct dtiki_s dtiki_t;
 typedef float vec3_t[3];
