@@ -53,6 +53,7 @@ const char* dlerror();		// this will return the last error from any win32 functi
 #include <unistd.h> 
 #include <limits.h>
 #include <ctype.h>
+#include <stdint.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/types.h>

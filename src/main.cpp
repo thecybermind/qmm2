@@ -326,6 +326,9 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_PRINT], log_format(metadata, message, false).c_str());
             }, AixLog::Severity::info);
 
+        // initialize our polyfill milliseconds tracker so that now is 0
+        (void)util_get_milliseconds();
+
         LOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") initializing\n";
 
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_REGISTER], nullptr, "qmm_version", QMM_VERSION, QMM_ENG_MSG[QMM_CVAR_ROM] | QMM_ENG_MSG[QMM_CVAR_SERVERINFO]);

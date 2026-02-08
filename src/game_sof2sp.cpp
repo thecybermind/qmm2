@@ -191,8 +191,8 @@ intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
     intptr_t ret = 0;
 
     if (cmd == G_CVAR_REGISTER) {
-        //(vmCvar_t* vmCvar, const char* varName, const char* defaultValue, int flags)
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Cvar_Register({}, \"{}\", \"{}\", {}, {}) called\n", args[0], (char*)args[1], (char*)args[2], args[3], args[4]);
+        //void(vmCvar_t* vmCvar, const char* varName, const char* defaultValue, int flags)
+        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Cvar_Register(vmCvar={}, varName=\"{}\", defaultValue=\"{}\", flags={}) called\n", args[0], (char*)args[1], (char*)args[2], args[3]);
     }
 
     switch (cmd) {
@@ -321,67 +321,6 @@ intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
         (void)orig_import.ErrorF(0, fmt);
         break;
     }
-/*
-    case G_CVAR_VARIABLE_STRING_BUFFER: {
-        // sof2sp: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags, setModified)
-        // q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
-        const char* varName = (const char*)(args[0]);
-        char* buffer = (char*)(args[1]);
-        intptr_t bufsize = args[2];
-        *buffer = '\0';
-        cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0, qfalse);
-        if (cvar)
-            strncpyz(buffer, cvar->string, (size_t)bufsize);
-        // todo: cleanup
-
-//    int unknown1;
-//    int unknown2;
-//    int unknown3;
-//    int unknown4;
-//    int unknown5;
-//    int padding[12];
-//    char* string;
-//    char* resetString;
-//    int unknown6;
-//    int			flags;
-//
-//    qboolean	modified;			// set each time the cvar is changed
-//    int			modificationCount;	// incremented each time the cvar is changed
-//    float		value;				// atof( string )
-//    int			integer;			// atoi( string )
-//    struct cvar_s* next;
-
-
-//1734308710 6647137
-//0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-//0x40a345c 0x40a3484 0x0 0x18 0 1 0 0 1918858086
-
-        if (!cvar)
-            break;
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("unknown1={} unknown2={} unknown3={} unknown4={} unknown5={}\n", (void*)cvar->unknown1, (void*)cvar->unknown2, (void*)cvar->unknown3, (void*)cvar->unknown4, (void*)cvar->unknown5);
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("{} {} {} {} {} {}\n", cvar->padding[0], cvar->padding[1], cvar->padding[2], cvar->padding[3], cvar->padding[4], cvar->padding[5]);
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("{} {} {} {} {} {}\n", cvar->padding[6], cvar->padding[7], cvar->padding[8], cvar->padding[9], cvar->padding[10], cvar->padding[11]);
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("string={} resetString={} flags={} modified={} modifiedCount={} value={} integer={}\n", (void*)cvar->string, (void*)cvar->resetString, cvar->flags, (int) cvar->modified, cvar->modificationCount, cvar->value, cvar->integer);
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("string=\"{}\" resetString=\"{}\"\n", cvar->string, cvar->resetString);
-        if (cvar->string[0]) {
-            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("unknown1={}\n", (char*)cvar->unknown1);
-            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("unknown2={}\n", (char*)cvar->unknown2);
-            //LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("unknown3={}\n", (char*)cvar->unknown3);
-            //LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("unknown4={}\n", (char*)cvar->unknown4);
-            //LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("unknown5={}\n", (char*)cvar->unknown5);
-        }
-        break;
-    }
-    case G_CVAR_VARIABLE_INTEGER_VALUE: {
-        // sof2sp: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags, setModified)
-        // q3a: int trap_Cvar_VariableIntegerValue(const char* var_name)
-        const char* varName = (const char*)(args[0]);
-        cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0, qfalse);
-        if (cvar)
-            ret = cvar->integer;
-        break;
-    }
-*/
     case G_EXECUTE_CONSOLE_COMMAND:
     case G_SEND_CONSOLE_COMMAND: {
         // SOF2SP: void (*SendConsoleCommand)(const char *text);
