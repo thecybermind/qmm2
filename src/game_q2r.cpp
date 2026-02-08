@@ -353,7 +353,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
         orig_import.AddCommandString(text);
         break;
     }
-                               // provide these to plugins just so the most basic file functions all work. use FILE* for these
+    // provide these to plugins just so the most basic file functions all work. use FILE* for these
     case G_FS_FOPEN_FILE: {
         // int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
         const char* qpath = (const char*)args[0];
@@ -423,7 +423,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
         fclose(fp);
         break;
     }
-                         // help plugins not need separate logic for entity/client pointers
+    // help plugins not need separate logic for entity/client pointers
     case G_LOCATE_GAME_DATA: {
         // void trap_LocateGameData(gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient);
         // this is just to be hooked by plugins, so ignore everything

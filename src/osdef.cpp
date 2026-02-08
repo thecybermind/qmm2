@@ -111,28 +111,13 @@ const char* osdef_path_get_proc_path() {
 }
 
 
-intptr_t osdef_get_milliseconds() {
-#ifdef _WIN32
- #ifdef _WIN64
-    return GetTickCount64();
- #else
-    #pragma warning(push)
-    #pragma warning(disable:28159) // "Consider using GetTickCount64()"
-    return GetTickCount();
-    #pragma warning(pop)
- #endif // _WIN64 or not
-
-#elif defined(__linux__)
+#ifdef __linux__
+static time_t osdef_get_milliseconds() {
     struct timeval tp;
     struct timezone tzp;
 
     gettimeofday(&tp, &tzp);
 
-    if (!sys_timeBase) {
-        sys_timeBase = tp.tv_sec;
-        return tp.tv_usec / 1000;
-    }
-
-    return (tp.tv_sec - sys_timeBase) * 1000 + tp.tv_usec / 1000;
-#endif // __linux__
+    return (tp.tv_sec - startTime) * 1000 + tp.tv_usec / 1000;
 }
+#endif
