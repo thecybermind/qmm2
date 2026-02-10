@@ -109,3 +109,15 @@ const char* osdef_path_get_proc_path() {
 #endif
     return path;
 }
+
+
+#ifdef __linux__
+uint64_t osdef_get_milliseconds() {
+    struct timeval tp;
+    struct timezone tzp;
+
+    gettimeofday(&tp, &tzp);
+
+    return tp.tv_sec * 1000 + tp.tv_usec / 1000;
+}
+#endif

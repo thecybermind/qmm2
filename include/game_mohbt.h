@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_MOHBT_H__
-#define __QMM2_GAME_MOHBT_H__
+#ifndef QMM2_GAME_MOHBT_H
+#define QMM2_GAME_MOHBT_H
 
 // import ("syscall") cmds
 enum {
@@ -192,6 +192,7 @@ enum {
 	GVP_FSDEBUG,
 
 	G_PRINT = G_PRINTF,
+	G_FS_GETFILELIST = G_FS_LISTFILES,
 };
 
 // export ("vmMain") cmds
@@ -251,4 +252,4 @@ enum {
 	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
 };
 
-#endif // __QMM2_GAME_MOHBT_H__
+#endif // QMM2_GAME_MOHBT_H

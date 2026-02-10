@@ -13,6 +13,7 @@ Created By:
 #include "osdef.h"
 #include <cctype>
 #include <cstring>
+#include <cstdint>
 #include <vector>
 #include <string>
 #include "util.h"
@@ -96,6 +97,17 @@ std::string util_get_qmm_path() {
 
 void* util_get_qmm_handle() {
     return osdef_path_get_qmm_handle();
+}
+
+
+intptr_t util_get_milliseconds() {
+    static bool initialized = false;
+    static uint64_t startTime = 0;
+    if (!initialized) {
+        initialized = true;
+        startTime = osdef_get_milliseconds();
+    }
+    return (intptr_t)(osdef_get_milliseconds() - startTime);
 }
 
 

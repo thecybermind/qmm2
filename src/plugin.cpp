@@ -25,7 +25,8 @@ Created By:
 #include "plugin.h"
 #include "util.h"
 
-constexpr int NUM_PLUGIN_STR_BUFFERS = 12;
+constexpr int NUM_PLUGIN_STR_BUFFERS = 16;  // must be power of 2
+constexpr int NUM_PLUGIN_STR_BUFFER_MASK = NUM_PLUGIN_STR_BUFFERS - 1;
 
 static void s_plugin_helper_WriteQMMLog(plid_t plid, const char* text, int severity);
 static char* s_plugin_helper_VarArgs(plid_t plid [[maybe_unused]], const char* format, ...);
@@ -242,7 +243,7 @@ static char* s_plugin_helper_VarArgs(plid_t plid [[maybe_unused]], const char* f
     static int index = 0;
 
     // cycle rotating buffer and store string
-    index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
+    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
 
     va_start(argptr, format);
     vsnprintf(str[index], sizeof(str[index]), format, argptr);
@@ -295,7 +296,7 @@ static const char* s_plugin_helper_GetStrCvar(plid_t plid, const char* cvar) {
 
     if (cvar && *cvar) {
         // cycle rotating buffer and store string
-        index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
+        index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], cvar, str[index], (intptr_t)sizeof(str[index]));
         ret = str[index];
     }
@@ -342,7 +343,7 @@ static const char* s_plugin_helper_InfoValueForKey(plid_t plid, const char* user
             std::string fval = s.substr(valpos, valend - valpos);
 
             // cycle rotating buffer and store string
-            index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
+            index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
             value[index] = fval;
             ret = value[index].c_str();
         }
@@ -376,7 +377,7 @@ static const char* s_plugin_helper_ConfigGetStr(plid_t plid, const char* key) {
     nlohmann::json node = s_plugin_cfg_get_node(plid, key);
 
     // cycle rotating buffer and store string
-    index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
+    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
     value[index] = cfg_get_string(node, path_basename(key));
     const char* ret = value[index].c_str();
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnConfigGetStr(\"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, key, ret);
@@ -409,7 +410,7 @@ static const char** s_plugin_helper_ConfigGetArrayStr(plid_t plid, const char* k
     nlohmann::json node = s_plugin_cfg_get_node(plid, key);
 
     // cycle rotating buffer and store array
-    index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
+    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
     value[index] = cfg_get_array_str(node, path_basename(key));
     // fill valuep with const char*s from value
     valuep[index].clear();
@@ -429,7 +430,7 @@ static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid, const char* key) {
     nlohmann::json node = s_plugin_cfg_get_node(plid, key);
 
     // cycle rotating buffer and store array
-    index = (index + 1) % NUM_PLUGIN_STR_BUFFERS;
+    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
     value[index] = cfg_get_array_int(node, path_basename(key));
     // insert length of the array as the first element
     value[index].insert(value[index].begin(), (int)value[index].size());

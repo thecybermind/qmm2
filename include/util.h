@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_UTIL_H__
-#define __QMM2_UTIL_H__
+#ifndef QMM2_UTIL_H
+#define QMM2_UTIL_H
 
 #include <vector>
 #include <string>
@@ -24,6 +24,7 @@ bool path_is_relative(std::string path);
 std::string util_get_proc_path();
 std::string util_get_qmm_path();
 void* util_get_qmm_handle();
+intptr_t util_get_milliseconds();
 
 void path_mkdir(std::string path);
 
@@ -44,4 +45,4 @@ T util_max(T a, T b) {
     return (a > b ? a : b);
 }
 
-#endif // __QMM2_UTIL_H__
+#endif // QMM2_UTIL_H

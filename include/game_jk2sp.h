@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_JK2SP_H__
-#define __QMM2_GAME_JK2SP_H__
+#ifndef QMM2_GAME_JK2SP_H
+#define QMM2_GAME_JK2SP_H
 
 // import ("syscall") cmds
 enum {
@@ -119,6 +119,7 @@ enum {
 	G_RE_GETANIMATIONCFG,
 
 	G_PRINT = G_PRINTF,
+	G_FS_LISTFILES = G_FS_GETFILELIST,
 };
 
 // export ("vmMain") cmds
@@ -156,4 +157,4 @@ enum {
 	G_ARGS,							// char* (void)
 };
 
-#endif // __QMM2_GAME_JK2SP_H__
+#endif // QMM2_GAME_JK2SP_H

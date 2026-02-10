@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_PLUGIN_H__
-#define __QMM2_PLUGIN_H__
+#ifndef QMM2_PLUGIN_H
+#define QMM2_PLUGIN_H
 
 #include <vector>
 #include <string>
@@ -59,4 +59,4 @@ const char* plugin_result_to_str(pluginres_t res);
 int plugin_load(plugin_t& p, std::string file);
 void plugin_unload(plugin_t& p);
 
-#endif // __QMM2_PLUGIN_H__
+#endif // QMM2_PLUGIN_H

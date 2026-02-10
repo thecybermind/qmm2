@@ -22,21 +22,19 @@ Created By:
 GEN_QMM_MSGS(Q3A);
 GEN_EXTS(Q3A);
 
-// a copy of the original syscall pointer that comes from the game engine
+// original syscall pointer that comes from the game engine
 static eng_syscall_t orig_syscall = nullptr;
 
-// mod vmMain is access via g_mod.pfnvmMain
-
+// pointer to vmMain that comes from the mod
+static mod_vmMain_t orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 intptr_t Q3A_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
         LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q3A_syscall({} {}) called\n", Q3A_eng_msg_names(cmd), cmd);
-#endif
 
     intptr_t ret = 0;
 
@@ -65,10 +63,8 @@ intptr_t Q3A_syscall(intptr_t cmd, ...) {
 
     // do anything that needs to be done after function call here
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
         LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q3A_syscall({} {}) returning {}\n", Q3A_eng_msg_names(cmd), cmd, ret);
-#endif
 
     return ret;
 }
@@ -81,14 +77,14 @@ intptr_t Q3A_vmMain(intptr_t cmd, ...) {
 
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_vmMain({} {}) called\n", Q3A_mod_msg_names(cmd), cmd);
 
-    if (!g_mod.pfnvmMain)
+    if (!orig_vmMain)
         return 0;
 
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
     // all normal mod functions go to mod
-    ret = g_mod.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
     // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
     // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
@@ -108,13 +104,25 @@ void Q3A_dllEntry(eng_syscall_t syscall) {
     // store original syscall from engine
     orig_syscall = syscall;
 
-    // pointer to wrapper vmMain function that calls actual mod vmMain func g_mod.pfnvmMain
+    // pointer to wrapper vmMain function that calls actual mod vmMain func
     g_gameinfo.pfnvmMain = Q3A_vmMain;
 
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = Q3A_syscall;
 
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_dllEntry({}) returning\n", (void*)syscall);
+}
+
+
+bool Q3A_mod_load(void* entry) {
+    orig_vmMain = (mod_vmMain_t)entry;
+
+    return !!orig_vmMain;
+}
+
+
+void Q3A_mod_unload() {
+    orig_vmMain = nullptr;
 }
 
 

@@ -9,20 +9,12 @@ Created By:
 
 */
 
-#ifndef __QMM2_MAIN_H__
-#define __QMM2_MAIN_H__
+#ifndef QMM2_MAIN_H
+#define QMM2_MAIN_H
 
 #include <string>
 #include "qmmapi.h"
 #include "game_api.h"
-
-// store pointers for GetGameAPI-based systems
-struct api_info_t {
-    void* orig_import = nullptr;			// original import struct from engine
-    void* orig_export = nullptr;			// original export struct from mod
-    void* qmm_import = nullptr;				// import struct that is hooked by QMM and given to the mod
-    void* qmm_export = nullptr;				// export struct that is hooked by QMM and given to the engine
-};
 
 // store all currently-loaded game & game engine info
 struct game_info_t {
@@ -38,7 +30,6 @@ struct game_info_t {
     mod_vmMain_t pfnvmMain = nullptr;		// game-specific wrapper for vmMain. given to plugins and called by QMM
     supportedgame_t* game = nullptr;		// loaded engine from supported games table from game_api.cpp
     void* qmm_module_ptr = nullptr;			// qmm module pointer
-    api_info_t api_info;					// some pointers utilized by GetGameAPI games
     bool isautodetected = false;			// was this engine auto-detected?
 };
 
@@ -68,4 +59,4 @@ intptr_t qmm_syscall(intptr_t cmd, ...);
 // get a given argument with G_ARGV, based on game engine type
 void qmm_argv(intptr_t argn, char* buf, intptr_t buflen);
 
-#endif // __QMM2_MAIN_H__
+#endif // QMM2_MAIN_H

@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_API_H__
-#define __QMM2_GAME_API_H__
+#ifndef QMM2_GAME_API_H
+#define QMM2_GAME_API_H
 
 #include <cstdint>
 #include <cstdarg>
@@ -19,42 +19,9 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-typedef const char* (*msgname_t)(intptr_t msg);
-
-// a list of all the mod messages used by QMM
-enum qmm_mod_msg_t {
-    QMM_GAME_INIT,
-    QMM_GAME_SHUTDOWN,
-    QMM_GAME_CONSOLE_COMMAND,
-};
-
-// a list of all the engine messages used by QMM
-enum qmm_eng_msg_t {
-    QMM_G_PRINT,
-    QMM_G_ERROR,
-    QMM_G_ARGV,
-    QMM_G_ARGC,
-    QMM_G_SEND_CONSOLE_COMMAND,
-
-    QMM_G_CVAR_REGISTER,
-    QMM_G_CVAR_SET,
-    QMM_G_CVAR_VARIABLE_STRING_BUFFER,
-    QMM_G_CVAR_VARIABLE_INTEGER_VALUE,
-
-    QMM_G_FS_FOPEN_FILE,
-    QMM_G_FS_READ,
-    QMM_G_FS_WRITE,
-    QMM_G_FS_FCLOSE_FILE,
-
-    QMM_EXEC_APPEND,
-    QMM_FS_READ,
-
-    QMM_CVAR_SERVERINFO,
-    QMM_CVAR_ROM,
-
-    QMM_G_GET_CONFIGSTRING,
-};
-
+typedef const char* (*msgname_t)(intptr_t);
+typedef bool (*mod_load_t)(void*);
+typedef void (*mod_unload_t)();
 // some information for each game engine supported by QMM
 struct supportedgame_t {
     const char* dllname;				// default dll mod filename
@@ -70,9 +37,11 @@ struct supportedgame_t {
     msgname_t eng_msg_names;			// pointer to a function that returns a string for a given engine message
     msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
 
-    vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a VM (NULL = not required)	
+    vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a QVM (NULL = not required)	
     mod_dllEntry_t pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not required)
     mod_GetGameAPI_t pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not required)
+    mod_load_t pfnModLoad;	        	// pointer to a function that handles mod loading logic after a DLL is loaded (NULL = not required)
+    mod_unload_t pfnModUnload;	        // pointer to a function that handles mod unloading logic before a DLL is unloaded (NULL = not required)
     int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
     int max_vmmain_args;				// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
     std::vector<std::string> exe_hints;	// array of hints that should appear in the executable filename to be considered a game match
@@ -86,28 +55,46 @@ extern supportedgame_t g_supportedgames[];
 // generate externs for each game's msg arrays and functions
 #define GEN_EXTS(game)		extern int game##_qmm_eng_msgs[]; \
 							extern int game##_qmm_mod_msgs[]; \
-							const char* game##_eng_msg_names(intptr_t msg); \
-							const char* game##_mod_msg_names(intptr_t msg); \
-							int game##_vmsyscall(uint8_t* membase, int cmd, int* args); \
-							void* game##_GetGameAPI(void* import); \
-							void game##_dllEntry(eng_syscall_t syscall)
+							const char* game##_eng_msg_names(intptr_t); \
+							const char* game##_mod_msg_names(intptr_t); \
+							int game##_vmsyscall(uint8_t*, int, int*); \
+							void game##_dllEntry(eng_syscall_t); \
+                            void* game##_GetGameAPI(void*, void*); \
+                            bool game##_mod_load(void*); \
+                            void game##_mod_unload();
 
 // generate struct info for the short name, messages arrays, and message name functions
 #define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names
 
+// generate struct info for the game-specific entry functions
+#define GEN_DLLQVM(game)    game##_vmsyscall, game##_dllEntry, nullptr, game##_mod_load, game##_mod_unload
+#define GEN_DLL(game)       nullptr, game##_dllEntry, nullptr, game##_mod_load, game##_mod_unload
+#define GEN_GGA(game)       nullptr, nullptr, game##_GetGameAPI, game##_mod_load, game##_mod_unload
+
 // generate a case/string line for the message name functions
 #define GEN_CASE(x)			case x: return #x
+
+
+// a list of all the engine messages/constants used by QMM. if you change this, update the GEN_QMM_MSGS macro
+enum qmm_eng_msg_t {
+    // general purpose
+    QMM_G_PRINT, QMM_G_ERROR, QMM_G_ARGV, QMM_G_ARGC, QMM_G_SEND_CONSOLE_COMMAND, QMM_G_GET_CONFIGSTRING,
+    // cvars
+    QMM_G_CVAR_REGISTER, QMM_G_CVAR_VARIABLE_STRING_BUFFER, QMM_G_CVAR_VARIABLE_INTEGER_VALUE, QMM_CVAR_SERVERINFO, QMM_CVAR_ROM,
+    // files
+    QMM_G_FS_FOPEN_FILE, QMM_G_FS_READ, QMM_G_FS_WRITE, QMM_G_FS_FCLOSE_FILE, QMM_EXEC_APPEND, QMM_FS_READ,
+};
+
+// a list of all the mod messages used by QMM. if you change this, update the GEN_QMM_MSGS macro
+enum qmm_mod_msg_t { QMM_GAME_INIT, QMM_GAME_SHUTDOWN, QMM_GAME_CONSOLE_COMMAND, };
 
 // macro to easily output game-specific message values to match the qmm_eng_msg_t and qmm_mod_msg_t enums above
 // this macro goes in game_*.cpp
 #define GEN_QMM_MSGS(game) \
 	int game##_qmm_eng_msgs[] = { \
-		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, \
-		G_CVAR_REGISTER, G_CVAR_SET, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, \
-		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, \
-		EXEC_APPEND, FS_READ, \
-		CVAR_SERVERINFO, CVAR_ROM, \
-		G_GET_CONFIGSTRING, \
+		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING, \
+		G_CVAR_REGISTER, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, \
+		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, \
 	}; \
 	int game##_qmm_mod_msgs[] = { \
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
@@ -214,4 +201,4 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 // this subtracts the base VM address pointer from a value, for returning a pointer from syscall (this should evaluate to an int)
 #define VMRET(ptr)	(int)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
 
-#endif // __QMM2_GAME_API_H__
+#endif // QMM2_GAME_API_H

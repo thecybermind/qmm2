@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_SIN_H__
-#define __QMM2_GAME_SIN_H__
+#ifndef QMM2_GAME_SIN_H
+#define QMM2_GAME_SIN_H
 
 // import ("syscall") cmds
 enum {
@@ -165,6 +165,7 @@ enum {
 	G_GET_USERINFO,					// void (edict_t* ent, char* userinfo, int bufferSize)
 	G_GET_ENTITY_TOKEN,				// bool (char *buffer, int bufferSize)
 	G_GET_CONFIGSTRING,				// void ( int num, char *buffer, int bufferSize )
+	G_MILLISECONDS,					// int ()
 };
 
 typedef intptr_t fileHandle_t;
@@ -185,4 +186,4 @@ enum {
 	CVAR_ROM = CVAR_NOSET,
 };
 
-#endif // __QMM2_GAME_SIN_H__
+#endif // QMM2_GAME_SIN_H

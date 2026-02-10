@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_GAME_MOHAA_H__
-#define __QMM2_GAME_MOHAA_H__
+#ifndef QMM2_GAME_MOHAA_H
+#define QMM2_GAME_MOHAA_H
 
 // import ("syscall") cmds
 enum {
@@ -184,6 +184,7 @@ enum {
 	GVP_FSDEBUG,
 
 	G_PRINT = G_PRINTF,
+	G_FS_GETFILELIST = G_FS_LISTFILES,
 };
 
 // export ("vmMain") cmds
@@ -249,4 +250,4 @@ enum {
 // we need to store FILE* in fileHandle_t so change the underlying type
 #define fileHandle_t intptr_t
 
-#endif // __QMM2_GAME_MOHAA_H__
+#endif // QMM2_GAME_MOHAA_H

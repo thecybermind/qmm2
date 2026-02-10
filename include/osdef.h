@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_OSDEF_H__
-#define __QMM2_OSDEF_H__
+#ifndef QMM2_OSDEF_H
+#define QMM2_OSDEF_H
 
 #if defined(_WIN32)
 
@@ -53,7 +53,10 @@ const char* dlerror();		// this will return the last error from any win32 functi
 #include <unistd.h> 
 #include <limits.h>
 #include <ctype.h>
+#include <stdint.h>
+#include <sys/time.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #ifdef __LP64__
 #define SUF_DLL "x86_64"
@@ -84,4 +87,10 @@ void* osdef_path_get_qmm_handle();
 const char* osdef_path_get_qmm_path();
 const char* osdef_path_get_proc_path();
 
-#endif // __QMM2_OSDEF_H__
+#ifdef __linux__
+uint64_t osdef_get_milliseconds();
+#elif defined(_WIN32)
+#define osdef_get_milliseconds GetTickCount64
+#endif
+
+#endif // QMM2_OSDEF_H

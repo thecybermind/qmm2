@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef __QMM2_MOD_H__
-#define __QMM2_MOD_H__
+#ifndef QMM2_MOD_H
+#define QMM2_MOD_H
 
 #include <string>
 #include "qmmapi.h"
@@ -19,7 +19,7 @@ Created By:
 struct mod_t {
     void* dll = nullptr;
     qvm_t qvm = {};
-    mod_vmMain_t pfnvmMain = nullptr;
+    // mod_vmMain_t pfnvmMain = nullptr;
     intptr_t vmbase = 0;
     std::string path;
 };
@@ -29,5 +29,5 @@ extern mod_t g_mod;
 bool mod_load(mod_t& mod, std::string file);
 void mod_unload(mod_t& mod);
 
-#endif // __QMM2_MOD_H__
+#endif // QMM2_MOD_H
 
