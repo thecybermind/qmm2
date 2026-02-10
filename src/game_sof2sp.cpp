@@ -30,11 +30,6 @@ static game_import_t orig_import;
 // a copy of the original export struct pointer that comes from the mod
 static game_export_t* orig_export = nullptr;
 
-// todo: make LocateGameData polyfill in qmm_import that re-orders ent pointers to the "correct" way the other games do
-// //void(*LocateGameData)(gentity_t* gEnts, int numGEntities, int sizeofGEntity_t, playerState_t* clients, int sizeofGameClient);
-// void(*LocateGameData)(void* Quake3Game, int numGEntities, int sizeofQuake3Game, gentity_t* gEnts, int sizeofGEntity_t);
-// also need to make a polyfill handler in SOF2SP_syscall that puts them back in the correct order for entering the engine
-
 // struct with lambdas that call QMM's syscall function. this is given to the mod
 static game_import_t qmm_import = {
     GEN_IMPORT(Printf, G_PRINTF),
@@ -88,11 +83,11 @@ static game_import_t qmm_import = {
     GEN_IMPORT(unknown48, G_UNKNOWN48),
     GEN_IMPORT(unknown49, G_UNKNOWN49),
     GEN_IMPORT(unknown50, G_UNKNOWN50),
-    GEN_IMPORT(unknown51, G_UNKNOWN51),
+    GEN_IMPORT(Trace, G_TRACE),
     GEN_IMPORT(unknown52, G_UNKNOWN52),
     GEN_IMPORT(unknown53, G_UNKNOWN53),
     GEN_IMPORT(LocateGameData, G_LOCATE_GAME_DATA),
-    GEN_IMPORT(unknown55, G_UNKNOWN55),
+    GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
     GEN_IMPORT(unknown56, G_UNKNOWN56),
     GEN_IMPORT(unknown57, G_UNKNOWN57),
     GEN_IMPORT(unknown58, G_UNKNOWN58),
@@ -108,10 +103,10 @@ static game_import_t qmm_import = {
     0, // unknown68
     GEN_IMPORT(unknown69, G_UNKNOWN69),
     GEN_IMPORT(unknown70, G_UNKNOWN70),
-    GEN_IMPORT(unknown71, G_UNKNOWN71),
+    GEN_IMPORT(PointContents, G_POINT_CONTENTS),
     GEN_IMPORT(unknown72, G_UNKNOWN72),
-    GEN_IMPORT(unknown73, G_UNKNOWN73),
-    GEN_IMPORT(unknown74, G_UNKNOWN74),
+    GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
+    GEN_IMPORT(SetActiveSubBSP, G_SET_ACTIVE_SUBBSP),
     GEN_IMPORT(unknown75, G_UNKNOWN75),
     GEN_IMPORT(unknown76, G_UNKNOWN76),
     GEN_IMPORT(SetConfigstring, G_SET_CONFIGSTRING),
@@ -247,11 +242,11 @@ intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(unknown48, G_UNKNOWN48);
         ROUTE_IMPORT(unknown49, G_UNKNOWN49);
         ROUTE_IMPORT(unknown50, G_UNKNOWN50);
-        ROUTE_IMPORT(unknown51, G_UNKNOWN51);
+        ROUTE_IMPORT(Trace, G_TRACE);
         ROUTE_IMPORT(unknown52, G_UNKNOWN52);
         ROUTE_IMPORT(unknown53, G_UNKNOWN53);
         ROUTE_IMPORT(LocateGameData, G_LOCATE_GAME_DATA);
-        ROUTE_IMPORT(unknown55, G_UNKNOWN55);
+        ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
         ROUTE_IMPORT(unknown56, G_UNKNOWN56);
         ROUTE_IMPORT(unknown57, G_UNKNOWN57);
         ROUTE_IMPORT(unknown58, G_UNKNOWN58);
@@ -265,10 +260,10 @@ intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(unknown66, G_UNKNOWN66);
         ROUTE_IMPORT(unknown69, G_UNKNOWN69);
         ROUTE_IMPORT(unknown70, G_UNKNOWN70);
-        ROUTE_IMPORT(unknown71, G_UNKNOWN71);
+        ROUTE_IMPORT(PointContents, G_POINT_CONTENTS);
         ROUTE_IMPORT(unknown72, G_UNKNOWN72);
-        ROUTE_IMPORT(unknown73, G_UNKNOWN73);
-        ROUTE_IMPORT(unknown74, G_UNKNOWN74);
+        ROUTE_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL);
+        ROUTE_IMPORT(SetActiveSubBSP, G_SET_ACTIVE_SUBBSP);
         ROUTE_IMPORT(unknown75, G_UNKNOWN75);
         ROUTE_IMPORT(unknown76, G_UNKNOWN76);
         ROUTE_IMPORT(SetConfigstring, G_SET_CONFIGSTRING);
@@ -504,11 +499,11 @@ const char* SOF2SP_eng_msg_names(intptr_t cmd) {
         GEN_CASE(G_UNKNOWN48);
         GEN_CASE(G_UNKNOWN49);
         GEN_CASE(G_UNKNOWN50);
-        GEN_CASE(G_UNKNOWN51);
+        GEN_CASE(G_TRACE);
         GEN_CASE(G_UNKNOWN52);
         GEN_CASE(G_UNKNOWN53);
         GEN_CASE(G_LOCATE_GAME_DATA);
-        GEN_CASE(G_UNKNOWN55);
+        GEN_CASE(G_SEND_SERVER_COMMAND);
         GEN_CASE(G_UNKNOWN56);
         GEN_CASE(G_UNKNOWN57);
         GEN_CASE(G_UNKNOWN58);
@@ -524,10 +519,10 @@ const char* SOF2SP_eng_msg_names(intptr_t cmd) {
         GEN_CASE(GV_UNKNOWN68);
         GEN_CASE(G_UNKNOWN69);
         GEN_CASE(G_UNKNOWN70);
-        GEN_CASE(G_UNKNOWN71);
+        GEN_CASE(G_POINT_CONTENTS);
         GEN_CASE(G_UNKNOWN72);
-        GEN_CASE(G_UNKNOWN73);
-        GEN_CASE(G_UNKNOWN74);
+        GEN_CASE(G_SET_BRUSH_MODEL);
+        GEN_CASE(G_SET_ACTIVE_SUBBSP);
         GEN_CASE(G_UNKNOWN75);
         GEN_CASE(G_UNKNOWN76);
         GEN_CASE(G_SET_CONFIGSTRING);
