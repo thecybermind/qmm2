@@ -9,8 +9,7 @@ Created By:
 
 */
 
-//#include <sof2sp/game/q_shared.h>
-//#include <sof2sp/game/g_public.h>
+#include <sof2sp/g_public.h>
 
 #include "game_api.h"
 #include "log.h"
@@ -30,6 +29,11 @@ static game_import_t orig_import;
 
 // a copy of the original export struct pointer that comes from the mod
 static game_export_t* orig_export = nullptr;
+
+// todo: make LocateGameData polyfill in qmm_import that re-orders ent pointers to the "correct" way the other games do
+// //void(*LocateGameData)(gentity_t* gEnts, int numGEntities, int sizeofGEntity_t, playerState_t* clients, int sizeofGameClient);
+// void(*LocateGameData)(void* Quake3Game, int numGEntities, int sizeofQuake3Game, gentity_t* gEnts, int sizeofGEntity_t);
+// also need to make a polyfill handler in SOF2SP_syscall that puts them back in the correct order for entering the engine
 
 // struct with lambdas that call QMM's syscall function. this is given to the mod
 static game_import_t qmm_import = {

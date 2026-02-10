@@ -304,6 +304,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
     // if this is a call from cgame and we need to pass this call onto the mod
     if (cgame_passthrough_syscall && !cgame_is_QMM_vmMain_call) {
+        // cancel if cgame portion of mod isn't actually loaded yet
         if (!cgame_passthrough_mod_vmMain)
             return 0;
 
@@ -695,7 +696,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
     if (argc > arg_start + 2)
         qmm_argv(arg_start + 2, arg2, sizeof(arg2));
 
-    if (str_striequal("status", arg1)) {
+    if (str_striequal("status", arg1) || str_striequal("info", arg1)) {
         ENG_SYSCALL(msg_G_PRINT, "(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") loaded\n");
         ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file").c_str());
         ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) ModDir: {}\n", g_gameinfo.moddir).c_str());
@@ -703,6 +704,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
         ENG_SYSCALL(msg_G_PRINT, "(QMM) Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
         ENG_SYSCALL(msg_G_PRINT, "(QMM) URL: " QMM_URL "\n");
         ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Plugin interface: {}:{}\n", QMM_PIFV_MAJOR, QMM_PIFV_MINOR).c_str());
+        ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Plugins loaded: {}\n", g_plugins.size()).c_str());
         ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Loaded mod file: {}\n", g_mod.path).c_str());
         if (g_mod.vmbase) {
             ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM file size      : {}\n", g_mod.qvm.filesize).c_str());
@@ -726,7 +728,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
         }
         return 1;
     }
-    else if (str_striequal("info", arg1)) {
+    else if (str_striequal("plugin", arg1) || str_striequal("plugininfo", arg1)) {
         if (argc == arg_start + 2) {
             ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm info <id> - outputs info on plugin with id\n");
             return 1;
@@ -740,6 +742,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
             ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) URL: {}\n", p.plugininfo->url).c_str());
             ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Author: {}\n", p.plugininfo->author).c_str());
             ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Desc: {}\n", p.plugininfo->desc).c_str());
+            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Logtag: {}\n", p.plugininfo->logtag).c_str());
             ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Interface version: {}:{}\n", p.plugininfo->pifv_major, p.plugininfo->pifv_minor).c_str());
             ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Path: {}\n", p.path).c_str());
         }
@@ -761,9 +764,9 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
     else {
         ENG_SYSCALL(msg_G_PRINT, "(QMM) Usage: qmm <command> [params]\n");
         ENG_SYSCALL(msg_G_PRINT, "(QMM) Available commands:\n");
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm status - displays information about QMM\n");
+        ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm info - displays information about QMM\n");
         ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm list - displays information about loaded QMM plugins\n");
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm info <id> - outputs info on plugin with id\n");
+        ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm plugin <id> - outputs info on plugin with id\n");
         ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
         return 1;
     }
