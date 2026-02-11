@@ -9,8 +9,6 @@ Created By:
 
 */
 
-#define QMM_FEATURE_SOF2SP
-
 #include "osdef.h"
 #include "game_api.h"
 
@@ -78,9 +76,7 @@ supportedgame_t g_supportedgames[] = {
     { "game",		SUF_DLL,	nullptr,			"baseq2",		"Quake 2",										GEN_INFO(QUAKE2),	GEN_GGA(QUAKE2),	7,		3,		{ "q2", "quake2" } },
     { "game",		SUF_DLL,	nullptr,			"base",			"Star Trek: Elite Force II",					GEN_INFO(STEF2),	GEN_GGA(STEF2),	    17,		4,		{ "ef" } },
     { "game",		SUF_DLL,	nullptr,			"base",			"SiN",											GEN_INFO(SIN),		GEN_GGA(SIN),	    10,		3,		{ "sin" } },
-#ifdef QMM_FEATURE_SOF2SP
     { "game",		SUF_DLL,	nullptr,			".",			"Soldier of Fortune 2: Double Helix (SP)",		GEN_INFO(SOF2SP),	GEN_GGA(SOF2SP),    -1,		-1,		{ "sof2" } },
-#endif
     { "jk2game",	SUF_DLL,	nullptr,			".",			"Jedi Knight 2: Jedi Outcast (SP)",				GEN_INFO(JK2SP),	GEN_GGA(JK2SP),	    13,		9,		{ "jk2" } },
     { "jagame",		SUF_DLL,	nullptr,			".",			"Jedi Knight: Jedi Academy (SP)",				GEN_INFO(JASP),		GEN_GGA(JASP),	    13,		9,		{ "ja" } },
     { "efgame",		SUF_DLL,	nullptr,			".",			"Star Trek Voyager: Elite Force (SP)",			GEN_INFO(STVOYSP),	GEN_GGA(STVOYSP),	13,		9,		{ "stvoy" } },
