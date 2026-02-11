@@ -26,7 +26,7 @@ typedef void (*mod_unload_t)();
 struct supportedgame_t {
     const char* dllname;				// default dll mod filename
     const char* suffix;					// dll suffix
-    const char* qvmname;				// default qvm mod filename (NULL = qmm_<dllname>)
+    const char* qvmname;				// default qvm mod filename (NULL = not supported)
     const char* moddir;					// default moddir name
     const char* gamename_long;			// long, descriptive, game name
 
@@ -37,11 +37,11 @@ struct supportedgame_t {
     msgname_t eng_msg_names;			// pointer to a function that returns a string for a given engine message
     msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
 
-    vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a QVM (NULL = not required)	
-    mod_dllEntry_t pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not required)
-    mod_GetGameAPI_t pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not required)
-    mod_load_t pfnModLoad;	        	// pointer to a function that handles mod loading logic after a DLL is loaded (NULL = not required)
-    mod_unload_t pfnModUnload;	        // pointer to a function that handles mod unloading logic before a DLL is unloaded (NULL = not required)
+    vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
+    mod_dllEntry_t pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not supported)
+    mod_GetGameAPI_t pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not supported)
+    mod_load_t pfnModLoad;	        	// pointer to a function that handles mod loading logic after a DLL is loaded
+    mod_unload_t pfnModUnload;	        // pointer to a function that handles mod unloading logic before a DLL is unloaded
     int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
     int max_vmmain_args;				// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
     std::vector<std::string> exe_hints;	// array of hints that should appear in the executable filename to be considered a game match
