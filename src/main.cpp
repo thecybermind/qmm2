@@ -569,7 +569,7 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
         // otherwise, if auto, we need to check matching dll names, with optional exe hint
         if (str_striequal(cfg_game, "auto")) {
             // dll name matches
-            std::string full_dll_name = fmt::format("{}{}.{}", game.dllname, game.suffix, EXT_DLL);
+            std::string full_dll_name = fmt::format("{}.{}", game.dllname, EXT_DLL);
             if (str_striequal(g_gameinfo.qmm_file, full_dll_name)) {
                 LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", full_dll_name, game.gamename_short);
                 // if no hint array exists, assume we match
@@ -611,10 +611,10 @@ static bool s_main_load_mod(std::string cfg_mod) {
     else if (str_striequal(cfg_mod, "auto")) {
         std::string try_paths[] = {
             g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "",	// (only if game engine supports it)
-            fmt::format("{}/qmm_{}{}.{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname, g_gameinfo.game->suffix, EXT_DLL),
-            fmt::format("{}/{}/qmm_{}{}.{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, g_gameinfo.game->suffix, EXT_DLL),
-            fmt::format("{}/{}/{}{}.{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, g_gameinfo.game->suffix, EXT_DLL),
-            fmt::format("./{}/qmm_{}{}.{}", g_gameinfo.moddir, g_gameinfo.game->dllname, g_gameinfo.game->suffix, EXT_DLL)
+            fmt::format("{}/qmm_{}.{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname, EXT_DLL),
+            fmt::format("{}/{}/qmm_{}.{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, EXT_DLL),
+            fmt::format("{}/{}/{}.{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, EXT_DLL),
+            fmt::format("./{}/qmm_{}.{}", g_gameinfo.moddir, g_gameinfo.game->dllname, EXT_DLL)
         };
         // try paths
         for (auto& try_path : try_paths) {
