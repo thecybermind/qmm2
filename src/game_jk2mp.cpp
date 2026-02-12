@@ -80,7 +80,9 @@ intptr_t JK2MP_syscall(intptr_t cmd, ...) {
 intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_vmMain({} {}) called\n", JK2MP_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_vmMain)
         return 0;
@@ -97,7 +99,9 @@ intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
         ret += g_mod.vmbase;
     }
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_vmMain({} {}) returning {}\n", JK2MP_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

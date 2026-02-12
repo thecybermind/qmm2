@@ -842,7 +842,9 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 intptr_t STEF2_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) called\n", STEF2_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_export)
         return 0;
@@ -903,7 +905,9 @@ intptr_t STEF2_vmMain(intptr_t cmd, ...) {
     qmm_export.max_entities = orig_export->max_entities;
     qmm_export.error_message = orig_export->error_message;
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) returning {}\n", STEF2_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

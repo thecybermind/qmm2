@@ -79,7 +79,9 @@ intptr_t COD11MP_syscall(intptr_t cmd, ...) {
 intptr_t COD11MP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("COD11MP_vmMain({} {}) called\n", COD11MP_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_vmMain)
         return 0;
@@ -90,7 +92,9 @@ intptr_t COD11MP_vmMain(intptr_t cmd, ...) {
     // all normal mod functions go to mod
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("COD11MP_vmMain({} {}) returning {}\n", COD11MP_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

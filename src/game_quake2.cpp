@@ -416,7 +416,9 @@ intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) called\n", QUAKE2_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_export)
         return 0;
@@ -484,7 +486,9 @@ intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
     qmm_export.num_edicts = orig_export->num_edicts;
     qmm_export.max_edicts = orig_export->max_edicts;
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) returning {}\n", QUAKE2_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

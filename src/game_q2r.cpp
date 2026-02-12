@@ -482,7 +482,9 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 intptr_t Q2R_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) called\n", Q2R_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_export)
         return 0;
@@ -565,7 +567,9 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
     qmm_export.max_edicts = orig_export->max_edicts;
     qmm_export.server_flags = orig_export->server_flags;
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) returning {}\n", Q2R_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

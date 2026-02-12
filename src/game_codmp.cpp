@@ -84,7 +84,9 @@ intptr_t CODMP_syscall(intptr_t cmd, ...) {
 intptr_t CODMP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_vmMain({} {}) called\n", CODMP_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_vmMain)
         return 0;
@@ -95,7 +97,9 @@ intptr_t CODMP_vmMain(intptr_t cmd, ...) {
     // all normal mod functions go to mod
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_vmMain({} {}) returning {}\n", CODMP_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

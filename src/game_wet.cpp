@@ -80,7 +80,9 @@ intptr_t WET_syscall(intptr_t cmd, ...) {
 intptr_t WET_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) called\n", WET_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_vmMain)
         return 0;
@@ -91,7 +93,9 @@ intptr_t WET_vmMain(intptr_t cmd, ...) {
     // all normal mod functions go to mod
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) returning {}\n", WET_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

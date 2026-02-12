@@ -79,7 +79,9 @@ intptr_t Q3A_syscall(intptr_t cmd, ...) {
 intptr_t Q3A_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_vmMain({} {}) called\n", Q3A_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_vmMain)
         return 0;
@@ -96,7 +98,9 @@ intptr_t Q3A_vmMain(intptr_t cmd, ...) {
         ret += g_mod.vmbase;
     }
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_vmMain({} {}) returning {}\n", Q3A_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

@@ -300,7 +300,6 @@ C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
 */
 // cache the dynamic msg values when we load the game so we aren't recalculating every vmMain call
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
-    const char* msgname = g_gameinfo.game->mod_msg_names(cmd);
     QMM_GET_VMMAIN_ARGS();
 
     // if this is a call from cgame and we need to pass this call onto the mod
@@ -309,11 +308,15 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         if (!cgame_passthrough_mod_vmMain)
             return 0;
 
+#ifdef _DEBUG
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain({}) called\n", cmd);
+#endif
 
         intptr_t ret = cgame_passthrough_mod_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
+#ifdef _DEBUG
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain({}) returning {}\n", cmd, ret);
+#endif
 
         if (cgame_passthrough_shutdown) {
             // unload mod (dlclose)
@@ -327,7 +330,9 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     // clear passthrough flag
     cgame_is_QMM_vmMain_call = false;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) called\n", msgname, cmd);
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) called\n", g_gameinfo.game->mod_msg_names(cmd), cmd);
+#endif
 
     // couldn't load engine info, so we will just call syscall(G_ERROR) to exit
     if (!g_gameinfo.game) {
@@ -371,7 +376,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // load mod
         std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
         if (!s_main_load_mod(cfg_mod)) {
-            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("vmMain({}): Unable to load mod using \"{}\"\n", msgname, cfg_mod);
+            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("vmMain({}): Unable to load mod using \"{}\"\n", g_gameinfo.game->mod_msg_names(cmd), cfg_mod);
             return 0;
         }
         LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} mod \"{}\"\n", g_mod.vmbase ? "VM" : "DLL", g_mod.path);
@@ -458,7 +463,9 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         LOG(QMM_LOG_NOTICE, "QMM") << "Finished shutting down\n";
     }
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) returning {}\n", msgname, cmd, ret);
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) returning {}\n", g_gameinfo.game->mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }
@@ -475,6 +482,7 @@ intptr_t qmm_syscall(intptr_t cmd, ...) {
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({} {}) called\n", g_gameinfo.game->eng_msg_names(cmd), cmd);
 #endif
+
     // route call to plugins and mod
     intptr_t ret = s_main_route_syscall(cmd, args);
 
@@ -780,7 +788,9 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
 
 // route vmMain call to plugins and mod
 static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
+#ifdef _DEBUG
     const char* msgname = g_gameinfo.game->mod_msg_names(cmd);
+#endif
 
     // store max result
     pluginres_t max_result = QMM_UNUSED;
@@ -814,9 +824,9 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
         g_plugin_globals.high_result = max_result;
         // invalid/error result values
         if (g_plugin_globals.plugin_result == QMM_UNUSED)
-            LOG(QMM_LOG_WARNING, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" did not set result flag\n", msgname, p.plugininfo->name);
+            LOG(QMM_LOG_WARNING, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name);
         else if (g_plugin_globals.plugin_result == QMM_ERROR)
-            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" set result flag QMM_ERROR\n", msgname, p.plugininfo->name);
+            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name);
 
         // if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
         else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
@@ -867,7 +877,7 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 
         // ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR
         if (g_plugin_globals.plugin_result == QMM_ERROR)
-            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" set result flag QMM_ERROR\n", msgname, p.plugininfo->name);
+            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("vmMain({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->mod_msg_names(cmd), p.plugininfo->name);
 
         // if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
         else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
@@ -880,7 +890,9 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 
 // route syscall call to plugins and mod
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
+#ifdef _DEBUG
     const char* msgname = g_gameinfo.game->eng_msg_names(cmd);
+#endif
 
     // store max result
     pluginres_t max_result = QMM_UNUSED;
@@ -914,9 +926,9 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
         g_plugin_globals.high_result = max_result;
         // invalid/error result values
         if (g_plugin_globals.plugin_result == QMM_UNUSED)
-            LOG(QMM_LOG_WARNING, "QMM") << fmt::format("syscall({}): Plugin \"{}\" did not set result flag\n", msgname, p.plugininfo->name);
+            LOG(QMM_LOG_WARNING, "QMM") << fmt::format("syscall({}): Plugin \"{}\" did not set result flag\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name);
         else if (g_plugin_globals.plugin_result == QMM_ERROR)
-            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", msgname, p.plugininfo->name);
+            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name);
 
         // if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
         else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
@@ -967,7 +979,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 
         // ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR
         if (g_plugin_globals.plugin_result == QMM_ERROR)
-            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", msgname, p.plugininfo->name);
+            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", g_gameinfo.game->eng_msg_names(cmd), p.plugininfo->name);
 
         // if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
         else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)

@@ -252,7 +252,9 @@ intptr_t STVOYSP_syscall(intptr_t cmd, ...) {
 intptr_t STVOYSP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYSP_vmMain({} {}) called\n", STVOYSP_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_export)
         return 0;
@@ -309,7 +311,9 @@ intptr_t STVOYSP_vmMain(intptr_t cmd, ...) {
     qmm_export.gentitySize = orig_export->gentitySize;
     qmm_export.num_entities = orig_export->num_entities;
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYSP_vmMain({} {}) returning {}\n", STVOYSP_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

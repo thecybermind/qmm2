@@ -512,7 +512,9 @@ intptr_t SIN_syscall(intptr_t cmd, ...) {
 intptr_t SIN_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) called\n", SIN_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_export)
         return 0;
@@ -600,7 +602,9 @@ intptr_t SIN_vmMain(intptr_t cmd, ...) {
     qmm_export.max_surfaces = orig_export->max_surfaces;
     qmm_export.num_surfaces = orig_export->num_surfaces;
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) returning {}\n", SIN_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

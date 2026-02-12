@@ -558,7 +558,9 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_vmMain({} {}) called\n", MOHSH_mod_msg_names(cmd), cmd);
+#endif
 
     if (!orig_export)
         return 0;
@@ -624,7 +626,9 @@ intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
     qmm_export.max_entities = orig_export->max_entities;
     qmm_export.errorMessage = orig_export->errorMessage;
 
+#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_vmMain({} {}) returning {}\n", MOHSH_mod_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }
