@@ -24,8 +24,8 @@ enum { QMM_LOG_TRACE, QMM_LOG_DEBUG, QMM_LOG_INFO, QMM_LOG_NOTICE, QMM_LOG_WARNI
 #endif
 
 
-int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, int verify_data, qvm_alloc_t* allocator) {
-    if (!qvm || qvm->memory || !filemem || !filesize || !vmsyscall)
+int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t qvmsyscall, int verify_data, qvm_alloc_t* allocator) {
+    if (!qvm || qvm->memory || !filemem || !filesize || !qvmsyscall)
         return 0;
 
     if (filesize < sizeof(qvmheader_t)) {
@@ -34,7 +34,7 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vm
     }
     
     qvm->filesize = filesize;
-    qvm->vmsyscall = vmsyscall;
+    qvm->qvmsyscall = qvmsyscall;
     qvm->verify_data = verify_data;
     // if null, use default allocator (uses malloc/free)
     qvm->allocator = allocator ? allocator : &qvm_allocator_default;
@@ -372,7 +372,7 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
                 // pass call to game-specific syscall handler which will adjust pointer arguments
                 // and then call the normal QMM syscall entry point so it can be routed to plugins
-                int ret = qvm->vmsyscall(qvm->datasegment, -jump_to - 1, &programstack[2]);
+                int ret = qvm->qvmsyscall(qvm->datasegment, -jump_to - 1, &programstack[2]);
 
                 // program stack pointer in qvm object may have changed if re-entrant
                 programstack = qvm->stackptr;

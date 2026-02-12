@@ -61,7 +61,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
       is returned to engine
 
    syscall (mod->engine) call flow for QVM mods only:
-   1. QVM system calls <GAME>_vmsyscall function
+   1. QVM system calls <GAME>_qvmsyscall function
    2. pointer arguments are converted: if not NULL, the QVM data segment base address is added
    3. call qmm_syscall with converted arguments (continue with next section as if it were a DLL mod)
 

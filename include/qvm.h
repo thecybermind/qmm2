@@ -63,7 +63,7 @@ Created By:
 
 
 // function to receive syscalls (engine traps) out of VM
-typedef int (*vmsyscall_t)(uint8_t* membase, int cmd, int* args);
+typedef int (*qvmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
 // list of VM instructions
 typedef enum qvmopcode_e {
@@ -165,7 +165,7 @@ extern qvm_alloc_t qvm_allocator_default;
 // all the info for a single QVM object
 typedef struct qvm_s {
     // syscall
-    vmsyscall_t vmsyscall;          // e.g. Q3A_vmsyscall function from game_q3a.cpp
+    qvmsyscall_t qvmsyscall;        // function that will handle syscalls and adjust pointer arguments
 
     // memory
     uint8_t* memory;                // main block of memory
@@ -202,13 +202,12 @@ extern "C" {
 * @param [qvm_t*] qvm - Pointer to qvm_t object to store VM information
 * @param [const uint8_t*] filemem - Buffer with QVM file contents
 * @param [size_t] filesize - Size of the filemem buffer
-* @param [vmsyscall_t] vmsyscall - Function to be called for engine traps
-* @param [size_t] stacksize - Size of QVM program stack in MiB
+* @param [qvmsyscall_t] qvmsyscall - Function to be called for engine traps
 * @param [int] verify_data - (Boolean) Should data segment reads and writes be validated?
 * @param [qvm_alloc_t*] allocator - Pointer to a qvm_alloc_t object which contains custom alloc/free function pointers (pass NULL for default)
 * @returns [int] - (Boolean) 1 if success, 0 if failure
 */
-int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, vmsyscall_t vmsyscall, int verify_data, qvm_alloc_t* allocator);
+int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t qvmsyscall, int verify_data, qvm_alloc_t* allocator);
 
 /**
 * Begin execution in a VM

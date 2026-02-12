@@ -393,9 +393,9 @@ const char* JK2MP_mod_msg_names(intptr_t cmd) {
 // vec3_t are arrays, so convert them as pointers
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
-int JK2MP_vmsyscall(uint8_t* membase, int cmd, int* args) {
+int JK2MP_qvmsyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_vmsyscall({} {}) called\n", JK2MP_eng_msg_names(cmd), cmd);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_qvmsyscall({} {}) called\n", JK2MP_eng_msg_names(cmd), cmd);
 #endif
 
     int ret = 0;
@@ -714,7 +714,7 @@ int JK2MP_vmsyscall(uint8_t* membase, int cmd, int* args) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_vmsyscall({} {}) returning {}\n", JK2MP_eng_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_qvmsyscall({} {}) returning {}\n", JK2MP_eng_msg_names(cmd), cmd, ret);
 #endif
 
     return ret;

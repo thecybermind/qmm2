@@ -38,7 +38,7 @@ struct supportedgame_t {
     msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
 
     // this section is made by GEN_DLLQVM(GAME), GEN_DLL(GAME), or GEN_GGA(GAME)
-    vmsyscall_t vmsyscall;				// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
+    qvmsyscall_t qvmsyscall;				// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
     mod_dllEntry_t pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not supported)
     mod_GetGameAPI_t pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not supported)
     mod_load_t pfnModLoad;	        	// pointer to a function that handles mod loading logic after a DLL is loaded
@@ -58,7 +58,7 @@ extern supportedgame_t g_supportedgames[];
 							extern int game##_qmm_mod_msgs[]; \
 							const char* game##_eng_msg_names(intptr_t); \
 							const char* game##_mod_msg_names(intptr_t); \
-							int game##_vmsyscall(uint8_t*, int, int*); \
+							int game##_qvmsyscall(uint8_t*, int, int*); \
 							void game##_dllEntry(eng_syscall_t); \
                             void* game##_GetGameAPI(void*, void*); \
                             bool game##_mod_load(void*); \
@@ -68,7 +68,7 @@ extern supportedgame_t g_supportedgames[];
 #define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names
 
 // generate struct info for the game-specific entry functions
-#define GEN_DLLQVM(game)    game##_vmsyscall, game##_dllEntry, nullptr, game##_mod_load, game##_mod_unload
+#define GEN_DLLQVM(game)    game##_qvmsyscall, game##_dllEntry, nullptr, game##_mod_load, game##_mod_unload
 #define GEN_DLL(game)       nullptr, game##_dllEntry, nullptr, game##_mod_load, game##_mod_unload
 #define GEN_GGA(game)       nullptr, nullptr, game##_GetGameAPI, game##_mod_load, game##_mod_unload
 
@@ -191,7 +191,7 @@ typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
 // ----- QVM stuff -----
 // ---------------------
 
-// these macros handle qvm syscall arguments in GAME_vmsyscall functions in game_*.cpp
+// these macros handle qvm syscall arguments in GAME_qvmsyscall functions in game_*.cpp
 
 // this gets an argument value (evaluate to an intptr_t)
 #define VMARG(arg)	(intptr_t)args[arg]

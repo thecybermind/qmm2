@@ -83,8 +83,8 @@ intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
     if (!orig_vmMain)
         return 0;
 
-    // we cannot verify data in the QVM since this engine both provides malloc functionality and has the gametype VM
-    // so some pointers may point into the engine or the gametype VM
+    // we cannot verify data in the QVM since this engine both provides malloc functionality and has the gametype module,
+    // so some pointers may point into the engine or the gametype module
     if (g_mod.qvm.memory)
         g_mod.qvm.verify_data = false;
 
@@ -470,9 +470,9 @@ const char* SOF2MP_mod_msg_names(intptr_t cmd) {
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // TGPValue, TGPGroup, and TGenericParser2 are void*, but treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
-int SOF2MP_vmsyscall(uint8_t* membase, int cmd, int* args) {
+int SOF2MP_qvmsyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_vmsyscall({} {}) called\n", SOF2MP_eng_msg_names(cmd), cmd);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_qvmsyscall({} {}) called\n", SOF2MP_eng_msg_names(cmd), cmd);
 #endif
 
     int ret = 0;
@@ -838,7 +838,7 @@ int SOF2MP_vmsyscall(uint8_t* membase, int cmd, int* args) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_vmsyscall({} {}) returning {}\n", SOF2MP_eng_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_qvmsyscall({} {}) returning {}\n", SOF2MP_eng_msg_names(cmd), cmd, ret);
 #endif
 
     return ret;

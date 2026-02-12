@@ -41,7 +41,7 @@ bool mod_load(mod_t& mod, std::string file) {
     std::string ext = path_baseext(file);
 
     // only allow qvm mods if the game engine supports it
-    if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->vmsyscall)
+    if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->qvmsyscall)
         return s_mod_load_qvm(mod);
 
     // if DLL
@@ -131,7 +131,7 @@ static bool s_mod_load_qvm(mod_t& mod) {
     verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
 
     // attempt to load mod
-    loaded = qvm_load(&mod.qvm, filemem.data(), filemem.size(), g_gameinfo.game->vmsyscall, verify_data, nullptr);
+    loaded = qvm_load(&mod.qvm, filemem.data(), filemem.size(), g_gameinfo.game->qvmsyscall, verify_data, nullptr);
     if (!loaded) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", mod.path);
         goto fail;
