@@ -287,8 +287,10 @@ static game_export_t qmm_export = {
 intptr_t MOHBT_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
+#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHBT_syscall({} {}) called\n", MOHBT_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_syscall({} {}) called\n", MOHBT_eng_msg_names(cmd), cmd);
+#endif
 
     intptr_t ret = 0;
 
@@ -542,8 +544,10 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
 
     // do anything that needs to be done after function call here
 
+#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("MOHBT_syscall({} {}) returning {}\n", MOHBT_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_syscall({} {}) returning {}\n", MOHBT_eng_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }

@@ -470,15 +470,17 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
    Named qmm_syscall to avoid conflict with POSIX syscall function
 */
 intptr_t qmm_syscall(intptr_t cmd, ...) {
-    const char* msgname = g_gameinfo.game->eng_msg_names(cmd);
     QMM_GET_SYSCALL_ARGS();
 
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({} {}) called\n", msgname, cmd);
-
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({} {}) called\n", g_gameinfo.game->eng_msg_names(cmd), cmd);
+#endif
     // route call to plugins and mod
     intptr_t ret = s_main_route_syscall(cmd, args);
 
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("syscall({} {}) returning {}\n", msgname, cmd, ret);
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({} {}) returning {}\n", g_gameinfo.game->eng_msg_names(cmd), cmd, ret);
+#endif
 
     return ret;
 }
