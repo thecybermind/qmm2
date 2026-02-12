@@ -33,32 +33,32 @@ Created By:
 #define QVM_STACKFRAME(size) programstack = (int*)((uint8_t*)programstack - (size))
 
 // macros to manage opstack
-#define QVM_POPN(n) stack += (n)
+#define QVM_POPN(n) opstack += (n)
 #define QVM_POP()   QVM_POPN(1)
-#define QVM_PUSH(v) --stack; stack[0] = (v)
+#define QVM_PUSH(v) --opstack; opstack[0] = (v)
 
 // move instruction pointer to a given index, masked to code segment
 #define QVM_JUMP(x) opptr = qvm->codesegment + ((x) & codemask)
 
 // branch comparisons
 // signed integer comparison
-#define QVM_JUMP_SIF(o) if (stack[1] o stack[0]) { QVM_JUMP(param); } QVM_POPN(2)
+#define QVM_JUMP_SIF(o) if (opstack[1] o opstack[0]) { QVM_JUMP(param); } QVM_POPN(2)
 // unsigned integer comparison
-#define QVM_JUMP_UIF(o) if (*(unsigned int*)&stack[1] o *(unsigned int*)&stack[0]) { QVM_JUMP(param); } QVM_POPN(2)
+#define QVM_JUMP_UIF(o) if (*(unsigned int*)&opstack[1] o *(unsigned int*)&opstack[0]) { QVM_JUMP(param); } QVM_POPN(2)
 // floating point comparison
-#define QVM_JUMP_FIF(o) if (*(float*)&stack[1] o *(float*)&stack[0]) { QVM_JUMP(param); } QVM_POPN(2)
+#define QVM_JUMP_FIF(o) if (*(float*)&opstack[1] o *(float*)&opstack[0]) { QVM_JUMP(param); } QVM_POPN(2)
 
 // math operations
-// signed integer (stack[0] done to stack[1], stored in stack[1])
-#define QVM_SOP(o) stack[1] o stack[0]; QVM_POP()
-// unsigned integer (stack[0] done to stack[1], stored in stack[1])
-#define QVM_UOP(o) *(unsigned int*)&stack[1] o *(unsigned int*)&stack[0]; QVM_POP()
-// floating point (stack[0] done to stack[1], stored in stack[1])
-#define QVM_FOP(o) *(float*)&stack[1] o *(float*)&stack[0]; QVM_POP()
+// signed integer (opstack[0] done to opstack[1], stored in opstack[1])
+#define QVM_SOP(o) opstack[1] o opstack[0]; QVM_POP()
+// unsigned integer (opstack[0] done to opstack[1], stored in opstack[1])
+#define QVM_UOP(o) *(unsigned int*)&opstack[1] o *(unsigned int*)&opstack[0]; QVM_POP()
+// floating point (opstack[0] done to opstack[1], stored in opstack[1])
+#define QVM_FOP(o) *(float*)&opstack[1] o *(float*)&opstack[0]; QVM_POP()
 // signed integer (done to self)
-#define QVM_SSOP(o) stack[0] = o stack[0]
+#define QVM_SSOP(o) opstack[0] = o opstack[0]
 // floating point (done to self)
-#define QVM_SFOP(o) *(float*)&stack[0] = o *(float*)&stack[0]
+#define QVM_SFOP(o) *(float*)&opstack[0] = o *(float*)&opstack[0]
 
 
 
@@ -179,7 +179,9 @@ typedef struct qvm_s {
     size_t instructioncount;        // number of instructions, from qvm header
     size_t codeseglen;              // size of code segment
     size_t dataseglen;              // size of data segment
-    size_t stacksize;               // size of stack in bss segment
+    size_t stacksize;               // size of program stack in bss segment
+    int* stacklow;                  // pointer to lowest address of program stack
+    int* stackhigh;                 // pointer to highest address of program stack
 
     // registers
     int* stackptr;                  // pointer to current location in program stack
