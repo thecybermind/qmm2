@@ -153,8 +153,8 @@ typedef struct pluginfuncs_s {
 #define QMM_GETCONFIGSTRING         (g_pluginfuncs->pfnGetConfigString)     // call G_GET_CONFIGSTRING, but can handle both engine styles
 #define QMM_PLUGIN_BROADCAST        (g_pluginfuncs->pfnPluginBroadcast)     // broadcast a message to plugins' QMM_PluginMessage functions
 #define QMM_PLUGIN_SEND             (g_pluginfuncs->pfnPluginSend)          // send a message to a specific plugin's QMM_PluginMessage function
-#define QMM_QVM_REGISTER_FUNC       (g_pluginfuncs->pfnRegisterQVMFunc)     // register a new QVM function ID to the calling plugin (0 if unsuccessful)
-#define QMM_QVM_EXEC_FUNC           (g_pluginfuncs->pfnExecQVMFunc)         // exec a given QVM function function ID
+#define QMM_QVM_REGISTER_FUNC       (g_pluginfuncs->pfnQVMRegisterFunc)     // register a new QVM function ID to the calling plugin (0 if unsuccessful)
+#define QMM_QVM_EXEC_FUNC           (g_pluginfuncs->pfnQVMExecFunc)         // exec a given QVM function function ID
 
 // struct of vars for QMM plugin utils
 typedef struct pluginvars_s {
