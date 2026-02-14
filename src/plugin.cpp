@@ -200,7 +200,7 @@ int plugin_load(plugin_t& p, std::string file) {
 
     // find optional plugin functions
     p.QMM_PluginMessage = (plugin_pluginmessage)dlsym(p.dll, "QMM_PluginMessage");
-    p.QMM_QVMhandler = (plugin_qvmhandler)dlsym(p.dll, "QMM_QVMhandler");
+    p.QMM_QVMHandler = (plugin_qvmhandler)dlsym(p.dll, "QMM_QVMHandler");
 
     // set some pluginvars only available at run-time (this will get repeated for every plugin, but that's ok)
     s_pluginvars.vmbase = g_mod.vmbase;
@@ -534,7 +534,7 @@ static int s_plugin_helper_QVMRegisterFunc(plid_t plid [[maybe_unused]]) {
         // found it
         if (p.plugininfo == (plugininfo_t*)plid) {
             // make sure the plugin actually has a QVM handler func
-            if (!p.QMM_QVMhandler)
+            if (!p.QMM_QVMHandler)
                 break;
 
             // associate plugin with ID
