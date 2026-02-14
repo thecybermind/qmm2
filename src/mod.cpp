@@ -43,7 +43,7 @@ bool mod_load(mod_t& mod, std::string file) {
     std::string ext = path_baseext(file);
 
     // only allow qvm mods if the game engine supports it
-    if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->qvmsyscall)
+    if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->pfnqvmsyscall)
         return s_mod_load_qvm(mod);
 
     // if DLL
@@ -117,7 +117,7 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
     }
 
     // if no game-specific qvm handler, we need to error
-    if (!g_gameinfo.game->qvmsyscall) {
+    if (!g_gameinfo.game->pfnqvmsyscall) {
         if (!g_shutdown) {
             g_shutdown = true;
             LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_qvm_syscall({}): No QVM syscall handler found\n", g_gameinfo.game->eng_msg_names(cmd));
@@ -127,7 +127,7 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
     }
 
     // call the game-specific QVM syscall handler
-    return g_gameinfo.game->qvmsyscall(membase, cmd, args);
+    return g_gameinfo.game->pfnqvmsyscall(membase, cmd, args);
 }
 
 

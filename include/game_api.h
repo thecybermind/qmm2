@@ -38,11 +38,11 @@ struct supportedgame_t {
     msgname_t mod_msg_names;			// pointer to a function that returns a string for a given mod message
 
     // this section is made by GEN_DLLQVM(GAME), GEN_DLL(GAME), or GEN_GGA(GAME)
-    qvmsyscall_t qvmsyscall;				// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
+    qvmsyscall_t pfnqvmsyscall;			// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
     mod_dllEntry_t pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not supported)
     mod_GetGameAPI_t pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not supported)
-    mod_load_t pfnModLoad;	        	// pointer to a function that handles mod loading logic after a DLL is loaded
-    mod_unload_t pfnModUnload;	        // pointer to a function that handles mod unloading logic before a DLL is unloaded
+    mod_load_t pfnModLoad;				// pointer to a function that handles mod loading logic after a DLL is loaded
+    mod_unload_t pfnModUnload;			// pointer to a function that handles mod unloading logic before a DLL is unloaded
 
     int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
     int max_vmmain_args;				// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
