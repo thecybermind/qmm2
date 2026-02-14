@@ -21,11 +21,13 @@ Created By:
 #include "config.h"
 #include "mod.h"
 #include "qvm.h"
+#include "plugin.h"
 #include "util.h"
 
 mod_t g_mod;
 
 static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...);
+static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args);
 static bool s_mod_load_qvm(mod_t& mod);
 static bool s_mod_load_vmmain(mod_t& mod);
 static bool s_mod_load_getgameapi(mod_t& mod);
@@ -82,7 +84,7 @@ void mod_unload(mod_t& mod) {
 }
 
 
-// entry point to store in mod_t->pfnvmMain for qvm mods
+// entry point into QVM mods. stored in mod_t->pfnvmMain for QVM mods
 static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
     // if qvm isn't loaded, we need to error
     if (!g_mod.qvm.memory) {
@@ -104,6 +106,28 @@ static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
 
     // pass array and size to qvm
     return qvm_exec(&g_mod.qvm, QVM_MAX_VMMAIN_ARGS + 1, qvmargs);
+}
+
+
+// handle syscalls from the QVM. passed to qvm_load
+static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
+    // check for plugin qvm function registration
+    if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
+        return g_registered_qvm_funcs[cmd]->QMM_QVMhandler(membase, cmd, args);
+    }
+
+    // if no game-specific qvm handler, we need to error
+    if (!g_gameinfo.game->qvmsyscall) {
+        if (!g_shutdown) {
+            g_shutdown = true;
+            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_qvm_syscall({}): No QVM syscall handler found\n", g_gameinfo.game->eng_msg_names(cmd));
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nNo QVM syscall handler found.\n=========\n");
+        }
+        return 0;
+    }
+
+    // call the game-specific QVM syscall handler
+    return g_gameinfo.game->qvmsyscall(membase, cmd, args);
 }
 
 
@@ -131,7 +155,7 @@ static bool s_mod_load_qvm(mod_t& mod) {
     verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
 
     // attempt to load mod
-    loaded = qvm_load(&mod.qvm, filemem.data(), filemem.size(), g_gameinfo.game->qvmsyscall, verify_data, nullptr);
+    loaded = qvm_load(&mod.qvm, filemem.data(), filemem.size(), s_mod_qvm_syscall, verify_data, nullptr);
     if (!loaded) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", mod.path);
         goto fail;

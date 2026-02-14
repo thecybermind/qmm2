@@ -46,6 +46,8 @@ static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid, const char* key);
 static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t argn, char* buf, intptr_t buflen);
 static int s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen);
 static int s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen);
+static int s_plugin_helper_QVMRegisterFunc(plid_t plid);
+static int s_plugin_helper_QVMExecFunc(plid_t plid, int funcid, int argc, int* argv);
 
 static pluginfuncs_t s_pluginfuncs = {
     s_plugin_helper_WriteQMMLog,
@@ -66,6 +68,8 @@ static pluginfuncs_t s_pluginfuncs = {
     s_plugin_helper_GetConfigString,
     s_plugin_helper_PluginBroadcast,
     s_plugin_helper_PluginSend,
+    s_plugin_helper_QVMRegisterFunc,
+    s_plugin_helper_QVMExecFunc,
 };
 
 // struct to store all the globals available to plugins
@@ -77,6 +81,10 @@ plugin_globals_t g_plugin_globals = {
 };
 
 std::vector<plugin_t> g_plugins;
+
+// store registered QVM function IDs for plugins
+std::map<int, plugin_t*> g_registered_qvm_funcs;
+static int s_next_qvm_func = QMM_QVM_FUNC_STARTING_ID;
 
 static pluginvars_t s_pluginvars = {
     0,				// vmbase, set in plugin_load
@@ -190,8 +198,9 @@ int plugin_load(plugin_t& p, std::string file) {
         goto fail;
     }
 
-    // find optional plugin message function
+    // find optional plugin functions
     p.QMM_PluginMessage = (plugin_pluginmessage)dlsym(p.dll, "QMM_PluginMessage");
+    p.QMM_QVMhandler = (plugin_qvmhandler)dlsym(p.dll, "QMM_QVMhandler");
 
     // set some pluginvars only available at run-time (this will get repeated for every plugin, but that's ok)
     s_pluginvars.vmbase = g_mod.vmbase;
@@ -513,4 +522,47 @@ static int s_plugin_helper_PluginSend(plid_t plid [[maybe_unused]], plid_t to_pl
         }
     }
     return 0;
+}
+
+
+// register a new QVM function ID to the calling plugin (0 if unsuccessful)
+static int s_plugin_helper_QVMRegisterFunc(plid_t plid [[maybe_unused]]) {
+    int ret = 0;
+
+    // find the plugin_t for this plugin
+    for (plugin_t& p : g_plugins) {
+        // found it
+        if (p.plugininfo == (plugininfo_t*)plid) {
+            // make sure the plugin actually has a QVM handler func
+            if (!p.QMM_QVMhandler)
+                break;
+
+            // associate plugin with ID
+            g_registered_qvm_funcs[s_next_qvm_func] = &p;
+
+            // return negative-1 form of ID for storing in a QVM function pointer
+            ret = -s_next_qvm_func - 1;
+
+            s_next_qvm_func++;
+            break;
+        }
+    }
+
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnRegisterQVMFunc(\"{}\") = {}\n", ((plugininfo_t*)plid)->name, ret);
+#endif
+
+    return ret;
+}
+
+
+// exec a given QVM function function ID
+static int s_plugin_helper_QVMExecFunc(plid_t plid [[maybe_unused]], int instruction, int argc, int* argv) {
+    int ret = qvm_exec_ex(&g_mod.qvm, instruction, argc, argv);
+
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnQVMExecFunc(\"{}\", {}, {}) = {}\n", ((plugininfo_t*)plid)->name, funcid, argc, ret);
+#endif
+
+    return ret;
 }
