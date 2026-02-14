@@ -548,9 +548,7 @@ static int s_plugin_helper_QVMRegisterFunc(plid_t plid [[maybe_unused]]) {
         }
     }
 
-#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnRegisterQVMFunc(\"{}\") = {}\n", ((plugininfo_t*)plid)->name, ret);
-#endif
 
     return ret;
 }

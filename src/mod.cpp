@@ -113,6 +113,7 @@ static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
 static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
     // check for plugin qvm function registration
     if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
+        LOG(QMM_LOG_INFO, "QMM") << fmt::format("calling function {}\n", cmd);
         return g_registered_qvm_funcs[cmd]->QMM_QVMHandler(membase, cmd, args);
     }
 
