@@ -89,33 +89,31 @@ intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
     if (!orig_vmMain)
         return 0;
 
-    // we cannot verify data in the QVM since this engine both provides malloc functionality and has the gametype module,
-    // so some pointers may point into the engine or the gametype module
-    if (g_mod.qvm.memory)
-        g_mod.qvm.verify_data = false;
-
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
-    // some of the args passed to GAME_GAMETYPE_COMMAND are pointers from the gametype VM. while both the SOF2MP engine
-    // and the SOF2GT_QMM plugin will convert them from QVM pointers to real pointers on the way in from the QVM, these
-    // are going back into the game QVM, so we need to subtract the game vmbase from them, much like the return values
-    // from G_G2_GETGLANAME, G_BOT_GET_MEMORY, G_VM_LOCALALLOC, G_VM_LOCALALLOCUNALIGNED, G_VM_LOCALTEMPALLOC, and
-    // G_VM_LOCALSTRINGALLOC syscalls
+    // some of the args passed to GAME_GAMETYPE_COMMAND are pointers from the gametype QVM. while both the SOF2MP engine
+    // and the SOF2GT_QMM plugin will convert them from QVM pointers to real pointers on the way in from the gametype QVM,
+    // these are going back into the game QVM, so we need to subtract the game vmbase from them, much like the return
+    // values from G_G2_GETGLANAME, G_BOT_GET_MEMORY, G_VM_LOCALALLOC, G_VM_LOCALALLOCUNALIGNED, G_VM_LOCALTEMPALLOC,
+    // and G_VM_LOCALSTRINGALLOC syscalls
     if (cmd == GAME_GAMETYPE_COMMAND && g_mod.vmbase) {
         switch (args[0]) {
+        // only 1st arg is a pointer
         case GTCMD_REGISTERSOUND:       // int  ( const char* soundFile );
         case GTCMD_REGISTEREFFECT:      // int	( const char* name );
         case GTCMD_REGISTERICON:        // int  ( const char* icon );
         case GTCMD_USETARGETS:          // void ( const char* targetname );
             args[1] = (args[1] ? args[1] - g_mod.vmbase : 0);
             break;
+        // 3rd arg is a pointer (all of these also have 2nd arg pointers, handled below with fallthrough)
         case GTCMD_SPAWNITEM:           // void ( int itemid, vec3_t origin, vec3_t angles );
         case GTCMD_PLAYEFFECT:          // void ( int effect, vec3_t origin, vec3_t angles );
         case GTCMD_REGISTERITEM:        // int  ( int itemid, const char* name, gtItemDef_t* def );
         case GTCMD_REGISTERTRIGGER:     // bool ( int triggerid, const char* message, gtTriggerDef_t* def );
             args[3] = (args[3] ? args[3] - g_mod.vmbase : 0);
             [[fallthrough]];
+        // 2nd arg is a pointer
         case GTCMD_TEXTMESSAGE:         // void ( int clientid, const char* message );
         case GTCMD_RADIOMESSAGE:        // void ( int clientid, const char* message );
         case GTCMD_STARTSOUND:          // void ( int soundid, vec3_t origin );
@@ -164,6 +162,11 @@ void SOF2MP_dllEntry(eng_syscall_t syscall) {
 // get mod's vmMain function pointer from mod.cpp::mod_load
 bool SOF2MP_mod_load(void* entry) {
     orig_vmMain = (mod_vmMain_t)entry;
+
+    // we cannot verify data in the QVM since this engine both provides malloc functionality and has the gametype module,
+    // so some pointers may point into the engine or the gametype module
+    if (g_mod.vmbase)
+        g_mod.qvm.verify_data = false;
 
     return !!orig_vmMain;
 }
