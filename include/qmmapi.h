@@ -63,8 +63,9 @@ typedef void* (*mod_GetGameAPI_t)(void*, void*);
 // - added is_broadcast argument to QMM_PluginMessage
 // - QMM_PLUGIN_BROADCAST now returns int with how many plugins were called
 // 4:2
-// - added QMM_QVM_REGISTER_FUNC and QMM_QVM_EXEC_FUNC
+// - added QMM_QVM_REGISTER_FUNC, QMM_QVM_EXEC_FUNC, QMM_ARGV2, and QMM_GETCONFIGSTRING2
 // - added optional QMM_QVMHandler callback function
+// - pluginfunc macros now hide PLID arg
 
 // holds plugin info to pass back to QMM
 typedef struct plugininfo_s {
@@ -134,6 +135,9 @@ typedef struct pluginfuncs_s {
     int (*pfnPluginSend)(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen); // send a message to a specific plugin's QMM_PluginMessage function
     int (*pfnQVMRegisterFunc)(plid_t plid);                                                             // register a new QVM function ID to the calling plugin (0 if unsuccessful)
     int (*pfnQVMExecFunc)(plid_t plid, int funcid, int argc, int* argv);                                // exec a given QVM function function ID
+    const char* (*pfnArgv2)(plid_t plid, intptr_t argn);                                                // same as pfnArgv except returns value
+    const char* (*pfnGetConfigString2)(plid_t plid, intptr_t index);                                    // same as pfnGetConfigString except returns value
+
 } pluginfuncs_t;
 
 // macros for QMM plugin util funcs
@@ -157,6 +161,8 @@ typedef struct pluginfuncs_s {
 #define QMM_PLUGIN_SEND(to, msg, buf, buflen)   (g_pluginfuncs->pfnPluginSend)(PLID, to, msg, buf, buflen)      // send a message to a specific plugin's QMM_PluginMessage function
 #define QMM_QVM_REGISTER_FUNC()                 (g_pluginfuncs->pfnQVMRegisterFunc)(PLID)                       // register a new QVM function ID to the calling plugin (0 if unsuccessful)
 #define QMM_QVM_EXEC_FUNC(funcid, argc, argv)   (g_pluginfuncs->pfnQVMExecFunc)(PLID, funcid, argc, argv)       // exec a given QVM function function ID
+#define QMM_ARGV2(argn)                         (g_pluginfuncs->pfnArgv2)(PLID, argn)                           // same as QMM_ARGV except returns value
+#define QMM_GETCONFIGSTRING2(index)             (g_pluginfuncs->pfnGetConfigString2)(PLID, index)               // same as QMM_GETCONFIGSTRING except returns value
 
 // struct of vars for QMM plugin utils
 typedef struct pluginvars_s {
