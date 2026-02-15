@@ -129,7 +129,7 @@ typedef struct pluginfuncs_s {
     int (*pfnConfigGetBool)(plid_t plid, const char* key);                                              // get a bool config entry
     const char** (*pfnConfigGetArrayStr)(plid_t plid, const char* key);                                 // get an array-of-strings config entry (array terminated with a null pointer)
     int* (*pfnConfigGetArrayInt)(plid_t plid, const char* key);                                         // get an array-of-ints config entry (array starts with remaining length)
-    void (*pfnGetConfigString)(plid_t plid, intptr_t argn, char* buf, intptr_t buflen);                 // call G_GET_CONFIGSTRING, but can handle both engine styles
+    void (*pfnGetConfigString)(plid_t plid, intptr_t index, char* buf, intptr_t buflen);                // call G_GET_CONFIGSTRING, but can handle both engine styles
     int (*pfnPluginBroadcast)(plid_t plid, const char* message, void* buf, intptr_t buflen);            // broadcast a message to plugins' QMM_PluginMessage functions
     int (*pfnPluginSend)(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen); // send a message to a specific plugin's QMM_PluginMessage function
     int (*pfnQVMRegisterFunc)(plid_t plid);                                                             // register a new QVM function ID to the calling plugin (0 if unsuccessful)
@@ -137,26 +137,26 @@ typedef struct pluginfuncs_s {
 } pluginfuncs_t;
 
 // macros for QMM plugin util funcs
-#define QMM_WRITEQMMLOG             (g_pluginfuncs->pfnWriteQMMLog)         // write to the QMM log
-#define QMM_VARARGS                 (g_pluginfuncs->pfnVarArgs)             // simple vsprintf helper
-#define QMM_ISQVM                   (g_pluginfuncs->pfnIsQVM)               // returns 1 if the mod is QVM
-#define QMM_ENGMSGNAME              (g_pluginfuncs->pfnEngMsgName)          // get the string name of a syscall code
-#define QMM_MODMSGNAME              (g_pluginfuncs->pfnModMsgName)          // get the string name of a vmMain code
-#define QMM_GETINTCVAR              (g_pluginfuncs->pfnGetIntCvar)          // get the int value of a cvar
-#define QMM_GETSTRCVAR              (g_pluginfuncs->pfnGetStrCvar)          // get the str value of a cvar
-#define QMM_GETGAMEENGINE           (g_pluginfuncs->pfnGetGameEngine)       // return the QMM short code for the game engine
-#define QMM_ARGV                    (g_pluginfuncs->pfnArgv)                // call G_ARGV, but can handle both engine styles
-#define QMM_INFOVALUEFORKEY         (g_pluginfuncs->pfnInfoValueForKey)     // same as SDK's Info_ValueForKey
-#define QMM_CFG_GETSTR              (g_pluginfuncs->pfnConfigGetStr)        // get a string config entry
-#define QMM_CFG_GETINT              (g_pluginfuncs->pfnConfigGetInt)        // get an int config entry
-#define QMM_CFG_GETBOOL             (g_pluginfuncs->pfnConfigGetBool)       // get a bool config entry
-#define QMM_CFG_GETARRAYSTR         (g_pluginfuncs->pfnConfigGetArrayStr)   // get an array-of-strings config entry (array terminated with a null pointer)
-#define QMM_CFG_GETARRAYINT         (g_pluginfuncs->pfnConfigGetArrayInt)   // get an array-of-ints config entry (array starts with remaining length)
-#define QMM_GETCONFIGSTRING         (g_pluginfuncs->pfnGetConfigString)     // call G_GET_CONFIGSTRING, but can handle both engine styles
-#define QMM_PLUGIN_BROADCAST        (g_pluginfuncs->pfnPluginBroadcast)     // broadcast a message to plugins' QMM_PluginMessage functions
-#define QMM_PLUGIN_SEND             (g_pluginfuncs->pfnPluginSend)          // send a message to a specific plugin's QMM_PluginMessage function
-#define QMM_QVM_REGISTER_FUNC       (g_pluginfuncs->pfnQVMRegisterFunc)     // register a new QVM function ID to the calling plugin (0 if unsuccessful)
-#define QMM_QVM_EXEC_FUNC           (g_pluginfuncs->pfnQVMExecFunc)         // exec a given QVM function function ID
+#define QMM_WRITEQMMLOG(text, severity)         (g_pluginfuncs->pfnWriteQMMLog)(PLID, text, severity)           // write to the QMM log
+#define QMM_VARARGS(format, ...)                (g_pluginfuncs->pfnVarArgs)(PLID, format, __VA_ARGS__)          // simple vsprintf helper
+#define QMM_ISQVM()                             (g_pluginfuncs->pfnIsQVM)(PLID)                                 // returns 1 if the mod is QVM
+#define QMM_ENGMSGNAME(cmd)                     (g_pluginfuncs->pfnEngMsgName)(PLID, cmd)                       // get the string name of a syscall code
+#define QMM_MODMSGNAME(cmd)                     (g_pluginfuncs->pfnModMsgName)(PLID, cmd)                       // get the string name of a vmMain code
+#define QMM_GETINTCVAR(cvar)                    (g_pluginfuncs->pfnGetIntCvar)(PLID, cvar)                      // get the int value of a cvar
+#define QMM_GETSTRCVAR(cvar)                    (g_pluginfuncs->pfnGetStrCvar)(PLID, cvar)                      // get the str value of a cvar
+#define QMM_GETGAMEENGINE()                     (g_pluginfuncs->pfnGetGameEngine)(PLID)                         // return the QMM short code for the game engine
+#define QMM_ARGV(argn, buf, buflen)             (g_pluginfuncs->pfnArgv)(PLID, argn, buf, buflen)               // call G_ARGV, but can handle both engine styles
+#define QMM_INFOVALUEFORKEY(userinfo, key)      (g_pluginfuncs->pfnInfoValueForKey)(PLID, userinfo, key)        // same as SDK's Info_ValueForKey
+#define QMM_CFG_GETSTR(key)                     (g_pluginfuncs->pfnConfigGetStr)(PLID, key)                     // get a string config entry
+#define QMM_CFG_GETINT(key)                     (g_pluginfuncs->pfnConfigGetInt)(PLID, key)                     // get an int config entry
+#define QMM_CFG_GETBOOL(key)                    (g_pluginfuncs->pfnConfigGetBool)(PLID, key)                    // get a bool config entry
+#define QMM_CFG_GETARRAYSTR(key)                (g_pluginfuncs->pfnConfigGetArrayStr)(PLID, key)                // get an array-of-strings config entry (array terminated with a null pointer)
+#define QMM_CFG_GETARRAYINT(key)                (g_pluginfuncs->pfnConfigGetArrayInt)(PLID, key)                // get an array-of-ints config entry (array starts with remaining length)
+#define QMM_GETCONFIGSTRING(index, buf, buflen) (g_pluginfuncs->pfnGetConfigString)(PLID, index, buf, buflen)   // call G_GET_CONFIGSTRING, but can handle both engine styles
+#define QMM_PLUGIN_BROADCAST(msg, buf, buflen)  (g_pluginfuncs->pfnPluginBroadcast)(PLID, msg, buf, buflen)     // broadcast a message to plugins' QMM_PluginMessage functions
+#define QMM_PLUGIN_SEND(to, msg, buf, buflen)   (g_pluginfuncs->pfnPluginSend)(PLID, to, msg, buf, buflen)      // send a message to a specific plugin's QMM_PluginMessage function
+#define QMM_QVM_REGISTER_FUNC()                 (g_pluginfuncs->pfnQVMRegisterFunc)(PLID)                       // register a new QVM function ID to the calling plugin (0 if unsuccessful)
+#define QMM_QVM_EXEC_FUNC(funcid, argc, argv)   (g_pluginfuncs->pfnQVMExecFunc)(PLID, funcid, argc, argv)       // exec a given QVM function function ID
 
 // struct of vars for QMM plugin utils
 typedef struct pluginvars_s {
