@@ -556,7 +556,7 @@ static int s_plugin_helper_QVMRegisterFunc(plid_t plid [[maybe_unused]]) {
 
 // exec a given QVM function function ID
 static int s_plugin_helper_QVMExecFunc(plid_t plid [[maybe_unused]], int instruction, int argc, int* argv) {
-    int ret = qvm_exec_ex(&g_mod.qvm, instruction, argc, argv);
+    int ret = qvm_exec_ex(&g_mod.qvm, (size_t)instruction, argc, argv);
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnQVMExecFunc(\"{}\", {}, {}) = {}\n", ((plugininfo_t*)plid)->name, funcid, argc, ret);

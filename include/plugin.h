@@ -30,7 +30,7 @@ typedef intptr_t(*plugin_syscall)(intptr_t cmd, intptr_t* args);
 // QMM_PluginMessage
 typedef void (*plugin_pluginmessage)(plid_t from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
 // QMM_QVMHandler
-typedef int (*plugin_qvmhandler)(uint8_t* membase, int cmd, int* args);
+typedef int (*plugin_qvmhandler)(int cmd, int* args);
 
 struct plugin_t {
     void* dll = nullptr;

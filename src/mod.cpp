@@ -120,7 +120,7 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
             return 0;
 
         // pass the negative-1 form since that's the number the plugin probably stored and expects
-        return p->QMM_QVMHandler(membase, -cmd - 1, args);
+        return p->QMM_QVMHandler(-cmd - 1, args);
     }
 
     // if no game-specific qvm handler, we need to error

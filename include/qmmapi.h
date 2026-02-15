@@ -200,11 +200,12 @@ extern pluginvars_t* g_pluginvars;      // set to 'pluginvars' in QMM_Attach
 C_DLLEXPORT void QMM_Query(plugininfo_t** pinfo);
 C_DLLEXPORT int QMM_Attach(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, pluginvars_t* pluginvars);
 C_DLLEXPORT void QMM_Detach();
-C_DLLEXPORT void QMM_PluginMessage(plid_t from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
 C_DLLEXPORT intptr_t QMM_vmMain(intptr_t cmd, intptr_t* args);
 C_DLLEXPORT intptr_t QMM_vmMain_Post(intptr_t cmd, intptr_t* args);
 C_DLLEXPORT intptr_t QMM_syscall(intptr_t cmd, intptr_t* args);
 C_DLLEXPORT intptr_t QMM_syscall_Post(intptr_t cmd, intptr_t* args);
+C_DLLEXPORT void QMM_PluginMessage(plid_t from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
+C_DLLEXPORT int QMM_QVMHandler(int func, int* args);
 
 // Some helpful macros assuming you've stored entity/client info in G_LOCATE_GAME_DATA
 #define ENT_FROM_NUM(index)     ((gentity_t*)((unsigned char*)g_gents + g_gentsize * (index)))                  // get a gentity_t* by entity number
