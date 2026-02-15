@@ -40,7 +40,7 @@ typedef void* (*mod_GetGameAPI_t)(void*, void*);
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, pluginfunc_t, or plugininfo_t
 #define QMM_PIFV_MAJOR  4
 // minor interface version increases with trailing addition to pluginfunc_t or plugininfo_t structs
-#define QMM_PIFV_MINOR  1
+#define QMM_PIFV_MINOR  2
 // 2:0
 // - removed canpause, loadcmd, unloadcmd from plugininfo_t
 // - renamed old pause/cmd args to QMM_ functions (iscmd, etc) to "reserved"
@@ -62,7 +62,9 @@ typedef void* (*mod_GetGameAPI_t)(void*, void*);
 // - added QMM_PLUGIN_SEND
 // - added is_broadcast argument to QMM_PluginMessage
 // - QMM_PLUGIN_BROADCAST now returns int with how many plugins were called
-
+// 4:2
+// - added QMM_QVM_REGISTER_FUNC and QMM_QVM_EXEC_FUNC
+// - added optional QMM_QVMHandler callback function
 
 // holds plugin info to pass back to QMM
 typedef struct plugininfo_s {
