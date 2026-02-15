@@ -113,8 +113,14 @@ static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
 static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
     // check for plugin qvm function registration
     if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
-        LOG(QMM_LOG_INFO, "QMM") << fmt::format("calling function {}\n", cmd);
-        return g_registered_qvm_funcs[cmd]->QMM_QVMHandler(membase, cmd, args);
+        plugin_t* p = g_registered_qvm_funcs[cmd];
+
+        // make sure plugin has the handler function (shouldn't have been registered, but check anyway)
+        if (!p->QMM_QVMHandler)
+            return 0;
+
+        // pass the negative-1 form since that's the number the plugin probably stored and expects
+        return p->QMM_QVMHandler(membase, -cmd - 1, args);
     }
 
     // if no game-specific qvm handler, we need to error
