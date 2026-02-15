@@ -45,8 +45,10 @@ int cfg_get_int(nlohmann::json& j, std::string key, int def) {
 
 
 bool cfg_get_bool(nlohmann::json& j, std::string key, bool def) {
-    if (j.contains(key) && j[key].is_boolean()) {
-        return j[key];
+    if (j.contains(key)) {
+        if (j[key].is_boolean() || j[key].is_number_integer()) {
+            return (bool)j[key];
+        }
     }
 
     return def;
