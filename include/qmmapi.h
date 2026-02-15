@@ -137,7 +137,6 @@ typedef struct pluginfuncs_s {
     int (*pfnQVMExecFunc)(plid_t plid, int funcid, int argc, int* argv);                                // exec a given QVM function function ID
     const char* (*pfnArgv2)(plid_t plid, intptr_t argn);                                                // same as pfnArgv except returns value
     const char* (*pfnGetConfigString2)(plid_t plid, intptr_t index);                                    // same as pfnGetConfigString except returns value
-
 } pluginfuncs_t;
 
 // macros for QMM plugin util funcs
