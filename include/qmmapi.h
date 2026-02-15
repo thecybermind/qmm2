@@ -105,7 +105,7 @@ typedef enum pluginres_e {
 } pluginres_t;
 
 // macros to help set the plugin result value
-#define QMM_SET_RESULT(res)		*g_result = (pluginres_t)(res)          // set result flag to "re"s
+#define QMM_SET_RESULT(res)		*g_result = (pluginres_t)(res)          // set result flag to "res"
 #define QMM_RETURN(res, ret)	return (QMM_SET_RESULT(res), (ret))     // set result flag to "res" and return "ret"
 #define QMM_RET_ERROR(ret)		QMM_RETURN(QMM_ERROR, (ret))            // output an error message in logs, but otherwise functions like QMM_IGNORED, and return "ret"
 #define QMM_RET_IGNORED(ret)	QMM_RETURN(QMM_IGNORED, (ret))          // this plugin doesn't need special handling, and return "ret"
