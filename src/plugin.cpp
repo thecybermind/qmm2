@@ -43,9 +43,13 @@ static int s_plugin_helper_ConfigGetInt(plid_t plid, const char* key);
 static int s_plugin_helper_ConfigGetBool(plid_t plid, const char* key);
 static const char** s_plugin_helper_ConfigGetArrayStr(plid_t plid, const char* key);
 static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid, const char* key);
-static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t argn, char* buf, intptr_t buflen);
+static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t index, char* buf, intptr_t buflen);
 static int s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen);
 static int s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen);
+static int s_plugin_helper_QVMRegisterFunc(plid_t plid);
+static int s_plugin_helper_QVMExecFunc(plid_t plid, int funcid, int argc, int* argv);
+static const char* s_plugin_helper_Argv2(plid_t plid, intptr_t argn);
+static const char* s_plugin_helper_GetConfigString2(plid_t plid, intptr_t index);
 
 static pluginfuncs_t s_pluginfuncs = {
     s_plugin_helper_WriteQMMLog,
@@ -66,6 +70,10 @@ static pluginfuncs_t s_pluginfuncs = {
     s_plugin_helper_GetConfigString,
     s_plugin_helper_PluginBroadcast,
     s_plugin_helper_PluginSend,
+    s_plugin_helper_QVMRegisterFunc,
+    s_plugin_helper_QVMExecFunc,
+    s_plugin_helper_Argv2,
+    s_plugin_helper_GetConfigString2,
 };
 
 // struct to store all the globals available to plugins
@@ -77,6 +85,10 @@ plugin_globals_t g_plugin_globals = {
 };
 
 std::vector<plugin_t> g_plugins;
+
+// store registered QVM function IDs for plugins
+std::map<int, plugin_t*> g_registered_qvm_funcs;
+static int s_next_qvm_func = QMM_QVM_FUNC_STARTING_ID;
 
 static pluginvars_t s_pluginvars = {
     0,				// vmbase, set in plugin_load
@@ -190,8 +202,9 @@ int plugin_load(plugin_t& p, std::string file) {
         goto fail;
     }
 
-    // find optional plugin message function
+    // find optional plugin functions
     p.QMM_PluginMessage = (plugin_pluginmessage)dlsym(p.dll, "QMM_PluginMessage");
+    p.QMM_QVMHandler = (plugin_qvmhandler)dlsym(p.dll, "QMM_QVMHandler");
 
     // set some pluginvars only available at run-time (this will get repeated for every plugin, but that's ok)
     s_pluginvars.vmbase = g_mod.vmbase;
@@ -457,17 +470,17 @@ static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid [[maybe_unused]], cons
 
 
 // get a configstring with G_GET_CONFIGSTRING, based on game engine type
-static void s_plugin_helper_GetConfigString(plid_t plid [[maybe_unused]], intptr_t argn, char* buf, intptr_t buflen) {
+static void s_plugin_helper_GetConfigString(plid_t plid [[maybe_unused]], intptr_t index, char* buf, intptr_t buflen) {
     // char* (*getConfigstring)(int index);
     // void trap_GetConfigstring(int num, char* buffer, int bufferSize);
     // some games don't return pointers because of QVM interaction, so if this returns anything but null
     // (or true?), we probably are in an api game, and need to get the configstring from the return value
     // instead
-    intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], argn, buf, buflen);
+    intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], index, buf, buflen);
     if (ret > 1)
         strncpyz(buf, (const char*)ret, (size_t)buflen);
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, argn, buf);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, index, buf);
 #endif
 }
 
@@ -513,4 +526,84 @@ static int s_plugin_helper_PluginSend(plid_t plid [[maybe_unused]], plid_t to_pl
         }
     }
     return 0;
+}
+
+
+// register a new QVM function ID to the calling plugin (0 if unsuccessful)
+static int s_plugin_helper_QVMRegisterFunc(plid_t plid [[maybe_unused]]) {
+    int ret = 0;
+
+    // find the plugin_t for this plugin
+    for (plugin_t& p : g_plugins) {
+        // found it
+        if (p.plugininfo == (plugininfo_t*)plid) {
+            // make sure the plugin actually has a QVM handler func
+            if (!p.QMM_QVMHandler)
+                break;
+
+            // associate plugin with ID
+            g_registered_qvm_funcs[s_next_qvm_func] = &p;
+
+            // return negative-1 form of ID for storing in a QVM function pointer
+            ret = -s_next_qvm_func - 1;
+
+            s_next_qvm_func++;
+            break;
+        }
+    }
+
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnRegisterQVMFunc(\"{}\") = {}\n", ((plugininfo_t*)plid)->name, ret);
+
+    return ret;
+}
+
+
+// exec a given QVM function function ID
+static int s_plugin_helper_QVMExecFunc(plid_t plid [[maybe_unused]], int instruction, int argc, int* argv) {
+    int ret = qvm_exec_ex(&g_mod.qvm, (size_t)instruction, argc, argv);
+
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnQVMExecFunc(\"{}\", {}, {}) = {}\n", ((plugininfo_t*)plid)->name, funcid, argc, ret);
+#endif
+
+    return ret;
+}
+
+
+static const char* s_plugin_helper_Argv2(plid_t plid [[maybe_unused]], intptr_t argn) {
+    static char str[NUM_PLUGIN_STR_BUFFERS][1024];
+    static int index = 0;
+
+    // cycle rotating buffer and store string
+    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
+
+    qmm_argv(argn, str[index], sizeof(str[index]));
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnArgv2(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, argn, str[index]);
+#endif
+
+    return str[index];
+}
+
+
+static const char* s_plugin_helper_GetConfigString2(plid_t plid [[maybe_unused]], intptr_t configindex) {
+    static char str[NUM_PLUGIN_STR_BUFFERS][1024];
+    static int index = 0;
+
+    // cycle rotating buffer and store string
+    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
+
+    // char* (*getConfigstring)(int index);
+    // void trap_GetConfigstring(int num, char* buffer, int bufferSize);
+    // some games don't return pointers because of QVM interaction, so if this returns anything but null
+    // (or true?), we probably are in an api game, and need to get the configstring from the return value
+    // instead
+    intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], configindex, str[index], sizeof(str[index]));
+    if (ret > 1)
+        strncpyz(str[index], (const char*)ret, sizeof(str[index]));
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString2(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, configindex, str[index]);
+#endif
+
+    return str[index];
 }

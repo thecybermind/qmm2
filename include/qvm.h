@@ -60,8 +60,6 @@ Created By:
 // floating point (done to self)
 #define QVM_SFOP(o) *(float*)&opstack[0] = o *(float*)&opstack[0]
 
-
-
 // function to receive syscalls (engine traps) out of VM
 typedef int (*qvmsyscall_t)(uint8_t* membase, int cmd, int* args);
 
@@ -218,6 +216,17 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t q
 * @returns [int] - Return value from VM entry point
 */
 int qvm_exec(qvm_t* qvm, int argc, int* argv);
+
+/**
+* Begin execution in a VM at a given instruction
+*
+* @param [qvm_t*] qvm - Pointer to qvm_t object to execute
+* @param [size_t] instruction - Instruction to begin execution at
+* @param [int] argc - Number of arguments to pass to VM entry point
+* @param [int*] argv - Array of arguments to pass to VM entry point
+* @returns [int] - Return value from VM entry point
+*/
+int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv);
 
 /**
 * Unload a VM
