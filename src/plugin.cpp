@@ -23,33 +23,34 @@ Created By:
 #include "main.h"
 #include "mod.h"
 #include "plugin.h"
+#include "qvm.h"
 #include "util.h"
 
 constexpr int NUM_PLUGIN_STR_BUFFERS = 16;  // must be power of 2
 constexpr int NUM_PLUGIN_STR_BUFFER_MASK = NUM_PLUGIN_STR_BUFFERS - 1;
 
 static void s_plugin_helper_WriteQMMLog(plid_t plid, const char* text, int severity);
-static char* s_plugin_helper_VarArgs(plid_t plid, const char* format, ...);
-static int s_plugin_helper_IsQVM(plid_t plid);
-static const char* s_plugin_helper_EngMsgName(plid_t plid, intptr_t msg);
-static const char* s_plugin_helper_ModMsgName(plid_t plid, intptr_t msg);
-static intptr_t s_plugin_helper_GetIntCvar(plid_t plid, const char* cvar);
-static const char* s_plugin_helper_GetStrCvar(plid_t plid, const char* cvar);
-static const char* s_plugin_helper_GetGameEngine(plid_t plid);
-static void s_plugin_helper_Argv(plid_t plid, intptr_t argn, char* buf, intptr_t buflen);
-static const char* s_plugin_helper_InfoValueForKey(plid_t plid, const char* userinfo, const char* key);
-static const char* s_plugin_helper_ConfigGetStr(plid_t plid, const char* key);
-static int s_plugin_helper_ConfigGetInt(plid_t plid, const char* key);
-static int s_plugin_helper_ConfigGetBool(plid_t plid, const char* key);
-static const char** s_plugin_helper_ConfigGetArrayStr(plid_t plid, const char* key);
-static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid, const char* key);
-static void s_plugin_helper_GetConfigString(plid_t plid, intptr_t index, char* buf, intptr_t buflen);
+static char* s_plugin_helper_VarArgs(plid_t plid [[maybe_unused]], const char* format, ...);
+static int s_plugin_helper_IsQVM(plid_t plid [[maybe_unused]] );
+static const char* s_plugin_helper_EngMsgName(plid_t plid [[maybe_unused]], intptr_t msg);
+static const char* s_plugin_helper_ModMsgName(plid_t plid [[maybe_unused]], intptr_t msg);
+static intptr_t s_plugin_helper_GetIntCvar(plid_t plid [[maybe_unused]], const char* cvar);
+static const char* s_plugin_helper_GetStrCvar(plid_t plid [[maybe_unused]], const char* cvar);
+static const char* s_plugin_helper_GetGameEngine(plid_t plid [[maybe_unused]] );
+static void s_plugin_helper_Argv(plid_t plid [[maybe_unused]], intptr_t argn, char* buf, intptr_t buflen);
+static const char* s_plugin_helper_InfoValueForKey(plid_t plid [[maybe_unused]], const char* userinfo, const char* key);
+static const char* s_plugin_helper_ConfigGetStr(plid_t plid [[maybe_unused]], const char* key);
+static int s_plugin_helper_ConfigGetInt(plid_t plid [[maybe_unused]], const char* key);
+static int s_plugin_helper_ConfigGetBool(plid_t plid [[maybe_unused]], const char* key);
+static const char** s_plugin_helper_ConfigGetArrayStr(plid_t plid [[maybe_unused]], const char* key);
+static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid [[maybe_unused]], const char* key);
+static void s_plugin_helper_GetConfigString(plid_t plid [[maybe_unused]], intptr_t index, char* buf, intptr_t buflen);
 static int s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen);
 static int s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen);
 static int s_plugin_helper_QVMRegisterFunc(plid_t plid);
-static int s_plugin_helper_QVMExecFunc(plid_t plid, int funcid, int argc, int* argv);
-static const char* s_plugin_helper_Argv2(plid_t plid, intptr_t argn);
-static const char* s_plugin_helper_GetConfigString2(plid_t plid, intptr_t index);
+static int s_plugin_helper_QVMExecFunc(plid_t plid [[maybe_unused]], int funcid, int argc, int* argv);
+static const char* s_plugin_helper_Argv2(plid_t plid [[maybe_unused]], intptr_t argn);
+static const char* s_plugin_helper_GetConfigString2(plid_t plid [[maybe_unused]], intptr_t index);
 
 static pluginfuncs_t s_pluginfuncs = {
     s_plugin_helper_WriteQMMLog,
@@ -317,7 +318,7 @@ static intptr_t s_plugin_helper_GetIntCvar(plid_t plid [[maybe_unused]], const c
 }
 
 
-#define MAX_CVAR_LEN	1024	// most common cvar buffer size in SDK when calling G_CVAR_VARIABLE_STRING_BUFFER
+constexpr int MAX_CVAR_LEN = 1024; // most common cvar buffer size in SDK when calling G_CVAR_VARIABLE_STRING_BUFFER
 static const char* s_plugin_helper_GetStrCvar(plid_t plid [[maybe_unused]], const char* cvar) {
     static char str[NUM_PLUGIN_STR_BUFFERS][MAX_CVAR_LEN];
     static int index = 0;
@@ -555,7 +556,7 @@ static int s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* m
 
 
 // register a new QVM function ID to the calling plugin (0 if unsuccessful)
-static int s_plugin_helper_QVMRegisterFunc(plid_t plid [[maybe_unused]]) {
+static int s_plugin_helper_QVMRegisterFunc(plid_t plid) {
     int ret = 0;
 
     // find the plugin_t for this plugin
