@@ -111,7 +111,7 @@ void CODMP_dllEntry(eng_syscall_t syscall) {
     // store original syscall from engine
     orig_syscall = syscall;
 
-    // pointer to wrapper vmMain function that calls actual mod vmMain func g_mod.pfnvmMain
+    // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = CODMP_vmMain;
 
     // pointer to wrapper syscall function that calls actual engine syscall func
