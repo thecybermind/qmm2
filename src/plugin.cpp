@@ -239,7 +239,7 @@ void plugin_unload(plugin_t& p) {
 }
 
 
-static void s_plugin_helper_WriteQMMLog(plid_t plid [[maybe_unused]], const char* text, int severity) {
+static void s_plugin_helper_WriteQMMLog(plid_t plid, const char* text, int severity) {
     if (severity < QMM_LOG_TRACE || severity > QMM_LOG_FATAL)
         severity = QMM_LOG_INFO;
     plugininfo_t* plinfo = (plugininfo_t*)plid;
@@ -339,7 +339,8 @@ static const char* s_plugin_helper_GetGameEngine(plid_t plid [[maybe_unused]]) {
 
 
 static void s_plugin_helper_Argv(plid_t plid [[maybe_unused]], intptr_t argn, char* buf, intptr_t buflen) {
-    qmm_argv(argn, buf, buflen);
+    if (buf && buflen)
+        qmm_argv(argn, buf, buflen);
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnArgv(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, argn, buf);
 #endif
@@ -476,9 +477,11 @@ static void s_plugin_helper_GetConfigString(plid_t plid [[maybe_unused]], intptr
     // some games don't return pointers because of QVM interaction, so if this returns anything but null
     // (or true?), we probably are in an api game, and need to get the configstring from the return value
     // instead
-    intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], index, buf, buflen);
-    if (ret > 1)
-        strncpyz(buf, (const char*)ret, (size_t)buflen);
+    if (buf && buflen) {
+        intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], index, buf, buflen);
+        if (ret > 1)
+            strncpyz(buf, (const char*)ret, (size_t)buflen);
+    }
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, index, buf);
 #endif
@@ -486,7 +489,7 @@ static void s_plugin_helper_GetConfigString(plid_t plid [[maybe_unused]], intptr
 
 
 // broadcast a message to plugins' QMM_PluginMessage() functions
-static int s_plugin_helper_PluginBroadcast(plid_t plid [[maybe_unused]], const char* message, void* buf, intptr_t buflen) {
+static int s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen) {
     // count how many plugins were called
     int total = 0;
     for (plugin_t& p : g_plugins) {
@@ -507,7 +510,7 @@ static int s_plugin_helper_PluginBroadcast(plid_t plid [[maybe_unused]], const c
 
 
 // send a message to a specific plugin's QMM_PluginMessage() functions
-static int s_plugin_helper_PluginSend(plid_t plid [[maybe_unused]], plid_t to_plid, const char* message, void* buf, intptr_t buflen) {
+static int s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* message, void* buf, intptr_t buflen) {
     // don't let a plugin call itself
     if (plid == to_plid)
         return 0;

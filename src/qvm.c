@@ -77,6 +77,10 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t q
 
     // each opcode is 8 bytes long, calculate total size of instructions
     size_t codeseglen = header.instructioncount * sizeof(qvmop_t);
+    if (!codeseglen) {
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: code segment length is 0\n");
+        goto fail;
+    }
     // the q3 engine rounds the data segment size up to the next power of 2 for masking data accesses,
     // but we can also do that with code segment too. the remainder of the code segment will be filled
     // out with byte 0 (QVM_OP_UNDEF) which will immediately fail if the instruction pointer ends up
@@ -86,6 +90,10 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t q
     
     // data segment is all the data segment lengths combined (plus optional extra stack space)
     size_t dataseglen = header.datalen + header.litlen + header.bsslen + QVM_EXTRA_PROGRAMSTACK_SIZE;
+    if (!dataseglen) {
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: data segment length is 0\n");
+        goto fail;
+    }
     // save actual dataseglen before rounding up
     size_t orig_dataseglen = dataseglen;
     // round data segment size up to next power of 2 for masking data accesses
@@ -98,6 +106,10 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t q
     // allocate vm memory
     qvm->memorysize = qvm->codeseglen + qvm->dataseglen;
     qvm->memory = (uint8_t*)qvm->allocator->alloc(qvm->memorysize, qvm->allocator->ctx);
+    if (!qvm->memory) {
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Memory allocation failed for size %zu\n", qvm->memorysize);
+        goto fail;
+    }
 
     // zero out memory
     memset(qvm->memory, 0, qvm->memorysize);
@@ -120,7 +132,7 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t q
     for (uint32_t i = 0; i < header.instructioncount; ++i) {
         // make sure we're not reading past the end of the codesegment in the file
         if (codeoffset >= filemem + header.codeoffset + header.codelen) {
-            log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: can't read instruction at %d, reached end of file\n", i);
+            log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: can't read instruction at %ud, reached end of file\n", i);
             goto fail;
         }
 
@@ -129,7 +141,7 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t q
 
         // make sure opcode is valid
         if (opcode < 0 || opcode >= QVM_OP_NUM_OPS) {
-            log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: invalid opcode value at %d: %d\n", i, opcode);
+            log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: invalid opcode value at %ud: %d\n", i, opcode);
             goto fail;
         }
         
@@ -164,7 +176,7 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t q
             // all the above instructions have 4-byte params
             // make sure we're not reading an int past the end of the codesegment in the file
             if (codeoffset + 3 >= filemem + header.codeoffset + header.codelen) {
-                log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: can't read instruction %d, reached end of file\n", i);
+                log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: can't read instruction %ud, reached end of file\n", i);
                 goto fail;
             }
             qvm->codesegment[i].param = *(int*)codeoffset;
@@ -175,7 +187,7 @@ int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t q
             // this instruction has a 1-byte param
             // make sure we're not reading past the end of the codesegment in the file
             if (codeoffset >= filemem + header.codeoffset + header.codelen) {
-                log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: can't read instruction %d, reached end of file\n", i);
+                log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: can't read instruction %ud, reached end of file\n", i);
                 goto fail;
             }
             qvm->codesegment[i].param = (int)*codeoffset;
@@ -219,13 +231,13 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv) {
 
 int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
     if (!qvm || !qvm->memory) {
-        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%d): Initialization error: given qvm is not loaded.\n", instruction);
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%zu): Initialization error: given qvm is not loaded.\n", instruction);
         return 0;
     }
 
     // make sure instruction is in range
     if (instruction >= qvm->instructioncount) {
-        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%d): Initialization error: given instruction id %d is out of range [0, %d).\n", instruction, instruction, qvm->instructioncount);
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%zu): Initialization error: given instruction id %zu is out of range [0, %zu).\n", instruction, instruction, qvm->instructioncount);
         return 0;
     }
 
@@ -237,15 +249,15 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
         const char* opname = "unknown";
         if (opptr->op >= 0 && opptr->op < QVM_OP_NUM_OPS)
             opname = opcodename[opptr->op];
-        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%d): Initialization error: instruction at %d is %s (%d), expected QVM_OP_ENTER (3).\n", instruction, instruction, opname, opptr->op);
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%zu): Initialization error: instruction at %zu is %s (%d), expected QVM_OP_ENTER (3).\n", instruction, instruction, opname, opptr->op);
         return 0;
     }
 
     // set up bitmasks for safety
-    // code mask
-    size_t codemask = qvm->codeseglen - 1;
+    // code mask (masking qvmop_t indexes)
+    size_t codemask = (qvm->codeseglen / sizeof(qvmop_t)) - 1;
     // data mask - disable if verify_data is off by using a mask with all bits 1
-    size_t datamask = qvm->verify_data ? qvm->dataseglen - 1 : 0xFFFFFFFF;
+    size_t datamask = qvm->verify_data ? qvm->dataseglen - 1 : (size_t)-1;
 
     // local "register" copy of stack pointer. this is purely for locality/speed.
     // it gets synced to qvm object before syscalls and restored after syscalls.
@@ -253,6 +265,8 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
     int* programstack = qvm->stackptr;
 
     // size of new stack frame, need to store RII, framesize, and vmMain args
+    if (!argv)
+        argc = 0;
     int framesize = (argc + 2) * sizeof(argv[0]);
     // create new stack frame
     QVM_STACKFRAME(framesize);
@@ -308,14 +322,14 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
         // using > to allow starting at 1 past the end of block
         if (programstack <= qvm->stacklow || programstack > qvm->stackhigh) {
             ptrdiff_t stackusage = (uint8_t*)qvm->stackhigh - (uint8_t*)programstack;
-            log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%d): Runtime error at %d: program stack overflow! Program stack size is currently %d, max is %d.\n", instruction, opptr - qvm->codesegment, stackusage, qvm->stacksize);
+            log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: program stack overflow! Program stack size is currently %td, max is %zu.\n", instruction, opptr - qvm->codesegment, stackusage, qvm->stacksize);
             goto fail;
         }
         // verify opstack pointer is in op stack
         // using > to allow starting at 1 past the end of block
         if (opstack <= opstacklow || opstack > opstackhigh) {
-            intptr_t stackusage = (uint8_t*)opstackhigh - (uint8_t*)opstack;
-            log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%d): Runtime error at %d: opstack overflow! Opstack size is currently %d, max is %d.\n", instruction, opptr - qvm->codesegment, stackusage, QVM_OPSTACK_SIZE);
+            ptrdiff_t stackusage = (uint8_t*)opstackhigh - (uint8_t*)opstack;
+            log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: opstack overflow! Opstack size is currently %td, max is %d.\n", instruction, opptr - qvm->codesegment, stackusage, QVM_OPSTACK_SIZE);
             goto fail;
         }
 
@@ -335,7 +349,7 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
         default:
             // anything else
             // todo: dump stacks/memory?
-            log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%d): Runtime error at %d: unhandled opcode %d\n", instruction, opptr - qvm->codesegment, op);
+            log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: unhandled opcode %d\n", instruction, opptr - qvm->codesegment, op);
             goto fail;
 
         case QVM_OP_NOP:
@@ -362,7 +376,7 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
             // verify the value saved in programstack[1] matches param, then remove stack frame (size=param).
             // then, grab RII from top of previous stack frame and then jump to it
             if (programstack[1] != param) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%d): Runtime error at %d: QVM_OP_LEAVE param (%d) does not match QVM_OP_ENTER param (%d)\n", instruction, opptr - qvm->codesegment, param, programstack[1]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: QVM_OP_LEAVE param (%d) does not match QVM_OP_ENTER param (%d)\n", instruction, opptr - qvm->codesegment, param, programstack[1]);
                 goto fail;
             }
             // clean up stack frame
@@ -627,7 +641,7 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
         case QVM_OP_DIVI:
             // division
             if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%d): Runtime error at %d: %s division by 0!\n", instruction, opptr - qvm->codesegment, opcodename[op]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - qvm->codesegment, opcodename[op]);
                 goto fail;
             }
             QVM_SOP( /= );
@@ -636,7 +650,7 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
         case QVM_OP_DIVU:
             // unsigned division
             if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%d): Runtime error at %d: %s division by 0!\n", instruction, opptr - qvm->codesegment, opcodename[op]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - qvm->codesegment, opcodename[op]);
                 goto fail;
             }
             QVM_UOP( /= );
@@ -645,7 +659,7 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
         case QVM_OP_MODI:
             // modulus
             if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%d): Runtime error at %d: %s division by 0!\n", instruction, opptr - qvm->codesegment, opcodename[op]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - qvm->codesegment, opcodename[op]);
                 goto fail;
             }
             QVM_SOP( %= );
@@ -654,7 +668,7 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
         case QVM_OP_MODU:
             // unsigned modulus
             if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%d): Runtime error at %d: %s division by 0!\n", instruction, opptr - qvm->codesegment, opcodename[op]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - qvm->codesegment, opcodename[op]);
                 goto fail;
             }
             QVM_UOP( %= );
@@ -724,7 +738,7 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
             // float division
             // float 0s are all 0 bits but with either sign bit
             if (opstack[0] == 0 || opstack[0] == 0x80000000) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%d): Runtime error at %d: %s division by 0!\n", opptr - qvm->codesegment, opcodename[op]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", opptr - qvm->codesegment, opcodename[op]);
                 goto fail;
             }
             QVM_FOP( /= );
@@ -751,7 +765,7 @@ int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv) {
 
     // compare stored frame size like in QVM_OP_LEAVE
     if (programstack[1] != framesize) {
-        log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%d): Runtime error after execution: stack frame size (%d) does not match entry stack frame size (%d)\n", opptr - qvm->codesegment, programstack[1], framesize);
+        log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error after execution: stack frame size (%d) does not match entry stack frame size (%d)\n", opptr - qvm->codesegment, programstack[1], framesize);
         goto fail;
     }
 

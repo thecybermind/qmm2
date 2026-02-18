@@ -496,6 +496,9 @@ intptr_t qmm_syscall(intptr_t cmd, ...) {
 
 // get a given argument with G_ARGV, based on game engine type
 void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
+    if (!buf || !buflen)
+        return;
+    
     // char* (*argv)(int argn);
     // void trap_Argv(int argn, char* buffer, int bufferSize);
     // some games don't return pointers because of QVM interaction, so if this returns anything but null
