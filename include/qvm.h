@@ -27,7 +27,7 @@ Created By:
 #define QVM_EXTRA_PROGRAMSTACK_SIZE     0
 
 // round number up to next power of 2: https://stackoverflow.com/a/1322548/809900
-#define QVM_NEXT_POW_2(var) var--; var |= var >> 1; var |= var >> 2; var |= var >> 4; var |= var >> 8; var |= var >> 16; var++;
+#define QVM_NEXT_POW_2(var) var--; var |= var >> 1; var |= var >> 2; var |= var >> 4; var |= var >> 8; var |= var >> 16; var++
 
 // macro to manage stack frame in bytes
 #define QVM_STACKFRAME(size) programstack = (int*)((uint8_t*)programstack - (size))

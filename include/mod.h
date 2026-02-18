@@ -19,7 +19,6 @@ Created By:
 struct mod_t {
     void* dll = nullptr;
     qvm_t qvm = {};
-    // mod_vmMain_t pfnvmMain = nullptr;
     intptr_t vmbase = 0;
     std::string path;
 };

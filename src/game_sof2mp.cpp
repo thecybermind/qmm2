@@ -475,7 +475,8 @@ const char* SOF2MP_mod_msg_names(intptr_t cmd) {
 
 /* Entry point: qvm mod->qmm
    This is the syscall function called by a QVM mod as a way to pass info to or get info from the engine.
-   It modifies pointer arguments (if they are not NULL, the QVM data segment base address is added), and then the call is passed to the normal syscall() function that DLL mods call.
+   It modifies pointer arguments (if they are not NULL, the QVM data segment base address is added), and
+   then the call is passed to the normal syscall() function that DLL mods call.
 */
 // vec3_t are arrays, so convert them as pointers
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
