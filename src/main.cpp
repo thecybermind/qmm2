@@ -330,10 +330,6 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     // clear passthrough flag
     cgame_is_QMM_vmMain_call = false;
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) called\n", g_gameinfo.game->mod_msg_names(cmd), cmd);
-#endif
-
     // couldn't load engine info, so we will just call syscall(G_ERROR) to exit
     if (!g_gameinfo.game) {
         if (!g_shutdown) {
@@ -342,6 +338,10 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         }
         return 0;
     }
+
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) called\n", g_gameinfo.game->mod_msg_names(cmd), cmd);
+#endif
 
     if (cmd == msg_GAME_INIT) {
         // initialize our polyfill milliseconds tracker so that now is 0
@@ -356,7 +356,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         // get mod dir from engine
         char moddir[256];
-        ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], "fs_game", moddir, (intptr_t)sizeof(moddir));
+        ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], "fs_game", moddir, sizeof(moddir));
         moddir[sizeof(moddir) - 1] = '\0';
         g_gameinfo.moddir = moddir;
         // the default mod (including all singleplayer games) returns "" for the fs_game, so grab the default mod dir from game info instead
@@ -614,6 +614,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to find mod using \"{}\"\n", cfg_mod);
     // if config setting is an absolute path, just attempt to load it directly
     if (!path_is_relative(cfg_mod)) {
+        LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", cfg_mod);
         if (!mod_load(g_mod, cfg_mod))
             return false;
     }
@@ -621,7 +622,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
     // "<qvmname>" (if the game engine supports it)
     // "<qmmdir>/qmm_<dllname>"
     // "<exedir>/<moddir>/qmm_<dllname>"
-    // "<exedir>/<moddir>/<dllname>" (as long as this isn't same as qmm path)
+    // "<exedir>/<moddir>/<dllname>"
     // "./<moddir>/qmm_<dllname>"
     else if (str_striequal(cfg_mod, "auto")) {
         std::string try_paths[] = {
@@ -1029,6 +1030,9 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
         return nullptr;
 
     mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(dll, "GetCGameAPI");
+
+    // return CGame export from mod DLL
+    // note we do not unload the DLL
     return mod_GetCGameAPI ? mod_GetCGameAPI(import, nullptr) : nullptr;
 }
 #endif // _WIN64

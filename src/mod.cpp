@@ -140,7 +140,7 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
 
 // load a QVM mod
 static bool s_mod_load_qvm(mod_t& mod) {
-    int fpk3;
+    int fpk3 = 0;
     intptr_t filelen;
     std::vector<uint8_t> filemem;
     bool verify_data;
@@ -148,9 +148,10 @@ static bool s_mod_load_qvm(mod_t& mod) {
 
     // load file using engine functions to read into pk3s if necessary
     filelen = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], mod.path.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
-    if (filelen <= 0) {
+    if (filelen <= 0 || !fpk3) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Could not open QVM for reading\n", mod.path);
-        ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
+        if (fpk3)
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
         goto fail;
     }
     filemem.resize((size_t)filelen);

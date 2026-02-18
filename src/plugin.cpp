@@ -273,27 +273,33 @@ static char* s_plugin_helper_VarArgs(plid_t plid [[maybe_unused]], const char* f
 
 static int s_plugin_helper_IsQVM(plid_t plid [[maybe_unused]]) {
     int ret = g_mod.vmbase != 0;
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnIsQVM(\"{}\") = {}\n", ((plugininfo_t*)plid)->name, ret);
 #endif
+
     return ret;
 }
 
 
 static const char* s_plugin_helper_EngMsgName(plid_t plid [[maybe_unused]], intptr_t msg) {
     const char* ret = g_gameinfo.game->eng_msg_names(msg);
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnEngMsgName(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, msg, ret);
 #endif
+
     return ret;
 }
 
 
 static const char* s_plugin_helper_ModMsgName(plid_t plid [[maybe_unused]], intptr_t msg) {
     const char* ret = g_gameinfo.game->mod_msg_names(msg);
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnModMsgName(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, msg, ret);
 #endif
+
     return ret;
 }
 
@@ -302,9 +308,11 @@ static intptr_t s_plugin_helper_GetIntCvar(plid_t plid [[maybe_unused]], const c
     intptr_t ret = 0;
     if (cvar && *cvar)
         ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_INTEGER_VALUE], cvar);
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetIntCvar(\"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, cvar, ret);
 #endif
+
     return ret;
 }
 
@@ -322,18 +330,22 @@ static const char* s_plugin_helper_GetStrCvar(plid_t plid [[maybe_unused]], cons
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], cvar, str[index], (intptr_t)sizeof(str[index]));
         ret = str[index];
     }
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetStrCvar(\"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, cvar, ret);
 #endif
+
     return ret;
 }
 
 
 static const char* s_plugin_helper_GetGameEngine(plid_t plid [[maybe_unused]]) {
     const char* ret = g_gameinfo.game->gamename_short;
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetGameEngine(\"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, ret);
 #endif
+
     return ret;
 }
 
@@ -341,9 +353,11 @@ static const char* s_plugin_helper_GetGameEngine(plid_t plid [[maybe_unused]]) {
 static void s_plugin_helper_Argv(plid_t plid [[maybe_unused]], intptr_t argn, char* buf, intptr_t buflen) {
     if (buf && buflen)
         qmm_argv(argn, buf, buflen);
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnArgv(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, argn, buf);
 #endif
+
 }
 
 
@@ -377,9 +391,11 @@ static const char* s_plugin_helper_InfoValueForKey(plid_t plid [[maybe_unused]],
             ret = value[index].c_str();
         }
     }
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnInfoValueForKey(\"{}\", \"{}\", \"{}\") = \"{}\"\n", ((plugininfo_t*)plid)->name, userinfo, key, ret);
 #endif
+
     return ret;
 }
 
@@ -395,7 +411,7 @@ static nlohmann::json s_plugin_cfg_get_node(plid_t plid [[maybe_unused]], std::s
         std::string segment = key.substr(0, sep);
         node = cfg_get_object(node, segment);
         key = key.substr(sep + 1);
-        sep = key.find('/', sep + 1);
+        sep = key.find('/');
     }
 
     return node;
@@ -465,7 +481,7 @@ static int* s_plugin_helper_ConfigGetArrayInt(plid_t plid [[maybe_unused]], cons
     value[index] = cfg_get_array_int(node, path_basename(key));
     // insert length of the array as the first element
     value[index].insert(value[index].begin(), (int)value[index].size());
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin ConfigGetArrayInt(\"{}\", \"{}\") = [{} items]\n", ((plugininfo_t*)plid)->name, key, value[index].size());
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin ConfigGetArrayInt(\"{}\", \"{}\") = [{} items]\n", ((plugininfo_t*)plid)->name, key, value[index].size() - 1);
     return value[index].data();
 }
 
@@ -482,9 +498,11 @@ static void s_plugin_helper_GetConfigString(plid_t plid [[maybe_unused]], intptr
         if (ret > 1)
             strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, index, buf);
 #endif
+
 }
 
 
@@ -502,9 +520,11 @@ static int s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, voi
         p.QMM_PluginMessage(plid, message, buf, buflen, 1); // 1 = is_broadcast
         total++;
     }
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnPluginBroadcast(\"{}\", \"{}\", {}, {}) = {} plugins called\n", ((plugininfo_t*)plid)->name, message, buf, buflen, total);
 #endif
+
     return total;
 }
 
@@ -522,9 +542,11 @@ static int s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* m
             if (!p.QMM_PluginMessage)
                 return 0;
             p.QMM_PluginMessage(plid, message, buf, buflen, 0); // 0 = is_broadcast
+
 #ifdef _DEBUG
             LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnPluginSend(\"{}\", \"{}\", \"{}\", {}, {}) called\n", ((plugininfo_t*)plid)->name, ((plugininfo_t*)to_plid)->name, message, buf, buflen);
 #endif
+
             return 1;
         }
     }
@@ -566,7 +588,7 @@ static int s_plugin_helper_QVMExecFunc(plid_t plid [[maybe_unused]], int instruc
     int ret = qvm_exec_ex(&g_mod.qvm, (size_t)instruction, argc, argv);
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnQVMExecFunc(\"{}\", {}, {}) = {}\n", ((plugininfo_t*)plid)->name, funcid, argc, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnQVMExecFunc(\"{}\", {}, {}) = {}\n", ((plugininfo_t*)plid)->name, instruction, argc, ret);
 #endif
 
     return ret;
@@ -581,6 +603,7 @@ static const char* s_plugin_helper_Argv2(plid_t plid [[maybe_unused]], intptr_t 
     index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
 
     qmm_argv(argn, str[index], sizeof(str[index]));
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnArgv2(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, argn, str[index]);
 #endif
@@ -604,6 +627,7 @@ static const char* s_plugin_helper_GetConfigString2(plid_t plid [[maybe_unused]]
     intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], configindex, str[index], sizeof(str[index]));
     if (ret > 1)
         strncpyz(str[index], (const char*)ret, sizeof(str[index]));
+
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString2(\"{}\", {}) = \"{}\"\n", ((plugininfo_t*)plid)->name, configindex, str[index]);
 #endif
