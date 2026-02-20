@@ -35,7 +35,7 @@ int str_stricmp(std::string s1, std::string s2);
 int str_striequal(std::string s1, std::string s2);
 
 // "safe" strncpy that always null-terminates
-char* strncpyz(char* dest, const char* src, std::size_t count);
+char* strncpyz(char* dest, const char* src, size_t count);
 
 // tokenize an entstring into a vector of strings 
 std::vector<std::string> util_parse_entstring(std::string entstring);

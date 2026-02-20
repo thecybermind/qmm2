@@ -63,6 +63,8 @@ std::string path_baseext(std::string path) {
 
 
 bool path_is_relative(std::string path) {
+    if (path.empty())
+        return false;   // not really a good result
     // \\computer\dir\file
     // \dir\file
     // /dir/file
@@ -75,7 +77,7 @@ bool path_is_relative(std::string path) {
         return true;
 #ifdef _WIN32
     // windows: C:\dir\file
-    if (path[1] == ':' && std::isalpha((unsigned char)(path[0])))
+    if (path.size() > 1 && path[1] == ':' && std::isalpha((unsigned char)(path[0])))
         return false;
     // windows: colon ANYWHERE is probably absolute too?
     if (path.find_first_of(':') != std::string::npos)
@@ -112,6 +114,9 @@ intptr_t util_get_milliseconds() {
 
 
 void path_mkdir(std::string path) {
+    if (path.empty())
+        return;
+
     unsigned int i = 1; // start after a possible /
 #ifdef _WIN32
     // if this is an absolute path, start at the 3rd index (after "X:\")
@@ -172,7 +177,9 @@ int str_striequal(std::string s1, std::string s2) {
 
 
 // "safe" strncpy that always null-terminates
-char* strncpyz(char* dest, const char* src, std::size_t count) {
+char* strncpyz(char* dest, const char* src, size_t count) {
+    if (!dest || !src || !count)
+        return dest;
     char* ret = strncpy(dest, src, count);
     dest[count - 1] = '\0';
     return ret;
