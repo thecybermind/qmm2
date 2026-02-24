@@ -168,12 +168,13 @@ static game_import_t qmm_import = {
 // we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
 
 // track entstrings for our G_GET_ENTITY_TOKEN syscall
-static std::vector<std::string> s_entity_tokens;
-static size_t s_tokencount = 0;
+static std::map<intptr_t, std::vector<std::string>> s_subbsp_entity_tokens;  // -1 = main map entities
+static std::map<intptr_t, size_t> s_tokencount;
+static intptr_t s_active_subbsp = -1;
 static void JASP_Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition) {
     if (entstring) {
-        s_entity_tokens = util_parse_entstring(entstring);
-        s_tokencount = 0;
+        s_subbsp_entity_tokens[-1] = util_parse_entstring(entstring);
+        s_tokencount[-1] = 0;
     }
     cgame_is_QMM_vmMain_call = true;
     vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
@@ -339,7 +340,8 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(G2API_ClearSkinGore, G_G2API_CLEARSKINGORE);
         ROUTE_IMPORT(RMG_Init, G_RMG_INIT);
         ROUTE_IMPORT(CM_RegisterTerrain, G_CM_REGISTERTERRAIN);
-        ROUTE_IMPORT(SetActiveSubBSP, G_SET_ACTIVE_SUBBSP);
+        // handled below since we do special handling to track entity tokens
+        // ROUTE_IMPORT(SetActiveSubBSP, G_SET_ACTIVE_SUBBSP);
         ROUTE_IMPORT(RE_RegisterSkin, G_RE_REGISTERSKIN);
         ROUTE_IMPORT(RE_GetAnimationCFG, G_RE_GETANIMATIONCFG);
         ROUTE_IMPORT(WE_GetWindVector, G_WE_GETWINDVECTOR);
@@ -384,17 +386,36 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
         // this is just to be hooked by plugins, so ignore everything
         break;
     }
+    case G_SET_ACTIVE_SUBBSP: {
+        // save current index
+        s_active_subbsp = args[0];
+        // get actual entstring from engine return value
+        const char* entstring = orig_import.SetActiveSubBSP((int)s_active_subbsp);
+        ret = (intptr_t)entstring;
+        // if it returns an entstring (-1 won't), parse it
+        if (entstring) {
+            s_subbsp_entity_tokens[s_active_subbsp] = util_parse_entstring(entstring);
+            s_tokencount[s_active_subbsp] = 0;
+        }
+        break;
+    }
     case G_GET_ENTITY_TOKEN: {
         // qboolean trap_GetEntityToken(char *buffer, int bufferSize);
-        if (s_tokencount >= s_entity_tokens.size()) {
+
+        // get references to the tokencount and tokenlist for this subbsp
+        size_t& tokencount = s_tokencount[s_active_subbsp];
+        std::vector<std::string>& tokens = s_subbsp_entity_tokens[s_active_subbsp];
+
+        // if we previously hit the end of the particular entity list, return false
+        if (tokencount >= tokens.size()) {
             ret = qfalse;
             break;
         }
 
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
-
-        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), (size_t)bufferSize);
+        // write current token into the buffer and increment token counter
+        strncpyz(buffer, tokens[tokencount++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }
