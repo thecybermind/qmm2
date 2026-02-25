@@ -429,7 +429,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
             qmm_argv(argn, arg_cmd, sizeof(arg_cmd));
         }
         // check for "qmm" command
-        if (str_striequal("qmm", arg_cmd)) {
+        if (str_striequal("qmm", arg_cmd) || str_striequal("/qmm", arg_cmd)) {
             // pass 0 or 1 which gets added to argn in the handler function
             s_main_handle_command_qmm(argn);
             return 1;
