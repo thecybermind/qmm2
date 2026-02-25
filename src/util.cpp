@@ -20,12 +20,12 @@ Created By:
 
 std::string path_normalize(std::string path) {
     // switch \ to /
-    for (auto& c : path) {
+    for (char& c : path) {
         if (c == '\\')
             c = '/';
     }
     // collapse /./ to /
-    auto pos = path.rfind("/./");
+    size_t pos = path.rfind("/./");
     while (pos != std::string::npos) {
         path = path.substr(0, pos) + path.substr(pos + 2);
         pos = path.rfind("/./");
@@ -36,7 +36,7 @@ std::string path_normalize(std::string path) {
 
 
 std::string path_dirname(std::string path) {
-    auto pos = path.find_last_of("/\\");
+    size_t pos = path.find_last_of("/\\");
     if (pos == std::string::npos)
         return ".";
     if (pos == 0)
@@ -46,7 +46,7 @@ std::string path_dirname(std::string path) {
 
 
 std::string path_basename(std::string path) {
-    auto pos = path.find_last_of("/\\");
+    size_t pos = path.find_last_of("/\\");
     if (pos == std::string::npos)
         return path;
     return path.substr(pos + 1);
@@ -55,7 +55,7 @@ std::string path_basename(std::string path) {
 
 std::string path_baseext(std::string path) {
     std::string base = path_basename(path);
-    auto pos = base.find_last_of('.');
+    size_t pos = base.find_last_of('.');
     if (pos == std::string::npos)
         return base;
     return base.substr(pos + 1);
@@ -146,7 +146,7 @@ void path_mkdir(std::string path) {
 
 
 std::string str_tolower(std::string str) {
-    for (auto& c : str)
+    for (char& c : str)
         c = (char)std::tolower((unsigned char)c);
 
     return str;
@@ -154,7 +154,7 @@ std::string str_tolower(std::string str) {
 
 
 std::string str_toupper(std::string str) {
-    for (auto& c : str)
+    for (char& c : str)
         c = (char)std::toupper((unsigned char)c);
 
     return str;
@@ -193,7 +193,7 @@ std::vector<std::string> util_parse_entstring(std::string entstring) {
     std::string build;
     bool buildstr = false;
 
-    for (auto& c : entstring) {
+    for (const char& c : entstring) {
         // end if null (shouldn't happen)
         if (!c)
             break;

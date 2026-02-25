@@ -35,7 +35,7 @@ static void s_main_load_config(bool quiet = false);
 static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode);
 static bool s_main_load_mod(std::string cfg_mod);
 static bool s_main_load_plugin(std::string plugin_path);
-static intptr_t s_main_handle_command_qmm(intptr_t arg_start);
+static void s_main_handle_command_qmm(intptr_t arg_start);
 static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args);
 static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
 
@@ -171,7 +171,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
         return;
     }
 
-    // now that the game is detected, cache some dynamic message values that get called a lot
+    // now that the game is detected, cache some dynamic message values that get evaluated a lot
     msg_G_PRINT = QMM_ENG_MSG[QMM_G_PRINT];
     msg_GAME_INIT = QMM_MOD_MSG[QMM_GAME_INIT];
     msg_GAME_CONSOLE_COMMAND = QMM_MOD_MSG[QMM_GAME_CONSOLE_COMMAND];
@@ -269,7 +269,7 @@ C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
         return nullptr;
     }
 
-    // now that the game is detected, cache some dynamic message values that get called a lot
+    // now that the game is detected, cache some dynamic message values that get evaluated a lot
     msg_G_PRINT = QMM_ENG_MSG[QMM_G_PRINT];
     msg_GAME_INIT = QMM_MOD_MSG[QMM_GAME_INIT];
     msg_GAME_CONSOLE_COMMAND = QMM_MOD_MSG[QMM_GAME_CONSOLE_COMMAND];
@@ -396,7 +396,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         // load plugins
         LOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
-        for (auto& plugin_path : cfg_get_array_str(g_cfg, "plugins")) {
+        for (std::string& plugin_path : cfg_get_array_str(g_cfg, "plugins")) {
             LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load plugin \"{}\"...\n", plugin_path);
             if (s_main_load_plugin(plugin_path))
                 LOG(QMM_LOG_INFO, "QMM") << fmt::format("Plugin \"{}\" loaded\n", plugin_path);
@@ -429,9 +429,11 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
             qmm_argv(argn, arg_cmd, sizeof(arg_cmd));
         }
         // check for "qmm" command
-        if (str_striequal("qmm", arg_cmd))
+        if (str_striequal("qmm", arg_cmd) || str_striequal("/qmm", arg_cmd)) {
             // pass 0 or 1 which gets added to argn in the handler function
-            return s_main_handle_command_qmm(argn);
+            s_main_handle_command_qmm(argn);
+            return 1;
+        }
     }
 
     // route call to plugins and mod
@@ -548,7 +550,7 @@ static void s_main_load_config(bool quiet) {
         fmt::format("{}/{}/qmm2.json", g_gameinfo.exe_dir, g_gameinfo.moddir),
         fmt::format("./{}/qmm2.json", g_gameinfo.moddir)
     };
-    for (auto& try_path : try_paths) {
+    for (std::string& try_path : try_paths) {
         g_cfg = cfg_load(try_path);
         if (!g_cfg.empty()) {
             g_gameinfo.cfg_path = try_path;
@@ -595,7 +597,7 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
                     return;
                 }
                 // if a hint array exists, check each for an exe file match
-                for (auto& hint : game.exe_hints) {
+                for (std::string& hint : game.exe_hints) {
                     if (str_stristr(g_gameinfo.exe_file, hint)) {
                         LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for exe hint \"{}\" - {}\n", hint, game.gamename_short);
                         g_gameinfo.game = &game;
@@ -633,7 +635,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
             fmt::format("./{}/qmm_{}.{}", g_gameinfo.moddir, g_gameinfo.game->dllname, EXT_DLL)
         };
         // try paths
-        for (auto& try_path : try_paths) {
+        for (std::string& try_path : try_paths) {
             if (try_path.empty())
                 continue;
             LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to auto-load mod \"{}\"\n", try_path);
@@ -654,7 +656,7 @@ static bool s_main_load_mod(std::string cfg_mod) {
             fmt::format("./{}/{}", g_gameinfo.moddir, cfg_mod)
         };
         // try paths
-        for (auto& try_path : try_paths) {
+        for (std::string& try_path : try_paths) {
             if (try_path.empty())
                 continue;
             LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
@@ -688,7 +690,7 @@ static bool s_main_load_plugin(std::string plugin_path) {
         fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, plugin_path),
         fmt::format("./{}/{}", g_gameinfo.moddir, plugin_path)
     };
-    for (auto& try_path : try_paths) {
+    for (std::string& try_path : try_paths) {
         // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
         int ret = plugin_load(p, try_path);
         if (ret > 0) {
@@ -704,7 +706,7 @@ static bool s_main_load_plugin(std::string plugin_path) {
 
 
 // handle "qmm" console command
-static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
+static void s_main_handle_command_qmm(intptr_t arg_start) {
     char arg1[10] = "", arg2[10] = "";
 
     int argc = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
@@ -732,7 +734,6 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
             ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM stack size     : {}\n", g_mod.qvm.stacksize).c_str());
             ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM data validation: {}\n", g_mod.qvm.verify_data ? "on" : "off").c_str());
         }
-        return 1;
     }
     else if (str_striequal("list", arg1)) {
         ENG_SYSCALL(msg_G_PRINT, "(QMM) id - plugin [version]\n");
@@ -742,12 +743,11 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
             ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) {:>2} - {} [{}]\n", num, p.plugininfo->name, p.plugininfo->version).c_str());
             num++;
         }
-        return 1;
     }
     else if (str_striequal("plugin", arg1) || str_striequal("plugininfo", arg1)) {
         if (argc == arg_start + 2) {
             ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm info <id> - outputs info on plugin with id\n");
-            return 1;
+            return;
         }
 		size_t pid = (size_t)atoi(arg2);
         if (pid > 0 && pid <= g_plugins.size()) {
@@ -765,17 +765,15 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
         else {
             ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Unable to find plugin #{}\n", arg2).c_str());
         }
-        return 1;
     }
     else if (str_striequal("loglevel", arg1)) {
         if (argc == arg_start + 2) {
             ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
-            return 1;
+            return;
         }
         AixLog::Severity severity = log_severity_from_name(arg2);
         log_set_severity(severity);
         ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Log level set to {}\n", log_name_from_severity(severity)).c_str());
-        return 1;
     }
     else {
         ENG_SYSCALL(msg_G_PRINT, "(QMM) Usage: qmm <command> [params]\n");
@@ -784,9 +782,7 @@ static intptr_t s_main_handle_command_qmm(intptr_t arg_start) {
         ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm list - displays information about loaded QMM plugins\n");
         ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm plugin <id> - outputs info on plugin with id\n");
         ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
-        return 1;
     }
-    return 1;
 }
 
 

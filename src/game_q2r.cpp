@@ -147,10 +147,10 @@ static bool Q2R_ClientConnect(edict_t* ent, char* userinfo, const char* social_i
         intptr_t entnum = (intptr_t)(((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size);
         intptr_t clientnum = entnum - 1;
         // if userinfo is null, remove entry in map. otherwise store in map
-        if (userinfo)
-            s_userinfo.emplace(clientnum, userinfo);
-        else if (s_userinfo.count(clientnum))
+        if (!userinfo)
             s_userinfo.erase(clientnum);
+        else
+            s_userinfo[clientnum] = userinfo;
     }
     cgame_is_QMM_vmMain_call = true;
     return (bool)vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
@@ -163,10 +163,10 @@ static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
         intptr_t entnum = (intptr_t)(((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size);
         intptr_t clientnum = entnum - 1;
         // if userinfo is null, remove entry in map. otherwise store in map
-        if (userinfo)
-            s_userinfo.emplace(clientnum, userinfo);
-        else if (s_userinfo.count(clientnum))
+        if (!userinfo)
             s_userinfo.erase(clientnum);
+        else
+            s_userinfo[clientnum] = userinfo;
     }
     cgame_is_QMM_vmMain_call = true;
     vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
@@ -227,6 +227,35 @@ static game_export_t qmm_export = {
 };
 
 
+// update the export variables from orig_export
+static void s_update_export() {
+    if (!orig_export)
+        return;
+
+    bool changed = false;
+
+    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
+    if (qmm_export.edicts != orig_export->edicts
+        || qmm_export.edict_size != orig_export->edict_size
+        || qmm_export.num_edicts != orig_export->num_edicts
+        ) {
+        changed = true;
+    }
+
+    qmm_export.edicts = orig_export->edicts;
+    qmm_export.edict_size = orig_export->edict_size;
+    qmm_export.num_edicts = orig_export->num_edicts;
+    qmm_export.max_edicts = orig_export->max_edicts;
+    qmm_export.server_flags = orig_export->server_flags;
+
+    if (changed) {
+        // this will trigger this message to be fired to plugins, and then it will be handled
+        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
+        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, nullptr, 0);
+    }
+}
+
+
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 intptr_t Q2R_syscall(intptr_t cmd, ...) {
@@ -236,6 +265,9 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
     if (cmd != G_PRINT)
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_syscall({} {}) called\n", Q2R_eng_msg_names(cmd), cmd);
 #endif
+
+    // update export vars before calling into the engine
+    s_update_export();
 
     intptr_t ret = 0;
 
@@ -534,38 +566,8 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
         break;
     };
 
-    // if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
-    if (qmm_export.edicts != orig_export->edicts
-        || qmm_export.edict_size != orig_export->edict_size
-        || qmm_export.num_edicts != orig_export->num_edicts
-        ) {
-
-        edict_t* edicts = orig_export->edicts;
-        intptr_t edict_size = (intptr_t)orig_export->edict_size;
-
-        if (edicts) {
-            gclient_t* clients = nullptr;
-            intptr_t clientsize = 0;
-            // only do clients if this isn't GAME_PREINIT or GAME_INIT
-            if (cmd != GAME_INIT && cmd != GAME_PREINIT) {
-                edict_t* edict1 = (edict_t*)((intptr_t)edicts + edict_size);
-                edict_t* edict2 = (edict_t*)((intptr_t)edicts + edict_size * 2);
-                clients = edict1->client;
-                clientsize = (intptr_t)(edict2->client) - (intptr_t)clients;
-            }
-            // this will trigger this message to be fired to plugins, and then it will be handled
-            // by the empty "case G_LOCATE_GAME_DATA" above in QUAKE2_syscall
-            qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)edicts, orig_export->num_edicts, edict_size, (intptr_t)clients, clientsize);
-        }
-    }
-
-    // after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_edicts in particular)
-    // and these changes need to be available to the engine, so copy those values again now before returning from the mod
-    qmm_export.edicts = orig_export->edicts;
-    qmm_export.edict_size = orig_export->edict_size;
-    qmm_export.num_edicts = orig_export->num_edicts;
-    qmm_export.max_edicts = orig_export->max_edicts;
-    qmm_export.server_flags = orig_export->server_flags;
+    // update export vars after returning from the mod
+    s_update_export();
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) returning {}\n", Q2R_mod_msg_names(cmd), cmd, ret);

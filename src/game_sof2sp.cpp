@@ -160,12 +160,12 @@ static game_export_t qmm_export = {
     GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
     GEN_EXPORT(IsClientActive, GAME_IS_CLIENT_ACTIVE),
     GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
-    0,
+    0, // unknown10
     GEN_EXPORT(SpawnRMGEntity, GAME_SPAWN_RMG_ENTITY),
     GEN_EXPORT(arioche, GAME_ARIOCHE),
     GEN_EXPORT(EntityList, GAME_ENTITY_LIST),
     GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
-    0,
+    0, // unknown15
     GEN_EXPORT(unknown16, GAME_UNKNOWN16),
     GEN_EXPORT(Save, GAME_SAVE),
     GEN_EXPORT(GameAllowedToSaveHere, GAME_GAMEALLOWEDTOSAVEHERE),
@@ -179,6 +179,16 @@ static game_export_t qmm_export = {
 };
 
 
+// update the export variables from orig_export
+static void s_update_export() {
+    if (!orig_export)
+        return;
+
+    qmm_export.unknown10 = orig_export->unknown10;
+    qmm_export.unknown15 = orig_export->unknown15;
+}
+
+
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
@@ -188,6 +198,9 @@ intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
     if (cmd != G_PRINT)
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_syscall({} {}) called\n", SOF2SP_eng_msg_names(cmd), cmd);
 #endif
+
+    // update export vars before calling into the engine
+    s_update_export();
 
     intptr_t ret = 0;
 
@@ -400,10 +413,8 @@ intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
         break;
     };
 
-    // after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_entities and errorMessage in particular)
-    // and these changes need to be available to the engine, so copy those values again now before returning from the mod
-    qmm_export.unknown10 = orig_export->unknown10;
-    qmm_export.unknown15 = orig_export->unknown15;
+    // update export vars after returning from the mod
+    s_update_export();
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_vmMain({} {}) returning {}\n", SOF2SP_mod_msg_names(cmd), cmd, ret);

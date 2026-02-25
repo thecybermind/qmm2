@@ -9,13 +9,16 @@ Created By:
 
 */
 
+#define _CRT_SECURE_NO_WARNINGS 1
+#include <cstdio>
 #include <mohsh/qcommon/q_shared.h>
+#include <mohsh/qcommon/qcommon.h>
 #define GAME_DLL
 #include <mohsh/fgame/g_public.h>
 #undef GAME_DLL
-
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 // QMM-specific MOHSH header
 #include "game_mohsh.h"
 #include "main.h"
@@ -55,7 +58,7 @@ static game_import_t qmm_import = {
     GEN_IMPORT(FS_WriteFile, G_FS_WRITEFILE),
     GEN_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE),
     GEN_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND),
-    GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
+    GEN_IMPORT(FS_FOpenFile, G_FS_UNKNOWN),
     GEN_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE),
     GEN_IMPORT(FS_Write, G_FS_WRITE),
     GEN_IMPORT(FS_Read, G_FS_READ),
@@ -282,6 +285,36 @@ static game_export_t qmm_export = {
 };
 
 
+// update the export variables from orig_export
+static void s_update_export() {
+    if (!orig_export)
+        return;
+
+    bool changed = false;
+
+    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
+    if (qmm_export.gentities != orig_export->gentities
+        || qmm_export.gentitySize != orig_export->gentitySize
+        || qmm_export.num_entities != orig_export->num_entities
+        ) {
+        changed = true;
+    }
+
+    qmm_export.profStruct = orig_export->profStruct;
+    qmm_export.gentities = orig_export->gentities;
+    qmm_export.gentitySize = orig_export->gentitySize;
+    qmm_export.num_entities = orig_export->num_entities;
+    qmm_export.max_entities = orig_export->max_entities;
+    qmm_export.errorMessage = orig_export->errorMessage;
+
+    if (changed) {
+        // this will trigger this message to be fired to plugins, and then it will be handled
+        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
+        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, nullptr, 0);
+    }
+}
+
+
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 intptr_t MOHSH_syscall(intptr_t cmd, ...) {
@@ -291,6 +324,9 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
     if (cmd != G_PRINT)
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_syscall({} {}) called\n", MOHSH_eng_msg_names(cmd), cmd);
 #endif
+
+    // update export vars before calling into the engine
+    s_update_export();
 
     intptr_t ret = 0;
 
@@ -318,11 +354,12 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(FS_WriteFile, G_FS_WRITEFILE);
         ROUTE_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE);
         ROUTE_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND);
-        ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
+        ROUTE_IMPORT(FS_FOpenFile, G_FS_UNKNOWN);
         ROUTE_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE);
-        ROUTE_IMPORT(FS_Write, G_FS_WRITE);
-        ROUTE_IMPORT(FS_Read, G_FS_READ);
-        ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
+        // handled below since we do special handling for these for FILE* access
+        //ROUTE_IMPORT(FS_Write, G_FS_WRITE);
+        // ROUTE_IMPORT(FS_Read, G_FS_READ);
+        // ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
         ROUTE_IMPORT(FS_Tell, G_FS_TELL);
         ROUTE_IMPORT(FS_Seek, G_FS_SEEK);
         ROUTE_IMPORT(FS_Flush, G_FS_FLUSH);
@@ -476,7 +513,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 
     // handle special cmds which QMM uses but MOHSH doesn't have an analogue for
     case G_CVAR_REGISTER: {
-        // mohaa: cvar_t* (*Cvar_Get)(const char* varName, const char* varValue, int varFlags)
+        // mohsh: cvar_t* (*Cvar_Get)(const char* varName, const char* varValue, int varFlags)
         // q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
         // qmm always passes NULL for vmCvar so don't worry about it
         const char* varName = (const char*)(args[1]);
@@ -486,7 +523,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         break;
     }
     case G_CVAR_VARIABLE_STRING_BUFFER: {
-        // mohaa: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
+        // mohsh: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
         // q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
         const char* varName = (const char*)(args[0]);
         char* buffer = (char*)(args[1]);
@@ -498,7 +535,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         break;
     }
     case G_CVAR_VARIABLE_INTEGER_VALUE: {
-        // mohaa: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
+        // mohsh: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
         // q3a: int trap_Cvar_VariableIntegerValue(const char* var_name)
         const char* varName = (const char*)(args[0]);
         cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
@@ -521,6 +558,103 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
             break;
         }
         orig_import.ExecuteConsoleCommand((int)when, text);
+        break;
+    }
+    case G_FS_FOPEN_FILE: {
+        // not really sure what's up with fileHandle_t-based G_FS_ functions in MOHSH, but we are just
+        // bypassing them entirely when opening. if somehow a real fileHandle_t gets passed to G_FS_READ,
+        // G_FS_WRITE, or G_FS_FCLOSE_FILE, then they will be passed to the real engine functions. otherwise,
+        // they just use FILE* functions
+
+        // int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
+        const char* qpath = (const char*)args[0];
+        fileHandle_t* f = (fileHandle_t*)args[1];
+        intptr_t mode = args[2];
+
+        const char* str_mode = "rb";
+        if (mode == FS_WRITE)
+            str_mode = "wb";
+        else if (mode == FS_APPEND)
+            str_mode = "ab";
+        std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+        if (mode != FS_READ)
+            path_mkdir(path_dirname(path));
+        FILE* fp = fopen(path.c_str(), str_mode);
+        if (!fp) {
+            ret = -1;
+            break;
+        }
+        if (mode == FS_WRITE)
+            ret = 0;
+        else if (mode == FS_APPEND)
+            ret = ftell(fp);
+        else {
+            if (fseek(fp, 0, SEEK_END) != 0) {
+                ret = -1;
+                break;
+            }
+            ret = ftell(fp);
+            fseek(fp, 0, SEEK_SET);
+        }
+        *f = (fileHandle_t)fp;
+        break;
+    }
+    case G_FS_WRITE: {
+        // void trap_FS_Write( void *buffer, int len, fileHandle_t f );
+        // size_t orig_import.FS_Write(const void *buffer, size_t size, fileHandle_t fileHandle);
+        char* buffer = (char*)args[0];
+        size_t len = (size_t)args[1];
+        fileHandle_t f = (fileHandle_t)args[2];
+        // if this is actually a fileHandle_t, pass to real G_FS_WRITE
+        if (f < MAX_FILE_HANDLES) {
+            ret = (intptr_t)orig_import.FS_Write(buffer, len, f);
+            break;
+        }
+        // this is a FILE*
+        size_t total = 0;
+        FILE* fp = (FILE*)f;
+        for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
+            total += fwrite(buffer + total, 1, len - total, fp);
+            if (total >= len || ferror(fp) || feof(fp))
+                break;
+        }
+        ret = (intptr_t)total;
+        break;
+    }
+    case G_FS_READ: {
+        // void trap_FS_Read( void *buffer, int len, fileHandle_t f );
+        // void orig_import.FS_Read(void* buffer, size_t len, fileHandle_t f);
+        char* buffer = (char*)args[0];
+        size_t len = (size_t)args[1];
+        fileHandle_t f = (fileHandle_t)args[2];
+        // if this is actually a fileHandle_t, pass to real G_FS_READ (even though there's no G_FS_FOPEN_FILE for reading)
+        if (f < MAX_FILE_HANDLES) {
+            ret = (intptr_t)orig_import.FS_Read(buffer, len, f);
+            break;
+        }
+        // this is a FILE*
+        size_t total = 0;
+        FILE* fp = (FILE*)f;
+        for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
+            total += fread(buffer + total, 1, len - total, fp);
+            if (total >= len || ferror(fp) || feof(fp))
+                break;
+        }
+        ret = (intptr_t)total;
+        break;
+    }
+    case G_FS_FCLOSE_FILE: {
+        // void trap_FS_FCloseFile(fileHandle_t f);
+        // void orig_import.FS_FCloseFile(fileHandle_t fileHandle);
+        fileHandle_t f = (fileHandle_t)args[0];
+        // if this is actually a fileHandle_t, pass to real G_FS_FCLOSE_FILE
+        if (f < MAX_FILE_HANDLES) {
+            orig_import.FS_FCloseFile(f);
+            break;
+        }
+        // this is a FILE*
+        FILE* fp = (FILE*)f;
+        fclose(fp);
         break;
     }
     case G_GET_ENTITY_TOKEN: {
@@ -617,14 +751,8 @@ intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
         break;
     };
 
-    // after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_entities and errorMessage in particular)
-    // and these changes need to be available to the engine, so copy those values again now before returning from the mod
-    qmm_export.profStruct = orig_export->profStruct;
-    qmm_export.gentities = orig_export->gentities;
-    qmm_export.gentitySize = orig_export->gentitySize;
-    qmm_export.num_entities = orig_export->num_entities;
-    qmm_export.max_entities = orig_export->max_entities;
-    qmm_export.errorMessage = orig_export->errorMessage;
+    // update export vars after returning from the mod
+    s_update_export();
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_vmMain({} {}) returning {}\n", MOHSH_mod_msg_names(cmd), cmd, ret);
@@ -702,7 +830,7 @@ const char* MOHSH_eng_msg_names(intptr_t cmd) {
         GEN_CASE(G_FS_WRITEFILE);
         GEN_CASE(G_FS_FOPEN_FILE_WRITE);
         GEN_CASE(G_FS_FOPEN_FILE_APPEND);
-        GEN_CASE(G_FS_FOPEN_FILE);
+        GEN_CASE(G_FS_UNKNOWN);
         GEN_CASE(G_FS_PREPFILEWRITE);
         GEN_CASE(G_FS_WRITE);
         GEN_CASE(G_FS_READ);
@@ -856,6 +984,7 @@ const char* MOHSH_eng_msg_names(intptr_t cmd) {
         GEN_CASE(G_CVAR_REGISTER);
         GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
         GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
+        GEN_CASE(G_FS_FOPEN_FILE);
 
         GEN_CASE(G_GET_ENTITY_TOKEN);
 

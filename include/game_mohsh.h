@@ -37,7 +37,7 @@ enum {
 	G_FS_WRITEFILE,
 	G_FS_FOPEN_FILE_WRITE,
 	G_FS_FOPEN_FILE_APPEND,
-	G_FS_FOPEN_FILE,
+	G_FS_UNKNOWN,
 	G_FS_PREPFILEWRITE,
 	G_FS_WRITE,
 	G_FS_READ,
@@ -248,8 +248,12 @@ enum {
 	G_CVAR_REGISTER = -100,			// void (vmcvar_t* ignored_cvar, const char *varName, const char *defaultValue, int flags)
 	G_CVAR_VARIABLE_STRING_BUFFER,	// void (const char* var_name, char* buffer, int bufsize)
 	G_CVAR_VARIABLE_INTEGER_VALUE,	// int (const char* var_name)
+	G_FS_FOPEN_FILE,				// int (const char *qpath, fileHandle_t *f, fsMode_t mode)
 
 	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
 };
+
+// we need to store FILE* in fileHandle_t so change the underlying type
+#define fileHandle_t intptr_t
 
 #endif // QMM2_GAME_MOHSH_H

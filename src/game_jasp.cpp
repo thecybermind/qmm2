@@ -60,7 +60,7 @@ static game_import_t qmm_import = {
         GEN_IMPORT(SetUserinfo, G_SET_USERINFO),
         GEN_IMPORT(GetServerinfo, G_GET_SERVERINFO),
         GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
-        GEN_IMPORT(trace, G_TRACE),
+        GEN_IMPORT_9(trace, G_TRACE, void, trace_t*, const vec3_t, const vec3_t, const vec3_t, const vec3_t, const int, const int, const EG2_Collision, const int),
         GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
         GEN_IMPORT(totalMapContents, G_TOTALMAPCONTENTS),
         GEN_IMPORT(inPVS, G_IN_PVS),
@@ -168,12 +168,13 @@ static game_import_t qmm_import = {
 // we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
 
 // track entstrings for our G_GET_ENTITY_TOKEN syscall
-static std::vector<std::string> s_entity_tokens;
-static size_t s_tokencount = 0;
+static std::map<intptr_t, std::vector<std::string>> s_subbsp_entity_tokens;  // -1 = main map entities
+static std::map<intptr_t, size_t> s_tokencount;
+static intptr_t s_active_subbsp = -1;
 static void JASP_Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition) {
     if (entstring) {
-        s_entity_tokens = util_parse_entstring(entstring);
-        s_tokencount = 0;
+        s_subbsp_entity_tokens[-1] = util_parse_entstring(entstring);
+        s_tokencount[-1] = 0;
     }
     cgame_is_QMM_vmMain_call = true;
     vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
@@ -206,6 +207,33 @@ static game_export_t qmm_export = {
 };
 
 
+// update the export variables from orig_export
+static void s_update_export() {
+    if (!orig_export)
+        return;
+
+    bool changed = false;
+
+    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
+    if (qmm_export.gentities != orig_export->gentities
+        || qmm_export.gentitySize != orig_export->gentitySize
+        || qmm_export.num_entities != orig_export->num_entities
+        ) {
+        changed = true;
+    }
+
+    qmm_export.gentities = orig_export->gentities;
+    qmm_export.gentitySize = orig_export->gentitySize;
+    qmm_export.num_entities = orig_export->num_entities;
+
+    if (changed) {
+        // this will trigger this message to be fired to plugins, and then it will be handled
+        // by the empty "case G_LOCATE_GAME_DATA" in JASP_syscall
+        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, nullptr, 0);
+    }
+}
+
+
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 intptr_t JASP_syscall(intptr_t cmd, ...) {
@@ -215,6 +243,9 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
     if (cmd != G_PRINT)
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_syscall({} {}) called\n", JASP_eng_msg_names(cmd), cmd);
 #endif
+
+    // update export vars before calling into the engine
+    s_update_export();
 
     intptr_t ret = 0;
 
@@ -339,7 +370,8 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(G2API_ClearSkinGore, G_G2API_CLEARSKINGORE);
         ROUTE_IMPORT(RMG_Init, G_RMG_INIT);
         ROUTE_IMPORT(CM_RegisterTerrain, G_CM_REGISTERTERRAIN);
-        ROUTE_IMPORT(SetActiveSubBSP, G_SET_ACTIVE_SUBBSP);
+        // handled below since we do special handling to track entity tokens
+        // ROUTE_IMPORT(SetActiveSubBSP, G_SET_ACTIVE_SUBBSP);
         ROUTE_IMPORT(RE_RegisterSkin, G_RE_REGISTERSKIN);
         ROUTE_IMPORT(RE_GetAnimationCFG, G_RE_GETANIMATIONCFG);
         ROUTE_IMPORT(WE_GetWindVector, G_WE_GETWINDVECTOR);
@@ -365,7 +397,6 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
         (void)orig_import.cvar(varName, defaultValue, flags);
         break;
     }
-    case G_SEND_CONSOLE_COMMAND_QMM:
     case G_SEND_CONSOLE_COMMAND: {
         // JASP: void (*SendConsoleCommand)(const char *text);
         // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
@@ -384,9 +415,28 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
         // this is just to be hooked by plugins, so ignore everything
         break;
     }
+    case G_SET_ACTIVE_SUBBSP: {
+        // save current index
+        s_active_subbsp = args[0];
+        // get actual entstring from engine return value
+        const char* entstring = orig_import.SetActiveSubBSP((int)s_active_subbsp);
+        // if it returns an entstring (-1 won't), parse it
+        if (s_active_subbsp != -1 && entstring) {
+            s_subbsp_entity_tokens[s_active_subbsp] = util_parse_entstring(entstring);
+            s_tokencount[s_active_subbsp] = 0;
+        }
+        ret = (intptr_t)entstring;
+        break;
+    }
     case G_GET_ENTITY_TOKEN: {
         // qboolean trap_GetEntityToken(char *buffer, int bufferSize);
-        if (s_tokencount >= s_entity_tokens.size()) {
+
+        // get references to the tokencount and tokenlist for this subbsp
+        size_t& tokencount = s_tokencount[s_active_subbsp];
+        std::vector<std::string>& tokens = s_subbsp_entity_tokens[s_active_subbsp];
+
+        // if we previously hit the end of the particular entity list, return false
+        if (tokencount >= tokens.size()) {
             ret = qfalse;
             break;
         }
@@ -394,7 +444,8 @@ intptr_t JASP_syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), (size_t)bufferSize);
+        // write current token into the buffer and increment token counter
+        strncpyz(buffer, tokens[tokencount++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }
@@ -469,29 +520,8 @@ intptr_t JASP_vmMain(intptr_t cmd, ...) {
         break;
     };
 
-    // if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
-    if (qmm_export.gentities != orig_export->gentities
-        || qmm_export.gentitySize != orig_export->gentitySize
-        || qmm_export.num_entities != orig_export->num_entities
-        ) {
-
-        gentity_t* gentities = orig_export->gentities;
-
-        if (gentities) {
-            // single player only makes 1 client
-            playerState_s* clients = gentities->client;
-            intptr_t clientsize = 1;
-            // this will trigger this message to be fired to plugins, and then it will be handled
-            // by the empty "case G_LOCATE_GAME_DATA" above in QUAKE2_syscall
-            qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)gentities, orig_export->num_entities, orig_export->gentitySize, (intptr_t)clients, clientsize);
-        }
-    }
-
-    // after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_entities and errorMessage in particular)
-    // and these changes need to be available to the engine, so copy those values again now before returning from the mod
-    qmm_export.gentities = orig_export->gentities;
-    qmm_export.gentitySize = orig_export->gentitySize;
-    qmm_export.num_entities = orig_export->num_entities;
+    // update export vars after returning from the mod
+    s_update_export();
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_vmMain({} {}) returning {}\n", JASP_mod_msg_names(cmd), cmd, ret);
@@ -530,7 +560,6 @@ void* JASP_GetGameAPI(void* import, void*) {
 bool JASP_mod_load(void* entry) {
     mod_GetGameAPI_t mod_GetGameAPI = (mod_GetGameAPI_t)entry;
     orig_export = (game_export_t*)mod_GetGameAPI(&qmm_import, nullptr);
-
 
     return !!orig_export;
 }
