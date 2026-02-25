@@ -9,13 +9,16 @@ Created By:
 
 */
 
+#define _CRT_SECURE_NO_WARNINGS 1
+#include <cstdio>
 #include <mohbt/qcommon/q_shared.h>
+#include <mohbt/qcommon/qcommon.h>
 #define GAME_DLL
 #include <mohbt/fgame/g_public.h>
 #undef GAME_DLL
-
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 // QMM-specific MOHBT header
 #include "game_mohsh.h"
 #include "main.h"
@@ -351,11 +354,13 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(FS_WriteFile, G_FS_WRITEFILE);
         ROUTE_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE);
         ROUTE_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND);
-        ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
+        // handled below since we do special handling for this for FILE* access
+        // ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
         ROUTE_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE);
         ROUTE_IMPORT(FS_Write, G_FS_WRITE);
-        ROUTE_IMPORT(FS_Read, G_FS_READ);
-        ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
+        // handled below since we do special handling for these for FILE* access
+        // ROUTE_IMPORT(FS_Read, G_FS_READ);
+        // ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
         ROUTE_IMPORT(FS_Tell, G_FS_TELL);
         ROUTE_IMPORT(FS_Seek, G_FS_SEEK);
         ROUTE_IMPORT(FS_Flush, G_FS_FLUSH);
@@ -554,6 +559,84 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
             break;
         }
         orig_import.ExecuteConsoleCommand((int)when, text);
+        break;
+    }
+    case G_FS_FOPEN_FILE: {
+        // MOHBT is only missing a FS_FOPEN_FILE equivalent for reading
+        // if mode == FS_WRITE, then just pass to FS_FOpenFileWrite.
+        // if mode == FS_APPEND(_SYNC), then just pass to FS_FOpenFileAppend.
+        // if mode == FS_READ, then return a FILE* that will get picked up by G_FS_READ and G_FS_FCLOSE_FILE handlers below
+
+        // MOHBT: fileHandle_t (*FS_FOpenFileAppend)(const char *fileName);
+        // MOHBT: fileHandle_t (*FS_FOpenFileWrite)(const char *fileName);
+        // q3a: int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
+        const char* qpath = (const char*)args[0];
+        fileHandle_t* f = (fileHandle_t*)args[1];
+        fsMode_t mode = (fsMode_t)args[2];
+        if (mode == FS_READ) {
+            std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+            FILE* fp = fopen(path.c_str(), "rb");
+            if (!fp || fseek(fp, 0, SEEK_END) != 0) {
+                ret = -1;
+                break;
+            }
+            ret = ftell(fp);
+            fseek(fp, 0, SEEK_SET);
+            *f = (fileHandle_t)fp;
+        }
+        else if (mode == FS_WRITE) {
+            *f = orig_import.FS_FOpenFileWrite(qpath);
+            if (!*f) {
+                ret = -1;
+                break;
+            }
+            ret = 0;
+        }
+        else { // mode == FS_APPEND(_SYNC)
+            *f = orig_import.FS_FOpenFileAppend(qpath);
+            if (!*f) {
+                ret = -1;
+                break;
+            }
+            orig_import.FS_Seek(*f, 0, FS_SEEK_END);
+            ret = orig_import.FS_Tell(*f);
+        }
+        break;
+    }
+    case G_FS_READ: {
+        // void trap_FS_Read( void *buffer, int len, fileHandle_t f );
+        // void orig_import.FS_Read(void* buffer, size_t len, fileHandle_t f);
+        char* buffer = (char*)args[0];
+        size_t len = (size_t)args[1];
+        fileHandle_t f = (fileHandle_t)args[2];
+        // if this is actually a fileHandle_t, pass to real G_FS_READ (even though there's no G_FS_FOPEN_FILE for reading)
+        if (f < MAX_FILE_HANDLES) {
+            ret = (intptr_t)orig_import.FS_Read(buffer, len, f);
+            break;
+        }
+        // this is a FILE*
+        size_t total = 0;
+        FILE* fp = (FILE*)f;
+        for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
+            total += fread(buffer + total, 1, len - total, fp);
+            if (total >= len || ferror(fp) || feof(fp))
+                break;
+        }
+        ret = (intptr_t)total;
+        break;
+    }
+    case G_FS_FCLOSE_FILE: {
+        // void trap_FS_FCloseFile(fileHandle_t f);
+        // void orig_import.FS_FCloseFile(fileHandle_t fileHandle);
+        fileHandle_t f = (fileHandle_t)args[0];
+        // if this is actually a fileHandle_t, pass to real G_FS_FCLOSE_FILE
+        if (f < MAX_FILE_HANDLES) {
+            orig_import.FS_FCloseFile(f);
+            break;
+        }
+        // this is a FILE*
+        FILE* fp = (FILE*)f;
+        fclose(fp);
         break;
     }
     case G_GET_ENTITY_TOKEN: {
