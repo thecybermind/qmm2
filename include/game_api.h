@@ -19,9 +19,9 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-typedef const char* (*msgname_t)(intptr_t);
-typedef bool (*mod_load_t)(void*);
-typedef void (*mod_unload_t)();
+using msgname_t = const char* (*)(intptr_t);
+using mod_load_t = bool (*)(void*);
+using mod_unload_t = void (*)();
 // some information for each game engine supported by QMM
 struct supportedgame_t {
     const char* dllname;				// default dll mod filename
@@ -130,7 +130,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 // ----------------------------
 
 // used by GetGameAPI code as a cast for generic syscall/vmmain calls
-typedef intptr_t(*pfn_call_t)(intptr_t arg0, ...);
+using pfn_call_t = intptr_t (*)(intptr_t arg0, ...);
 
 // handle calls from QMM and plugins into the engine
 #define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((pfn_call_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break

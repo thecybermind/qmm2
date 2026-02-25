@@ -18,19 +18,19 @@ Created By:
 #include "qmmapi.h"
 
 // QMM_Query
-typedef void (*plugin_query)(plugininfo_t** pinfo);
+using plugin_query = void (*)(plugininfo_t** pinfo);
 // QMM_Attach
-typedef int (*plugin_attach)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, pluginvars_t* pluginvars);
+using plugin_attach = int (*)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, pluginvars_t* pluginvars);
 // QMM_Detach
-typedef void (*plugin_detach)();
+using plugin_detach = void (*)();
 // QMM_vmMain
-typedef intptr_t(*plugin_vmmain)(intptr_t cmd, intptr_t* args);
+using plugin_vmmain = intptr_t(*)(intptr_t cmd, intptr_t* args);
 // QMM_syscall
-typedef intptr_t(*plugin_syscall)(intptr_t cmd, intptr_t* args);
+using plugin_syscall = intptr_t(*)(intptr_t cmd, intptr_t* args);
 // QMM_PluginMessage
-typedef void (*plugin_pluginmessage)(plid_t from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
+using plugin_pluginmessage = void (*)(plid_t from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
 // QMM_QVMHandler
-typedef int (*plugin_qvmhandler)(int cmd, int* args);
+using plugin_qvmhandler = int (*)(int cmd, int* args);
 
 struct plugin_t {
     void* dll = nullptr;
