@@ -58,7 +58,7 @@ static game_import_t qmm_import = {
     GEN_IMPORT(FS_WriteFile, G_FS_WRITEFILE),
     GEN_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE),
     GEN_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND),
-    GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
+    GEN_IMPORT(FS_FOpenFile, G_FS_UNKNOWN),
     GEN_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE),
     GEN_IMPORT(FS_Write, G_FS_WRITE),
     GEN_IMPORT(FS_Read, G_FS_READ),
@@ -354,11 +354,10 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(FS_WriteFile, G_FS_WRITEFILE);
         ROUTE_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE);
         ROUTE_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND);
-        // handled below since we do special handling for this for FILE* access
-        // ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
+        ROUTE_IMPORT(FS_FOpenFile, G_FS_UNKNOWN);
         ROUTE_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE);
-        ROUTE_IMPORT(FS_Write, G_FS_WRITE);
         // handled below since we do special handling for these for FILE* access
+        //ROUTE_IMPORT(FS_Write, G_FS_WRITE);
         // ROUTE_IMPORT(FS_Read, G_FS_READ);
         // ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
         ROUTE_IMPORT(FS_Tell, G_FS_TELL);
@@ -514,7 +513,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 
     // handle special cmds which QMM uses but MOHSH doesn't have an analogue for
     case G_CVAR_REGISTER: {
-        // mohaa: cvar_t* (*Cvar_Get)(const char* varName, const char* varValue, int varFlags)
+        // mohsh: cvar_t* (*Cvar_Get)(const char* varName, const char* varValue, int varFlags)
         // q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
         // qmm always passes NULL for vmCvar so don't worry about it
         const char* varName = (const char*)(args[1]);
@@ -524,7 +523,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         break;
     }
     case G_CVAR_VARIABLE_STRING_BUFFER: {
-        // mohaa: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
+        // mohsh: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
         // q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
         const char* varName = (const char*)(args[0]);
         char* buffer = (char*)(args[1]);
@@ -536,7 +535,7 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         break;
     }
     case G_CVAR_VARIABLE_INTEGER_VALUE: {
-        // mohaa: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
+        // mohsh: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
         // q3a: int trap_Cvar_VariableIntegerValue(const char* var_name)
         const char* varName = (const char*)(args[0]);
         cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
@@ -562,45 +561,64 @@ intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         break;
     }
     case G_FS_FOPEN_FILE: {
-        // MOHSH is only missing a FS_FOPEN_FILE equivalent for reading
-        // if mode == FS_WRITE, then just pass to FS_FOpenFileWrite.
-        // if mode == FS_APPEND(_SYNC), then just pass to FS_FOpenFileAppend.
-        // if mode == FS_READ, then return a FILE* that will get picked up by G_FS_READ and G_FS_FCLOSE_FILE handlers below
+        // not really sure what's up with fileHandle_t-based G_FS_ functions in MOHSH, but we are just
+        // bypassing them entirely when opening. if somehow a real fileHandle_t gets passed to G_FS_READ,
+        // G_FS_WRITE, or G_FS_FCLOSE_FILE, then they will be passed to the real engine functions. otherwise,
+        // they just use FILE* functions
 
-        // MOHSH: fileHandle_t (*FS_FOpenFileAppend)(const char *fileName);
-        // MOHSH: fileHandle_t (*FS_FOpenFileWrite)(const char *fileName);
-        // q3a: int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
+        // int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
         const char* qpath = (const char*)args[0];
         fileHandle_t* f = (fileHandle_t*)args[1];
-        fsMode_t mode = (fsMode_t)args[2];
-        if (mode == FS_READ) {
-            std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
-            FILE* fp = fopen(path.c_str(), "rb");
-            if (!fp || fseek(fp, 0, SEEK_END) != 0) {
+        intptr_t mode = args[2];
+
+        const char* str_mode = "rb";
+        if (mode == FS_WRITE)
+            str_mode = "wb";
+        else if (mode == FS_APPEND)
+            str_mode = "ab";
+        std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+        if (mode != FS_READ)
+            path_mkdir(path_dirname(path));
+        FILE* fp = fopen(path.c_str(), str_mode);
+        if (!fp) {
+            ret = -1;
+            break;
+        }
+        if (mode == FS_WRITE)
+            ret = 0;
+        else if (mode == FS_APPEND)
+            ret = ftell(fp);
+        else {
+            if (fseek(fp, 0, SEEK_END) != 0) {
                 ret = -1;
                 break;
             }
             ret = ftell(fp);
             fseek(fp, 0, SEEK_SET);
-            *f = (fileHandle_t)fp;
         }
-        else if (mode == FS_WRITE) {
-            *f = orig_import.FS_FOpenFileWrite(qpath);
-            if (!*f) {
-                ret = -1;
+        *f = (fileHandle_t)fp;
+        break;
+    }
+    case G_FS_WRITE: {
+        // void trap_FS_Write( void *buffer, int len, fileHandle_t f );
+        // size_t orig_import.FS_Write(const void *buffer, size_t size, fileHandle_t fileHandle);
+        char* buffer = (char*)args[0];
+        size_t len = (size_t)args[1];
+        fileHandle_t f = (fileHandle_t)args[2];
+        // if this is actually a fileHandle_t, pass to real G_FS_WRITE
+        if (f < MAX_FILE_HANDLES) {
+            ret = (intptr_t)orig_import.FS_Write(buffer, len, f);
+            break;
+        }
+        // this is a FILE*
+        size_t total = 0;
+        FILE* fp = (FILE*)f;
+        for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
+            total += fwrite(buffer + total, 1, len - total, fp);
+            if (total >= len || ferror(fp) || feof(fp))
                 break;
-            }
-            ret = 0;
         }
-        else { // mode == FS_APPEND(_SYNC)
-            *f = orig_import.FS_FOpenFileAppend(qpath);
-            if (!*f) {
-                ret = -1;
-                break;
-            }
-            orig_import.FS_Seek(*f, 0, FS_SEEK_END);
-            ret = orig_import.FS_Tell(*f);
-        }
+        ret = (intptr_t)total;
         break;
     }
     case G_FS_READ: {
@@ -812,7 +830,7 @@ const char* MOHSH_eng_msg_names(intptr_t cmd) {
         GEN_CASE(G_FS_WRITEFILE);
         GEN_CASE(G_FS_FOPEN_FILE_WRITE);
         GEN_CASE(G_FS_FOPEN_FILE_APPEND);
-        GEN_CASE(G_FS_FOPEN_FILE);
+        GEN_CASE(G_FS_UNKNOWN);
         GEN_CASE(G_FS_PREPFILEWRITE);
         GEN_CASE(G_FS_WRITE);
         GEN_CASE(G_FS_READ);
@@ -966,6 +984,7 @@ const char* MOHSH_eng_msg_names(intptr_t cmd) {
         GEN_CASE(G_CVAR_REGISTER);
         GEN_CASE(G_CVAR_VARIABLE_STRING_BUFFER);
         GEN_CASE(G_CVAR_VARIABLE_INTEGER_VALUE);
+        GEN_CASE(G_FS_FOPEN_FILE);
 
         GEN_CASE(G_GET_ENTITY_TOKEN);
 
