@@ -213,9 +213,9 @@ C_DLLEXPORT void QMM_PluginMessage(plid_t from_plid, const char* message, void* 
 C_DLLEXPORT int QMM_QVMHandler(int func, int* args);
 
 // Some helpful macros assuming you've stored entity/client info in G_LOCATE_GAME_DATA
-#define ENT_FROM_NUM(index)     ((gentity_t*)((unsigned char*)g_gents + g_gentsize * (index)))                  // get a gentity_t* by entity number
-#define NUM_FROM_ENT(ent)       ((int)((unsigned char*)(ent) - (unsigned char*)g_gents) / g_gentsize)           // get a entity number by gentity_t*
-#define CLIENT_FROM_NUM(index)  ((gclient_t*)((unsigned char*)g_clients + g_clientsize * (index)))              // get a gclient_t* by client number
-#define NUM_FROM_CLIENT(client) ((int)((unsigned char*)(client) - (unsigned char*)g_clients) / g_clientsize)    // get a client number by gclient_t*
+#define ENT_FROM_NUM(index)     ((gentity_t*)((unsigned char*)g_gents + g_gentsize * (index)))                  // get a gentity_t* by entity number (check g_gents for NULL first)
+#define NUM_FROM_ENT(ent)       ((int)((unsigned char*)(ent) - (unsigned char*)g_gents) / g_gentsize)           // get a entity number by gentity_t* (check g_gents for NULL and g_gentsize for 0 first)
+#define CLIENT_FROM_NUM(index)  ((gclient_t*)((unsigned char*)g_clients + g_clientsize * (index)))              // get a gclient_t* by client number (check g_clients for NULL first)
+#define NUM_FROM_CLIENT(client) ((int)((unsigned char*)(client) - (unsigned char*)g_clients) / g_clientsize)    // get a client number by gclient_t* (check g_clients for NULL g_clientsize for 0 first)
 
 #endif // QMM2_QMMAPI_H

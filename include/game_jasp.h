@@ -178,7 +178,6 @@ enum {
 // these import messages do not have an exact analogue in JASP
 enum {
 	G_CVAR_REGISTER = -100,			// void (vmcvar_t* ignored_cvar, const char *varName, const char *defaultValue, int flags)
-	G_SEND_CONSOLE_COMMAND_QMM,		// void (int ignored_exec_when, const char *text)
 	// helper for plugins to not need separate logic
 	G_LOCATE_GAME_DATA,				// void (gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient)
 	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)

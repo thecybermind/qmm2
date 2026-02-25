@@ -38,10 +38,10 @@ static game_export_t* orig_export = nullptr;
 static std::map<int, std::string> s_configstrings;
 static void SIN_configstring(int num, const char* configstring) {
     // if configstring is null, remove entry in map. otherwise store in map
-    if (configstring)
-        s_configstrings[num] = configstring;
-    else if (s_configstrings.count(num))
+    if (!configstring)
         s_configstrings.erase(num);
+    else
+        s_configstrings[num] = configstring;
     qmm_syscall(G_CONFIGSTRING, num, configstring);
 }
 
@@ -152,10 +152,10 @@ static qboolean SIN_ClientConnect(edict_t* ent, const char* userinfo) {
         intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
         intptr_t clientnum = entnum - 1;
         // if userinfo is null, remove entry in map. otherwise store in map
-        if (userinfo)
-            s_userinfo.emplace(clientnum, userinfo);
-        else if (s_userinfo.count(clientnum))
+        if (!userinfo)
             s_userinfo.erase(clientnum);
+        else
+            s_userinfo[clientnum] = userinfo;
     }
     cgame_is_QMM_vmMain_call = true;
     return vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
@@ -168,10 +168,10 @@ static void SIN_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
         intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
         intptr_t clientnum = entnum - 1;
         // if userinfo is null, remove entry in map. otherwise store in map
-        if (userinfo)
-            s_userinfo.emplace(clientnum, userinfo);
-        else if (s_userinfo.count(clientnum))
+        if (!userinfo)
             s_userinfo.erase(clientnum);
+        else
+            s_userinfo[clientnum] = userinfo;
     }
     cgame_is_QMM_vmMain_call = true;
     vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
@@ -228,6 +228,44 @@ static game_export_t qmm_export = {
 };
 
 
+// update the export variables from orig_export
+static void s_update_export() {
+    if (!orig_export)
+        return;
+
+    bool changed = false;
+
+    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
+    if (qmm_export.edicts != orig_export->edicts
+        || qmm_export.edict_size != orig_export->edict_size
+        || qmm_export.num_edicts != orig_export->num_edicts
+        ) {
+        changed = true;
+    }
+
+    qmm_export.edicts = orig_export->edicts;
+    qmm_export.edict_size = orig_export->edict_size;
+    qmm_export.num_edicts = orig_export->num_edicts;
+    qmm_export.max_edicts = orig_export->max_edicts;
+    qmm_export.consoles = orig_export->consoles;
+    qmm_export.console_size = orig_export->console_size;
+    qmm_export.num_consoles = orig_export->num_consoles;
+    qmm_export.max_consoles = orig_export->max_consoles;
+    qmm_export.conbuffers = orig_export->conbuffers;
+    qmm_export.conbuffer_size = orig_export->conbuffer_size;
+    qmm_export.surfaces = orig_export->surfaces;
+    qmm_export.surface_size = orig_export->surface_size;
+    qmm_export.max_surfaces = orig_export->max_surfaces;
+    qmm_export.num_surfaces = orig_export->num_surfaces;
+
+    if (changed) {
+        // this will trigger this message to be fired to plugins, and then it will be handled
+        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
+        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, nullptr, 0);
+    }
+}
+
+
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
 intptr_t SIN_syscall(intptr_t cmd, ...) {
@@ -237,6 +275,9 @@ intptr_t SIN_syscall(intptr_t cmd, ...) {
     if (cmd != G_PRINT)
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) called\n", SIN_eng_msg_names(cmd), cmd);
 #endif
+
+    // update export vars before calling into the engine
+    s_update_export();
 
     intptr_t ret = 0;
 
@@ -488,10 +529,10 @@ intptr_t SIN_syscall(intptr_t cmd, ...) {
 
         break;
     }
-    case G_MILLISECONDS:
+    case G_MILLISECONDS: {
         ret = util_get_milliseconds();
         break;
-
+    }
     default:
         break;
     };
@@ -560,47 +601,8 @@ intptr_t SIN_vmMain(intptr_t cmd, ...) {
         break;
     };
 
-    // if entity data changed, send a G_LOCATE_GAME_DATA so plugins can hook it
-    if (qmm_export.edicts != orig_export->edicts
-        || qmm_export.edict_size != orig_export->edict_size
-        || qmm_export.num_edicts != orig_export->num_edicts
-        ) {
-
-        edict_t* edicts = orig_export->edicts;
-        intptr_t edict_size = orig_export->edict_size;
-
-        if (edicts) {
-            gclient_t* clients = nullptr;
-            intptr_t clientsize = 0;
-            // only do clients if this isn't GAME_INIT
-            if (cmd != GAME_INIT) {
-                edict_t* edict1 = (edict_t*)((intptr_t)edicts + edict_size);
-                edict_t* edict2 = (edict_t*)((intptr_t)edicts + edict_size * 2);
-                clients = edict1->client;
-                clientsize = (intptr_t)(edict2->client) - (intptr_t)clients;
-            }
-            // this will trigger this message to be fired to plugins, and then it will be handled
-            // by the empty "case G_LOCATE_GAME_DATA" above in SIN_syscall
-            qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)edicts, orig_export->num_edicts, edict_size, (intptr_t)clients, clientsize);
-        }
-    }
-
-    // after the mod is called into by the engine, some of the variables in the mod's exports may have changed (num_edicts in particular)
-    // and these changes need to be available to the engine, so copy those values again now before returning from the mod
-    qmm_export.edicts = orig_export->edicts;
-    qmm_export.edict_size = orig_export->edict_size;
-    qmm_export.num_edicts = orig_export->num_edicts;
-    qmm_export.max_edicts = orig_export->max_edicts;
-    qmm_export.consoles = orig_export->consoles;
-    qmm_export.console_size = orig_export->console_size;
-    qmm_export.num_consoles = orig_export->num_consoles;
-    qmm_export.max_consoles = orig_export->max_consoles;
-    qmm_export.conbuffers = orig_export->conbuffers;
-    qmm_export.conbuffer_size = orig_export->conbuffer_size;
-    qmm_export.surfaces = orig_export->surfaces;
-    qmm_export.surface_size = orig_export->surface_size;
-    qmm_export.max_surfaces = orig_export->max_surfaces;
-    qmm_export.num_surfaces = orig_export->num_surfaces;
+    // update export vars after returning from the mod
+    s_update_export();
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) returning {}\n", SIN_mod_msg_names(cmd), cmd, ret);
