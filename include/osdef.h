@@ -24,18 +24,12 @@ Created By:
 
 #ifdef _WIN64
 #define SUF_DLL "x86_64"
-#define SUF_SO  "x86_64"
 #else
 #define SUF_DLL "x86"
-#define SUF_SO  "x86"
 #endif
-#define EXT_DLL "dll"
-#define EXT_SO  "dll"
-#define EXT_QVM "qvm"
 
-constexpr const unsigned char MAGIC_DLL[] = { 'M',  'Z', 0x90, 0x00 };
-constexpr const unsigned char MAGIC_SO[] = { 'M',  'Z', 0x90, 0x00 };
-constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14,  'r', 0x12 };
+#define EXT_DLL "dll"
+#define EXT_QVM "qvm"
 
 #define NAKED				__declspec(naked)
 #define PATH_MAX			4096
@@ -60,18 +54,12 @@ const char* dlerror();		// this will return the last error from any win32 functi
 
 #ifdef __LP64__
 #define SUF_DLL "x86_64"
-#define SUF_SO  "x86_64"
 #else
 #define SUF_DLL "i386"
-#define SUF_SO  "i386"
 #endif
-#define EXT_DLL "so"
-#define EXT_SO  "so"
-#define EXT_QVM "qvm"
 
-constexpr const unsigned char MAGIC_DLL[] = { 0x7F,  'E', 'L',  'F' };
-constexpr const unsigned char MAGIC_SO[] = { 0x7F,  'E', 'L',  'F' };
-constexpr const unsigned char MAGIC_QVM[] = { 'D', 0x14, 'r', 0x12 };
+#define EXT_DLL "so"
+#define EXT_QVM "qvm"
 
 #define NAKED				__attribute__((naked))
 #define my_vsnprintf		vsnprintf
@@ -82,6 +70,8 @@ void MessageBoxA(void* handle, const char* message, const char* title, int flags
 #error Unknown OS?
 
 #endif
+
+#define MOD_DLL SUF_DLL "." EXT_DLL
 
 void* osdef_path_get_qmm_handle();
 const char* osdef_path_get_qmm_path();

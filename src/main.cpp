@@ -31,7 +31,7 @@ bool g_shutdown = false;
 static intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_SHUTDOWN;
 
 static void s_main_detect_env();
-static void s_main_load_config(bool quiet = false);
+static void s_main_load_config();
 static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode);
 static bool s_main_load_mod(std::string cfg_mod);
 static bool s_main_load_plugin(std::string plugin_path);
@@ -540,7 +540,7 @@ static void s_main_detect_env() {
 
 
 // general code to load config file. called from dllEntry() and GetGameAPI()
-static void s_main_load_config(bool quiet) {
+static void s_main_load_config() {
     // load config file, try the following locations in order:
     // "<qmmdir>/qmm2.json"
     // "<exedir>/<moddir>/qmm2.json"
@@ -554,16 +554,13 @@ static void s_main_load_config(bool quiet) {
         g_cfg = cfg_load(try_path);
         if (!g_cfg.empty()) {
             g_gameinfo.cfg_path = try_path;
-            if (!quiet)
-                LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Config file found! Path: \"{}\"\n", g_gameinfo.cfg_path);
-            break;
+            LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Config file found! Path: \"{}\"\n", g_gameinfo.cfg_path);
+            return;
         }
     }
-    if (g_cfg.empty() || g_cfg.is_discarded()) {
-        // a default constructed json object is a blank {}, so in case of load failure, we can still try to read from it and assume defaults
-        if (!quiet)
-            LOG(QMM_LOG_WARNING, "QMM") << "Unable to load config file, all settings will use default values\n";
-    }
+
+    // a default constructed json object is a blank {}, so in case of load failure, we can still try to read from it and assume defaults
+    LOG(QMM_LOG_WARNING, "QMM") << "Unable to load config file, all settings will use default values\n";
 }
 
 
@@ -586,9 +583,8 @@ static void s_main_detect_game(std::string cfg_game, bool is_GetGameAPI_mode) {
         // otherwise, if auto, we need to check matching dll names, with optional exe hint
         if (str_striequal(cfg_game, "auto")) {
             // dll name matches
-            std::string full_dll_name = fmt::format("{}.{}", game.dllname, EXT_DLL);
-            if (str_striequal(g_gameinfo.qmm_file, full_dll_name)) {
-                LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", full_dll_name, game.gamename_short);
+            if (str_striequal(g_gameinfo.qmm_file, game.dllname)) {
+                LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", game.dllname, game.gamename_short);
                 // if no hint array exists, assume we match
                 if (!game.exe_hints.size()) {
                     LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("No exe hint for game, assuming match\n");

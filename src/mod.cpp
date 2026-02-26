@@ -47,7 +47,7 @@ bool mod_load(mod_t& mod, std::string file) {
         return s_mod_load_qvm(mod);
 
     // if DLL
-    else if (str_striequal(ext, EXT_DLL)) {
+    else {
         // load DLL
         if (!(mod.dll = dlopen(file.c_str(), RTLD_NOW))) {
             LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror());
