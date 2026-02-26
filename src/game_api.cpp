@@ -38,7 +38,7 @@ GEN_EXTS(STEF2);
 GEN_EXTS(STVOYSP);
 
 // add your game's info data here
-supportedgame_t g_supportedgames[] = {
+supportedgame g_supportedgames[] = {
     // mod filename		    qvm mod filename	default moddir	full gamename									exe hints               msgs/short name		entry procs		    #syscall#vmmain
 
     // vmMain games

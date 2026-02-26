@@ -152,7 +152,7 @@ static bool Q2R_ClientConnect(edict_t* ent, char* userinfo, const char* social_i
         else
             s_userinfo[clientnum] = userinfo;
     }
-    cgame_is_QMM_vmMain_call = true;
+    cgame.is_QMM_vmMain_call = true;
     return (bool)vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
 }
 
@@ -168,7 +168,7 @@ static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
         else
             s_userinfo[clientnum] = userinfo;
     }
-    cgame_is_QMM_vmMain_call = true;
+    cgame.is_QMM_vmMain_call = true;
     vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
@@ -181,7 +181,7 @@ static void Q2R_SpawnEntities(const char* mapname, const char* entstring, const 
         s_entity_tokens = util_parse_entstring(entstring);
         s_tokencount = 0;
     }
-    cgame_is_QMM_vmMain_call = true;
+    cgame.is_QMM_vmMain_call = true;
     vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 

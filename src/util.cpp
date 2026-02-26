@@ -18,6 +18,7 @@ Created By:
 #include <string>
 #include "util.h"
 
+
 std::string path_normalize(std::string path) {
     // switch \ to /
     for (char& c : path) {

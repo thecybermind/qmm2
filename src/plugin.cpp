@@ -78,17 +78,17 @@ static pluginfuncs_t s_pluginfuncs = {
 };
 
 // struct to store all the globals available to plugins
-plugin_globals_t g_plugin_globals = {
+plugin_globals g_plugin_globals = {
     0,			// final_return
     0,			// orig_return
     QMM_UNUSED,	// high_result
     QMM_UNUSED,	// plugin_result
 };
 
-std::vector<plugin_t> g_plugins;
+std::vector<plugin> g_plugins;
 
 // store registered QVM function IDs for plugins
-std::map<int, plugin_t*> g_registered_qvm_funcs;
+std::map<int, plugin*> g_registered_qvm_funcs;
 static int s_next_qvm_func = QMM_QVM_FUNC_STARTING_ID;
 
 static pluginvars_t s_pluginvars = {
@@ -113,10 +113,10 @@ const char* plugin_result_to_str(pluginres_t res) {
 
 
 // returns: -1 if failed to load and don't continue, 0 if failed to load and continue, 1 if loaded
-int plugin_load(plugin_t& p, std::string file) {
+int plugin_load(plugin& p, std::string file) {
     int ret = 0;
 
-    // if this plugin_t somehow already has a dll pointer, wipe it first
+    // if this plugin somehow already has a dll pointer, wipe it first
     if (p.dll)
         plugin_unload(p);
 
@@ -135,7 +135,7 @@ int plugin_load(plugin_t& p, std::string file) {
     }
 
     // if this DLL is the same as another loaded plugin, cancel
-    for (plugin_t& t : g_plugins) {
+    for (plugin& t : g_plugins) {
         if (p.dll == t.dll) {
             LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL is already loaded as plugin\n", file);
             // treat this failure specially. this is a valid plugin, but it is already loaded
@@ -229,14 +229,14 @@ fail:
 }
 
 
-void plugin_unload(plugin_t& p) {
+void plugin_unload(plugin& p) {
     if (p.dll) {
         if (p.QMM_Detach)
             p.QMM_Detach();
         dlclose(p.dll);
     }
 
-    p = plugin_t();
+    p = plugin();
 }
 
 
@@ -511,7 +511,7 @@ static void s_plugin_helper_GetConfigString(plid_t plid [[maybe_unused]], intptr
 static int s_plugin_helper_PluginBroadcast(plid_t plid, const char* message, void* buf, intptr_t buflen) {
     // count how many plugins were called
     int total = 0;
-    for (plugin_t& p : g_plugins) {
+    for (plugin& p : g_plugins) {
         // skip the calling plugin
         if (p.plugininfo == (plugininfo_t*)plid)
             continue;
@@ -536,7 +536,7 @@ static int s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* m
     if (plid == to_plid)
         return 0;
 
-    for (plugin_t& p : g_plugins) {
+    for (plugin& p : g_plugins) {
         // if this is the destination plugin
         if (p.plugininfo == (plugininfo_t*)to_plid) {
             // if the plugin doesn't have the message function
@@ -559,8 +559,8 @@ static int s_plugin_helper_PluginSend(plid_t plid, plid_t to_plid, const char* m
 static int s_plugin_helper_QVMRegisterFunc(plid_t plid) {
     int ret = 0;
 
-    // find the plugin_t for this plugin
-    for (plugin_t& p : g_plugins) {
+    // find the calling plugin
+    for (plugin& p : g_plugins) {
         // found it
         if (p.plugininfo == (plugininfo_t*)plid) {
             // make sure the plugin actually has a QVM handler func

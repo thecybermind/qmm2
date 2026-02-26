@@ -24,17 +24,17 @@ Created By:
 #include "plugin.h"
 #include "util.h"
 
-mod_t g_mod;
+mod g_mod;
 
 static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...);
 static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args);
-static bool s_mod_load_qvm(mod_t& mod);
-static bool s_mod_load_vmmain(mod_t& mod);
-static bool s_mod_load_getgameapi(mod_t& mod);
+static bool s_mod_load_qvm(mod& mod);
+static bool s_mod_load_vmmain(mod& mod);
+static bool s_mod_load_getgameapi(mod& mod);
 
 
-bool mod_load(mod_t& mod, std::string file) {
-    // if this mod_t somehow already has a dll or qvm pointer, wipe it first
+bool mod_load(mod& mod, std::string file) {
+    // if this mod somehow already has a dll or qvm pointer, wipe it first
     if (mod.dll || mod.qvm.memory)
         mod_unload(mod);
 
@@ -73,14 +73,14 @@ bool mod_load(mod_t& mod, std::string file) {
 }
 
 
-void mod_unload(mod_t& mod) {
+void mod_unload(mod& mod) {
     // call the game-specific mod unload callback
     if (g_gameinfo.game->pfnModUnload)
         g_gameinfo.game->pfnModUnload();
     qvm_unload(&mod.qvm);
     if (mod.dll)
         dlclose(mod.dll);
-    mod = mod_t();
+    mod = ::mod();
 }
 
 
@@ -88,8 +88,8 @@ void mod_unload(mod_t& mod) {
 static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
     // if qvm isn't loaded, we need to error
     if (!g_mod.qvm.memory) {
-        if (!g_shutdown) {
-            g_shutdown = true;
+        if (!g_gameinfo.isshutdown) {
+            g_gameinfo.isshutdown = true;
             LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded during previous execution due to a run-time error\n", g_gameinfo.game->mod_msg_names(cmd));
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded during previous execution due to a run-time error.\n=========\n");
         }
@@ -113,7 +113,7 @@ static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
 static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
     // check for plugin qvm function registration
     if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
-        plugin_t* p = g_registered_qvm_funcs[cmd];
+        plugin* p = g_registered_qvm_funcs[cmd];
 
         // make sure plugin has the handler function (shouldn't have been registered, but check anyway)
         if (!p->QMM_QVMHandler)
@@ -125,8 +125,8 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
 
     // if no game-specific qvm handler, we need to error
     if (!g_gameinfo.game->pfnqvmsyscall) {
-        if (!g_shutdown) {
-            g_shutdown = true;
+        if (!g_gameinfo.isshutdown) {
+            g_gameinfo.isshutdown = true;
             LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_qvm_syscall({}): No QVM syscall handler found\n", g_gameinfo.game->eng_msg_names(cmd));
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nNo QVM syscall handler found.\n=========\n");
         }
@@ -139,7 +139,7 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
 
 
 // load a QVM mod
-static bool s_mod_load_qvm(mod_t& mod) {
+static bool s_mod_load_qvm(mod& mod) {
     int fpk3 = 0;
     intptr_t filelen;
     std::vector<uint8_t> filemem;
@@ -186,7 +186,7 @@ fail:
 
 
 // load a GetGameAPI DLL mod
-static bool s_mod_load_getgameapi(mod_t& mod) {
+static bool s_mod_load_getgameapi(mod& mod) {
     // look for GetGameAPI function
     mod_GetGameAPI_t mod_GetGameAPI = (mod_GetGameAPI_t)dlsym(mod.dll, "GetGameAPI");
 
@@ -212,7 +212,7 @@ fail:
 
 
 // load a vmMain DLL mod
-static bool s_mod_load_vmmain(mod_t& mod) {
+static bool s_mod_load_vmmain(mod& mod) {
     mod_dllEntry_t mod_dllEntry = nullptr;
     mod_vmMain_t mod_vmMain = nullptr;
 
