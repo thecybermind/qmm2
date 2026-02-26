@@ -19,9 +19,6 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-using fn_msg_name = const char* (*)(intptr_t);
-using fn_mod_load = bool (*)(void*);
-using fn_mod_unload = void (*)();
 // some information for each game engine supported by QMM
 struct supportedgame {
     const char* dllname;				// default dll mod filename
@@ -34,15 +31,15 @@ struct supportedgame {
     const char* gamename_short;			// short initials for game
     int* qmm_eng_msgs;					// array of engine messages used by QMM
     int* qmm_mod_msgs;					// array of mod messages used by QMM
-    fn_msg_name eng_msg_names;			// pointer to a function that returns a string for a given engine message
-    fn_msg_name mod_msg_names;			// pointer to a function that returns a string for a given mod message
+    const char*(*eng_msg_names)(intptr_t);  // pointer to a function that returns a string for a given engine message
+    const char*(*mod_msg_names)(intptr_t);  // pointer to a function that returns a string for a given mod message
 
     // this section is made by GEN_DLLQVM(GAME), GEN_DLL(GAME), or GEN_GGA(GAME)
     qvm_syscall pfnqvmsyscall;			// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
     mod_dllEntry pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not supported)
     mod_GetGameAPI pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not supported)
-    fn_mod_load pfnModLoad;				// pointer to a function that handles mod loading logic after a DLL is loaded
-    fn_mod_unload pfnModUnload;			// pointer to a function that handles mod unloading logic before a DLL is unloaded
+    bool(*pfnModLoad)(void*);           // pointer to a function that handles mod loading logic after a DLL is loaded
+    void(*pfnModUnload)();              // pointer to a function that handles mod unloading logic before a DLL is unloaded
 
     int max_syscall_args;				// max number of syscall args that this game needs (unused for now, but nice to have easily available)
     int max_vmmain_args;				// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
@@ -75,7 +72,6 @@ extern supportedgame g_supportedgames[];
 // generate a case/string line for the message name functions
 #define GEN_CASE(x)			case x: return #x
 
-
 // a list of all the engine messages/constants used by QMM. if you change this, update the GEN_QMM_MSGS macro
 enum {
     // general purpose
@@ -89,8 +85,7 @@ enum {
 // a list of all the mod messages used by QMM. if you change this, update the GEN_QMM_MSGS macro
 enum { QMM_GAME_INIT, QMM_GAME_SHUTDOWN, QMM_GAME_CONSOLE_COMMAND, };
 
-// macro to easily output game-specific message values to match the qmm_eng_msg_t and qmm_mod_msg_t enums above
-// this macro goes in game_*.cpp
+// macro to easily output game-specific message values to match the enums above. this macro goes in game_*.cpp
 #define GEN_QMM_MSGS(game) \
 	int game##_qmm_eng_msgs[] = { \
 		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING, \
@@ -129,15 +124,12 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 // ----- GetGameAPI stuff -----
 // ----------------------------
 
-// used by GetGameAPI code as a cast for generic syscall/vmmain calls
-using fn_call = intptr_t (*)(intptr_t arg0, ...);
-
 // handle calls from QMM and plugins into the engine
-#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((fn_call)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break
+#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((eng_syscall)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break
 #define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_import. field); break
 
 // handle calls from QMM and plugins into the mod
-#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((fn_call)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
+#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((mod_vmMain)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_export-> field); break
 
 // handle calls from engine or mod into QMM
