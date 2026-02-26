@@ -188,9 +188,9 @@ fail:
 // load a GetGameAPI DLL mod
 static bool s_mod_load_getgameapi(mod& mod) {
     // look for GetGameAPI function
-    mod_GetGameAPI_t mod_GetGameAPI = (mod_GetGameAPI_t)dlsym(mod.dll, "GetGameAPI");
+    mod_GetGameAPI pfnGGA = (mod_GetGameAPI)dlsym(mod.dll, "GetGameAPI");
 
-    if (!mod_GetGameAPI) {
+    if (!pfnGGA) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", mod.path);
         goto fail;
     }
@@ -198,7 +198,7 @@ static bool s_mod_load_getgameapi(mod& mod) {
     mod.vmbase = 0;
 
     // pass the GetGameAPI function pointer to the game-specific mod load handler
-    if (!g_gameinfo.game->pfnModLoad((void*)mod_GetGameAPI)) {
+    if (!g_gameinfo.game->pfnModLoad((void*)pfnGGA)) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): \"GetGameAPI\" function failed\n", mod.path);
         goto fail;
     }
@@ -213,28 +213,28 @@ fail:
 
 // load a vmMain DLL mod
 static bool s_mod_load_vmmain(mod& mod) {
-    mod_dllEntry_t mod_dllEntry = nullptr;
-    mod_vmMain_t mod_vmMain = nullptr;
+    mod_dllEntry pfndllEntry = nullptr;
+    mod_vmMain pfnvmMain = nullptr;
 
     // look for dllEntry function
-    if (!(mod_dllEntry = (mod_dllEntry_t)dlsym(mod.dll, "dllEntry"))) {
+    if (!(pfndllEntry = (mod_dllEntry)dlsym(mod.dll, "dllEntry"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", mod.path);
         goto fail;
     }
 
     // look for vmMain function
-    if (!(mod_vmMain = (mod_vmMain_t)dlsym(mod.dll, "vmMain"))) {
+    if (!(pfnvmMain = (mod_vmMain)dlsym(mod.dll, "vmMain"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"vmMain\" function\n", mod.path);
         goto fail;
     }
 
     // pass qmm_syscall to mod's dllEntry function
-    mod_dllEntry(qmm_syscall);
+    pfndllEntry(qmm_syscall);
     
     mod.vmbase = 0;
 
     // pass the vmMain function pointer to the game-specific mod load handler
-    if (!g_gameinfo.game->pfnModLoad((void*)mod_vmMain)) {
+    if (!g_gameinfo.game->pfnModLoad((void*)pfnvmMain)) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Mod load failed?\n", mod.path);
         goto fail;
     }

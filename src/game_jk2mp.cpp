@@ -23,10 +23,10 @@ GEN_QMM_MSGS(JK2MP);
 GEN_EXTS(JK2MP);
 
 // original syscall pointer that comes from the game engine
-static eng_syscall_t orig_syscall = nullptr;
+static eng_syscall orig_syscall = nullptr;
 
 // pointer to vmMain that comes from the mod
-static mod_vmMain_t orig_vmMain = nullptr;
+static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
@@ -107,7 +107,7 @@ intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
 }
 
 
-void JK2MP_dllEntry(eng_syscall_t syscall) {
+void JK2MP_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_dllEntry({}) called\n", (void*)syscall);
 
     // store original syscall from engine
@@ -124,7 +124,7 @@ void JK2MP_dllEntry(eng_syscall_t syscall) {
 
 
 bool JK2MP_mod_load(void* entry) {
-    orig_vmMain = (mod_vmMain_t)entry;
+    orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }

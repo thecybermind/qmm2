@@ -355,8 +355,8 @@ void* STVOYSP_GetGameAPI(void* import, void*) {
 
 
 bool STVOYSP_mod_load(void* entry) {
-    mod_GetGameAPI_t mod_GetGameAPI = (mod_GetGameAPI_t)entry;
-    orig_export = (game_export_t*)mod_GetGameAPI(&qmm_import, nullptr);
+    mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
+    orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
     return !!orig_export;
 }

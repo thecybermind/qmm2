@@ -26,8 +26,8 @@ struct gameinfo {
     std::string qmm_file;					// filename of qmm dll
     std::string mod_dir;					// active mod dir
     std::string cfg_path;					// qmm config file path
-    eng_syscall_t pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
-    mod_vmMain_t pfnvmMain = nullptr;		// game-specific wrapper for vmMain. given to plugins and called by QMM
+    eng_syscall pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
+    mod_vmMain pfnvmMain = nullptr;			// game-specific wrapper for vmMain. given to plugins and called by QMM
     supportedgame* game = nullptr;			// loaded engine from supported games table from game_api.cpp
     void* qmm_module_ptr = nullptr;			// qmm module pointer
     bool isautodetected = false;			// was this engine auto-detected?
@@ -49,13 +49,13 @@ constexpr int QMM_FAIL_G_ERROR = 1;
 struct cgameinfo {
     // store syscall pointer if we need to pass it through to the mod's dllEntry function for games with
     // combined game+cgame (singleplayer)
-    eng_syscall_t syscall;
+    eng_syscall syscall;
     // flag that is set by GEN_EXPORT macro before calling into vmMain. used to tell if this is a call that
     // should be directly routed to the mod or not in some single player games that have game & cgame in the
     // same DLL
     bool is_QMM_vmMain_call;
     // store mod's vmMain function for cgame passthrough
-    mod_vmMain_t mod_vmMain;
+    mod_vmMain mod_vmMain;
     // GAME_SHUTDOWN has been called, but mod DLL was kept loaded so cgame shutdown can run
     bool shutdown;
 };

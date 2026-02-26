@@ -18,9 +18,9 @@ Created By:
 #include "qmmapi.h"
 
 // QMM_Query
-using plugin_query = void (*)(plugininfo_t** pinfo);
+using plugin_query = void (*)(plugin_info** pinfo);
 // QMM_Attach
-using plugin_attach = int (*)(eng_syscall_t engfunc, mod_vmMain_t modfunc, pluginres_t* presult, pluginfuncs_t* pluginfuncs, pluginvars_t* pluginvars);
+using plugin_attach = int (*)(eng_syscall engfunc, mod_vmMain modfunc, plugin_res* presult, plugin_funcs* pluginfuncs, plugin_vars* pluginvars);
 // QMM_Detach
 using plugin_detach = void (*)();
 // QMM_vmMain
@@ -28,7 +28,7 @@ using plugin_vmmain = intptr_t(*)(intptr_t cmd, intptr_t* args);
 // QMM_syscall
 using plugin_syscall = intptr_t(*)(intptr_t cmd, intptr_t* args);
 // QMM_PluginMessage
-using plugin_pluginmessage = void (*)(plid_t from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
+using plugin_pluginmessage = void (*)(plugin_id from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
 // QMM_QVMHandler
 using plugin_qvmhandler = int (*)(int cmd, int* args);
 
@@ -44,14 +44,14 @@ struct plugin {
     plugin_syscall QMM_syscall_Post = nullptr;
     plugin_pluginmessage QMM_PluginMessage = nullptr;
     plugin_qvmhandler QMM_QVMHandler = nullptr;
-    plugininfo_t* plugininfo = nullptr;
+    plugin_info* plugininfo = nullptr;
 };
 
 struct plugin_globals {
     intptr_t final_return = 0;
     intptr_t orig_return = 0;
-    pluginres_t high_result = QMM_UNUSED;
-    pluginres_t plugin_result = QMM_UNUSED;
+    plugin_res high_result = QMM_UNUSED;
+    plugin_res plugin_result = QMM_UNUSED;
 };
 
 extern plugin_globals g_plugin_globals;
@@ -63,7 +63,7 @@ extern std::vector<plugin> g_plugins;
 #define QMM_QVM_FUNC_STARTING_ID 10000
 extern std::map<int, plugin*> g_registered_qvm_funcs;
 
-const char* plugin_result_to_str(pluginres_t res);
+const char* plugin_result_to_str(plugin_res res);
 
 // returns: -1 if failed to load and don't continue, 0 if failed to load and continue, 1 if loaded
 int plugin_load(plugin& p, std::string file);

@@ -117,7 +117,7 @@ cgameinfo cgame = {
    do is store the syscall, load the config file, and attempt to figure out what game engine we are in. This is either
    determined by the config file, or by getting the filename of the QMM DLL itself.
 */
-C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
+C_DLLEXPORT void dllEntry(eng_syscall syscall) {
     // cgame passthrough hack:
     // QMM is already loaded, so this is a cgame passthrough situation. since the mod DLL isn't loaded yet, we can
     // just store the syscall pointer and pass it to the mod once it's loaded in vmMain(GAME_INIT)
@@ -379,11 +379,11 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // so if we have a passthrough situation, init the mod's cgame functions now
         if (cgame.syscall) {
             // pass original cgame syscall to dllEntry in mod
-            mod_dllEntry_t cgame_mod_dllEntry = (mod_dllEntry_t)dlsym(g_mod.dll, "dllEntry");
-            cgame_mod_dllEntry(cgame.syscall);
-            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passing syscall passthrough to mod. dllEntry = {}\n", (void*)cgame_mod_dllEntry);
+            mod_dllEntry pfndllEntry = (mod_dllEntry)dlsym(g_mod.dll, "dllEntry");
+            pfndllEntry(cgame.syscall);
+            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passing syscall passthrough to mod. dllEntry = {}\n", (void*)pfndllEntry);
 
-            cgame.mod_vmMain = (mod_vmMain_t)dlsym(g_mod.dll, "vmMain");
+            cgame.mod_vmMain = (mod_vmMain)dlsym(g_mod.dll, "vmMain");
             LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain = {}\n", (void*)cgame.mod_vmMain);
         }
 
@@ -782,7 +782,7 @@ static intptr_t s_main_route_vmmain(intptr_t cmd, intptr_t* args) {
 #endif
 
     // store max result
-    pluginres_t max_result = QMM_UNUSED;
+    plugin_res max_result = QMM_UNUSED;
     // return values from a plugin call
     intptr_t plugin_ret = 0;
     // return value from mod call
@@ -884,7 +884,7 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args) {
 #endif
 
     // store max result
-    pluginres_t max_result = QMM_UNUSED;
+    plugin_res max_result = QMM_UNUSED;
     // return values from a plugin call
     intptr_t plugin_ret = 0;
     // return value from engine call

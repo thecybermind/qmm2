@@ -39,8 +39,8 @@ struct supportedgame {
 
     // this section is made by GEN_DLLQVM(GAME), GEN_DLL(GAME), or GEN_GGA(GAME)
     qvmsyscall_t pfnqvmsyscall;			// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
-    mod_dllEntry_t pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not supported)
-    mod_GetGameAPI_t pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not supported)
+    mod_dllEntry pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not supported)
+    mod_GetGameAPI pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not supported)
     fn_mod_load pfnModLoad;				// pointer to a function that handles mod loading logic after a DLL is loaded
     fn_mod_unload pfnModUnload;			// pointer to a function that handles mod unloading logic before a DLL is unloaded
 
@@ -59,7 +59,7 @@ extern supportedgame g_supportedgames[];
 							const char* game##_eng_msg_names(intptr_t); \
 							const char* game##_mod_msg_names(intptr_t); \
 							int game##_qvmsyscall(uint8_t*, int, int*); \
-							void game##_dllEntry(eng_syscall_t); \
+							void game##_dllEntry(eng_syscall); \
 							void* game##_GetGameAPI(void*, void*); \
 							bool game##_mod_load(void*); \
 							void game##_mod_unload();
@@ -77,7 +77,7 @@ extern supportedgame g_supportedgames[];
 
 
 // a list of all the engine messages/constants used by QMM. if you change this, update the GEN_QMM_MSGS macro
-enum qmm_eng_msg_t {
+enum {
     // general purpose
     QMM_G_PRINT, QMM_G_ERROR, QMM_G_ARGV, QMM_G_ARGC, QMM_G_SEND_CONSOLE_COMMAND, QMM_G_GET_CONFIGSTRING,
     // cvars
@@ -87,7 +87,7 @@ enum qmm_eng_msg_t {
 };
 
 // a list of all the mod messages used by QMM. if you change this, update the GEN_QMM_MSGS macro
-enum qmm_mod_msg_t { QMM_GAME_INIT, QMM_GAME_SHUTDOWN, QMM_GAME_CONSOLE_COMMAND, };
+enum { QMM_GAME_INIT, QMM_GAME_SHUTDOWN, QMM_GAME_CONSOLE_COMMAND, };
 
 // macro to easily output game-specific message values to match the qmm_eng_msg_t and qmm_mod_msg_t enums above
 // this macro goes in game_*.cpp
@@ -130,14 +130,14 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 // ----------------------------
 
 // used by GetGameAPI code as a cast for generic syscall/vmmain calls
-using pfn_call_t = intptr_t (*)(intptr_t arg0, ...);
+using fn_call = intptr_t (*)(intptr_t arg0, ...);
 
 // handle calls from QMM and plugins into the engine
-#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((pfn_call_t)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break
+#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((fn_call)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break
 #define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_import. field); break
 
 // handle calls from QMM and plugins into the mod
-#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((pfn_call_t)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
+#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((fn_call)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_export-> field); break
 
 // handle calls from engine or mod into QMM
