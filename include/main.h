@@ -50,12 +50,12 @@ struct cgameinfo {
     // store syscall pointer if we need to pass it through to the mod's dllEntry function for games with
     // combined game+cgame (singleplayer)
     eng_syscall syscall;
+    // store mod's vmMain function for cgame passthrough
+    mod_vmMain vmMain;
     // flag that is set by GEN_EXPORT macro before calling into vmMain. used to tell if this is a call that
     // should be directly routed to the mod or not in some single player games that have game & cgame in the
     // same DLL
-    bool is_QMM_vmMain_call;
-    // store mod's vmMain function for cgame passthrough
-    mod_vmMain mod_vmMain;
+    bool is_from_QMM;
     // GAME_SHUTDOWN has been called, but mod DLL was kept loaded so cgame shutdown can run
     bool shutdown;
 };

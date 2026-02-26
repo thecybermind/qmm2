@@ -86,17 +86,17 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
    We do this with a few fields in the "cgame" struct. First, the "cgame.syscall" pointer variable is used to store the
    syscall pointer if dllEntry is called after QMM was already loaded from GetGameAPI. Then, dllEntry exits.
 
-   Next, the "cgame.is_QMM_vmMain_call" bool is used to flag incoming calls to vmMain as coming from a game-specific
+   Next, the "cgame.is_from_QMM" bool is used to flag incoming calls to vmMain as coming from a game-specific
    GetGameAPI vmMain wrapper struct (i.e. qmm_export) meaning the call actually came from the game system (as opposed to
    cgame). This flag is set in the GEN_EXPORT macro and all of the custom static polyfill functions that route to vmMain.
    It is set back to false immediately after checking and handling passthrough calls.
 
    Next, when the GAME_INIT event comes through, and we load the actual mod DLL, we also check to see if "cgame.syscall"
    is set. If it is, we look for "dllEntry" in the DLL, and pass "cgame.syscall" to it. Next, we look for "vmMain" in
-   the DLL and then store it in the "cgame.mod_vmMain" pointer.
+   the DLL and then store it in the "cgame.vmMain" pointer.
 
-   Whenever control enters vmMain and "cgame.is_QMM_vmMain_call" is false (meaning it was called directly by the engine
-   for the cgame system), it routes the call to the mod's vmMain stored in "cgame.mod_vmMain".
+   Whenever control enters vmMain and "cgame.is_from_QMM" is false (meaning it was called directly by the engine
+   for the cgame system), it routes the call to the mod's vmMain stored in "cgame.vmMain".
 
    The final piece is that single player games shutdown and init the DLL a lot, particularly at every new level or
    between-level cutscene. When QMM detects that it is being shutdown and "cgame.syscall" is set, it no longer unloads
@@ -104,9 +104,9 @@ static intptr_t s_main_route_syscall(intptr_t cmd, intptr_t* args);
    "cgame.shutdown" is true, it will then unload the mod DLL. This allows the cgame system to shutdown properly.
 */
 cgameinfo cgame = {
-    nullptr,    // syscall;
-    false,      // is_QMM_vmMain_call
-    nullptr,    // mod_vmMain
+    nullptr,    // syscall
+    nullptr,    // vmMain
+    false,      // is_from_QMM
     false,      // shutdown
 };
 
@@ -296,16 +296,16 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
     // if this is a call from cgame and we need to pass this call onto the mod
-    if (cgame.syscall && !cgame.is_QMM_vmMain_call) {
+    if (cgame.syscall && !cgame.is_from_QMM) {
         // cancel if cgame portion of mod isn't actually loaded yet
-        if (!cgame.mod_vmMain)
+        if (!cgame.vmMain)
             return 0;
 
 #ifdef _DEBUG
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain({}) called\n", cmd);
 #endif
 
-        intptr_t ret = cgame.mod_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+        intptr_t ret = cgame.vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain({}) returning {}\n", cmd, ret);
@@ -321,7 +321,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     }
 
     // clear passthrough flag
-    cgame.is_QMM_vmMain_call = false;
+    cgame.is_from_QMM = false;
 
     // couldn't load engine info, so we will just call syscall(G_ERROR) to exit
     if (!g_gameinfo.game) {
@@ -383,8 +383,8 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
             pfndllEntry(cgame.syscall);
             LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passing syscall passthrough to mod. dllEntry = {}\n", (void*)pfndllEntry);
 
-            cgame.mod_vmMain = (mod_vmMain)dlsym(g_mod.dll, "vmMain");
-            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain = {}\n", (void*)cgame.mod_vmMain);
+            cgame.vmMain = (mod_vmMain)dlsym(g_mod.dll, "vmMain");
+            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain = {}\n", (void*)cgame.vmMain);
         }
 
         // load plugins

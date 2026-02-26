@@ -111,7 +111,7 @@ static qboolean QUAKE2_ClientConnect(edict_t* ent, char* userinfo) {
         else
             s_userinfo[clientnum] = userinfo;
     }
-    cgame.is_QMM_vmMain_call = true;
+    cgame.is_from_QMM = true;
     return vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
 }
 
@@ -127,7 +127,7 @@ static void QUAKE2_ClientUserinfoChanged(edict_t* ent, char* userinfo) {
         else
             s_userinfo[clientnum] = userinfo;
     }
-    cgame.is_QMM_vmMain_call = true;
+    cgame.is_from_QMM = true;
     vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
@@ -140,7 +140,7 @@ static void QUAKE2_SpawnEntities(char* mapname, char* entstring, char* spawnpoin
         s_entity_tokens = util_parse_entstring(entstring);
         s_tokencount = 0;
     }
-    cgame.is_QMM_vmMain_call = true;
+    cgame.is_from_QMM = true;
     vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 

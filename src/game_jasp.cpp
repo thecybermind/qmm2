@@ -176,7 +176,7 @@ static void JASP_Init(const char* mapname, const char* spawntarget, int checkSum
         s_subbsp_entity_tokens[-1] = util_parse_entstring(entstring);
         s_tokencount[-1] = 0;
     }
-    cgame.is_QMM_vmMain_call = true;
+    cgame.is_from_QMM = true;
     vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
 }
 
