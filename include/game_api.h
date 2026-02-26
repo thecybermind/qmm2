@@ -38,7 +38,7 @@ struct supportedgame {
     fn_msg_name mod_msg_names;			// pointer to a function that returns a string for a given mod message
 
     // this section is made by GEN_DLLQVM(GAME), GEN_DLL(GAME), or GEN_GGA(GAME)
-    qvmsyscall_t pfnqvmsyscall;			// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
+    qvm_syscall pfnqvmsyscall;			// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
     mod_dllEntry pfndllEntry;			// pointer to a function that handles dllEntry entry for a game (NULL = not supported)
     mod_GetGameAPI pfnGetGameAPI;		// pointer to a function that handles GetGameAPI entry for a game (NULL = not supported)
     fn_mod_load pfnModLoad;				// pointer to a function that handles mod loading logic after a DLL is loaded

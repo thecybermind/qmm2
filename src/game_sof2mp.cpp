@@ -166,7 +166,7 @@ bool SOF2MP_mod_load(void* entry) {
     // we cannot verify data in the QVM since this engine both provides malloc functionality and has the gametype module,
     // so some pointers may point into the engine or the gametype module
     if (g_mod.vmbase)
-        g_mod.qvm.verify_data = false;
+        g_mod.vm.verify_data = false;
 
     return !!orig_vmMain;
 }

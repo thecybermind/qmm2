@@ -35,7 +35,7 @@ static bool s_mod_load_getgameapi(mod& mod);
 
 bool mod_load(mod& mod, std::string file) {
     // if this mod somehow already has a dll or qvm pointer, wipe it first
-    if (mod.dll || mod.qvm.memory)
+    if (mod.dll || mod.vm.memory)
         mod_unload(mod);
 
     mod.path = file;
@@ -77,7 +77,7 @@ void mod_unload(mod& mod) {
     // call the game-specific mod unload callback
     if (g_gameinfo.game->pfnModUnload)
         g_gameinfo.game->pfnModUnload();
-    qvm_unload(&mod.qvm);
+    qvm_unload(&mod.vm);
     if (mod.dll)
         dlclose(mod.dll);
     mod = ::mod();
@@ -87,7 +87,7 @@ void mod_unload(mod& mod) {
 // entry point into QVM mods. stored in mod_t->pfnvmMain for QVM mods
 static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
     // if qvm isn't loaded, we need to error
-    if (!g_mod.qvm.memory) {
+    if (!g_mod.vm.memory) {
         if (!g_gameinfo.isshutdown) {
             g_gameinfo.isshutdown = true;
             LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded during previous execution due to a run-time error\n", g_gameinfo.game->mod_msg_names(cmd));
@@ -105,7 +105,7 @@ static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
     }
 
     // pass array and size to qvm
-    return qvm_exec(&g_mod.qvm, QVM_MAX_VMMAIN_ARGS + 1, qvmargs);
+    return qvm_exec(&g_mod.vm, QVM_MAX_VMMAIN_ARGS + 1, qvmargs);
 }
 
 
@@ -163,13 +163,13 @@ static bool s_mod_load_qvm(mod& mod) {
     verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
 
     // attempt to load mod
-    loaded = qvm_load(&mod.qvm, filemem.data(), filemem.size(), s_mod_qvm_syscall, verify_data, nullptr);
+    loaded = qvm_load(&mod.vm, filemem.data(), filemem.size(), s_mod_qvm_syscall, verify_data, nullptr);
     if (!loaded) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): QVM load failed\n", mod.path);
         goto fail;
     }
 
-    mod.vmbase = (intptr_t)mod.qvm.datasegment;
+    mod.vmbase = (intptr_t)mod.vm.datasegment;
 
     // pass the qvm vmMain function pointer to the game-specific mod load handler
     if (!g_gameinfo.game->pfnModLoad((void*)s_mod_qvm_vmmain)) {

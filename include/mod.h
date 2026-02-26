@@ -18,7 +18,7 @@ Created By:
 
 struct mod {
     void* dll = nullptr;
-    qvm_t qvm = {};
+    qvm vm = {};
     intptr_t vmbase = 0;
     std::string path;
 };
