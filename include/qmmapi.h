@@ -40,7 +40,7 @@ typedef void* (*mod_GetGameAPI)(void*, void*);
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, plugin_func, or plugin_info
 #define QMM_PIFV_MAJOR  4
 // minor interface version increases with trailing addition to plugin_func or plugin_info structs
-#define QMM_PIFV_MINOR  2
+#define QMM_PIFV_MINOR  3
 // 2:0
 // - removed canpause, loadcmd, unloadcmd from plugininfo_t
 // - renamed old pause/cmd args to QMM_ functions (iscmd, etc) to "reserved"
@@ -67,7 +67,7 @@ typedef void* (*mod_GetGameAPI)(void*, void*);
 // - added optional QMM_QVMHandler callback function
 // - pluginfunc macros now hide PLID arg
 // 4:3
-// - changed type names away from those ending with "_t" - added typedefs for old names marked deprecated 
+// - changed type names away from those ending with "_t" - added typedefs for old names marked deprecated. define QMM_USE_DEPRECATED_TYPES to use old types without warning
 
 // holds plugin info to pass back to QMM
 typedef struct {
@@ -220,14 +220,20 @@ C_DLLEXPORT int QMM_QVMHandler(int func, int* args);
 #define CLIENT_FROM_NUM(index)  ((gclient_t*)((unsigned char*)g_clients + g_clientsize * (index)))              // get a gclient_t* by client number (check g_clients for NULL first)
 #define NUM_FROM_CLIENT(client) ((int)((unsigned char*)(client) - (unsigned char*)g_clients) / g_clientsize)    // get a client number by gclient_t* (check g_clients for NULL g_clientsize for 0 first)
 
-[[deprecated("Use 'eng_syscall' instead.")]]      typedef eng_syscall eng_syscall_t;
-[[deprecated("Use 'mod_vmMain' instead.")]]       typedef mod_vmMain mod_vmMain_t;
-[[deprecated("Use 'mod_dllEntry' instead.")]]     typedef mod_dllEntry mod_dllEntry_t;
-[[deprecated("Use 'mod_GetGameAPI' instead.")]]   typedef mod_GetGameAPI mod_GetGameAPI_t;
-[[deprecated("Use 'plugin_info' instead.")]]      typedef plugin_info plugininfo_t;
-[[deprecated("Use 'plugin_id' instead.")]]        typedef plugin_id plid_t;
-[[deprecated("Use 'plugin_res' instead.")]]       typedef plugin_res pluginres_t;
-[[deprecated("Use 'plugin_funcs' instead.")]]     typedef plugin_funcs pluginfuncs_t;
-[[deprecated("Use 'plugin_vars' instead.")]]      typedef plugin_vars pluginvars_t;
+#ifdef QMM_USE_DEPRECATED_TYPES
+#define DEPRECATE_TYPE(new_type, old_type) typedef new_type old_type
+#else
+#define DEPRECATE_TYPE(new_type, old_type) [[deprecated("Use '" #new_type "' instead, or #define QMM_USE_DEPRECATED_TYPES")]] typedef new_type old_type
+#endif
+
+DEPRECATE_TYPE(eng_syscall, eng_syscall_t);
+DEPRECATE_TYPE(mod_vmMain, mod_vmMain_t);
+DEPRECATE_TYPE(mod_dllEntry, mod_dllEntry_t);
+DEPRECATE_TYPE(mod_GetGameAPI, mod_GetGameAPI_t);
+DEPRECATE_TYPE(plugin_info, plugininfo_t);
+DEPRECATE_TYPE(plugin_id, plid_t);
+DEPRECATE_TYPE(plugin_res, pluginres_t);
+DEPRECATE_TYPE(plugin_funcs, pluginfuncs_t);
+DEPRECATE_TYPE(plugin_vars, pluginvars_t);
 
 #endif // QMM2_QMMAPI_H

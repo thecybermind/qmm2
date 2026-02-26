@@ -270,6 +270,9 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
     // it gets synced to qvm object before syscalls and restored after syscalls.
     // it also gets synced back to qvm object after execution completes
     int* programstack = vm->stackptr;
+    // local copies
+    int* stacklow = vm->stacklow;
+    int* stackhigh = vm->stackhigh;
 
     // size of new stack frame, need to store RII, framesize, and vmMain args
     if (!argv)
@@ -327,8 +330,8 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
     do {
         // verify program stack pointer is in program stack
         // using > to allow starting at 1 past the end of block
-        if (programstack <= vm->stacklow || programstack > vm->stackhigh) {
-            ptrdiff_t stackusage = (uint8_t*)vm->stackhigh - (uint8_t*)programstack;
+        if (programstack <= stacklow || programstack > stackhigh) {
+            ptrdiff_t stackusage = (uint8_t*)stackhigh - (uint8_t*)programstack;
             log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: program stack overflow! Program stack size is currently %td, max is %zu.\n", instruction, opptr - codesegment, stackusage, vm->stacksize);
             goto fail;
         }
