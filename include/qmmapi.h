@@ -223,7 +223,7 @@ C_DLLEXPORT int QMM_QVMHandler(int func, int* args);
 [[deprecated("Use 'eng_syscall' instead.")]]      typedef eng_syscall eng_syscall_t;
 [[deprecated("Use 'mod_vmMain' instead.")]]       typedef mod_vmMain mod_vmMain_t;
 [[deprecated("Use 'mod_dllEntry' instead.")]]     typedef mod_dllEntry mod_dllEntry_t;
-[[deprecated("Use 'mod_GetGameAPI_t' instead.")]] typedef mod_GetGameAPI mod_GetGameAPI_t;
+[[deprecated("Use 'mod_GetGameAPI' instead.")]]   typedef mod_GetGameAPI mod_GetGameAPI_t;
 [[deprecated("Use 'plugin_info' instead.")]]      typedef plugin_info plugininfo_t;
 [[deprecated("Use 'plugin_id' instead.")]]        typedef plugin_id plid_t;
 [[deprecated("Use 'plugin_res' instead.")]]       typedef plugin_res pluginres_t;

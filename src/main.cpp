@@ -1002,8 +1002,8 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
         if (!g_mod.dll)
             return nullptr;
         LOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Passing on call to mod DLL.\n";
-        mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(g_mod.dll, "GetCGameAPI");
-        return mod_GetCGameAPI ? mod_GetCGameAPI(import, nullptr) : nullptr;
+        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)dlsym(g_mod.dll, "GetCGameAPI");
+        return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
     }
 
     // client-side-only load. just get file info and slap "qmm_" in front of the qmm filename
@@ -1014,10 +1014,10 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
     if (!dll)
         return nullptr;
 
-    mod_GetGameAPI_t mod_GetCGameAPI = (mod_GetGameAPI_t)dlsym(dll, "GetCGameAPI");
+    mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)dlsym(dll, "GetCGameAPI");
 
     // return CGame export from mod DLL
     // note we do not unload the DLL
-    return mod_GetCGameAPI ? mod_GetCGameAPI(import, nullptr) : nullptr;
+    return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
 }
 #endif // _WIN64
