@@ -24,7 +24,7 @@ struct game_info_t {
     std::string qmm_path;					// full path of qmm dll
     std::string qmm_dir;					// directory of qmm dll
     std::string qmm_file;					// filename of qmm dll
-    std::string moddir;						// active mod dir
+    std::string mod_dir;						// active mod dir
     std::string cfg_path;					// qmm config file path
     eng_syscall_t pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
     mod_vmMain_t pfnvmMain = nullptr;		// game-specific wrapper for vmMain. given to plugins and called by QMM

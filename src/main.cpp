@@ -141,7 +141,7 @@ C_DLLEXPORT void dllEntry(eng_syscall_t syscall) {
     LOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") (dllEntry) loaded!\n";
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("QMM path: \"{}\"\n", g_gameinfo.qmm_path);
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Engine path: \"{}\"\n", g_gameinfo.exe_path);
-    LOG(QMM_LOG_INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
+    LOG(QMM_LOG_INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.mod_dir);
 
     // ???
     if (!syscall) {
@@ -237,7 +237,7 @@ C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
     LOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") (GetGameAPI) loaded!\n";
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("QMM path: \"{}\"\n", g_gameinfo.qmm_path);
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Engine path: \"{}\"\n", g_gameinfo.exe_path);
-    LOG(QMM_LOG_INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.moddir);
+    LOG(QMM_LOG_INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.mod_dir);
 
     // ???
     // return nullptr to error out now, Init() will never be called
@@ -358,13 +358,13 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         char moddir[256];
         ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], "fs_game", moddir, sizeof(moddir));
         moddir[sizeof(moddir) - 1] = '\0';
-        g_gameinfo.moddir = moddir;
+        g_gameinfo.mod_dir = moddir;
         // the default mod (including all singleplayer games) returns "" for the fs_game, so grab the default mod dir from game info instead
-        if (g_gameinfo.moddir.empty())
-            g_gameinfo.moddir = g_gameinfo.game->moddir;
+        if (g_gameinfo.mod_dir.empty())
+            g_gameinfo.mod_dir = g_gameinfo.game->moddir;
 
         LOG(QMM_LOG_INFO, "QMM") << fmt::format("Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file");
-        LOG(QMM_LOG_INFO, "QMM") << fmt::format("ModDir: {}\n", g_gameinfo.moddir);
+        LOG(QMM_LOG_INFO, "QMM") << fmt::format("ModDir: {}\n", g_gameinfo.mod_dir);
         LOG(QMM_LOG_INFO, "QMM") << fmt::format("Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? "(error)" : "");
 
         LOG(QMM_LOG_INFO, "QMM") << "Built: " QMM_COMPILE " by " QMM_BUILDER "\n";
@@ -531,10 +531,10 @@ static void s_main_detect_env() {
     // likely that this is a singleplayer game, so just set the temporary moddir to ".".
     // this doesn't have to be exact, since it will only be used only for config loading.
     if (str_striequal(g_gameinfo.qmm_dir, g_gameinfo.exe_dir)) {
-        g_gameinfo.moddir = ".";
+        g_gameinfo.mod_dir = ".";
     }
     else {
-        g_gameinfo.moddir = path_basename(g_gameinfo.qmm_dir);
+        g_gameinfo.mod_dir = path_basename(g_gameinfo.qmm_dir);
     }
 }
 
@@ -547,8 +547,8 @@ static void s_main_load_config() {
     // "./<moddir>/qmm2.json"
     std::string try_paths[] = {
         fmt::format("{}/qmm2.json", g_gameinfo.qmm_dir),
-        fmt::format("{}/{}/qmm2.json", g_gameinfo.exe_dir, g_gameinfo.moddir),
-        fmt::format("./{}/qmm2.json", g_gameinfo.moddir)
+        fmt::format("{}/{}/qmm2.json", g_gameinfo.exe_dir, g_gameinfo.mod_dir),
+        fmt::format("./{}/qmm2.json", g_gameinfo.mod_dir)
     };
     for (std::string& try_path : try_paths) {
         g_cfg = cfg_load(try_path);
@@ -625,10 +625,10 @@ static bool s_main_load_mod(std::string cfg_mod) {
     else if (str_striequal(cfg_mod, "auto")) {
         std::string try_paths[] = {
             g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "",	// (only if game engine supports it)
-            fmt::format("{}/qmm_{}.{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname, EXT_DLL),
-            fmt::format("{}/{}/qmm_{}.{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, EXT_DLL),
-            fmt::format("{}/{}/{}.{}", g_gameinfo.exe_dir, g_gameinfo.moddir, g_gameinfo.game->dllname, EXT_DLL),
-            fmt::format("./{}/qmm_{}.{}", g_gameinfo.moddir, g_gameinfo.game->dllname, EXT_DLL)
+            fmt::format("{}/qmm_{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname),
+            fmt::format("{}/{}/qmm_{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, g_gameinfo.game->dllname),
+            fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, g_gameinfo.game->dllname),
+            fmt::format("./{}/qmm_{}", g_gameinfo.mod_dir, g_gameinfo.game->dllname)
         };
         // try paths
         for (std::string& try_path : try_paths) {
@@ -648,8 +648,8 @@ static bool s_main_load_mod(std::string cfg_mod) {
         std::string try_paths[] = {
             cfg_mod,
             fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod),
-            fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, cfg_mod),
-            fmt::format("./{}/{}", g_gameinfo.moddir, cfg_mod)
+            fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, cfg_mod),
+            fmt::format("./{}/{}", g_gameinfo.mod_dir, cfg_mod)
         };
         // try paths
         for (std::string& try_path : try_paths) {
@@ -683,8 +683,8 @@ static bool s_main_load_plugin(std::string plugin_path) {
     // "./<moddir>/<plugin>"
     std::string try_paths[] = {
         fmt::format("{}/{}", g_gameinfo.qmm_dir, plugin_path),
-        fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.moddir, plugin_path),
-        fmt::format("./{}/{}", g_gameinfo.moddir, plugin_path)
+        fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, plugin_path),
+        fmt::format("./{}/{}", g_gameinfo.mod_dir, plugin_path)
     };
     for (std::string& try_path : try_paths) {
         // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
@@ -713,7 +713,7 @@ static void s_main_handle_command_qmm(intptr_t arg_start) {
     if (str_striequal("status", arg1) || str_striequal("info", arg1)) {
         ENG_SYSCALL(msg_G_PRINT, "(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") loaded\n");
         ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file").c_str());
-        ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) ModDir: {}\n", g_gameinfo.moddir).c_str());
+        ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) ModDir: {}\n", g_gameinfo.mod_dir).c_str());
         ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? " (error)" : "").c_str());
         ENG_SYSCALL(msg_G_PRINT, "(QMM) Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
         ENG_SYSCALL(msg_G_PRINT, "(QMM) URL: " QMM_URL "\n");
