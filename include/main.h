@@ -39,6 +39,7 @@ extern gameinfo g_gameinfo;
 #define QMM_MOD_MSG	(g_gameinfo.game->qmm_mod_msgs)
 
 #define ENG_SYSCALL	(g_gameinfo.pfnsyscall)
+#define PRINT_CONSOLE(str, ...)     ENG_SYSCALL(msg_G_PRINT, fmt::format(str, __VA_ARGS__).c_str())
 
 // this is used if we couldn't determine a game engine and we have to fail.
 // G_ERROR appears to be 1 in all supported dllEntry games. they are different in some GetGameAPI games,

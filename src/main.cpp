@@ -704,73 +704,73 @@ static void s_main_handle_command_qmm(intptr_t arg_start) {
         qmm_argv(arg_start + 2, arg2, sizeof(arg2));
 
     if (str_striequal("status", arg1) || str_striequal("info", arg1)) {
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") loaded\n");
-        ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file").c_str());
-        ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) ModDir: {}\n", g_gameinfo.mod_dir).c_str());
-        ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? " (error)" : "").c_str());
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) URL: " QMM_URL "\n");
-        ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Plugin interface: {}:{}\n", QMM_PIFV_MAJOR, QMM_PIFV_MINOR).c_str());
-        ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Plugins loaded: {}\n", g_plugins.size()).c_str());
-        ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Loaded mod file: {}\n", g_mod.path).c_str());
+        PRINT_CONSOLE("(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") loaded\n");
+        PRINT_CONSOLE("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file");
+        PRINT_CONSOLE("(QMM) ModDir: {}\n", g_gameinfo.mod_dir);
+        PRINT_CONSOLE("(QMM) Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? " (error)" : "");
+        PRINT_CONSOLE("(QMM) Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
+        PRINT_CONSOLE("(QMM) URL: " QMM_URL "\n");
+        PRINT_CONSOLE("(QMM) Plugin interface: {}:{}\n", QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
+        PRINT_CONSOLE("(QMM) Plugins loaded: {}\n", g_plugins.size());
+        PRINT_CONSOLE("(QMM) Loaded mod file: {}\n", g_mod.path);
         if (g_mod.vmbase) {
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM file size      : {}\n", g_mod.vm.filesize).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM memory base    : {}\n", (void*)g_mod.vm.memory).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM memory size    : {}\n", g_mod.vm.memorysize).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM instr count    : {}\n", g_mod.vm.instructioncount).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM codeseg size   : {}\n", g_mod.vm.codeseglen).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM dataseg size   : {}\n", g_mod.vm.dataseglen).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM stack size     : {}\n", g_mod.vm.stacksize).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) QVM data validation: {}\n", g_mod.vm.verify_data ? "on" : "off").c_str());
+            PRINT_CONSOLE("(QMM) QVM file size      : {}\n", g_mod.vm.filesize);
+            PRINT_CONSOLE("(QMM) QVM memory base    : {}\n", (void*)g_mod.vm.memory);
+            PRINT_CONSOLE("(QMM) QVM memory size    : {}\n", g_mod.vm.memorysize);
+            PRINT_CONSOLE("(QMM) QVM instr count    : {}\n", g_mod.vm.instructioncount);
+            PRINT_CONSOLE("(QMM) QVM codeseg size   : {}\n", g_mod.vm.codeseglen);
+            PRINT_CONSOLE("(QMM) QVM dataseg size   : {}\n", g_mod.vm.dataseglen);
+            PRINT_CONSOLE("(QMM) QVM stack size     : {}\n", g_mod.vm.stacksize);
+            PRINT_CONSOLE("(QMM) QVM data validation: {}\n", g_mod.vm.verify_data ? "on" : "off");
         }
     }
     else if (str_striequal("list", arg1)) {
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) id - plugin [version]\n");
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) ---------------------\n");
+        PRINT_CONSOLE("(QMM) id - plugin [version]\n");
+        PRINT_CONSOLE("(QMM) ---------------------\n");
         int num = 1;
         for (plugin& p : g_plugins) {
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) {:>2} - {} [{}]\n", num, p.plugininfo->name, p.plugininfo->version).c_str());
+            PRINT_CONSOLE("(QMM) {:>2} - {} [{}]\n", num, p.plugininfo->name, p.plugininfo->version);
             num++;
         }
     }
     else if (str_striequal("plugin", arg1) || str_striequal("plugininfo", arg1)) {
         if (argc == arg_start + 2) {
-            ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm info <id> - outputs info on plugin with id\n");
+            PRINT_CONSOLE("(QMM) qmm info <id> - outputs info on plugin with id\n");
             return;
         }
 		size_t pid = (size_t)atoi(arg2);
         if (pid > 0 && pid <= g_plugins.size()) {
             plugin& p = g_plugins[pid - 1];
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Plugin info for #{}:\n", arg2).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Name: {}\n", p.plugininfo->name).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Version: {}\n", p.plugininfo->version).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) URL: {}\n", p.plugininfo->url).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Author: {}\n", p.plugininfo->author).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Desc: {}\n", p.plugininfo->desc).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Logtag: {}\n", p.plugininfo->logtag).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Interface version: {}:{}\n", p.plugininfo->pifv_major, p.plugininfo->pifv_minor).c_str());
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Path: {}\n", p.path).c_str());
+            PRINT_CONSOLE("(QMM) Plugin info for #{}:\n", arg2);
+            PRINT_CONSOLE("(QMM) Name: {}\n", p.plugininfo->name);
+            PRINT_CONSOLE("(QMM) Version: {}\n", p.plugininfo->version);
+            PRINT_CONSOLE("(QMM) URL: {}\n", p.plugininfo->url);
+            PRINT_CONSOLE("(QMM) Author: {}\n", p.plugininfo->author);
+            PRINT_CONSOLE("(QMM) Desc: {}\n", p.plugininfo->desc);
+            PRINT_CONSOLE("(QMM) Logtag: {}\n", p.plugininfo->logtag);
+            PRINT_CONSOLE("(QMM) Interface version: {}:{}\n", p.plugininfo->pifv_major, p.plugininfo->pifv_minor);
+            PRINT_CONSOLE("(QMM) Path: {}\n", p.path);
         }
         else {
-            ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Unable to find plugin #{}\n", arg2).c_str());
+            PRINT_CONSOLE("(QMM) Unable to find plugin #{}\n", arg2);
         }
     }
     else if (str_striequal("loglevel", arg1)) {
         if (argc == arg_start + 2) {
-            ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
+            PRINT_CONSOLE("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
             return;
         }
         AixLog::Severity severity = log_severity_from_name(arg2);
         log_set_severity(severity);
-        ENG_SYSCALL(msg_G_PRINT, fmt::format("(QMM) Log level set to {}\n", log_name_from_severity(severity)).c_str());
+        PRINT_CONSOLE("(QMM) Log level set to {}\n", log_name_from_severity(severity));
     }
     else {
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) Usage: qmm <command> [params]\n");
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) Available commands:\n");
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm info - displays information about QMM\n");
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm list - displays information about loaded QMM plugins\n");
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm plugin <id> - outputs info on plugin with id\n");
-        ENG_SYSCALL(msg_G_PRINT, "(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
+        PRINT_CONSOLE("(QMM) Usage: qmm <command> [params]\n");
+        PRINT_CONSOLE("(QMM) Available commands:\n");
+        PRINT_CONSOLE("(QMM) qmm info - displays information about QMM\n");
+        PRINT_CONSOLE("(QMM) qmm list - displays information about loaded QMM plugins\n");
+        PRINT_CONSOLE("(QMM) qmm plugin <id> - outputs info on plugin with id\n");
+        PRINT_CONSOLE("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
     }
 }
 
