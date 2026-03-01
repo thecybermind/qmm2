@@ -13,6 +13,7 @@ Created By:
 #define QMM2_MAIN_H
 
 #include <string>
+#include <cstdint>
 #include "qmmapi.h"
 #include "game_api.h"
 

@@ -214,6 +214,7 @@
     <ClCompile Include="..\src\game_wet.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\main_aux.cpp" />
     <ClCompile Include="..\src\mod.cpp" />
     <ClCompile Include="..\src\osdef.cpp" />
     <ClCompile Include="..\src\plugin.cpp" />
@@ -253,6 +254,7 @@
     <ClInclude Include="..\include\game_wet.h" />
     <ClInclude Include="..\include\log.h" />
     <ClInclude Include="..\include\main.h" />
+    <ClInclude Include="..\include\main_aux.h" />
     <ClInclude Include="..\include\mod.h" />
     <ClInclude Include="..\include\osdef.h" />
     <ClInclude Include="..\include\plugin.h" />

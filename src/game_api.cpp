@@ -12,6 +12,9 @@ Created By:
 #include "osdef.h"
 #include "game_api.h"
 
+// cache some dynamic message values that get called a lot
+intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_SHUTDOWN;
+
 // externs for each game's functions/structs
 GEN_EXTS(COD11MP);
 GEN_EXTS(CODMP);
