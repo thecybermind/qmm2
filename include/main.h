@@ -13,44 +13,56 @@ Created By:
 #define QMM2_MAIN_H
 
 #include <string>
+#include <cstdint>
 #include "qmmapi.h"
 #include "game_api.h"
 
 // store all currently-loaded game & game engine info
-struct game_info_t {
+struct gameinfo {
     std::string exe_path;					// full path of running server binary
     std::string exe_dir;					// directory of running server binary
     std::string exe_file;					// filename of running server binary
     std::string qmm_path;					// full path of qmm dll
     std::string qmm_dir;					// directory of qmm dll
     std::string qmm_file;					// filename of qmm dll
-    std::string moddir;						// active mod dir
+    std::string mod_dir;					// active mod dir
     std::string cfg_path;					// qmm config file path
-    eng_syscall_t pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
-    mod_vmMain_t pfnvmMain = nullptr;		// game-specific wrapper for vmMain. given to plugins and called by QMM
-    supportedgame_t* game = nullptr;		// loaded engine from supported games table from game_api.cpp
+    eng_syscall pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
+    mod_vmMain pfnvmMain = nullptr;			// game-specific wrapper for vmMain. given to plugins and called by QMM
+    supportedgame* game = nullptr;			// loaded engine from supported games table from game_api.cpp
     void* qmm_module_ptr = nullptr;			// qmm module pointer
     bool isautodetected = false;			// was this engine auto-detected?
+    bool isshutdown = false;				// is game shutting down due to G_ERROR? avoids calling G_ERROR again from GAME_SHUTDOWN
 };
-
-extern game_info_t g_gameinfo;
+extern gameinfo g_gameinfo;
 
 #define QMM_ENG_MSG	(g_gameinfo.game->qmm_eng_msgs)
 #define QMM_MOD_MSG	(g_gameinfo.game->qmm_mod_msgs)
 
-#define ENG_SYSCALL	g_gameinfo.pfnsyscall
+#define ENG_SYSCALL	(g_gameinfo.pfnsyscall)
+#define CONSOLE_PRINTF(str, ...)     ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
 
 // this is used if we couldn't determine a game engine and we have to fail.
 // G_ERROR appears to be 1 in all supported dllEntry games. they are different in some GetGameAPI games,
 // but for those we just return nullptr from GetGameAPI
 constexpr int QMM_FAIL_G_ERROR = 1;
-// set to true if a G_ERROR has been triggered, to avoid calling it again from GAME_SHUTDOWN or its ilk (SOF2MP's GAME_GHOUL2_SHUTDOWN, etc)
-extern bool g_shutdown;
 
-// flag that is set by GEN_EXPORT macro before calling into vmMain. used to tell if this is a call that
-// should be directly routed to the mod or not in some single player games that have game & cgame in the
-// same DLL
-extern bool cgame_is_QMM_vmMain_call;
+// store cgame passthrough stuff
+struct cgameinfo {
+    // store syscall pointer if we need to pass it through to the mod's dllEntry function for games with
+    // combined game+cgame (singleplayer)
+    eng_syscall syscall;
+    // store mod's vmMain function for cgame passthrough
+    mod_vmMain vmMain;
+    // flag that is set by GEN_EXPORT macro before calling into vmMain. used to tell if this is a call that
+    // should be directly routed to the mod or not in some single player games that have game & cgame in the
+    // same DLL
+    bool is_from_QMM;
+    // GAME_SHUTDOWN has been called, but mod DLL was kept loaded so cgame shutdown can run
+    bool shutdown;
+};
+extern cgameinfo cgame;
+
 // engine->mod entry point
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
 // renamed syscall to qmm_syscall to avoid conflict with POSIX "long syscall(long number, ...)" which has pretty much the same interface

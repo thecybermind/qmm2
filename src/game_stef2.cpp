@@ -387,7 +387,7 @@ static void STEF2_SpawnEntities(const char* mapname, const char* entstring, int 
         s_entity_tokens = util_parse_entstring(entstring);
         s_tokencount = 0;
     }
-    cgame_is_QMM_vmMain_call = true;
+    cgame.is_from_QMM = true;
     vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, levelTime);
 }
 
@@ -968,8 +968,8 @@ void* STEF2_GetGameAPI(void* import, void*) {
 
 
 bool STEF2_mod_load(void* entry) {
-    mod_GetGameAPI_t mod_GetGameAPI = (mod_GetGameAPI_t)entry;
-    orig_export = (game_export_t*)mod_GetGameAPI(&qmm_import, nullptr);
+    mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
+    orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
     return !!orig_export;
 }

@@ -38,7 +38,7 @@ Created By:
 #define QVM_PUSH(v) --opstack; opstack[0] = (v)
 
 // move instruction pointer to a given index, masked to code segment
-#define QVM_JUMP(x) opptr = qvm->codesegment + ((x) & codemask)
+#define QVM_JUMP(x) opptr = codesegment + ((x) & codemask)
 
 // branch comparisons
 // signed integer comparison
@@ -61,10 +61,10 @@ Created By:
 #define QVM_SFOP(o) *(float*)&opstack[0] = o *(float*)&opstack[0]
 
 // function to receive syscalls (engine traps) out of VM
-typedef int (*qvmsyscall_t)(uint8_t* membase, int cmd, int* args);
+typedef int (*qvm_syscall)(uint8_t* membase, int cmd, int* args);
 
 // list of VM instructions
-typedef enum qvmopcode_e {
+typedef enum {
     QVM_OP_UNDEF,
     QVM_OP_NOP,
     QVM_OP_BREAK,
@@ -127,19 +127,19 @@ typedef enum qvmopcode_e {
     QVM_OP_CVFI,
 
     QVM_OP_NUM_OPS,
-} qvmopcode_t;
+} qvm_opcode;
 
 // array of strings of opcode names
-extern const char* opcodename[];
+extern const char* qvm_opcodename[];
 
 // a single opcode in memory
-typedef struct qvmop_s {
-    qvmopcode_t op;
+typedef struct {
+    qvm_opcode op;
     int param;
-} qvmop_t;
+} qvm_op;
 
 // QVM file header
-typedef struct qvmheader_s {
+typedef struct {
     uint32_t magic;
     uint32_t instructioncount;
     uint32_t codeoffset;
@@ -148,29 +148,29 @@ typedef struct qvmheader_s {
     uint32_t datalen;
     uint32_t litlen;
     uint32_t bsslen;
-} qvmheader_t;
+} qvm_header;
 
 // allocator type for custom allocation
-typedef struct qvm_alloc_s {
+typedef struct {
     void* (*alloc)(ptrdiff_t size, void* ctx);
     void  (*free)(void* ptr, ptrdiff_t size, void* ctx);
     void* ctx;
-} qvm_alloc_t;
+} qvm_alloc;
 
 // default vm allocator (uses malloc/free)
-extern qvm_alloc_t qvm_allocator_default;
+extern qvm_alloc qvm_allocator_default;
 
 // all the info for a single QVM object
-typedef struct qvm_s {
+typedef struct {
     // syscall
-    qvmsyscall_t qvmsyscall;        // function that will handle syscalls and adjust pointer arguments
+    qvm_syscall syscall;            // function that will handle syscalls and adjust pointer arguments
 
     // memory
     uint8_t* memory;                // main block of memory
     size_t memorysize;              // size of memory block
 
     // segments (into memory block)
-    qvmop_t* codesegment;           // code segment, each op is 8 bytes (4 op, 4 param)
+    qvm_op* codesegment;            // code segment, each op is 8 bytes (4 op, 4 param)
     uint8_t* datasegment;           // data segment, partially filled on load
 
     // segment sizes
@@ -186,9 +186,9 @@ typedef struct qvm_s {
 
     // extra
     size_t filesize;                // .qvm file size
-    qvm_alloc_t* allocator;         // allocator
+    qvm_alloc* allocator;           // allocator
     int verify_data;                // verify data access is inside the memory block
-} qvm_t;
+} qvm;
 
 #ifdef __cplusplus
 extern "C" {
@@ -197,25 +197,25 @@ extern "C" {
 /**
 * Create and initialize a new VM from a QVM file
 * 
-* @param [qvm_t*] qvm - Pointer to qvm_t object to store VM information
+* @param [qvm*] qvm - Pointer to qvm_t object to store VM information
 * @param [const uint8_t*] filemem - Buffer with QVM file contents
 * @param [size_t] filesize - Size of the filemem buffer
-* @param [qvmsyscall_t] qvmsyscall - Function to be called for engine traps
+* @param [qvm_syscall] qvmsyscall - Function to be called for engine traps
 * @param [int] verify_data - (Boolean) Should data segment reads and writes be validated?
-* @param [qvm_alloc_t*] allocator - Pointer to a qvm_alloc_t object which contains custom alloc/free function pointers (pass NULL for default)
+* @param [qvm_alloc*] allocator - Pointer to a qvm_alloc object which contains custom alloc/free function pointers (pass NULL for default)
 * @returns [int] - (Boolean) 1 if success, 0 if failure
 */
-int qvm_load(qvm_t* qvm, const uint8_t* filemem, size_t filesize, qvmsyscall_t qvmsyscall, int verify_data, qvm_alloc_t* allocator);
+int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsyscall, int verify_data, qvm_alloc* allocator);
 
 /**
 * Begin execution in a VM
 *
-* @param [qvm_t*] qvm - Pointer to qvm_t object to execute
+* @param [qvm*] qvm - Pointer to qvm_t object to execute
 * @param [int] argc - Number of arguments to pass to VM entry point
 * @param [int*] argv - Array of arguments to pass to VM entry point
 * @returns [int] - Return value from VM entry point
 */
-int qvm_exec(qvm_t* qvm, int argc, int* argv);
+int qvm_exec(qvm* vm, int argc, int* argv);
 
 /**
 * Begin execution in a VM at a given instruction
@@ -226,14 +226,14 @@ int qvm_exec(qvm_t* qvm, int argc, int* argv);
 * @param [int*] argv - Array of arguments to pass to VM entry point
 * @returns [int] - Return value from VM entry point
 */
-int qvm_exec_ex(qvm_t* qvm, size_t instruction, int argc, int* argv);
+int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv);
 
 /**
 * Unload a VM
 *
 * @param [qvm_t*] qvm - Pointer to qvm_t object to unload
 */
-void qvm_unload(qvm_t* qvm);
+void qvm_unload(qvm* vm);
 
 #ifdef __cplusplus
 }

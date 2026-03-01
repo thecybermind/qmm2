@@ -53,7 +53,7 @@ void log_add_sink(T func, AixLog::Severity level = AixLog::Severity::notice) {
 
 std::string log_format(const AixLog::Metadata& metadata, const std::string& message, bool timestamp) {
     std::string output = fmt::format("({}) {}\n", metadata.tag.text, message);
-    if ((int)metadata.severity >= 5)
+    if ((int)metadata.severity >= QMM_LOG_WARNING)
         output = fmt::format("[{}] {}", AixLog::to_string(metadata.severity), output);
     if (timestamp && metadata.timestamp)
         output = fmt::format("{} {}", metadata.timestamp.to_string(), output);
