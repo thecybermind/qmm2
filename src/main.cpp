@@ -134,7 +134,7 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall) {
         return;
     }
 
-    main_handle_entry(syscall, nullptr, false);    // false = !is_GetGameAPI
+    main_handle_entry((void*)syscall, nullptr, false);    // false = !is_GetGameAPI
     return;
 }
 
