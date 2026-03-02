@@ -111,6 +111,16 @@ static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
 
 // handle syscalls from the QVM. passed to qvm_load
 static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
+    // if no game-specific qvm handler, we need to error
+    if (!g_gameinfo.game->pfnqvmsyscall) {
+        if (!g_gameinfo.is_shutdown) {
+            g_gameinfo.is_shutdown = true;
+            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_qvm_syscall({}): No QVM syscall handler found\n", g_gameinfo.game->eng_msg_names(cmd));
+            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nNo QVM syscall handler found.\n=========\n");
+        }
+        return 0;
+    }
+
     // check for plugin qvm function registration
     if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
         plugin* p = g_registered_qvm_funcs[cmd];
@@ -121,16 +131,6 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
 
         // pass the negative-1 form since that's the number the plugin probably stored and expects
         return p->QMM_QVMHandler(-cmd - 1, args);
-    }
-
-    // if no game-specific qvm handler, we need to error
-    if (!g_gameinfo.game->pfnqvmsyscall) {
-        if (!g_gameinfo.is_shutdown) {
-            g_gameinfo.is_shutdown = true;
-            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_qvm_syscall({}): No QVM syscall handler found\n", g_gameinfo.game->eng_msg_names(cmd));
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nNo QVM syscall handler found.\n=========\n");
-        }
-        return 0;
     }
 
     // call the game-specific QVM syscall handler
