@@ -123,9 +123,6 @@
     <ClInclude Include="..\include\game_sof2sp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\main_aux.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -219,9 +216,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\game_sof2sp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\main_aux.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
