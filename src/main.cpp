@@ -571,49 +571,38 @@ static void main_detect_game(std::string cfg_game, bool is_GetGameAPI) {
 
 // general code to find a mod file to load
 static bool main_load_mod(std::string cfg_mod) {
+    if (cfg_mod.empty())
+        return false;
+
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to find mod using \"{}\"\n", cfg_mod);
-    // if config setting is an absolute path, just attempt to load it directly
+    // if "mod" config setting is an absolute path, just attempt to load it directly
     if (!path_is_relative(cfg_mod)) {
         LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", cfg_mod);
         if (!mod_load(g_mod, cfg_mod))
             return false;
     }
-    // if config setting is "auto", try the following locations in order:
-    // "<qvmname>" (if the game engine supports it)
-    // "<qmmdir>/qmm_<dllname>"
-    // "<exedir>/<moddir>/qmm_<dllname>"
-    // "<exedir>/<moddir>/<dllname>"
-    // "./<moddir>/qmm_<dllname>"
-    else if (str_striequal(cfg_mod, "auto")) {
-        std::string try_paths[] = {
-            g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "",	// (only if game engine supports it)
-            fmt::format("{}/qmm_{}", g_gameinfo.qmm_dir, g_gameinfo.game->dllname),
-            fmt::format("{}/{}/qmm_{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, g_gameinfo.game->dllname),
-            fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, g_gameinfo.game->dllname),
-            fmt::format("./{}/qmm_{}", g_gameinfo.mod_dir, g_gameinfo.game->dllname)
-        };
-        // try paths
-        for (std::string& try_path : try_paths) {
-            if (try_path.empty())
-                continue;
-            LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to auto-load mod \"{}\"\n", try_path);
-            if (mod_load(g_mod, try_path))
-                return true;
-        }
-    }
-    // if config setting is a relative path, try the following locations in order:
-    // "<mod>"
+    // if "mod" config setting is auto, set the dllname to look for to be "qmm_"+dllname, and then treat as a relative path
+    // if "mod" config setting is a relative path, try the following locations in order:
+    // "<mod>" (if "mod" was "auto", this is "<qvmname>" if the game engine supports it, otherwise empty)
     // "<qmmdir>/<mod>"
     // "<exedir>/<moddir>/<mod>"
     // "./<moddir>/<mod>"
     else {
+        // the first filename to look for is just the config option
+        std::string first = cfg_mod;
+        // if the config option was actually "auto"
+        if (str_striequal(cfg_mod, "auto")) {
+            // the auto filename is "qmm_" + the default dll name
+            cfg_mod = fmt::format("qmm_{}", g_gameinfo.game->dllname);
+            // set first filename to qvm filename if game engine supports it
+            first = g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "";
+        }
         std::string try_paths[] = {
-            cfg_mod,
+            first,
             fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod),
             fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, cfg_mod),
             fmt::format("./{}/{}", g_gameinfo.mod_dir, cfg_mod)
         };
-        // try paths
         for (std::string& try_path : try_paths) {
             if (try_path.empty())
                 continue;
