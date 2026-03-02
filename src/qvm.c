@@ -270,7 +270,7 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
     // it gets synced to qvm object before syscalls and restored after syscalls.
     // it also gets synced back to qvm object after execution completes
     int* programstack = vm->stackptr;
-    // local copies
+    // local copies of stack boundaries
     int* stacklow = vm->stacklow;
     int* stackhigh = vm->stackhigh;
 
