@@ -747,17 +747,14 @@ static void main_handle_command_qmm(intptr_t arg_start) {
 // route syscall or vmMain call to plugins and mod
 static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
     const char* (*msg_names)(intptr_t) = nullptr;
-    const char* target_name = nullptr;
     const char* func_name = nullptr;
 
     if (is_syscall) {
         msg_names = g_gameinfo.game->eng_msg_names;
-        target_name = "Engine";
         func_name = "syscall";
     }
     else {
         msg_names = g_gameinfo.game->mod_msg_names;
-        target_name = "Game";
         func_name = "vmMain";
     }
 
@@ -812,7 +809,7 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
     // call real function (unless a plugin resulted in QMM_SUPERCEDE)
     if (max_result < QMM_SUPERCEDE) {
 #ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("{} {}({} {}) called\n", target_name, func_name, msg_name, cmd);
+        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) called\n", func_name, msg_name, cmd);
 #endif
         if (is_syscall)
             real_ret = g_gameinfo.pfnsyscall(cmd, QMM_PUT_SYSCALL_ARGS());
@@ -820,12 +817,12 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
             real_ret = g_gameinfo.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("{} {}({} {}) returning {}\n", target_name, func_name, msg_name, cmd, real_ret);
+        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) returning {}\n", func_name, msg_name, cmd, real_ret);
 #endif
     }
     else {
 #ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("{} {}({} {}) superceded\n", target_name, func_name, msg_name, cmd);
+        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) superceded\n", func_name, msg_name, cmd);
 #endif
     }
 
