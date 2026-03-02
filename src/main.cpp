@@ -31,7 +31,7 @@ static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI);
 // general code to get path/module/binary/etc information
 static void main_detect_env();
 // general code to load config file
-static void main_load_config();
+static void main_load_config(std::string config_filename);
 // general code to auto-detect what game engine loaded us
 static void main_detect_game(std::string cfg_game, bool is_GetGameAPI);
 // general code to find a mod file to load
@@ -245,6 +245,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     if (!g_gameinfo.game) {
         if (!g_gameinfo.is_shutdown) {
             g_gameinfo.is_shutdown = true;
+            // if the syscall passed to dllEntry was null, this will crash, but this shouldn't happen
             ENG_SYSCALL(QMM_FAIL_G_ERROR, "\n\n=========\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n=========\n");
         }
         return 0;
@@ -286,6 +287,8 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         // load mod
         std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
+        // check command line arguments for a mod filename
+        cfg_mod = util_get_cmdline_arg("--qmm_mod", cfg_mod);
         if (!main_load_mod(cfg_mod)) {
             g_gameinfo.is_shutdown = true;
             LOG(QMM_LOG_FATAL, "QMM") << fmt::format("vmMain({}): Unable to load mod using \"{}\"\n", g_gameinfo.game->mod_msg_names(cmd), cfg_mod);
@@ -425,28 +428,36 @@ static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI) {
     // ???
     // return nullptr to error out now. if GetGameAPI, Init() will never be called
     if (!import) {
-        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): import is NULL!\n", func_name);
+        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): {} is NULL!\n", func_name, is_GetGameAPI ? "import" : "syscall");
         return nullptr;
     }
 
-    main_load_config();
+    // load config file. check command line arguments for a config filename
+    main_load_config(util_get_cmdline_arg("--qmm_config", "qmm2.json"));
 
     // update log severity for file output
     std::string cfg_loglevel = cfg_get_string(g_cfg, "loglevel", "");
     if (!cfg_loglevel.empty())
         log_set_severity(log_severity_from_name(cfg_loglevel));
 
+    // detect game
     std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
+    // check command line arguments for a game code
+    cfg_game = util_get_cmdline_arg("--qmm_game", cfg_game);
     main_detect_game(cfg_game, is_GetGameAPI);
 
     // failed to get engine information
-    // return nullptr to error out now, if GetGameAPI, Init() will never be called
+    // return nullptr to error out now. if GetGameAPI, Init() will never be called
     if (!g_gameinfo.game) {
         LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Unable to determine game engine using \"{}\"\n", func_name, cfg_game);
+        // if dllEntry, store the given syscall pointer so we can call G_ERROR to shutdown in vmMain
+        if (!is_GetGameAPI)
+            g_gameinfo.pfnsyscall = (eng_syscall)import;
         return nullptr;
     }
 
     // supported games table is missing game-specific GetGameAPI handler?
+    // return nullptr to error out now. Init() will never be called
     if (is_GetGameAPI && !g_gameinfo.game->pfnGetGameAPI) {
         LOG(QMM_LOG_FATAL, "QMM") << fmt::format("GetGameAPI(): pfnGetGameAPI handler for game \"{}\" is NULL!\n", g_gameinfo.game->gamename_short);
         return nullptr;
@@ -454,6 +465,10 @@ static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI) {
     // supported games table is missing game-specific dllEntry handler?
     else if (!is_GetGameAPI && !g_gameinfo.game->pfndllEntry) {
         LOG(QMM_LOG_FATAL, "QMM") << fmt::format("dllEntry(): pfndllEntry handler for game \"{}\" is NULL!\n", g_gameinfo.game->gamename_short);
+        // wipe detected game to trigger fail in vmMain
+        g_gameinfo.game = nullptr;
+        // store the given syscall pointer so we can call G_ERROR to shutdown in vmMain
+        g_gameinfo.pfnsyscall = (eng_syscall)import;
         return nullptr;
     }
 
@@ -505,17 +520,18 @@ static void main_detect_env() {
 
 
 // general code to load config file. called from dllEntry() and GetGameAPI()
-static void main_load_config() {
+static void main_load_config(std::string config_filename) {
     // load config file, try the following locations in order:
     // "<qmmdir>/qmm2.json"
     // "<exedir>/<moddir>/qmm2.json"
     // "./<moddir>/qmm2.json"
     std::string try_paths[] = {
-        fmt::format("{}/qmm2.json", g_gameinfo.qmm_dir),
-        fmt::format("{}/{}/qmm2.json", g_gameinfo.exe_dir, g_gameinfo.mod_dir),
-        fmt::format("./{}/qmm2.json", g_gameinfo.mod_dir)
+        fmt::format("{}/{}", g_gameinfo.qmm_dir, config_filename),
+        fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, config_filename),
+        fmt::format("./{}/{}", g_gameinfo.mod_dir, config_filename)
     };
     for (std::string& try_path : try_paths) {
+        try_path = path_normalize(try_path);
         g_cfg = cfg_load(try_path);
         if (!g_cfg.empty()) {
             g_gameinfo.cfg_path = try_path;
@@ -525,7 +541,7 @@ static void main_load_config() {
     }
 
     // a default constructed json object is a blank {}, so in case of load failure, we can still try to read from it and assume defaults
-    LOG(QMM_LOG_WARNING, "QMM") << "Unable to load config file, all settings will use default values\n";
+    LOG(QMM_LOG_WARNING, "QMM") << fmt::format("Unable to load config file \"{}\", all settings will use default values\n", config_filename);
 }
 
 
@@ -581,31 +597,36 @@ static bool main_load_mod(std::string cfg_mod) {
         if (!mod_load(g_mod, cfg_mod))
             return false;
     }
-    // if "mod" config setting is auto, set the dllname to look for to be "qmm_"+dllname, and then treat as a relative path
+    // if "mod" config setting is "auto", try the following locations in order:
+    // "<qvmname>" (if the game engine supports it)
+    // "<qmmdir>/qmm_<dllname>"
+    // "<exedir>/<moddir>/qmm_<dllname>"
+    // "./<moddir>/qmm_<dllname>"
+
     // if "mod" config setting is a relative path, try the following locations in order:
-    // "<mod>" (if "mod" was "auto", this is "<qvmname>" if the game engine supports it, otherwise empty)
+    // "<mod>"
     // "<qmmdir>/<mod>"
     // "<exedir>/<moddir>/<mod>"
     // "./<moddir>/<mod>"
     else {
-        // the first filename to look for is just the config option
-        std::string first = cfg_mod;
-        // if the config option was actually "auto"
+        std::vector<std::string> try_paths;
+        // if "mod" config setting was "auto"
         if (str_striequal(cfg_mod, "auto")) {
-            // the auto filename is "qmm_" + the default dll name
+            // treat as if "mod" config setting was "qmm_" plus the default dll name for this engine
             cfg_mod = fmt::format("qmm_{}", g_gameinfo.game->dllname);
-            // set first filename to qvm filename if game engine supports it
-            first = g_gameinfo.game->qvmname ? g_gameinfo.game->qvmname : "";
+            // add QVM filename to search list if this game supports it
+            if (g_gameinfo.game->qvmname)
+                try_paths.push_back(g_gameinfo.game->qvmname);
         }
-        std::string try_paths[] = {
-            first,
-            fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod),
-            fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, cfg_mod),
-            fmt::format("./{}/{}", g_gameinfo.mod_dir, cfg_mod)
-        };
+        // "mod" config setting was a relative path
+        else {
+            // add config setting to list
+            try_paths.push_back(cfg_mod);
+        }
+        try_paths.push_back(fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod));
+        try_paths.push_back(fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, cfg_mod));
+        try_paths.push_back(fmt::format("./{}/{}", g_gameinfo.mod_dir, cfg_mod));
         for (std::string& try_path : try_paths) {
-            if (try_path.empty())
-                continue;
             LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
             if (mod_load(g_mod, try_path))
                 return true;

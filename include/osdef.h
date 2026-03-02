@@ -21,6 +21,7 @@ Created By:
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <direct.h>
+#include <shellapi.h>
 
 #ifdef _WIN64
 #define SUF_DLL "x86_64"
