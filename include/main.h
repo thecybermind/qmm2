@@ -31,8 +31,8 @@ struct gameinfo {
     mod_vmMain pfnvmMain = nullptr;			// game-specific wrapper for vmMain. given to plugins and called by QMM
     supportedgame* game = nullptr;			// loaded engine from supported games table from game_api.cpp
     void* qmm_module_ptr = nullptr;			// qmm module pointer
-    bool isautodetected = false;			// was this engine auto-detected?
-    bool isshutdown = false;				// is game shutting down due to G_ERROR? avoids calling G_ERROR again from GAME_SHUTDOWN
+    bool is_auto_detected = false;			// was this engine auto-detected?
+    bool is_shutdown = false;				// is game shutting down due to G_ERROR? avoids calling G_ERROR again from GAME_SHUTDOWN
 };
 extern gameinfo g_gameinfo;
 
@@ -60,7 +60,7 @@ struct cgameinfo {
     // same DLL
     bool is_from_QMM;
     // GAME_SHUTDOWN has been called, but mod DLL was kept loaded so cgame shutdown can run
-    bool shutdown;
+    bool is_shutdown;
 };
 extern cgameinfo cgame;
 

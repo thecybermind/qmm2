@@ -229,7 +229,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain({}) returning {}\n", cmd, ret);
 #endif
 
-        if (cgame.shutdown) {
+        if (cgame.is_shutdown) {
             // unload mod (dlclose)
             LOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
             mod_unload(g_mod);
@@ -243,8 +243,8 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
     // couldn't load engine info, so we will just call syscall(G_ERROR) to exit
     if (!g_gameinfo.game) {
-        if (!g_gameinfo.isshutdown) {
-            g_gameinfo.isshutdown = true;
+        if (!g_gameinfo.is_shutdown) {
+            g_gameinfo.is_shutdown = true;
             ENG_SYSCALL(QMM_FAIL_G_ERROR, "\n\n=========\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n=========\n");
         }
         return 0;
@@ -274,7 +274,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         if (g_gameinfo.mod_dir.empty())
             g_gameinfo.mod_dir = g_gameinfo.game->moddir;
 
-        LOG(QMM_LOG_INFO, "QMM") << fmt::format("Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file");
+        LOG(QMM_LOG_INFO, "QMM") << fmt::format("Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.is_auto_detected ? "Auto-detected" : "Config file");
         LOG(QMM_LOG_INFO, "QMM") << fmt::format("ModDir: {}\n", g_gameinfo.mod_dir);
         LOG(QMM_LOG_INFO, "QMM") << fmt::format("Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? "(error)" : "");
 
@@ -287,22 +287,25 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // load mod
         std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
         if (!main_load_mod(cfg_mod)) {
+            g_gameinfo.is_shutdown = true;
             LOG(QMM_LOG_FATAL, "QMM") << fmt::format("vmMain({}): Unable to load mod using \"{}\"\n", g_gameinfo.game->mod_msg_names(cmd), cfg_mod);
+            ENG_SYSCALL(QMM_FAIL_G_ERROR, "\n\n=========\nFatal QMM Error:\nQMM was unable to load the mod file.\nPlease set the \"mod\" option in qmm2.json.\nRefer to the documentation for more information.\n=========\n");
             return 0;
         }
         LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} mod \"{}\"\n", g_mod.vmbase ? "VM" : "DLL", g_mod.path);
 
         // cgame passthrough hack:
-        // JASP (and others?) calls into the cgame syscall before a cgame vmMain GAME_INIT call is made
-        // so if we have a passthrough situation, init the mod's cgame functions now
+        // mod DLL is loaded, so find the vmMain and dllEntry functions and call dllEntry
+        // JASP+JK2SP's cgame dllEntry functions actually call into the syscall almost immediately,
+        // so make sure we store vmMain first in case there's some re-entrancy
         if (cgame.syscall) {
+            cgame.vmMain = (mod_vmMain)dlsym(g_mod.dll, "vmMain");
+            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Storing cgame vmMain = {}\n", (void*)cgame.vmMain);
+
             // pass original cgame syscall to dllEntry in mod
             mod_dllEntry pfndllEntry = (mod_dllEntry)dlsym(g_mod.dll, "dllEntry");
+            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passing cgame syscall to dllEntry = {}\n", (void*)pfndllEntry);
             pfndllEntry(cgame.syscall);
-            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passing syscall passthrough to mod. dllEntry = {}\n", (void*)pfndllEntry);
-
-            cgame.vmMain = (mod_vmMain)dlsym(g_mod.dll, "vmMain");
-            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain = {}\n", (void*)cgame.vmMain);
         }
 
         // load plugins
@@ -357,7 +360,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // cgame passthrough hack:
         // hack to keep single player games shutting down correctly between levels/cutscenes/etc
         if (cgame.syscall) {
-            cgame.shutdown = true;
+            cgame.is_shutdown = true;
             LOG(QMM_LOG_NOTICE, "QMM") << "Delaying shutting down mod so cgame shutdown can run\n";
         }
         else {
@@ -539,29 +542,26 @@ static void main_detect_game(std::string cfg_game, bool is_GetGameAPI) {
         if (str_striequal(cfg_game, game.gamename_short)) {
             LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);
             g_gameinfo.game = &game;
-            g_gameinfo.isautodetected = false;
+            g_gameinfo.is_auto_detected = false;
             return;
         }
         // otherwise, if auto, we need to check matching dll names, with optional exe hint
-        if (str_striequal(cfg_game, "auto")) {
-            // dll name matches
-            if (str_striequal(g_gameinfo.qmm_file, game.dllname)) {
-                LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", game.dllname, game.gamename_short);
-                // if no hint array exists, assume we match
-                if (!game.exe_hints.size()) {
-                    LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("No exe hint for game, assuming match\n");
+        if (str_striequal(cfg_game, "auto") && str_striequal(g_gameinfo.qmm_file, game.dllname)) {
+            LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match for dll name \"{}\" - {}\n", game.dllname, game.gamename_short);
+            // if no hint array exists, assume we match
+            if (!game.exe_hints.size()) {
+                LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("No exe hint for game, assuming match\n");
+                g_gameinfo.game = &game;
+                g_gameinfo.is_auto_detected = true;
+                return;
+            }
+            // if a hint array exists, check each for an exe file match
+            for (std::string& hint : game.exe_hints) {
+                if (str_stristr(g_gameinfo.exe_file, hint)) {
+                    LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for exe hint \"{}\" - {}\n", hint, game.gamename_short);
                     g_gameinfo.game = &game;
-                    g_gameinfo.isautodetected = true;
+                    g_gameinfo.is_auto_detected = true;
                     return;
-                }
-                // if a hint array exists, check each for an exe file match
-                for (std::string& hint : game.exe_hints) {
-                    if (str_stristr(g_gameinfo.exe_file, hint)) {
-                        LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for exe hint \"{}\" - {}\n", hint, game.gamename_short);
-                        g_gameinfo.game = &game;
-                        g_gameinfo.isautodetected = true;
-                        return;
-                    }
                 }
             }
         }
@@ -674,7 +674,7 @@ static void main_handle_command_qmm(intptr_t arg_start) {
 
     if (str_striequal("status", arg1) || str_striequal("info", arg1)) {
         CONSOLE_PRINT("(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ")\n");
-        CONSOLE_PRINTF("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.isautodetected ? "Auto-detected" : "Config file");
+        CONSOLE_PRINTF("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.is_auto_detected ? "Auto-detected" : "Config file");
         CONSOLE_PRINTF("(QMM) ModDir: {}\n", g_gameinfo.mod_dir);
         CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? " (error)" : "");
         CONSOLE_PRINT("(QMM) Built: " QMM_COMPILE " by " QMM_BUILDER "\n");

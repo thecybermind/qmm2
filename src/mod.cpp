@@ -88,8 +88,8 @@ void mod_unload(mod& mod) {
 static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
     // if qvm isn't loaded, we need to error
     if (!g_mod.vm.memory) {
-        if (!g_gameinfo.isshutdown) {
-            g_gameinfo.isshutdown = true;
+        if (!g_gameinfo.is_shutdown) {
+            g_gameinfo.is_shutdown = true;
             LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded during previous execution due to a run-time error\n", g_gameinfo.game->mod_msg_names(cmd));
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nThe QVM was unloaded during previous execution due to a run-time error.\n=========\n");
         }
@@ -125,8 +125,8 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
 
     // if no game-specific qvm handler, we need to error
     if (!g_gameinfo.game->pfnqvmsyscall) {
-        if (!g_gameinfo.isshutdown) {
-            g_gameinfo.isshutdown = true;
+        if (!g_gameinfo.is_shutdown) {
+            g_gameinfo.is_shutdown = true;
             LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_qvm_syscall({}): No QVM syscall handler found\n", g_gameinfo.game->eng_msg_names(cmd));
             ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\n\n=========\nFatal QMM Error:\nNo QVM syscall handler found.\n=========\n");
         }
