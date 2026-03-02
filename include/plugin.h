@@ -23,10 +23,8 @@ using plugin_query = void (*)(plugin_info** pinfo);
 using plugin_attach = int (*)(eng_syscall engfunc, mod_vmMain modfunc, plugin_res* presult, plugin_funcs* pluginfuncs, plugin_vars* pluginvars);
 // QMM_Detach
 using plugin_detach = void (*)();
-// QMM_vmMain
-using plugin_vmmain = intptr_t(*)(intptr_t cmd, intptr_t* args);
-// QMM_syscall
-using plugin_syscall = intptr_t(*)(intptr_t cmd, intptr_t* args);
+// QMM_vmMain(_Post) + QMM_syscall(_Post)
+using plugin_callback = intptr_t(*)(intptr_t cmd, intptr_t* args);
 // QMM_PluginMessage
 using plugin_pluginmessage = void (*)(plugin_id from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
 // QMM_QVMHandler
@@ -38,10 +36,10 @@ struct plugin {
     plugin_query QMM_Query = nullptr;
     plugin_attach QMM_Attach = nullptr;
     plugin_detach QMM_Detach = nullptr;
-    plugin_vmmain QMM_vmMain = nullptr;
-    plugin_vmmain QMM_vmMain_Post = nullptr;
-    plugin_syscall QMM_syscall = nullptr;
-    plugin_syscall QMM_syscall_Post = nullptr;
+    plugin_callback QMM_vmMain = nullptr;
+    plugin_callback QMM_vmMain_Post = nullptr;
+    plugin_callback QMM_syscall = nullptr;
+    plugin_callback QMM_syscall_Post = nullptr;
     plugin_pluginmessage QMM_PluginMessage = nullptr;
     plugin_qvmhandler QMM_QVMHandler = nullptr;
     plugin_info* plugininfo = nullptr;

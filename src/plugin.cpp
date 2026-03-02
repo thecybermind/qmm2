@@ -185,20 +185,20 @@ int plugin_load(plugin& p, std::string file) {
         goto fail;
     }
 
-    // find hook functions
-    if (!(p.QMM_vmMain = (plugin_vmmain)dlsym(p.dll, "QMM_vmMain"))) {
+    // find hook callback functions
+    if (!(p.QMM_vmMain = (plugin_callback)dlsym(p.dll, "QMM_vmMain"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain\" function\n", file);
         goto fail;
     }
-    if (!(p.QMM_syscall = (plugin_syscall)dlsym(p.dll, "QMM_syscall"))) {
+    if (!(p.QMM_syscall = (plugin_callback)dlsym(p.dll, "QMM_syscall"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_syscall\" function\n", file);
         goto fail;
     }
-    if (!(p.QMM_vmMain_Post = (plugin_vmmain)dlsym(p.dll, "QMM_vmMain_Post"))) {
+    if (!(p.QMM_vmMain_Post = (plugin_callback)dlsym(p.dll, "QMM_vmMain_Post"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain_Post\" function\n", file);
         goto fail;
     }
-    if (!(p.QMM_syscall_Post = (plugin_syscall)dlsym(p.dll, "QMM_syscall_Post"))) {
+    if (!(p.QMM_syscall_Post = (plugin_callback)dlsym(p.dll, "QMM_syscall_Post"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_syscall_Post\" function\n", file);
         goto fail;
     }
@@ -545,7 +545,7 @@ static int s_plugin_helper_PluginSend(plugin_id plid, plugin_id to_plid, const c
             p.QMM_PluginMessage(plid, message, buf, buflen, 0); // 0 = is_broadcast
 
 #ifdef _DEBUG
-            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnPluginSend(\"{}\", \"{}\", \"{}\", {}, {}) called\n", ((plugin_info*)plid)->name, ((plugininfo_t*)to_plid)->name, message, buf, buflen);
+            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnPluginSend(\"{}\", \"{}\", \"{}\", {}, {}) called\n", ((plugin_info*)plid)->name, ((plugin_info*)to_plid)->name, message, buf, buflen);
 #endif
 
             return 1;
