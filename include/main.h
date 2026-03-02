@@ -40,6 +40,7 @@ extern gameinfo g_gameinfo;
 #define QMM_MOD_MSG	(g_gameinfo.game->qmm_mod_msgs)
 
 #define ENG_SYSCALL	(g_gameinfo.pfnsyscall)
+#define CONSOLE_PRINT(str)           ENG_SYSCALL(msg_G_PRINT, str)
 #define CONSOLE_PRINTF(str, ...)     ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
 
 // this is used if we couldn't determine a game engine and we have to fail.
