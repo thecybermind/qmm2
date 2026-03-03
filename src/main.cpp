@@ -456,22 +456,6 @@ static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI) {
         return nullptr;
     }
 
-    // supported games table is missing game-specific GetGameAPI handler?
-    // return nullptr to error out now. Init() will never be called
-    if (is_GetGameAPI && !g_gameinfo.game->pfnGetGameAPI) {
-        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("GetGameAPI(): pfnGetGameAPI handler for game \"{}\" is NULL!\n", g_gameinfo.game->gamename_short);
-        return nullptr;
-    }
-    // supported games table is missing game-specific dllEntry handler?
-    else if (!is_GetGameAPI && !g_gameinfo.game->pfndllEntry) {
-        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("dllEntry(): pfndllEntry handler for game \"{}\" is NULL!\n", g_gameinfo.game->gamename_short);
-        // wipe detected game to trigger fail in vmMain
-        g_gameinfo.game = nullptr;
-        // store the given syscall pointer so we can call G_ERROR to shutdown in vmMain
-        g_gameinfo.pfnsyscall = (eng_syscall)import;
-        return nullptr;
-    }
-
     // now that the game is detected, cache some dynamic message values that get evaluated a lot
     msg_G_PRINT = QMM_ENG_MSG[QMM_G_PRINT];
     msg_GAME_INIT = QMM_MOD_MSG[QMM_GAME_INIT];
@@ -479,6 +463,13 @@ static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI) {
     msg_GAME_SHUTDOWN = QMM_MOD_MSG[QMM_GAME_SHUTDOWN];
 
     if (is_GetGameAPI) {
+        // supported games table is missing game-specific GetGameAPI handler?
+        // return nullptr to error out now. Init() will never be called
+        if (!g_gameinfo.game->pfnGetGameAPI) {
+            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("GetGameAPI(): pfnGetGameAPI handler for game \"{}\" is NULL!\n", g_gameinfo.game->gamename_short);
+            return nullptr;
+        }
+
         // call the game-specific GetGameAPI function (e.g. MOHAA_GetGameAPI) which will set up the exports for
         // returning here back to the game engine, as well as save the imports in preparation of loading the mod
         return g_gameinfo.game->pfnGetGameAPI(import, extra);
@@ -486,7 +477,14 @@ static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI) {
 
     // call the game-specific dllEntry function (e.g. Q3A_dllEntry) which will set up the functions to handle
     // vmMain and syscalls from the mod, engine, and plugins
-    g_gameinfo.game->pfndllEntry((eng_syscall)import);
+    if (g_gameinfo.game->pfndllEntry)
+        g_gameinfo.game->pfndllEntry((eng_syscall)import);
+    // supported games table is missing game-specific dllEntry handler? we can try to fake it by storing the
+    // syscall pointer in g_gameinfo.pfnsyscall. also as a hack, s_mod_load_vmmain & s_mod_load_qvm will store
+    // vmMain in g_gameinfo.pfnvmMain if it wasn't set already by the game-specific dllEntry
+    else
+        g_gameinfo.pfnsyscall = (eng_syscall)import;
+
     return nullptr;
 }
 
@@ -819,7 +817,7 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
     // call real function (unless a plugin resulted in QMM_SUPERCEDE)
     if (max_result < QMM_SUPERCEDE) {
 #ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) called\n", func_name, msg_name, cmd);
+        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) called {}\n", func_name, msg_name, cmd, (void*)g_gameinfo.pfnvmMain);
 #endif
         if (is_syscall)
             real_ret = g_gameinfo.pfnsyscall(cmd, QMM_PUT_SYSCALL_ARGS());
