@@ -819,9 +819,9 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
 #ifdef _DEBUG
         LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) called {}\n", func_name, msg_name, cmd, (void*)g_gameinfo.pfnvmMain);
 #endif
-        if (is_syscall)
+        if (is_syscall && g_gameinfo.pfnsyscall)
             real_ret = g_gameinfo.pfnsyscall(cmd, QMM_PUT_SYSCALL_ARGS());
-        else
+        else if (!is_syscall && g_gameinfo.pfnvmMain)
             real_ret = g_gameinfo.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
