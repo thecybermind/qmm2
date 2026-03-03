@@ -152,7 +152,7 @@ static bool Q2R_ClientConnect(edict_t* ent, char* userinfo, const char* social_i
         else
             s_userinfo[clientnum] = userinfo;
     }
-    cgame_is_QMM_vmMain_call = true;
+    cgame.is_from_QMM = true;
     return (bool)vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
 }
 
@@ -168,7 +168,7 @@ static void Q2R_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
         else
             s_userinfo[clientnum] = userinfo;
     }
-    cgame_is_QMM_vmMain_call = true;
+    cgame.is_from_QMM = true;
     vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
@@ -181,7 +181,7 @@ static void Q2R_SpawnEntities(const char* mapname, const char* entstring, const 
         s_entity_tokens = util_parse_entstring(entstring);
         s_tokencount = 0;
     }
-    cgame_is_QMM_vmMain_call = true;
+    cgame.is_from_QMM = true;
     vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 
@@ -589,7 +589,6 @@ void* Q2R_GetGameAPI(void* import, void*) {
     qmm_import.tick_rate = orig_import.tick_rate;
     qmm_import.frame_time_s = orig_import.frame_time_s;
     qmm_import.frame_time_ms = orig_import.frame_time_ms;
-    // qmm_import.sound = orig_import.sound;
 
     // pointer to wrapper vmMain function that calls actual mod func from orig_export
     g_gameinfo.pfnvmMain = Q2R_vmMain;
@@ -607,8 +606,8 @@ void* Q2R_GetGameAPI(void* import, void*) {
 
 
 bool Q2R_mod_load(void* entry) {
-    mod_GetGameAPI_t mod_GetGameAPI = (mod_GetGameAPI_t)entry;
-    orig_export = (game_export_t*)mod_GetGameAPI(&qmm_import, nullptr);
+    mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
+    orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
     return !!orig_export;
 }

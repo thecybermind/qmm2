@@ -16,7 +16,9 @@ Created By:
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <fstream> // util_get_proc_cmdline in linux
 #include "util.h"
+
 
 std::string path_normalize(std::string path) {
     // switch \ to /
@@ -25,12 +27,21 @@ std::string path_normalize(std::string path) {
             c = '/';
     }
     // collapse /./ to /
-    size_t pos = path.rfind("/./");
-    while (pos != std::string::npos) {
-        path = path.substr(0, pos) + path.substr(pos + 2);
-        pos = path.rfind("/./");
+    size_t dotdir = path.rfind("/./");
+    while (dotdir != std::string::npos) {
+        path = path.substr(0, dotdir) + path.substr(dotdir + 2);
+        dotdir = path.rfind("/./");
     }
-
+    // collapse /*/../ to /
+    size_t dotdotdir = path.rfind("/../");
+    while (dotdotdir != std::string::npos) {
+        size_t prev = path.rfind('/', dotdotdir - 1);
+        if (prev != std::string::npos)
+            path = path.substr(0, prev) + path.substr(dotdotdir + 3);
+        else
+            break;
+        dotdotdir = path.rfind("/../");
+    }
     return path;
 }
 
@@ -84,6 +95,42 @@ bool path_is_relative(std::string path) {
         return false;
 #endif
     return true;
+}
+
+
+std::vector<std::string> util_get_proc_cmdline() {
+    std::vector<std::string> ret;
+#if defined(_WIN32)
+    // CommandLineToArgvA doesn't exist, so we have to do this with wide strings and convert them to utf8 std::strings
+    int argc = 0;
+    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    char buf[MAX_PATH];
+    for (int i = 0; i < argc; i++) {
+        WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, buf, sizeof(buf), NULL, NULL);
+        buf[sizeof(buf) - 1] = '\0';
+        ret.push_back(buf);
+    }
+#elif defined(__linux__)
+    // read null-terminated argv strings from /proc/self/cmdline
+    std::ifstream in("/proc/self/cmdline");
+    std::string argv;
+    while (std::getline(in, argv, '\0')) {
+        ret.push_back(argv);
+    }
+#endif
+    return ret;
+}
+
+
+std::string util_get_cmdline_arg(std::string arg, std::string def) {
+    std::vector<std::string> argv = util_get_proc_cmdline();
+    // 1 to skip binary name
+    for (size_t i = 1; i < argv.size(); i++) {
+        if (str_striequal(argv[i], arg) && i != argv.size() - 1) {
+            return argv[i + 1];
+        }
+    }
+    return def;
 }
 
 

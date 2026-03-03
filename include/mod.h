@@ -16,17 +16,17 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-struct mod_t {
+struct mod {
     void* dll = nullptr;
-    qvm_t qvm = {};
+    qvm vm = {};
     intptr_t vmbase = 0;
     std::string path;
 };
 
-extern mod_t g_mod;
+extern mod g_mod;
 
-bool mod_load(mod_t& mod, std::string file);
-void mod_unload(mod_t& mod);
+bool mod_load(mod& mod, std::string file);
+void mod_unload(mod& mod);
 
 #endif // QMM2_MOD_H
 

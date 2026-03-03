@@ -452,9 +452,9 @@ void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
 
 
 bool SOF2SP_mod_load(void* entry) {
-    mod_GetGameAPI_t mod_GetGameAPI = (mod_GetGameAPI_t)entry;
+    mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     // api version gets passed before import pointer
-    orig_export = (game_export_t*)mod_GetGameAPI((void*)orig_apiversion, &qmm_import);
+    orig_export = (game_export_t*)pfnGGA((void*)orig_apiversion, &qmm_import);
 
     return !!orig_export;
 }

@@ -225,14 +225,14 @@ static void MOHBT_SpawnEntities(char* entstring, int levelTime) {
         s_entity_tokens = util_parse_entstring(entstring);
         s_tokencount = 0;
     }
-    cgame_is_QMM_vmMain_call = true;
+    cgame.is_from_QMM = true;
     vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
 }
 
 
 // at least one of first four args is a float (see big comment at top of game_q2r.cpp), so use specific types
 static void MOHBT_DebugCircle(float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6) {
-    cgame_is_QMM_vmMain_call = true;
+    cgame.is_from_QMM = true;
     vmMain(GAME_DEBUG_CIRCLE, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
@@ -793,8 +793,8 @@ void* MOHBT_GetGameAPI(void* import, void*) {
 
 
 bool MOHBT_mod_load(void* entry) {
-    mod_GetGameAPI_t mod_GetGameAPI = (mod_GetGameAPI_t)entry;
-    orig_export = (game_export_t*)mod_GetGameAPI(&qmm_import, nullptr);
+    mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
+    orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
     return !!orig_export;
 }
