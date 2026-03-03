@@ -12,7 +12,6 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS
 #include "osdef.h"
 #include <cstdarg>
-#include <cstdio>
 #include <vector>
 #include <string>
 #include "qmmapi.h"

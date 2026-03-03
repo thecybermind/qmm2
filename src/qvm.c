@@ -11,9 +11,9 @@ Created By:
 
 #define QMM_LOGGING
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h> // intptr_t and uint8_t
+#include <stdlib.h> // malloc and free
+#include <string.h> // memcpy and memset
 #include "qvm.h"
 
 #ifdef QMM_LOGGING

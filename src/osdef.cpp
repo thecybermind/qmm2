@@ -11,7 +11,7 @@ Created By:
 
 #include "osdef.h"
 #include <string>
-#include <cstring>
+#include <cstring>  // memset in linux only
 #include "util.h"   // strncpyz in linux only
 
 #ifdef _WIN32

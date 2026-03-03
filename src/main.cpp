@@ -11,7 +11,7 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS
 #include "osdef.h"
-#include <cstdlib>
+#include <cstdlib>  // atoi
 #include <string>
 #include "log.h"
 #include "format.h"

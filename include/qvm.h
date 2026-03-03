@@ -12,8 +12,8 @@ Created By:
 #ifndef QMM2_QVM_H
 #define QMM2_QVM_H
 
-#include <stdint.h>
-#include <stddef.h>
+#include <stdint.h> // intptr_t and uint8_t
+#include <stddef.h> // ptrdiff_t and size_t
 
 // macros used throughout qvm_load or qvm_exec
 

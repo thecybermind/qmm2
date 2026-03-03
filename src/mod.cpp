@@ -11,7 +11,6 @@ Created By:
 
 #include "osdef.h"
 #include <cstdint>
-#include <cstring>
 #include <vector>
 #include <string>
 #include "log.h"

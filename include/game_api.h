@@ -12,7 +12,7 @@ Created By:
 #ifndef QMM2_GAME_API_H
 #define QMM2_GAME_API_H
 
-#include <cstdint>
+#include <cstdint>  // intptr_t
 #include <cstdarg>
 #include <vector>
 #include <string>
