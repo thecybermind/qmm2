@@ -61,20 +61,26 @@ void* osdef_path_get_qmm_handle() {
 #if defined(_WIN32)
     return s_dll;
 #elif defined(__linux__)
+    static void* module;
+    if (module)
+        return module;
+
     Dl_info dli;
     memset(&dli, 0, sizeof(dli));
 
     if (!dladdr(&dli, &dli))
         return nullptr;
 
-    return dli.dli_fbase;
+    module = dli.dli_fbase;
+    return module;
 #endif
 }
 
 
 const char* osdef_path_get_qmm_path() {
-    static char path[PATH_MAX] = "";
-    memset(path, 0, sizeof(path));
+    static char path[PATH_MAX];
+    if (path[0])
+        return path;
 
 #if defined(_WIN32)
     if (!GetModuleFileName(s_dll, path, sizeof(path)))
@@ -93,8 +99,9 @@ const char* osdef_path_get_qmm_path() {
 
 
 const char* osdef_path_get_proc_path() {
-    static char path[PATH_MAX] = "";
-    memset(path, 0, sizeof(path));
+    static char path[PATH_MAX];
+    if (path[0])
+        return path;
 
 #if defined(_WIN32)
     if (!GetModuleFileName(nullptr, path, sizeof(path)))

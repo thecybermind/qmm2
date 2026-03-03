@@ -32,9 +32,7 @@ Created By:
 #define EXT_DLL "dll"
 #define EXT_QVM "qvm"
 
-#define NAKED				__declspec(naked)
 #define PATH_MAX			4096
-#define my_vsnprintf		_vsnprintf
 #define strcasecmp			_stricmp
 #define dlopen(file, x)		((void*)LoadLibrary(file))
 #define dlsym(dll, func)	((void*)GetProcAddress((HMODULE)(dll), (func)))
@@ -62,8 +60,6 @@ const char* dlerror();		// this will return the last error from any win32 functi
 #define EXT_DLL "so"
 #define EXT_QVM "qvm"
 
-#define NAKED				__attribute__((naked))
-#define my_vsnprintf		vsnprintf
 void MessageBoxA(void* handle, const char* message, const char* title, int flags);
 
 #else // !_WIN32 && !__linux__
