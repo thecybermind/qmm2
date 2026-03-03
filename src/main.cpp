@@ -228,7 +228,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 #ifdef _DEBUG
         LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passthrough vmMain({}) returning {}\n", cmd, ret);
 #endif
-
+        // next call into combined mod after GAME_SHUTDOWN should be CGAME_SHUTDOWN so unload mod now
         if (cgame.is_shutdown) {
             // unload mod (dlclose)
             LOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
@@ -259,7 +259,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // initialize our polyfill milliseconds tracker so that now is 0
         (void)util_get_milliseconds();
 
-        // add engine G_PRINT logger (info level)
+        // add engine G_PRINT logger (info level and above)
         log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
             ENG_SYSCALL(msg_G_PRINT, log_format(metadata, message, false).c_str());
             }, AixLog::Severity::info);
