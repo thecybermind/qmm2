@@ -20,23 +20,13 @@ Created By:
 GEN_QMM_MSGS(COD11MP);
 GEN_EXTS(COD11MP);
 
-static const char* COD11MP_eng_msg_names(intptr_t);
-static const char* COD11MP_mod_msg_names(intptr_t);
-static void COD11MP_dllEntry(eng_syscall);
-static bool COD11MP_mod_load(void*, bool);
-static void COD11MP_mod_unload();
-supportedgame_funcs COD11MP_funcs = {
-    COD11MP_qmm_eng_msgs,
-    COD11MP_qmm_mod_msgs,
-    COD11MP_eng_msg_names,
-    COD11MP_mod_msg_names,
-    nullptr, // COD11MP_autodetect
-    nullptr, // COD11MP_qvmsyscall
-    COD11MP_dllEntry,
-    nullptr, // COD11MP_GetGameAPI
-    COD11MP_mod_load,
-    COD11MP_mod_unload
-};
+GEN_DLL(COD11MP);
+
+
+// auto-detection logic for COD11MP (never auto-detect)
+static bool COD11MP_autodetect(bool, supportedgame*) {
+    return false;
+}
 
 
 // original syscall pointer that comes from the game engine
