@@ -469,7 +469,7 @@ static void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
 }
 
 
-static bool SOF2SP_mod_load(void* entry) {
+static bool SOF2SP_mod_load(void* entry, bool) {
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     // api version gets passed before import pointer
     orig_export = (game_export_t*)pfnGGA((void*)orig_apiversion, &qmm_import);

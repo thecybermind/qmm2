@@ -810,7 +810,7 @@ static void* MOHSH_GetGameAPI(void* import, void*) {
 }
 
 
-static bool MOHSH_mod_load(void* entry) {
+static bool MOHSH_mod_load(void* entry, bool) {
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 

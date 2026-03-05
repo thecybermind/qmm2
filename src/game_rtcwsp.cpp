@@ -67,7 +67,7 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
         s = "";
         int i = 1;
         while (i < orig_syscall(G_ARGC)) {
-            orig_syscall(G_ARGV, buf, sizeof(buf));
+            orig_syscall(G_ARGV, i, buf, sizeof(buf));
             buf[sizeof(buf) - 1] = '\0';
             if (i != 1)
                 s += " ";
@@ -135,7 +135,7 @@ static void RTCWSP_dllEntry(eng_syscall syscall) {
 }
 
 
-static bool RTCWSP_mod_load(void* entry) {
+static bool RTCWSP_mod_load(void* entry, bool) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;

@@ -23,7 +23,7 @@ GEN_EXTS(COD11MP);
 static const char* COD11MP_eng_msg_names(intptr_t);
 static const char* COD11MP_mod_msg_names(intptr_t);
 static void COD11MP_dllEntry(eng_syscall);
-static bool COD11MP_mod_load(void*);
+static bool COD11MP_mod_load(void*, bool);
 static void COD11MP_mod_unload();
 supportedgame_funcs COD11MP_funcs = {
     COD11MP_qmm_eng_msgs,
@@ -66,7 +66,7 @@ static intptr_t COD11MP_syscall(intptr_t cmd, ...) {
         s = "";
         int i = 1;
         while (i < orig_syscall(G_ARGC)) {
-            orig_syscall(G_ARGV, buf, sizeof(buf));
+            orig_syscall(G_ARGV, i, buf, sizeof(buf));
             buf[sizeof(buf) - 1] = '\0';
             if (i != 1)
                 s += " ";
@@ -134,7 +134,7 @@ static void COD11MP_dllEntry(eng_syscall syscall) {
 }
 
 
-static bool COD11MP_mod_load(void* entry) {
+static bool COD11MP_mod_load(void* entry, bool) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;

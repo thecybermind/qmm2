@@ -540,7 +540,7 @@ static void* QUAKE2_GetGameAPI(void* import, void*) {
 }
 
 
-static bool QUAKE2_mod_load(void* entry) {
+static bool QUAKE2_mod_load(void* entry, bool) {
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
