@@ -12,6 +12,11 @@ Created By:
 #ifndef QMM2_GAME_JAMP_H
 #define QMM2_GAME_JAMP_H
 
+// these import messages do not exist in the "legacy" JAMP API but they do in GetModuleAPI
+enum {
+	G_SV_REGISTER_SHARED_MEMORY = 90,	// void (char *memory)
+};
+
 // these import messages do not have an exact analogue in JAMP
 enum {
 	G_ARGS = -100,					// char* (void)
