@@ -19,9 +19,28 @@ Created By:
 #include "game_sof2mp.h"
 #include "main.h"
 #include "mod.h"
+#include "util.h"
 
 GEN_QMM_MSGS(SOF2MP);
 GEN_EXTS(SOF2MP);
+
+GEN_DLLQVM(SOF2MP);
+
+
+// auto-detection logic for SOF2MP
+static bool SOF2MP_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "sof2mp") && !str_stristr(g_gameinfo.exe_file, "sof2ded"))
+        return false;
+
+    return true;
+}
+
 
 // original syscall pointer that comes from the game engine
 static eng_syscall orig_syscall = nullptr;
@@ -31,7 +50,7 @@ static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t SOF2MP_syscall(intptr_t cmd, ...) {
+static intptr_t SOF2MP_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -79,7 +98,7 @@ intptr_t SOF2MP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
+static intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -143,7 +162,7 @@ intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
 }
 
 
-void SOF2MP_dllEntry(eng_syscall syscall) {
+static void SOF2MP_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_dllEntry({}) called\n", (void*)syscall);
 
     // store original syscall from engine
@@ -160,7 +179,7 @@ void SOF2MP_dllEntry(eng_syscall syscall) {
 
 
 // get mod's vmMain function pointer from mod.cpp::mod_load
-bool SOF2MP_mod_load(void* entry) {
+static bool SOF2MP_mod_load(void* entry) {
     orig_vmMain = (mod_vmMain)entry;
 
     // we cannot verify data in the QVM since this engine both provides malloc functionality and has the gametype module,
@@ -172,12 +191,12 @@ bool SOF2MP_mod_load(void* entry) {
 }
 
 
-void SOF2MP_mod_unload() {
+static void SOF2MP_mod_unload() {
     orig_vmMain = nullptr;
 }
 
 
-const char* SOF2MP_eng_msg_names(intptr_t cmd) {
+static const char* SOF2MP_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -450,7 +469,7 @@ const char* SOF2MP_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* SOF2MP_mod_msg_names(intptr_t cmd) {
+static const char* SOF2MP_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
@@ -482,7 +501,7 @@ const char* SOF2MP_mod_msg_names(intptr_t cmd) {
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // TGPValue, TGPGroup, and TGenericParser2 are void*, but treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
-int SOF2MP_qvmsyscall(uint8_t* membase, int cmd, int* args) {
+static int SOF2MP_qvmsyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
     LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_qvmsyscall({} {}) called\n", SOF2MP_eng_msg_names(cmd), cmd);
 #endif

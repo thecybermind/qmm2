@@ -16,10 +16,28 @@ Created By:
 // QMM-specific COD11MP header
 #include "game_cod11mp.h"
 #include "main.h"
-#include "mod.h"
 
 GEN_QMM_MSGS(COD11MP);
 GEN_EXTS(COD11MP);
+
+static const char* COD11MP_eng_msg_names(intptr_t);
+static const char* COD11MP_mod_msg_names(intptr_t);
+static void COD11MP_dllEntry(eng_syscall);
+static bool COD11MP_mod_load(void*);
+static void COD11MP_mod_unload();
+supportedgame_funcs COD11MP_funcs = {
+    COD11MP_qmm_eng_msgs,
+    COD11MP_qmm_mod_msgs,
+    COD11MP_eng_msg_names,
+    COD11MP_mod_msg_names,
+    nullptr, // COD11MP_autodetect
+    nullptr, // COD11MP_qvmsyscall
+    COD11MP_dllEntry,
+    nullptr, // COD11MP_GetGameAPI
+    COD11MP_mod_load,
+    COD11MP_mod_unload
+};
+
 
 // original syscall pointer that comes from the game engine
 static eng_syscall orig_syscall = nullptr;
@@ -29,7 +47,7 @@ static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t COD11MP_syscall(intptr_t cmd, ...) {
+static intptr_t COD11MP_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -76,7 +94,7 @@ intptr_t COD11MP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t COD11MP_vmMain(intptr_t cmd, ...) {
+static intptr_t COD11MP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -100,7 +118,7 @@ intptr_t COD11MP_vmMain(intptr_t cmd, ...) {
 }
 
 
-void COD11MP_dllEntry(eng_syscall syscall) {
+static void COD11MP_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("COD11MP_dllEntry({}) called\n", (void*)syscall);
 
     // store original syscall from engine
@@ -116,19 +134,19 @@ void COD11MP_dllEntry(eng_syscall syscall) {
 }
 
 
-bool COD11MP_mod_load(void* entry) {
+static bool COD11MP_mod_load(void* entry) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-void COD11MP_mod_unload() {
+static void COD11MP_mod_unload() {
     orig_vmMain = nullptr;
 }
 
 
-const char* COD11MP_eng_msg_names(intptr_t cmd) {
+static const char* COD11MP_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_ERROR);
@@ -275,7 +293,7 @@ const char* COD11MP_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* COD11MP_mod_msg_names(intptr_t cmd) {
+static const char* COD11MP_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

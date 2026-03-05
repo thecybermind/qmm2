@@ -18,9 +18,28 @@ Created By:
 #include "game_q3a.h"
 #include "main.h"
 #include "mod.h"
+#include "util.h"
 
 GEN_QMM_MSGS(STVOYHM);
 GEN_EXTS(STVOYHM);
+
+GEN_DLLQVM(STVOYHM);
+
+
+// auto-detection logic for Q3A
+static bool STVOYHM_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "stvoyhm"))
+        return false;
+
+    return true;
+}
+
 
 // original syscall pointer that comes from the game engine
 static eng_syscall orig_syscall = nullptr;
@@ -30,7 +49,7 @@ static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t STVOYHM_syscall(intptr_t cmd, ...) {
+static intptr_t STVOYHM_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -77,7 +96,7 @@ intptr_t STVOYHM_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t STVOYHM_vmMain(intptr_t cmd, ...) {
+static intptr_t STVOYHM_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -107,7 +126,7 @@ intptr_t STVOYHM_vmMain(intptr_t cmd, ...) {
 }
 
 
-void STVOYHM_dllEntry(eng_syscall syscall) {
+static void STVOYHM_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_dllEntry({}) called\n", (void*)syscall);
 
     // store original syscall from engine
@@ -123,19 +142,19 @@ void STVOYHM_dllEntry(eng_syscall syscall) {
 }
 
 
-bool STVOYHM_mod_load(void* entry) {
+static bool STVOYHM_mod_load(void* entry) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-void STVOYHM_mod_unload() {
+static void STVOYHM_mod_unload() {
     orig_vmMain = nullptr;
 }
 
 
-const char* STVOYHM_eng_msg_names(intptr_t cmd) {
+static const char* STVOYHM_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -335,7 +354,7 @@ const char* STVOYHM_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* STVOYHM_mod_msg_names(intptr_t cmd) {
+static const char* STVOYHM_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
@@ -361,7 +380,7 @@ const char* STVOYHM_mod_msg_names(intptr_t cmd) {
 */
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
-int STVOYHM_qvmsyscall(uint8_t* membase, int cmd, int* args) {
+static int STVOYHM_qvmsyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
     LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYHM_qvmsyscall({} {}) called\n", STVOYHM_eng_msg_names(cmd), cmd);
 #endif

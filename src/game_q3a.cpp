@@ -18,9 +18,28 @@ Created By:
 #include "game_q3a.h"
 #include "main.h"
 #include "mod.h"
+#include "util.h"
 
 GEN_QMM_MSGS(Q3A);
 GEN_EXTS(Q3A);
+
+GEN_DLLQVM(Q3A);
+
+
+// auto-detection logic for Q3A
+static bool Q3A_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "quake3") && !str_stristr(g_gameinfo.exe_file, "q3ded"))
+        return false;
+
+    return true;
+}
+
 
 // original syscall pointer that comes from the game engine
 static eng_syscall orig_syscall = nullptr;
@@ -30,7 +49,7 @@ static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t Q3A_syscall(intptr_t cmd, ...) {
+static intptr_t Q3A_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -76,7 +95,7 @@ intptr_t Q3A_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t Q3A_vmMain(intptr_t cmd, ...) {
+static intptr_t Q3A_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -106,7 +125,7 @@ intptr_t Q3A_vmMain(intptr_t cmd, ...) {
 }
 
 
-void Q3A_dllEntry(eng_syscall syscall) {
+static void Q3A_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_dllEntry({}) called\n", (void*)syscall);
 
     // store original syscall from engine
@@ -122,19 +141,19 @@ void Q3A_dllEntry(eng_syscall syscall) {
 }
 
 
-bool Q3A_mod_load(void* entry) {
+static bool Q3A_mod_load(void* entry) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-void Q3A_mod_unload() {
+static void Q3A_mod_unload() {
     orig_vmMain = nullptr;
 }
 
 
-const char* Q3A_eng_msg_names(intptr_t cmd) {
+static const char* Q3A_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -343,7 +362,7 @@ const char* Q3A_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* Q3A_mod_msg_names(intptr_t cmd) {
+static const char* Q3A_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
@@ -369,7 +388,7 @@ const char* Q3A_mod_msg_names(intptr_t cmd) {
 */
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
-int Q3A_qvmsyscall(uint8_t* membase, int cmd, int* args) {
+static int Q3A_qvmsyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
     LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q3A_qvmsyscall({} {}) called\n", Q3A_eng_msg_names(cmd), cmd);
 #endif

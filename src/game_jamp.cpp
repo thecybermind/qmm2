@@ -17,10 +17,31 @@ Created By:
 // QMM-specific JAMP header
 #include "game_jamp.h"
 #include "main.h"
-#include "mod.h"
+#include "util.h"
 
 GEN_QMM_MSGS(JAMP);
 GEN_EXTS(JAMP);
+
+GEN_DLL(JAMP);
+
+
+// auto-detection logic for JAMP
+static bool JAMP_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (is_GetGameAPI)
+        return false;
+
+    // QMM filename must match default or an OpenJK temp filename (if DLL was pulled from .pk3)
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname)
+        && !str_striequal(g_gameinfo.qmm_file.substr(0, 3), "ojk")
+        && !str_striequal(path_baseext(g_gameinfo.qmm_file), "tmp"))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "jamp") && !str_stristr(g_gameinfo.exe_file, "openjk.") && !str_stristr(g_gameinfo.exe_file, "openjkded"))
+        return false;
+
+    return true;
+}
+
 
 // original syscall pointer that comes from the game engine
 static eng_syscall orig_syscall = nullptr;
@@ -30,7 +51,7 @@ static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t JAMP_syscall(intptr_t cmd, ...) {
+static intptr_t JAMP_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -77,7 +98,7 @@ intptr_t JAMP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t JAMP_vmMain(intptr_t cmd, ...) {
+static intptr_t JAMP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -101,7 +122,7 @@ intptr_t JAMP_vmMain(intptr_t cmd, ...) {
 }
 
 
-void JAMP_dllEntry(eng_syscall syscall) {
+static void JAMP_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_dllEntry({}) called\n", (void*)syscall);
 
     // store original syscall from engine
@@ -117,19 +138,19 @@ void JAMP_dllEntry(eng_syscall syscall) {
 }
 
 
-bool JAMP_mod_load(void* entry) {
+static bool JAMP_mod_load(void* entry) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-void JAMP_mod_unload() {
+static void JAMP_mod_unload() {
     orig_vmMain = nullptr;
 }
 
 
-const char* JAMP_eng_msg_names(intptr_t cmd) {
+static const char* JAMP_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -467,7 +488,7 @@ const char* JAMP_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* JAMP_mod_msg_names(intptr_t cmd) {
+static const char* JAMP_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

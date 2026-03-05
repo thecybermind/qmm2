@@ -17,10 +17,28 @@ Created By:
 // QMM-specific RTCWSP header
 #include "game_q3a.h"
 #include "main.h"
-#include "mod.h"
+#include "util.h"
 
 GEN_QMM_MSGS(RTCWSP);
 GEN_EXTS(RTCWSP);
+
+GEN_DLL(RTCWSP);
+
+
+// auto-detection logic for RTCWSP
+static bool RTCWSP_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "wolfsp"))
+        return false;
+
+    return true;
+}
+
 
 // original syscall pointer that comes from the game engine
 static eng_syscall orig_syscall = nullptr;
@@ -30,7 +48,7 @@ static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
+static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -77,7 +95,7 @@ intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t RTCWSP_vmMain(intptr_t cmd, ...) {
+static intptr_t RTCWSP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -101,7 +119,7 @@ intptr_t RTCWSP_vmMain(intptr_t cmd, ...) {
 }
 
 
-void RTCWSP_dllEntry(eng_syscall syscall) {
+static void RTCWSP_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_dllEntry({}) called\n", (void*)syscall);
 
     // store original syscall from engine
@@ -117,19 +135,19 @@ void RTCWSP_dllEntry(eng_syscall syscall) {
 }
 
 
-bool RTCWSP_mod_load(void* entry) {
+static bool RTCWSP_mod_load(void* entry) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-void RTCWSP_mod_unload() {
+static void RTCWSP_mod_unload() {
     orig_vmMain = nullptr;
 }
 
 
-const char* RTCWSP_eng_msg_names(intptr_t cmd) {
+static const char* RTCWSP_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -338,7 +356,7 @@ const char* RTCWSP_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* RTCWSP_mod_msg_names(intptr_t cmd) {
+static const char* RTCWSP_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

@@ -17,10 +17,28 @@ Created By:
 // QMM-specific WET header
 #include "game_wet.h"
 #include "main.h"
-#include "mod.h"
+#include "util.h"
 
 GEN_QMM_MSGS(WET);
 GEN_EXTS(WET);
+
+GEN_DLL(WET);
+
+
+// auto-detection logic for WET
+static bool WET_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "et"))
+        return false;
+
+    return true;
+}
+
 
 // original syscall pointer that comes from the game engine
 static eng_syscall orig_syscall = nullptr;

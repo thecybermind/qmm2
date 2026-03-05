@@ -35,6 +35,24 @@ GEN_QMM_MSGS(Q2R);
 #undef GAME_INIT
 GEN_EXTS(Q2R);
 
+GEN_GGA(Q2R);
+
+
+// auto-detection logic for Q2R
+static bool Q2R_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (!is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "quake2ex"))
+        return false;
+
+    return true;
+}
+
+
 // a copy of the original import struct that comes from the game engine
 static game_import_t orig_import;
 
@@ -258,7 +276,7 @@ static void s_update_export() {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t Q2R_syscall(intptr_t cmd, ...) {
+static intptr_t Q2R_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -511,7 +529,7 @@ intptr_t Q2R_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t Q2R_vmMain(intptr_t cmd, ...) {
+static intptr_t Q2R_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -577,7 +595,7 @@ intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 }
 
 
-void* Q2R_GetGameAPI(void* import, void*) {
+static void* Q2R_GetGameAPI(void* import, void*) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_GetGameAPI({}) called\n", import);
 
     // original import struct from engine
@@ -605,7 +623,7 @@ void* Q2R_GetGameAPI(void* import, void*) {
 }
 
 
-bool Q2R_mod_load(void* entry) {
+static bool Q2R_mod_load(void* entry) {
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
@@ -613,12 +631,12 @@ bool Q2R_mod_load(void* entry) {
 }
 
 
-void Q2R_mod_unload() {
+static void Q2R_mod_unload() {
     orig_export = nullptr;
 }
 
 
-const char* Q2R_eng_msg_names(intptr_t cmd) {
+static const char* Q2R_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_BROADCAST_PRINT);
         GEN_CASE(G_COM_PRINT);
@@ -713,7 +731,7 @@ const char* Q2R_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* Q2R_mod_msg_names(intptr_t cmd) {
+static const char* Q2R_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_PREINIT);

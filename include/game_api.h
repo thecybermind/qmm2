@@ -14,73 +14,110 @@ Created By:
 
 #include <cstdint>  // intptr_t
 #include <cstdarg>
-#include <vector>
-#include <string>
 #include "qmmapi.h"
 #include "qvm.h"
 
-// some information for each game engine supported by QMM
-struct supportedgame {
-    const char* dllname;					// default dll mod filename
-    const char* qvmname;					// default qvm mod filename (NULL = not supported)
-    const char* moddir;						// default moddir name
-    const char* gamename_long;				// long, descriptive, game name
-    std::vector<std::string> exe_hints;		// array of hints that should appear in the executable filename to be considered a game match
-
+struct supportedgame;
+struct supportedgame_funcs {
     // this section is made by GEN_INFO(GAME)
-    const char* gamename_short;				// short initials for game
-    int* qmm_eng_msgs;						// array of engine messages used by QMM
-    int* qmm_mod_msgs;						// array of mod messages used by QMM
-    const char*(*eng_msg_names)(intptr_t);	// pointer to a function that returns a string for a given engine message
-    const char*(*mod_msg_names)(intptr_t);	// pointer to a function that returns a string for a given mod message
+    int* qmm_eng_msgs;							// array of engine messages used by QMM
+    int* qmm_mod_msgs;							// array of mod messages used by QMM
+    const char* (*pfnEngMsgNames)(intptr_t);	// pointer to a function that returns a string for a given engine message
+    const char* (*pfnModMsgNames)(intptr_t);	// pointer to a function that returns a string for a given mod message
 
     // this section is made by GEN_DLLQVM(GAME), GEN_DLL(GAME), or GEN_GGA(GAME)
-    qvm_syscall pfnqvmsyscall;				// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
-    mod_dllEntry pfndllEntry;				// pointer to a function that handles dllEntry entry for a game (NULL = not supported)
-    mod_GetGameAPI pfnGetGameAPI;			// pointer to a function that handles GetGameAPI entry for a game (NULL = not supported)
-    bool(*pfnModLoad)(void*);				// pointer to a function that handles mod loading logic after a DLL is loaded
-    void(*pfnModUnload)();					// pointer to a function that handles mod unloading logic before a DLL is unloaded
+    bool(*pfnAutoDetect)(bool, supportedgame*);	// pointer to a function that handles auto-detection logic for a game (NULL = no auto-detection)
+    qvm_syscall pfnqvmsyscall;					// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
+    mod_dllEntry pfndllEntry;					// pointer to a function that handles dllEntry entry for a game (NULL = not supported)
+    mod_GetGameAPI pfnGetGameAPI;				// pointer to a function that handles GetGameAPI entry for a game (NULL = not supported)
+    bool(*pfnModLoad)(void*);					// pointer to a function that handles mod loading logic after a DLL is loaded
+    void(*pfnModUnload)();						// pointer to a function that handles mod unloading logic before a DLL is unloaded
+};
 
-    int max_syscall_args;					// max number of syscall args that this game needs (unused for now, but nice to have easily available)
-    int max_vmmain_args;					// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
+// some information for each game engine supported by QMM
+struct supportedgame {
+    const char* dllname;			// default dll mod filename
+    const char* qvmname;			// default qvm mod filename (NULL = not supported)
+    const char* moddir;				// default moddir name
+    const char* gamename_long;		// long, descriptive, game name
+
+    // this section is made by GEN_FUNCS(GAME)
+    const char* gamename_short;		// short initials for game
+    supportedgame_funcs* funcs;     // function pointers for this game
+
+    int max_syscall_args;			// max number of syscall args that this game needs (unused for now, but nice to have easily available)
+    int max_vmmain_args;			// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
 };
 
 extern supportedgame g_supportedgames[];
 
 // macros to make game support a bit easier to do
-// these macros are used in game_api.cpp and game_xyz.cpp
 
-// generate externs for each game's msg arrays and functions
-#define GEN_EXTS(game)		extern int game##_qmm_eng_msgs[]; \
-							extern int game##_qmm_mod_msgs[]; \
-							const char* game##_eng_msg_names(intptr_t); \
-							const char* game##_mod_msg_names(intptr_t); \
-							int game##_qvmsyscall(uint8_t*, int, int*); \
-							void game##_dllEntry(eng_syscall); \
-							void* game##_GetGameAPI(void*, void*); \
-							bool game##_mod_load(void*); \
-							void game##_mod_unload();
+// used at the top of game_api.cpp and game_XYZ.cpp
+// ======
+// generate extern for each game's functions
+#define GEN_EXTS(game)	extern supportedgame_funcs game##_funcs;
 
-// generate struct info for the short name, messages arrays, and message name functions
-#define GEN_INFO(game)		#game, game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names
+// used in supportedgames entry in game_api.cpp
+// ======
+// generate extern for each game's shortcode and supportedgame_funcs struct (used in game_api.cpp)
+#define GEN_INFO(game)  #game , &game##_funcs
 
-// generate struct info for the game-specific entry functions
+// used in game_XYZ.cpp
+// ======
+// generate struct info for the game-specific functions and arrays
 
 // dllEntry/vmMain game with QVM support
-#define GEN_DLLQVM(game)	game##_qvmsyscall, game##_dllEntry, nullptr, game##_mod_load, game##_mod_unload
+#define GEN_DLLQVM(game) \
+static const char* game##_eng_msg_names(intptr_t); \
+static const char* game##_mod_msg_names(intptr_t); \
+static bool game##_autodetect(bool, supportedgame*); \
+static intptr_t game##_syscall(intptr_t cmd, ...); \
+static intptr_t game##_vmMain(intptr_t cmd, ...); \
+static int game##_qvmsyscall(uint8_t*, int, int*); \
+static void game##_dllEntry(eng_syscall); \
+static bool game##_mod_load(void*); \
+static void game##_mod_unload(); \
+supportedgame_funcs game##_funcs = { \
+	game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names, \
+	game##_autodetect, game##_qvmsyscall, game##_dllEntry, nullptr, \
+	game##_mod_load, game##_mod_unload \
+}
+
 // dllEntry/vmMain game with no QVM support
-#define GEN_DLL(game)		nullptr, game##_dllEntry, nullptr, game##_mod_load, game##_mod_unload
+#define GEN_DLL(game) \
+static const char* game##_eng_msg_names(intptr_t); \
+static const char* game##_mod_msg_names(intptr_t); \
+static bool game##_autodetect(bool, supportedgame*); \
+static intptr_t game##_syscall(intptr_t cmd, ...); \
+static intptr_t game##_vmMain(intptr_t cmd, ...); \
+static void game##_dllEntry(eng_syscall); \
+static bool game##_mod_load(void*); \
+static void game##_mod_unload(); \
+supportedgame_funcs game##_funcs = { \
+	game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names, \
+	game##_autodetect, nullptr, game##_dllEntry, nullptr, \
+	game##_mod_load, game##_mod_unload \
+}
+
 // GetGameAPI game
-#define GEN_GGA(game)		nullptr, nullptr, game##_GetGameAPI, game##_mod_load, game##_mod_unload
+#define GEN_GGA(game) \
+static const char* game##_eng_msg_names(intptr_t); \
+static const char* game##_mod_msg_names(intptr_t); \
+static bool game##_autodetect(bool, supportedgame*); \
+static intptr_t game##_syscall(intptr_t cmd, ...); \
+static intptr_t game##_vmMain(intptr_t cmd, ...); \
+static void* game##_GetGameAPI(void*, void*); \
+static bool game##_mod_load(void*); \
+static void game##_mod_unload(); \
+supportedgame_funcs game##_funcs = { \
+	game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names, \
+	game##_autodetect, nullptr, nullptr, game##_GetGameAPI, \
+	game##_mod_load, game##_mod_unload \
+}
 
-// only for development/testing new game support
-// dllEntry/vmMain game with QVM support and no modload/modunload, dllentry, or syscall/vmmain handlers
-#define GEN_QVM(game)		game##_qvmsyscall, nullptr, nullptr, nullptr, nullptr
-// dllEntry/vmMain game with no QVM support and no modload/modunload, dllentry, or syscall/vmmain handlers
-#define GEN_NONE(game)		nullptr, nullptr, nullptr, nullptr, nullptr
-
-// generate a case/string line for the message name functions
-#define GEN_CASE(x)			case x: return #x
+// generate a case/string line for use in the _msg_names functions
+#define GEN_CASE(x)				case x: return #x
 
 // a list of all the engine messages/constants used by QMM. if you change this, update the GEN_QMM_MSGS macro
 enum {
@@ -97,12 +134,12 @@ enum { QMM_GAME_INIT, QMM_GAME_SHUTDOWN, QMM_GAME_CONSOLE_COMMAND, };
 
 // macro to easily output game-specific message values to match the enums above. this macro goes in game_*.cpp
 #define GEN_QMM_MSGS(game) \
-	int game##_qmm_eng_msgs[] = { \
+	static int game##_qmm_eng_msgs[] = { \
 		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING, \
 		G_CVAR_REGISTER, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, \
 		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, \
 	}; \
-	int game##_qmm_mod_msgs[] = { \
+	static int game##_qmm_mod_msgs[] = { \
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
 	}
 

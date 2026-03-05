@@ -16,7 +16,7 @@ Created By:
 // QMM-specific CODMP header
 #include "game_codmp.h"
 #include "main.h"
-#include "mod.h"
+#include "util.h"
 
 // GAME_GET_APIVERSION gets called first, which is when QMM has to perform mod/plugin loading, but we
 // don't want to make plugins have to use separate code to handle the actual GAME_INIT message, so just
@@ -26,6 +26,24 @@ GEN_QMM_MSGS(CODMP);
 #undef GAME_INIT
 GEN_EXTS(CODMP);
 
+GEN_DLL(CODMP);
+
+
+// auto-detection logic for CODMP
+static bool CODMP_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "codmp") && !str_stristr(g_gameinfo.exe_file, "cod_lnxded"))
+        return false;
+
+    return true;
+}
+
+
 // original syscall pointer that comes from the game engine
 static eng_syscall orig_syscall = nullptr;
 
@@ -34,7 +52,7 @@ static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t CODMP_syscall(intptr_t cmd, ...) {
+static intptr_t CODMP_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -81,7 +99,7 @@ intptr_t CODMP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t CODMP_vmMain(intptr_t cmd, ...) {
+static intptr_t CODMP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -105,7 +123,7 @@ intptr_t CODMP_vmMain(intptr_t cmd, ...) {
 }
 
 
-void CODMP_dllEntry(eng_syscall syscall) {
+static void CODMP_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_dllEntry({}) called\n", (void*)syscall);
 
     // store original syscall from engine
@@ -121,19 +139,19 @@ void CODMP_dllEntry(eng_syscall syscall) {
 }
 
 
-bool CODMP_mod_load(void* entry) {
+static bool CODMP_mod_load(void* entry) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-void CODMP_mod_unload() {
+static void CODMP_mod_unload() {
     orig_vmMain = nullptr;
 }
 
 
-const char* CODMP_eng_msg_names(intptr_t cmd) {
+static const char* CODMP_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_ERROR);
@@ -285,7 +303,7 @@ const char* CODMP_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* CODMP_mod_msg_names(intptr_t cmd) {
+static const char* CODMP_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_DEFAULT_0);
         GEN_CASE(GAME_GET_APIVERSION);

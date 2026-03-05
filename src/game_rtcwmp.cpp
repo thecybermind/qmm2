@@ -17,10 +17,28 @@ Created By:
 // QMM-specific RTCWMP header
 #include "game_q3a.h"
 #include "main.h"
-#include "mod.h"
+#include "util.h"
 
 GEN_QMM_MSGS(RTCWMP);
 GEN_EXTS(RTCWMP);
+
+GEN_DLL(RTCWMP);
+
+
+// auto-detection logic for RTCWMP
+static bool RTCWMP_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "wolfmp") && !str_stristr(g_gameinfo.exe_file, "wolfded"))
+        return false;
+
+    return true;
+}
+
 
 // original syscall pointer that comes from the game engine
 static eng_syscall orig_syscall = nullptr;
@@ -30,7 +48,7 @@ static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t RTCWMP_syscall(intptr_t cmd, ...) {
+static intptr_t RTCWMP_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -77,7 +95,7 @@ intptr_t RTCWMP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t RTCWMP_vmMain(intptr_t cmd, ...) {
+static intptr_t RTCWMP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -101,7 +119,7 @@ intptr_t RTCWMP_vmMain(intptr_t cmd, ...) {
 }
 
 
-void RTCWMP_dllEntry(eng_syscall syscall) {
+static void RTCWMP_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_dllEntry({}) called\n", (void*)syscall);
 
     // store original syscall from engine
@@ -117,19 +135,19 @@ void RTCWMP_dllEntry(eng_syscall syscall) {
 }
 
 
-bool RTCWMP_mod_load(void* entry) {
+static bool RTCWMP_mod_load(void* entry) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-void RTCWMP_mod_unload() {
+static void RTCWMP_mod_unload() {
     orig_vmMain = nullptr;
 }
 
 
-const char* RTCWMP_eng_msg_names(intptr_t cmd) {
+static const char* RTCWMP_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -335,7 +353,7 @@ const char* RTCWMP_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* RTCWMP_mod_msg_names(intptr_t cmd) {
+static const char* RTCWMP_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

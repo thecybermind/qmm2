@@ -18,9 +18,28 @@ Created By:
 #include "game_jk2mp.h"
 #include "main.h"
 #include "mod.h"
+#include "util.h"
 
 GEN_QMM_MSGS(JK2MP);
 GEN_EXTS(JK2MP);
+
+GEN_DLLQVM(JK2MP);
+
+
+// auto-detection logic for JK2MP
+static bool JK2MP_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "jk2mp") && !str_stristr(g_gameinfo.exe_file, "jk2ded"))
+        return false;
+
+    return true;
+}
+
 
 // original syscall pointer that comes from the game engine
 static eng_syscall orig_syscall = nullptr;
@@ -30,7 +49,7 @@ static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t JK2MP_syscall(intptr_t cmd, ...) {
+static intptr_t JK2MP_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -77,7 +96,7 @@ intptr_t JK2MP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
+static intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -107,7 +126,7 @@ intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
 }
 
 
-void JK2MP_dllEntry(eng_syscall syscall) {
+static void JK2MP_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_dllEntry({}) called\n", (void*)syscall);
 
     // store original syscall from engine
@@ -123,19 +142,19 @@ void JK2MP_dllEntry(eng_syscall syscall) {
 }
 
 
-bool JK2MP_mod_load(void* entry) {
+static bool JK2MP_mod_load(void* entry) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-void JK2MP_mod_unload() {
+static void JK2MP_mod_unload() {
     orig_vmMain = nullptr;
 }
 
 
-const char* JK2MP_eng_msg_names(intptr_t cmd) {
+static const char* JK2MP_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -374,7 +393,7 @@ const char* JK2MP_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* JK2MP_mod_msg_names(intptr_t cmd) {
+static const char* JK2MP_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

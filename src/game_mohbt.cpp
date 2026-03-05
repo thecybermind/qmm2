@@ -27,6 +27,24 @@ Created By:
 GEN_QMM_MSGS(MOHBT);
 GEN_EXTS(MOHBT);
 
+GEN_GGA(MOHBT);
+
+
+// auto-detection logic for MOHBT
+static bool MOHBT_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (!is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "break"))
+        return false;
+
+    return true;
+}
+
+
 // a copy of the original import struct that comes from the game engine
 static game_import_t orig_import;
 
@@ -317,7 +335,7 @@ static void s_update_export() {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t MOHBT_syscall(intptr_t cmd, ...) {
+static intptr_t MOHBT_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -689,7 +707,7 @@ intptr_t MOHBT_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t MOHBT_vmMain(intptr_t cmd, ...) {
+static intptr_t MOHBT_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -762,7 +780,7 @@ intptr_t MOHBT_vmMain(intptr_t cmd, ...) {
 }
 
 
-void* MOHBT_GetGameAPI(void* import, void*) {
+static void* MOHBT_GetGameAPI(void* import, void*) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_GetGameAPI({}) called\n", import);
 
     // original import struct from engine
@@ -792,7 +810,7 @@ void* MOHBT_GetGameAPI(void* import, void*) {
 }
 
 
-bool MOHBT_mod_load(void* entry) {
+static bool MOHBT_mod_load(void* entry) {
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
@@ -800,12 +818,12 @@ bool MOHBT_mod_load(void* entry) {
 }
 
 
-void MOHBT_mod_unload() {
+static void MOHBT_mod_unload() {
     orig_export = nullptr;
 }
 
 
-const char* MOHBT_eng_msg_names(intptr_t cmd) {
+static const char* MOHBT_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -994,7 +1012,7 @@ const char* MOHBT_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* MOHBT_mod_msg_names(intptr_t cmd) {
+static const char* MOHBT_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);
