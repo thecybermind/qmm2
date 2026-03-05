@@ -15,7 +15,7 @@ Created By:
 #include "game_api.h"
 #include "log.h"
 // QMM-specific RTCWSP header
-#include "game_q3a.h"
+#include "game_rtcwsp.h"
 #include "main.h"
 #include "util.h"
 
