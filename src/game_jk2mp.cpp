@@ -47,7 +47,7 @@ static eng_syscall orig_syscall = nullptr;
 // pointer to vmMain that comes from the mod
 static mod_vmMain orig_vmMain = nullptr;
 
-// wrapper syscall function that calls actual engine func from orig_import
+// wrapper syscall function that calls actual engine func in orig_syscall
 // this is how QMM and plugins will call into the engine
 static intptr_t JK2MP_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
@@ -94,7 +94,7 @@ static intptr_t JK2MP_syscall(intptr_t cmd, ...) {
 }
 
 
-// wrapper vmMain function that calls actual mod func from orig_export
+// wrapper vmMain function that calls actual mod func in orig_vmMain
 // this is how QMM and plugins will call into the mod
 static intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();

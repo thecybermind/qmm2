@@ -75,7 +75,7 @@ static eng_syscall orig_syscall_legacy = nullptr;
 static mod_vmMain orig_vmMain_legacy = nullptr;
 
 
-// wrapper syscall function that calls actual engine func from orig_import
+// wrapper syscall function that calls actual engine func in orig_syscall_legacy
 // this is how QMM and plugins will call into the engine
 static intptr_t JAMP_syscall_legacy(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
@@ -125,7 +125,7 @@ static intptr_t JAMP_syscall_legacy(intptr_t cmd, ...) {
 }
 
 
-// wrapper vmMain function that calls actual mod func from orig_export
+// wrapper vmMain function that calls actual mod func in orig_vmMain_legacy
 // this is how QMM and plugins will call into the mod
 static intptr_t JAMP_vmMain_legacy(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
