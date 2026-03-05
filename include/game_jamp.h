@@ -12,6 +12,11 @@ Created By:
 #ifndef QMM2_GAME_JAMP_H
 #define QMM2_GAME_JAMP_H
 
+// meh
+enum {
+	G_FS_LISTFILES = G_FS_GETFILELIST,
+};
+
 // these import messages do not have an exact analogue in JAMP
 enum {
 	G_ARGS = -100,					// char* (void)
