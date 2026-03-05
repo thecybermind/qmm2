@@ -208,7 +208,7 @@ std::string str_toupper(std::string str) {
 }
 
 
-int str_stristr(std::string haystack, std::string needle) {
+bool str_stristr(std::string haystack, std::string needle) {
     return str_tolower(haystack).find(str_tolower(needle)) != std::string::npos;
 }
 

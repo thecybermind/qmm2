@@ -36,8 +36,8 @@ struct gameinfo {
 };
 extern gameinfo g_gameinfo;
 
-#define QMM_ENG_MSG	(g_gameinfo.game->qmm_eng_msgs)
-#define QMM_MOD_MSG	(g_gameinfo.game->qmm_mod_msgs)
+#define QMM_ENG_MSG	(g_gameinfo.game->funcs->qmm_eng_msgs)
+#define QMM_MOD_MSG	(g_gameinfo.game->funcs->qmm_mod_msgs)
 
 #define ENG_SYSCALL	(g_gameinfo.pfnsyscall)
 #define CONSOLE_PRINT(str)           ENG_SYSCALL(msg_G_PRINT, str)

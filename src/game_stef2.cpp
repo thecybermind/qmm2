@@ -24,6 +24,24 @@ Created By:
 GEN_QMM_MSGS(STEF2);
 GEN_EXTS(STEF2);
 
+GEN_GGA(STEF2);
+
+
+// auto-detection logic for STEF2
+static bool STEF2_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (!is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "ef"))
+        return false;
+
+    return true;
+}
+
+
 // a copy of the original import struct that comes from the game engine
 static game_import_t orig_import;
 
@@ -466,7 +484,7 @@ static void s_update_export() {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t STEF2_syscall(intptr_t cmd, ...) {
+static intptr_t STEF2_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -871,7 +889,7 @@ intptr_t STEF2_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t STEF2_vmMain(intptr_t cmd, ...) {
+static intptr_t STEF2_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -940,7 +958,7 @@ intptr_t STEF2_vmMain(intptr_t cmd, ...) {
 }
 
 
-void* STEF2_GetGameAPI(void* import, void*) {
+static void* STEF2_GetGameAPI(void* import, void*) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_GetGameAPI({}) called\n", import);
 
     // original import struct from engine
@@ -967,7 +985,7 @@ void* STEF2_GetGameAPI(void* import, void*) {
 }
 
 
-bool STEF2_mod_load(void* entry) {
+static bool STEF2_mod_load(void* entry) {
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
@@ -975,12 +993,12 @@ bool STEF2_mod_load(void* entry) {
 }
 
 
-void STEF2_mod_unload() {
+static void STEF2_mod_unload() {
     orig_export = nullptr;
 }
 
 
-const char* STEF2_eng_msg_names(intptr_t cmd) {
+static const char* STEF2_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -1333,7 +1351,7 @@ const char* STEF2_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* STEF2_mod_msg_names(intptr_t cmd) {
+static const char* STEF2_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);

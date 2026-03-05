@@ -21,6 +21,24 @@ Created By:
 GEN_QMM_MSGS(SOF2SP);
 GEN_EXTS(SOF2SP);
 
+GEN_GGA(SOF2SP);
+
+
+// auto-detection logic for SOF2SP
+static bool SOF2SP_autodetect(bool is_GetGameAPI, supportedgame* game) {
+    if (!is_GetGameAPI)
+        return false;
+
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+        return false;
+
+    if (!str_stristr(g_gameinfo.exe_file, "sof2"))
+        return false;
+
+    return true;
+}
+
+
 // a copy of the apiversion int that comes from the game engine
 static intptr_t orig_apiversion = 0;
 
@@ -191,7 +209,7 @@ static void s_update_export() {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
+static intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
@@ -367,7 +385,7 @@ intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
+static intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
@@ -424,7 +442,7 @@ intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
 }
 
 
-void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
+static void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
     orig_apiversion = (intptr_t)apiversion;
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GetGameAPI({}, {}) called\n", orig_apiversion, import);
 
@@ -451,7 +469,7 @@ void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
 }
 
 
-bool SOF2SP_mod_load(void* entry) {
+static bool SOF2SP_mod_load(void* entry) {
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     // api version gets passed before import pointer
     orig_export = (game_export_t*)pfnGGA((void*)orig_apiversion, &qmm_import);
@@ -460,12 +478,12 @@ bool SOF2SP_mod_load(void* entry) {
 }
 
 
-void SOF2SP_mod_unload() {
+static void SOF2SP_mod_unload() {
     orig_export = nullptr;
 }
 
 
-const char* SOF2SP_eng_msg_names(intptr_t cmd) {
+static const char* SOF2SP_eng_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -590,7 +608,7 @@ const char* SOF2SP_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* SOF2SP_mod_msg_names(intptr_t cmd) {
+static const char* SOF2SP_mod_msg_names(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

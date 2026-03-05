@@ -283,7 +283,7 @@ static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]]) {
 
 
 static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
-    const char* ret = g_gameinfo.game->eng_msg_names(msg);
+    const char* ret = g_gameinfo.game->funcs->pfnEngMsgNames(msg);
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnEngMsgName(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, msg, ret);
@@ -294,7 +294,7 @@ static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], i
 
 
 static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
-    const char* ret = g_gameinfo.game->mod_msg_names(msg);
+    const char* ret = g_gameinfo.game->funcs->pfnModMsgNames(msg);
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnModMsgName(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, msg, ret);
