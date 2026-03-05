@@ -194,6 +194,10 @@ static bool s_mod_load_getgameapi(mod& mod) {
     // look for GetGameAPI function
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)dlsym(mod.dll, "GetGameAPI");
 
+    // try for "GetModuleAPI", which is what OpenJK uses
+    if (!pfnGGA)
+        pfnGGA = (mod_GetGameAPI)dlsym(mod.dll, "GetModuleAPI");
+
     if (!pfnGGA) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", mod.path);
         goto fail;
