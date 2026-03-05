@@ -520,6 +520,11 @@ static void main_detect_env() {
     else {
         g_gameinfo.mod_dir = path_basename(g_gameinfo.qmm_dir);
     }
+
+    // hack for OpenJK
+    if (str_striequal(g_gameinfo.mod_dir, "temp")) {
+        g_gameinfo.mod_dir = "base";
+    }
 }
 
 
