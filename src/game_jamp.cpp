@@ -22,14 +22,36 @@ Created By:
 GEN_QMM_MSGS(JAMP);
 GEN_EXTS(JAMP);
 
-GEN_DLL(JAMP);
+// store whether or not this mod was loaded as GetGameAPI or not
+static bool s_is_GetGameAPI = false;
+
+// do not use macro since this game supports both dllEntry and GetGameAPI entry points
+static const char* JAMP_eng_msg_names(intptr_t);
+static const char* JAMP_mod_msg_names(intptr_t);
+static bool JAMP_autodetect(bool, supportedgame*);
+static intptr_t JAMP_syscall_legacy(intptr_t cmd, ...);
+static intptr_t JAMP_vmMain_legacy(intptr_t cmd, ...);
+static void JAMP_dllEntry(eng_syscall);
+static intptr_t JAMP_syscall_GGA(intptr_t cmd, ...);
+static intptr_t JAMP_vmMain_GGA(intptr_t cmd, ...);
+static void* JAMP_GetGameAPI(void*, void*);
+static bool JAMP_mod_load(void*);
+static void JAMP_mod_unload();
+supportedgame_funcs JAMP_funcs = {
+    JAMP_qmm_eng_msgs,
+    JAMP_qmm_mod_msgs,
+    JAMP_eng_msg_names,
+    JAMP_mod_msg_names,
+    JAMP_autodetect,
+    nullptr,    // JAMP_qvmsyscall
+    JAMP_dllEntry,
+    JAMP_GetGameAPI,
+    JAMP_mod_load, JAMP_mod_unload
+};
 
 
 // auto-detection logic for JAMP
 static bool JAMP_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (is_GetGameAPI)
-        return false;
-
     // QMM filename must match default or an OpenJK temp filename (if DLL was pulled from .pk3)
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname)
         && !str_striequal(g_gameinfo.qmm_file.substr(0, 3), "ojk")
@@ -39,25 +61,32 @@ static bool JAMP_autodetect(bool is_GetGameAPI, supportedgame* game) {
     if (!str_stristr(g_gameinfo.exe_file, "jamp") && !str_stristr(g_gameinfo.exe_file, "openjk.") && !str_stristr(g_gameinfo.exe_file, "openjkded"))
         return false;
 
+    // store how we were loaded
+    s_is_GetGameAPI = is_GetGameAPI;
+
     return true;
 }
 
 
 // original syscall pointer that comes from the game engine
-static eng_syscall orig_syscall = nullptr;
+static eng_syscall orig_syscall_legacy = nullptr;
 
 // pointer to vmMain that comes from the mod
-static mod_vmMain orig_vmMain = nullptr;
+static mod_vmMain orig_vmMain_legacy = nullptr;
+
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-static intptr_t JAMP_syscall(intptr_t cmd, ...) {
+static intptr_t JAMP_syscall_legacy(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_syscall({} {}) called\n", JAMP_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_syscall_legacy({} {}) called\n", JAMP_eng_msg_names(cmd), cmd);
 #endif
+
+    if (s_is_GetGameAPI)
+        return 0;
 
     intptr_t ret = 0;
 
@@ -69,8 +98,8 @@ static intptr_t JAMP_syscall(intptr_t cmd, ...) {
         static char buf[MAX_STRING_CHARS];
         s = "";
         int i = 1;
-        while (i < orig_syscall(G_ARGC)) {
-            orig_syscall(G_ARGV, buf, sizeof(buf));
+        while (i < orig_syscall_legacy(G_ARGC)) {
+            orig_syscall_legacy(G_ARGV, buf, sizeof(buf));
             buf[sizeof(buf) - 1] = '\0';
             if (i != 1)
                 s += " ";
@@ -82,14 +111,14 @@ static intptr_t JAMP_syscall(intptr_t cmd, ...) {
 
     default:
         // all normal engine functions go to engine
-        ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+        ret = orig_syscall_legacy(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
     // do anything that needs to be done after function call here
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_syscall({} {}) returning {}\n", JAMP_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_syscall_legacy({} {}) returning {}\n", JAMP_eng_msg_names(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -98,24 +127,27 @@ static intptr_t JAMP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-static intptr_t JAMP_vmMain(intptr_t cmd, ...) {
+static intptr_t JAMP_vmMain_legacy(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_vmMain({} {}) called\n", JAMP_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_vmMain_legacy({} {}) called\n", JAMP_mod_msg_names(cmd), cmd);
 #endif
 
-    if (!orig_vmMain)
+    if (s_is_GetGameAPI)
+        return 0;
+
+    if (!orig_vmMain_legacy)
         return 0;
 
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
     // all normal mod functions go to mod
-    ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    ret = orig_vmMain_legacy(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_vmMain({} {}) returning {}\n", JAMP_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_vmMain_legacy({} {}) returning {}\n", JAMP_mod_msg_names(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -125,28 +157,161 @@ static intptr_t JAMP_vmMain(intptr_t cmd, ...) {
 static void JAMP_dllEntry(eng_syscall syscall) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_dllEntry({}) called\n", (void*)syscall);
 
+    // store how we were loaded
+    s_is_GetGameAPI = false;
+
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall_legacy = syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
-    g_gameinfo.pfnvmMain = JAMP_vmMain;
+    g_gameinfo.pfnvmMain = JAMP_vmMain_legacy;
 
     // pointer to wrapper syscall function that calls actual engine syscall func
-    g_gameinfo.pfnsyscall = JAMP_syscall;
+    g_gameinfo.pfnsyscall = JAMP_syscall_legacy;
 
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_dllEntry({}) returning\n", (void*)syscall);
 }
 
 
-static bool JAMP_mod_load(void* entry) {
-    orig_vmMain = (mod_vmMain)entry;
+// these variables are all for the GGA implementation for OpenJK, but can't add _GGA suffix
+// to all because ROUTE_IMPORT/ROUTE_EXPORT macros use these names
 
-    return !!orig_vmMain;
+// a copy of the apiversion int that comes from the game engine
+static intptr_t orig_apiversion_GGA = 0;
+
+// a copy of the original import struct that comes from the game engine
+static game_import_t orig_import;
+
+// a copy of the original export struct pointer that comes from the mod
+static game_export_t* orig_export = nullptr;
+
+// struct with lambdas that call QMM's syscall function. this is given to the mod
+static game_import_t qmm_import = {
+    GEN_IMPORT(Print, G_PRINT),
+    // todo finish
+};
+
+// struct with lambdas that call QMM's vmMain function. this is given to the game engine
+static game_export_t qmm_export = {
+    GEN_EXPORT(InitGame, GAME_INIT),
+    // todo finish
+};
+
+
+// wrapper syscall function that calls actual engine func from orig_import
+// this is how QMM and plugins will call into the engine
+static intptr_t JAMP_syscall_GGA(intptr_t cmd, ...) {
+    QMM_GET_SYSCALL_ARGS();
+
+#ifdef _DEBUG
+    if (cmd != G_PRINT)
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_syscall_GGA({} {}) called\n", JAMP_eng_msg_names(cmd), cmd);
+#endif
+
+    if (!s_is_GetGameAPI)
+        return 0;
+
+    intptr_t ret = 0;
+
+    switch (cmd) {
+        ROUTE_IMPORT(Print, G_PRINT);
+
+    default:
+        break;
+    };
+
+    // do anything that needs to be done after function call here
+
+#ifdef _DEBUG
+    if (cmd != G_PRINT)
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_syscall_GGA({} {}) returning {}\n", JAMP_eng_msg_names(cmd), cmd, ret);
+#endif
+
+    return ret;
+}
+
+
+// wrapper vmMain function that calls actual mod func from orig_export
+// this is how QMM and plugins will call into the mod
+static intptr_t JAMP_vmMain_GGA(intptr_t cmd, ...) {
+    QMM_GET_VMMAIN_ARGS();
+
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_vmMain_GGA({} {}) called\n", JAMP_mod_msg_names(cmd), cmd);
+#endif
+
+    if (!s_is_GetGameAPI)
+        return 0;
+
+    if (!orig_export)
+        return 0;
+
+    // store return value since we do some stuff after the function call is over
+    intptr_t ret = 0;
+
+    switch (cmd) {
+        ROUTE_EXPORT(InitGame, GAME_INIT);
+
+    default:
+        break;
+    };
+
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_vmMain_GGA({} {}) returning {}\n", JAMP_mod_msg_names(cmd), cmd, ret);
+#endif
+
+    return ret;
+}
+
+
+static void* JAMP_GetGameAPI(void* apiversion, void* import) {
+    orig_apiversion_GGA = (intptr_t)apiversion;
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GetGameAPI({}, {}) called\n", orig_apiversion_GGA, import);
+
+    // store how we were loaded
+    s_is_GetGameAPI = true;
+
+    // original import struct from engine
+    // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
+    game_import_t* gi = (game_import_t*)import;
+    orig_import = *gi;
+
+    // fill in variables of our hooked import struct to pass to the mod
+
+    // pointer to wrapper vmMain function that calls actual mod func from orig_export
+    g_gameinfo.pfnvmMain = JAMP_vmMain_GGA;
+
+    // pointer to wrapper syscall function that calls actual engine func from orig_import
+    g_gameinfo.pfnsyscall = JAMP_syscall_GGA;
+
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GetGameAPI({}, {}) returning {}\n", orig_apiversion_GGA, import, (void*)&qmm_export);
+
+    // struct full of export lambdas to QMM's vmMain
+    // this gets returned to the game engine, but we haven't loaded the mod yet.
+    // the only thing in this struct the engine uses before calling Init is the apiversion
+    return &qmm_export;
+
+}
+
+
+static bool JAMP_mod_load(void* entry) {
+    if (s_is_GetGameAPI) {
+        mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
+        // api version gets passed before import pointer
+        orig_export = (game_export_t*)pfnGGA((void*)orig_apiversion_GGA, &qmm_import);
+
+        return !!orig_export;
+    }
+    else {
+        orig_vmMain_legacy = (mod_vmMain)entry;
+        return !!orig_vmMain_legacy;
+    }
 }
 
 
 static void JAMP_mod_unload() {
-    orig_vmMain = nullptr;
+    orig_export = nullptr;
+    orig_vmMain_legacy = nullptr;
 }
 
 
