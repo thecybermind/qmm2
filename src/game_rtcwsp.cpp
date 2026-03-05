@@ -46,7 +46,7 @@ static eng_syscall orig_syscall = nullptr;
 // pointer to vmMain that comes from the mod
 static mod_vmMain orig_vmMain = nullptr;
 
-// wrapper syscall function that calls actual engine func from orig_import
+// wrapper syscall function that calls actual engine func in orig_syscall
 // this is how QMM and plugins will call into the engine
 static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
@@ -67,7 +67,7 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
         s = "";
         int i = 1;
         while (i < orig_syscall(G_ARGC)) {
-            orig_syscall(G_ARGV, buf, sizeof(buf));
+            orig_syscall(G_ARGV, i, buf, sizeof(buf));
             buf[sizeof(buf) - 1] = '\0';
             if (i != 1)
                 s += " ";
@@ -93,7 +93,7 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
 }
 
 
-// wrapper vmMain function that calls actual mod func from orig_export
+// wrapper vmMain function that calls actual mod func in orig_vmMain
 // this is how QMM and plugins will call into the mod
 static intptr_t RTCWSP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
@@ -135,7 +135,7 @@ static void RTCWSP_dllEntry(eng_syscall syscall) {
 }
 
 
-static bool RTCWSP_mod_load(void* entry) {
+static bool RTCWSP_mod_load(void* entry, bool) {
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;

@@ -28,8 +28,6 @@ mod g_mod;
 static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...);
 static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args);
 static bool s_mod_load_qvm(mod& mod);
-static bool s_mod_load_vmmain(mod& mod);
-static bool s_mod_load_getgameapi(mod& mod);
 
 
 bool mod_load(mod& mod, std::string file) {
@@ -54,18 +52,67 @@ bool mod_load(mod& mod, std::string file) {
         }
 
         // if this DLL is the same as QMM, cancel
-        if ((void*)mod.dll == g_gameinfo.qmm_module_ptr) {
+        if (mod.dll == g_gameinfo.qmm_module_ptr) {
             LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL is actually QMM?\n", file);
-            mod_unload(mod);
+            dlclose(mod.dll);
             return false;
         }
 
-        // pass off to engine-specific loading function
-        if (g_gameinfo.game->funcs->pfnGetGameAPI)
-            return s_mod_load_getgameapi(mod);
-        else
-            return s_mod_load_vmmain(mod);
+        mod.vmbase = 0;
+
+        // if game supports GetGameAPI, look for GetGameAPI function
+        if (g_gameinfo.game->funcs->pfnGetGameAPI) {
+            mod_GetGameAPI pfnGGA = (mod_GetGameAPI)dlsym(mod.dll, "GetGameAPI");
+
+            // try for "GetModuleAPI", which is what OpenJK uses
+            if (!pfnGGA) {
+                pfnGGA = (mod_GetGameAPI)dlsym(mod.dll, "GetModuleAPI");
+            }
+
+            if (pfnGGA) {
+                // pass the GetGameAPI function pointer to the game-specific mod load handler
+                if (g_gameinfo.game->funcs->pfnModLoad &&
+                    g_gameinfo.game->funcs->pfnModLoad((void*)pfnGGA, true)) {     // true = is_GetGameAPI
+                    return true;
+                }
+                else {
+                    LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): \"GetGameAPI\" function failed\n", mod.path);
+                }
+            }
+            else {
+                LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", mod.path);
+            }
+        }
+
+        // if game supports dllEntry, look for dllEntry function
+        if (g_gameinfo.game->funcs->pfndllEntry) {
+            mod_dllEntry pfndllEntry = (mod_dllEntry)dlsym(mod.dll, "dllEntry");
+            mod_vmMain pfnvmMain = (mod_vmMain)dlsym(mod.dll, "vmMain");
+
+            if (pfndllEntry && pfnvmMain) {
+                if (g_gameinfo.game->funcs->pfnModLoad) {
+                    // pass the vmMain function pointer to the game-specific mod load handler
+                    if (g_gameinfo.game->funcs->pfnModLoad((void*)pfnvmMain, false)) {   // false = !is_GetGameAPI
+                        // pass qmm_syscall to mod's dllEntry function
+                        pfndllEntry(qmm_syscall);
+                        return true;
+                    }
+                    else {
+                        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Mod load failed?\n", mod.path);
+                    }
+                }
+                // hack in case there isn't a game-specific dllEntry or ModLoad function
+                else if (!g_gameinfo.pfnvmMain) {
+                    g_gameinfo.pfnvmMain = pfnvmMain;
+                }
+            }
+            else {
+                LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"dllEntry\" and/or \"vmMain\" function\n", mod.path);
+            }
+        }
     }
+
+    mod_unload(mod);
 
     LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unknown file format\n", file);
     return false;
@@ -171,7 +218,9 @@ static bool s_mod_load_qvm(mod& mod) {
     mod.vmbase = (intptr_t)mod.vm.datasegment;
 
     // pass the qvm vmMain function pointer to the game-specific mod load handler
-    if (g_gameinfo.game->funcs->pfnModLoad && !g_gameinfo.game->funcs->pfnModLoad((void*)s_mod_qvm_vmmain)) {
+    if (g_gameinfo.game->funcs->pfnModLoad &&
+        !g_gameinfo.game->funcs->pfnModLoad((void*)s_mod_qvm_vmmain, false))	// false = !is_GetGameAPI
+    {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Mod load failed?\n", mod.path);
         goto fail;
     }
@@ -179,73 +228,6 @@ static bool s_mod_load_qvm(mod& mod) {
     // hack in case there isn't a game-specific dllEntry or ModLoad function
     if (!g_gameinfo.pfnvmMain) {
         g_gameinfo.pfnvmMain = s_mod_qvm_vmmain;
-    }
-
-    return true;
-
-fail:
-    mod_unload(mod);
-    return false;
-}
-
-
-// load a GetGameAPI DLL mod
-static bool s_mod_load_getgameapi(mod& mod) {
-    // look for GetGameAPI function
-    mod_GetGameAPI pfnGGA = (mod_GetGameAPI)dlsym(mod.dll, "GetGameAPI");
-
-    if (!pfnGGA) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"GetGameAPI\" function\n", mod.path);
-        goto fail;
-    }
-
-    mod.vmbase = 0;
-
-    // pass the GetGameAPI function pointer to the game-specific mod load handler
-    if (!g_gameinfo.game->funcs->pfnModLoad || !g_gameinfo.game->funcs->pfnModLoad((void*)pfnGGA)) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): \"GetGameAPI\" function failed\n", mod.path);
-        goto fail;
-    }
-
-    return true;
-
-fail:
-    mod_unload(mod);
-    return false;
-}
-
-
-// load a vmMain DLL mod
-static bool s_mod_load_vmmain(mod& mod) {
-    mod_dllEntry pfndllEntry = nullptr;
-    mod_vmMain pfnvmMain = nullptr;
-
-    // look for dllEntry function
-    if (!(pfndllEntry = (mod_dllEntry)dlsym(mod.dll, "dllEntry"))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"dllEntry\" function\n", mod.path);
-        goto fail;
-    }
-
-    // look for vmMain function
-    if (!(pfnvmMain = (mod_vmMain)dlsym(mod.dll, "vmMain"))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Unable to find \"vmMain\" function\n", mod.path);
-        goto fail;
-    }
-
-    // pass qmm_syscall to mod's dllEntry function
-    pfndllEntry(qmm_syscall);
-    
-    mod.vmbase = 0;
-
-    // pass the vmMain function pointer to the game-specific mod load handler
-    if (g_gameinfo.game->funcs->pfnModLoad && !g_gameinfo.game->funcs->pfnModLoad((void*)pfnvmMain)) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Mod load failed?\n", mod.path);
-        goto fail;
-    }
-
-    // hack in case there isn't a game-specific dllEntry or ModLoad function
-    if (!g_gameinfo.pfnvmMain) {
-        g_gameinfo.pfnvmMain = pfnvmMain;
     }
 
     return true;

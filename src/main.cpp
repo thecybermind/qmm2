@@ -124,17 +124,17 @@ cgameinfo cgame = {
    do is store the syscall, load the config file, and attempt to figure out what game engine we are in. This is either
    determined by the config file, or by getting the filename of the QMM DLL itself.
 */
-C_DLLEXPORT void dllEntry(eng_syscall syscall) {
+C_DLLEXPORT void dllEntry(void* syscall) {
     // cgame passthrough hack:
     // QMM is already loaded, so this is a cgame passthrough situation. since the mod DLL isn't loaded yet, we can
     // just store the syscall pointer and pass it to the mod once it's loaded in vmMain(GAME_INIT)
     if (g_gameinfo.game) {
-        cgame.syscall = syscall;
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QMM passthrough_syscall = {}\n", (void*)cgame.syscall);
+        cgame.syscall = (eng_syscall)syscall;
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QMM passthrough_syscall = {}\n", syscall);
         return;
     }
 
-    main_handle_entry((void*)syscall, nullptr, false);    // false = !is_GetGameAPI
+    main_handle_entry(syscall, nullptr, false);     // false = !is_GetGameAPI
     return;
 }
 
@@ -190,7 +190,13 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall) {
    to the proper function pointer in the struct.
 */
 C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
-    return main_handle_entry(import, extra, true);    // true = is_GetGameAPI
+    return main_handle_entry(import, extra, true);      // true = is_GetGameAPI
+}
+
+
+// this is the same as the 2-arg GetGameAPI but OpenJK renamed it
+C_DLLEXPORT void* GetModuleAPI(void* import, void* extra) {
+    return main_handle_entry(import, extra, true);      // true = is_GetGameAPI
 }
 
 
@@ -513,6 +519,11 @@ static void main_detect_env() {
     }
     else {
         g_gameinfo.mod_dir = path_basename(g_gameinfo.qmm_dir);
+    }
+
+    // hack for OpenJK
+    if (str_striequal(g_gameinfo.mod_dir, "temp")) {
+        g_gameinfo.mod_dir = "base";
     }
 }
 
