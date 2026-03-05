@@ -30,7 +30,7 @@ struct supportedgame_funcs {
     qvm_syscall pfnqvmsyscall;					// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
     mod_dllEntry pfndllEntry;					// pointer to a function that handles dllEntry entry for a game (NULL = not supported)
     mod_GetGameAPI pfnGetGameAPI;				// pointer to a function that handles GetGameAPI entry for a game (NULL = not supported)
-    bool(*pfnModLoad)(void*);					// pointer to a function that handles mod loading logic after a DLL is loaded
+    bool(*pfnModLoad)(void*, bool);				// pointer to a function that handles mod loading logic after a DLL is loaded
     void(*pfnModUnload)();						// pointer to a function that handles mod unloading logic before a DLL is unloaded
 };
 
@@ -76,7 +76,7 @@ static intptr_t game##_syscall(intptr_t cmd, ...); \
 static intptr_t game##_vmMain(intptr_t cmd, ...); \
 static int game##_qvmsyscall(uint8_t*, int, int*); \
 static void game##_dllEntry(eng_syscall); \
-static bool game##_mod_load(void*); \
+static bool game##_mod_load(void*, bool); \
 static void game##_mod_unload(); \
 supportedgame_funcs game##_funcs = { \
 	game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names, \
@@ -92,7 +92,7 @@ static bool game##_autodetect(bool, supportedgame*); \
 static intptr_t game##_syscall(intptr_t cmd, ...); \
 static intptr_t game##_vmMain(intptr_t cmd, ...); \
 static void game##_dllEntry(eng_syscall); \
-static bool game##_mod_load(void*); \
+static bool game##_mod_load(void*, bool); \
 static void game##_mod_unload(); \
 supportedgame_funcs game##_funcs = { \
 	game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names, \
@@ -108,7 +108,7 @@ static bool game##_autodetect(bool, supportedgame*); \
 static intptr_t game##_syscall(intptr_t cmd, ...); \
 static intptr_t game##_vmMain(intptr_t cmd, ...); \
 static void* game##_GetGameAPI(void*, void*); \
-static bool game##_mod_load(void*); \
+static bool game##_mod_load(void*, bool); \
 static void game##_mod_unload(); \
 supportedgame_funcs game##_funcs = { \
 	game##_qmm_eng_msgs, game##_qmm_mod_msgs, game##_eng_msg_names, game##_mod_msg_names, \
