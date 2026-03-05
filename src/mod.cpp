@@ -60,10 +60,14 @@ bool mod_load(mod& mod, std::string file) {
             return false;
         }
 
+        
         // pass off to engine-specific loading function
+        bool ret = false;
         if (g_gameinfo.game->funcs->pfnGetGameAPI)
-            return s_mod_load_getgameapi(mod);
-        else
+            ret = s_mod_load_getgameapi(mod);
+
+        // fall back to vmmain loading if getgameapi failed
+        if (!ret)
             return s_mod_load_vmmain(mod);
     }
 
