@@ -564,6 +564,9 @@ static void main_detect_game(std::string cfg_game, bool is_GetGameAPI) {
             LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);
             g_gameinfo.game = &game;
             g_gameinfo.is_auto_detected = false;
+            // call the game's auto-detect function if it exists, since it may do some logic
+            if (game.funcs->pfnAutoDetect)
+                (void)game.funcs->pfnAutoDetect(is_GetGameAPI, &game);
             return;
         }
 
