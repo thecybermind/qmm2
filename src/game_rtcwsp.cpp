@@ -15,6 +15,8 @@ Created By:
 #include "version.h"
 #include "game_api.h"
 #include "log.h"
+#include <vector>
+#include <string>
 // QMM-specific RTCWSP header
 #include "game_rtcwsp.h"
 #include "main.h"
@@ -72,6 +74,10 @@ static eng_syscall orig_syscall = nullptr;
 // pointer to vmMain that comes from the mod
 static mod_vmMain orig_vmMain = nullptr;
 
+// store all the mallocs for G_ALLOC if this isn't running in ioRTCW engine
+static std::vector<void*> alloc_list;
+
+
 // wrapper syscall function that calls actual engine func in orig_syscall
 // this is how QMM and plugins will call into the engine
 static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
@@ -100,6 +106,18 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
             s += buf;
         }
         ret = (intptr_t)s.c_str();
+        break;
+    }
+    case G_ALLOC: {
+        // if we are using the iortcw game dll but not the engine, we need to handle G_ALLOC ourselves
+        // just malloc and store the pointer in alloc_list
+        // (at this time, it doesn't look like the rtcwsp game dll actually uses trap_Alloc)
+        if (is_iortcw) {
+            ret = orig_syscall(G_ALLOC, args[0]);
+            break;
+        }
+        ret = (intptr_t)malloc((size_t)args[0]);
+        alloc_list.push_back((void*)ret);
         break;
     }
 
@@ -170,6 +188,10 @@ static bool RTCWSP_mod_load(void* entry, bool) {
 
 static void RTCWSP_mod_unload() {
     orig_vmMain = nullptr;
+
+    // free the G_ALLOC list
+    for (void* ptr : alloc_list)
+        free(ptr);
 }
 
 
