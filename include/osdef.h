@@ -12,59 +12,66 @@ Created By:
 #ifndef QMM2_OSDEF_H
 #define QMM2_OSDEF_H
 
-#if defined(_WIN32)
+#include "version.h"
 
-#define WIN32_LEAN_AND_MEAN
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <direct.h>
-#include <shellapi.h>
+#if defined(QMM_OS_WINDOWS)
 
-#ifdef _WIN64
-#define SUF_DLL "x86_64"
-#else
-#define SUF_DLL "x86"
-#endif
+ #define WIN32_LEAN_AND_MEAN
+ #ifndef _CRT_SECURE_NO_WARNINGS
+  #define _CRT_SECURE_NO_WARNINGS
+ #endif
+ #define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+ #include <direct.h>
+ #include <shellapi.h>
 
-#define EXT_DLL "dll"
-#define EXT_QVM "qvm"
+ #if defined(QMM_ARCH_64)
+  #define SUF_DLL "x86_64"
+ #elif defined(QMM_ARCH_32)
+  #define SUF_DLL "x86"
+ #else
+  #error Unknown architecture?
+ #endif
 
-#define PATH_MAX			4096
-#define strcasecmp			_stricmp
-#define dlopen(file, x)		((void*)LoadLibrary(file))
-#define dlsym(dll, func)	((void*)GetProcAddress((HMODULE)(dll), (func)))
-#define dlclose(dll)		FreeLibrary((HMODULE)(dll))
-#define mkdir(path, x)		_mkdir(path)
-const char* dlerror();		// this will return the last error from any win32 function, not just library functions
+ #define EXT_DLL "dll"
+ #define EXT_QVM "qvm"
 
-#elif defined(__linux__)
+ #define PATH_MAX			4096
+ #define strcasecmp			_stricmp
+ #define dlopen(file, x)		((void*)LoadLibrary(file))
+ #define dlsym(dll, func)	((void*)GetProcAddress((HMODULE)(dll), (func)))
+ #define dlclose(dll)		FreeLibrary((HMODULE)(dll))
+ #define mkdir(path, x)		_mkdir(path)
+ #define osdef_get_milliseconds GetTickCount64
+ const char* dlerror();		// this will return the last error from any win32 function, not just library functions
 
-#include <dlfcn.h>
-#include <unistd.h> 
-#include <limits.h>
-#include <ctype.h>
-#include <stdint.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+#elif defined(QMM_OS_LINUX)
 
-#ifdef __LP64__
-#define SUF_DLL "x86_64"
-#else
-#define SUF_DLL "i386"
-#endif
+ #include <dlfcn.h>
+ #include <unistd.h> 
+ #include <limits.h>
+ #include <ctype.h>
+ #include <stdint.h>
+ #include <sys/time.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
 
-#define EXT_DLL "so"
-#define EXT_QVM "qvm"
+ #if defined(QMM_ARCH_64)
+  #define SUF_DLL "x86_64"
+ #elif defined(QMM_ARCH_32)
+  #define SUF_DLL "i386"
+ #else
+  #error Unknown architecture?
+ #endif
 
-void MessageBoxA(void* handle, const char* message, const char* title, int flags);
+ #define EXT_DLL "so"
+ #define EXT_QVM "qvm"
+ uint64_t osdef_get_milliseconds();
+ void MessageBoxA(void* handle, const char* message, const char* title, int flags);
 
-#else // !_WIN32 && !__linux__
+#else // !QMM_OS_WINDOWS && !QMM_OS_LINUX
 
-#error Unknown OS?
+ #error Unknown OS?
 
 #endif
 
@@ -73,11 +80,5 @@ void MessageBoxA(void* handle, const char* message, const char* title, int flags
 void* osdef_path_get_qmm_handle();
 const char* osdef_path_get_qmm_path();
 const char* osdef_path_get_proc_path();
-
-#ifdef __linux__
-uint64_t osdef_get_milliseconds();
-#elif defined(_WIN32)
-#define osdef_get_milliseconds GetTickCount64
-#endif
 
 #endif // QMM2_OSDEF_H

@@ -12,6 +12,7 @@ Created By:
 #ifndef QMM2_GAME_API_H
 #define QMM2_GAME_API_H
 
+#include "version.h"
 #include <cstdint>  // intptr_t
 #include <cstdarg>
 #include "qmmapi.h"
@@ -189,7 +190,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 // macros to easily generate a lambda with full return and argument type information:
 // e.g. GEN_IMPORT_2(G_DEBUGGRAPH, void, float, int)
 // e.g. GEN_IMPORT_2(G_ANIM_TIME, float, dtiki_t*, int)
-#if defined(__LP64__) || defined(_WIN64)
+#if defined(QMM_ARCH_64)
 #define  GEN_IMPORT_0(field, cmd, typeret) +[]() -> typeret { return (typeret)qmm_syscall(cmd); }
 #define  GEN_IMPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { return (typeret)qmm_syscall(cmd, arg0); }
 #define  GEN_IMPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { return (typeret)qmm_syscall(cmd, arg0, arg1); }
@@ -208,7 +209,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 #define GEN_IMPORT_15(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14) -> typeret { return (typeret)qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14); }
 #define GEN_IMPORT_16(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15) -> typeret { return (typeret)qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15); }
 #define GEN_IMPORT_17(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15, type16 arg16) -> typeret { return (typeret)qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
-#else
+#elif defined(QMM_ARCH_32)
 #define  GEN_IMPORT_0(field, cmd, ...) GEN_IMPORT(field, cmd)
 #define  GEN_IMPORT_1(field, cmd, ...) GEN_IMPORT(field, cmd)
 #define  GEN_IMPORT_2(field, cmd, ...) GEN_IMPORT(field, cmd)

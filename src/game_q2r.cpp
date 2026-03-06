@@ -11,7 +11,7 @@ Created By:
 
 // AFAIK Quake 2 Remastered is only available on 64-bit Windows, so skip the whole file otherwise.
 // The game entry in game_api is similarly conditionally compiled.
-#if defined(_WIN64)
+#if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <map>
@@ -774,4 +774,4 @@ static const char* Q2R_mod_msg_names(intptr_t cmd) {
     }
 }
 
-#endif // _WIN64
+#endif // QMM_OS_WINDOWS && QMM_ARCH_64

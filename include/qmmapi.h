@@ -24,6 +24,8 @@ Created By:
  #define DLLEXPORT __declspec(dllexport)
 #elif defined(__linux__)
  #define DLLEXPORT __attribute__((visibility("default")))
+#else
+ #error Unknown OS?
 #endif
 #ifdef __cplusplus
  #define C_DLLEXPORT extern "C" DLLEXPORT

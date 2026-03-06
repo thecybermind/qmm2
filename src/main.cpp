@@ -884,7 +884,7 @@ void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
 }
 
 
-#ifdef _WIN64
+#if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
 /* Entry point: engine->qmm (Q2R only)
    Quake 2 Remastered has a heavily modified engine + API, and includes Game and CGame in the same DLL, with this GetCGameAPI as
    the entry point. This is the first function called when a Q2R mod DLL is loaded. The only thing the engine does at first,
@@ -926,4 +926,4 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
     // note we do not unload the DLL
     return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
 }
-#endif // _WIN64
+#endif // QMM_OS_WINDOWS && QMM_ARCH_64
