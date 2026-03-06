@@ -19,12 +19,13 @@ Created By:
 
 // magic number is stored in file as 44 14 72 12
 #define QVM_MAGIC                       0x12721444
+// ioQuake3/ioRTCW added a new version of QVM with jumptables
+// magic number is stored in file as 45 14 72 12
+#define QVM_MAGIC_VER2                  0x12721445
 // amount of operands the opstack can hold (same amount used by Q3 engine)
 #define QVM_OPSTACK_SIZE                1024
 // max size of program stack (this is set by q3asm for ALL QVM-compatible games)
 #define QVM_PROGRAMSTACK_SIZE           0x10000     // 64KiB
-// allow extra space to be allocated to the data segment for additional stack space
-#define QVM_EXTRA_PROGRAMSTACK_SIZE     0
 
 // round number up to next power of 2: https://stackoverflow.com/a/1322548/809900
 #define QVM_NEXT_POW_2(var) var--; var |= var >> 1; var |= var >> 2; var |= var >> 4; var |= var >> 8; var |= var >> 16; var++
@@ -162,6 +163,8 @@ extern qvm_alloc qvm_allocator_default;
 
 // all the info for a single QVM object
 typedef struct {
+    uint32_t magic;                 // magic number from QVM
+
     // syscall
     qvm_syscall syscall;            // function that will handle syscalls and adjust pointer arguments
 

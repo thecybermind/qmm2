@@ -43,10 +43,10 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     qvm_header header;
 
     // grab a copy of the header
-    memcpy(&header, filemem, sizeof(qvm_header));
+    memcpy(&header, filemem, sizeof(header));
 
     // check header fields for oddities
-    if (header.magic != QVM_MAGIC) {
+    if (header.magic != QVM_MAGIC && header.magic != QVM_MAGIC_VER2) {
         log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: incorrect magic number\n");
         goto fail;
     }
@@ -72,6 +72,9 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
         goto fail;
     }
 
+    // store magic number
+    vm->magic = header.magic;
+
     // store numops in qvm object
     vm->instructioncount = header.instructioncount;
 
@@ -88,8 +91,8 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     QVM_NEXT_POW_2(codeseglen);
     vm->codeseglen = codeseglen;
     
-    // data segment is all the data segment lengths combined (plus optional extra stack space)
-    size_t dataseglen = header.datalen + header.litlen + header.bsslen + QVM_EXTRA_PROGRAMSTACK_SIZE;
+    // data segment is the total size of the individual data segments
+    size_t dataseglen = header.datalen + header.litlen + header.bsslen;
     if (!dataseglen) {
         log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: data segment length is 0\n");
         goto fail;
@@ -100,8 +103,9 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     QVM_NEXT_POW_2(dataseglen);
     vm->dataseglen = dataseglen;
 
-    // allow stack to use any extra space from rounding up
-    vm->stacksize = QVM_PROGRAMSTACK_SIZE + (dataseglen - orig_dataseglen) + QVM_EXTRA_PROGRAMSTACK_SIZE;
+    // stack is allocated by q3asm as the final symbol in BSS segment
+    // we will also include all extra space from rounding up the data segment size
+    vm->stacksize = QVM_PROGRAMSTACK_SIZE + (dataseglen - orig_dataseglen);
 
     // allocate vm memory
     vm->memorysize = vm->codeseglen + vm->dataseglen;
@@ -118,8 +122,8 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     // | CODE | DATA | <- program stack starts here and grows down
     // program stack is for arguments and local variables
     vm->codesegment = (qvm_op*)vm->memory;
-    vm->datasegment = vm->memory + vm->codeseglen;
-    vm->stackptr = (int*)(vm->datasegment + vm->dataseglen);
+    vm->datasegment = vm->memory + codeseglen;
+    vm->stackptr = (int*)(vm->datasegment + dataseglen);
     
     // set bounds of stack
     vm->stackhigh = vm->stackptr;
@@ -746,11 +750,6 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
 
         case QVM_OP_DIVF:
             // float division
-            // float 0s are all 0 bits but with either sign bit
-            if (opstack[0] == 0 || opstack[0] == 0x80000000) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", opptr - codesegment, qvm_opcodename[op]);
-                goto fail;
-            }
             QVM_FOP( /= );
             break;
 
