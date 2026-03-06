@@ -15,6 +15,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include <string>
 // QMM-specific SOF2MP header
 #include "game_sof2mp.h"
 #include "main.h"

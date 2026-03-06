@@ -15,6 +15,7 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <map>
+#include <vector>
 #include <string>
 #include <cstring>
 #include <cstdio>

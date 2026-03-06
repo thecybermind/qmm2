@@ -12,6 +12,9 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <cstring>
 #include <cstdio>
+#include <map>
+#include <vector>
+#include <string>
 #include <quake2/game/q_shared.h>
 #include <quake2/game/game.h>
 #include "game_api.h"

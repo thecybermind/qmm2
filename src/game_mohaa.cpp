@@ -19,6 +19,8 @@ Created By:
 #include "game_api.h"
 #include "log.h"
 #include "format.h"
+#include <vector>
+#include <string>
 // QMM-specific MOHAA header
 #include "game_mohaa.h"
 #include "main.h"

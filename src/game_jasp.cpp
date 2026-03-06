@@ -14,6 +14,9 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include <map>
+#include <vector>
+#include <string>
 // QMM-specific JASP header
 #include "game_jasp.h"
 #include "main.h"

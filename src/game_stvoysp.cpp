@@ -14,6 +14,8 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include <vector>
+#include <string>
 // QMM-specific STVOYSP header
 #include "game_stvoysp.h"
 #include "main.h"

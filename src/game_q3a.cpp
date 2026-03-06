@@ -14,6 +14,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include <string>
 // QMM-specific Q3A header
 #include "game_q3a.h"
 #include "main.h"

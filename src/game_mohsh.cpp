@@ -19,6 +19,8 @@ Created By:
 #include "game_api.h"
 #include "log.h"
 #include "format.h"
+#include <vector>
+#include <string>
 // QMM-specific MOHSH header
 #include "game_mohsh.h"
 #include "main.h"
