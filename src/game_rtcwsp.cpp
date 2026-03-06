@@ -27,18 +27,13 @@ GEN_EXTS(RTCWSP);
 
 GEN_DLL(RTCWSP);
 
-#if defined(QMM_ARCH_32)
- #if defined(QMM_OS_WINDOWS)
-  #define MOD_DLL "x86.dll"
- #elif defined(QMM_OS_LINUX)
-  #define MOD_DLL "i386.so"
- #else
-  #define MOD_DLL
- #endif
+#if defined(QMM_ARCH_32) && defined(QMM_OS_WINDOWS)
+ #define MOD_DLL "x86.dll"
+#elif defined(QMM_ARCH_32) && defined(QMM_OS_LINUX)
+ #define MOD_DLL "i386.so"
 #else
  #define MOD_DLL
 #endif
-
 
 static bool is_iortcw = false;
 
@@ -47,8 +42,10 @@ static bool RTCWSP_autodetect(bool is_GetGameAPI, supportedgame* game) {
     if (is_GetGameAPI)
         return false;
 
+    const char* official_dllname = "qagame" MOD_DLL;
+
     // check for iortcw name in game->dllname or official engine name
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname) && !str_striequal(g_gameinfo.qmm_file, "qagame" MOD_DLL))
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname) && !str_striequal(g_gameinfo.qmm_file, official_dllname))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "wolfsp"))
