@@ -12,6 +12,7 @@ Created By:
 #include <rtcwsp/game/q_shared.h>
 #include <rtcwsp/game/g_public.h>
 
+#include "version.h"
 #include "game_api.h"
 #include "log.h"
 // QMM-specific RTCWSP header
@@ -24,17 +25,42 @@ GEN_EXTS(RTCWSP);
 
 GEN_DLL(RTCWSP);
 
+#if defined(QMM_ARCH_32)
+ #if defined(QMM_OS_WINDOWS)
+  #define MOD_DLL "x86.dll"
+ #elif defined(QMM_OS_LINUX)
+  #define MOD_DLL "i386.so"
+ #else
+  #define MOD_DLL
+ #endif
+#else
+ #define MOD_DLL
+#endif
+
+
+static bool is_iortcw = false;
 
 // auto-detection logic for RTCWSP
 static bool RTCWSP_autodetect(bool is_GetGameAPI, supportedgame* game) {
     if (is_GetGameAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+    // check for iortcw name in game->dllname or official engine name
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname) && !str_striequal(g_gameinfo.qmm_file, "qagame" MOD_DLL))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "wolfsp"))
         return false;
+
+    // loaded in iortcw?
+    if (str_striequal(g_gameinfo.qmm_file, game->dllname)) {
+        is_iortcw = true;
+        // iortcw runs single player out of main dir
+        game->moddir = "main";
+    }
+
+    // set the default dllname to whatever we loaded as to load the correct mod DLL
+    game->dllname = g_gameinfo.qmm_file.c_str();
 
     return true;
 }
@@ -347,6 +373,9 @@ static const char* RTCWSP_eng_msg_names(intptr_t cmd) {
         GEN_CASE(BOTLIB_PC_SOURCE_FILE_AND_LINE);
         GEN_CASE(G_FS_COPY_FILE);
 
+        // iortcw
+        GEN_CASE(G_ALLOC);
+        
         // polyfills
         GEN_CASE(G_ARGS);
 
