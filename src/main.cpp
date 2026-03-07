@@ -564,6 +564,9 @@ static void main_detect_game(std::string cfg_game, bool is_GetGameAPI) {
             LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);
             g_gameinfo.game = &game;
             g_gameinfo.is_auto_detected = false;
+            // call the game's auto-detect function if it exists, since it may do some logic
+            if (game.funcs->pfnAutoDetect)
+                (void)game.funcs->pfnAutoDetect(is_GetGameAPI, &game);
             return;
         }
 
@@ -686,6 +689,7 @@ static void main_handle_command_qmm(intptr_t arg_start) {
         CONSOLE_PRINTF("(QMM) Plugins loaded: {}\n", g_plugins.size());
         CONSOLE_PRINTF("(QMM) Loaded mod file: {}\n", g_mod.path);
         if (g_mod.vmbase) {
+            CONSOLE_PRINTF("(QMM) QVM magic number   : {:x} ({})\n", g_mod.vm.magic, g_mod.vm.magic == QVM_MAGIC ? "QVM_MAGIC" : "QVM_MAGIC_VER2");
             CONSOLE_PRINTF("(QMM) QVM file size      : {}\n", g_mod.vm.filesize);
             CONSOLE_PRINTF("(QMM) QVM memory base    : {}\n", (void*)g_mod.vm.memory);
             CONSOLE_PRINTF("(QMM) QVM memory size    : {}\n", g_mod.vm.memorysize);
@@ -812,7 +816,7 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
     // call real function (unless a plugin resulted in QMM_SUPERCEDE)
     if (max_result < QMM_SUPERCEDE) {
 #ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) called {}\n", func_name, msg_name, cmd, (void*)g_gameinfo.pfnvmMain);
+        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) called\n", func_name, msg_name, cmd);
 #endif
         if (is_syscall && g_gameinfo.pfnsyscall)
             real_ret = g_gameinfo.pfnsyscall(cmd, QMM_PUT_SYSCALL_ARGS());
@@ -883,7 +887,7 @@ void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
 }
 
 
-#ifdef _WIN64
+#if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
 /* Entry point: engine->qmm (Q2R only)
    Quake 2 Remastered has a heavily modified engine + API, and includes Game and CGame in the same DLL, with this GetCGameAPI as
    the entry point. This is the first function called when a Q2R mod DLL is loaded. The only thing the engine does at first,
@@ -925,4 +929,4 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
     // note we do not unload the DLL
     return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
 }
-#endif // _WIN64
+#endif // QMM_OS_WINDOWS && QMM_ARCH_64

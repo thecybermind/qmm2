@@ -14,6 +14,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include <string>
 // QMM-specific WET header
 #include "game_wet.h"
 #include "main.h"

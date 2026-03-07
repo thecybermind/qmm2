@@ -16,6 +16,8 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include <vector>
+#include <string>
 // QMM-specific STEF2 header
 #include "game_stef2.h"
 #include "main.h"

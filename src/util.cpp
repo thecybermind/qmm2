@@ -86,7 +86,7 @@ bool path_is_relative(std::string path) {
     // .ssh/known_hosts
     if (path[0] == '.')
         return true;
-#ifdef _WIN32
+#if defined(QMM_OS_WINDOWS)
     // windows: C:\dir\file
     if (path.size() > 1 && path[1] == ':' && std::isalpha((unsigned char)(path[0])))
         return false;
@@ -100,7 +100,7 @@ bool path_is_relative(std::string path) {
 
 std::vector<std::string> util_get_proc_cmdline() {
     std::vector<std::string> ret;
-#if defined(_WIN32)
+#if defined(QMM_OS_WINDOWS)
     // CommandLineToArgvA doesn't exist, so we have to do this with wide strings and convert them to utf8 std::strings
     int argc = 0;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -110,7 +110,7 @@ std::vector<std::string> util_get_proc_cmdline() {
         buf[sizeof(buf) - 1] = '\0';
         ret.push_back(buf);
     }
-#elif defined(__linux__)
+#elif defined(QMM_OS_LINUX)
     // read null-terminated argv strings from /proc/self/cmdline
     std::ifstream in("/proc/self/cmdline");
     std::string argv;
@@ -165,7 +165,7 @@ void path_mkdir(std::string path) {
         return;
 
     unsigned int i = 1; // start after a possible /
-#ifdef _WIN32
+#if defined(QMM_OS_WINDOWS)
     // if this is an absolute path, start at the 3rd index (after "X:\")
     if (path[1] == ':')
         i = 3;

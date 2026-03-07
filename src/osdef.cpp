@@ -14,7 +14,15 @@ Created By:
 #include <cstring>  // memset in linux only
 #include "util.h"   // strncpyz in linux only
 
-#ifdef _WIN32
+#if defined(QMM_OS_WINDOWS)
+// store module handle
+static HMODULE s_dll = nullptr;
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD, LPVOID) {
+    s_dll = hinstDLL;
+    return TRUE;
+}
+
+
 // return error string for GetLastError()
 const char* dlerror() {
     static std::string str;
@@ -30,7 +38,7 @@ const char* dlerror() {
 
     return str.c_str();
 }
-#else
+#elif defined(QMM_OS_LINUX)
 // just output a big banner to stdout and stderr
 void MessageBoxA(void* handle, const char* message, const char* title, int flags) {
     fprintf(stderr, "**************************************************************************\n");
@@ -44,23 +52,23 @@ void MessageBoxA(void* handle, const char* message, const char* title, int flags
     printf("%s\n", message);
     printf("**************************************************************************\n");
 }
-#endif
 
 
+uint64_t osdef_get_milliseconds() {
+    struct timeval tp;
+    struct timezone tzp;
 
-#if defined(_WIN32)
-static HMODULE s_dll = nullptr;
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD, LPVOID) {
-    s_dll = hinstDLL;
-    return TRUE;
+    gettimeofday(&tp, &tzp);
+
+    return tp.tv_sec * 1000 + tp.tv_usec / 1000;
 }
 #endif
 
 
 void* osdef_path_get_qmm_handle() {
-#if defined(_WIN32)
+#if defined(QMM_OS_WINDOWS)
     return s_dll;
-#elif defined(__linux__)
+#elif defined(QMM_OS_LINUX)
     static void* module;
     if (module)
         return module;
@@ -82,10 +90,10 @@ const char* osdef_path_get_qmm_path() {
     if (path[0])
         return path;
 
-#if defined(_WIN32)
+#if defined(QMM_OS_WINDOWS)
     if (!GetModuleFileName(s_dll, path, sizeof(path)))
         return "";
-#elif defined(__linux__)
+#elif defined(QMM_OS_LINUX)
     Dl_info dli;
     memset(&dli, 0, sizeof(dli));
 
@@ -103,10 +111,10 @@ const char* osdef_path_get_proc_path() {
     if (path[0])
         return path;
 
-#if defined(_WIN32)
+#if defined(QMM_OS_WINDOWS)
     if (!GetModuleFileName(nullptr, path, sizeof(path)))
         return "";
-#elif defined(__linux__)
+#elif defined(QMM_OS_LINUX)
     // readlink does NOT null terminate at all
     // we pass sizeof-1 to guarantee the \0 from memset is still present at the end of the string
     // as a null terminator. also we write a \0 at the specific end of the written buffer.
@@ -117,14 +125,3 @@ const char* osdef_path_get_proc_path() {
     return path;
 }
 
-
-#ifdef __linux__
-uint64_t osdef_get_milliseconds() {
-    struct timeval tp;
-    struct timezone tzp;
-
-    gettimeofday(&tp, &tzp);
-
-    return tp.tv_sec * 1000 + tp.tv_usec / 1000;
-}
-#endif

@@ -27,17 +27,23 @@ Created By:
 
 #if defined(_WIN32)
  #define QMM_OS			"Windows"
+ #define QMM_OS_WINDOWS
  #ifdef _WIN64
   #define QMM_ARCH      "x86_64"
+  #define QMM_ARCH_64
  #else
   #define QMM_ARCH      "x86"
+  #define QMM_ARCH_32
  #endif
 #elif defined(__linux__)
  #define QMM_OS			"Linux"
+ #define QMM_OS_LINUX
  #ifdef __LP64__
   #define QMM_ARCH      "x86_64"
+  #define QMM_ARCH_64
  #else
   #define QMM_ARCH      "x86"
+  #define QMM_ARCH_32
  #endif
 #endif
 

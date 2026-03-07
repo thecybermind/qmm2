@@ -12,10 +12,13 @@ Created By:
 #include <rtcwsp/game/q_shared.h>
 #include <rtcwsp/game/g_public.h>
 
+#include "version.h"
 #include "game_api.h"
 #include "log.h"
+#include <vector>
+#include <string>
 // QMM-specific RTCWSP header
-#include "game_q3a.h"
+#include "game_rtcwsp.h"
 #include "main.h"
 #include "util.h"
 
@@ -24,17 +27,39 @@ GEN_EXTS(RTCWSP);
 
 GEN_DLL(RTCWSP);
 
+#if defined(QMM_ARCH_32) && defined(QMM_OS_WINDOWS)
+ #define MOD_DLL "x86.dll"
+#elif defined(QMM_ARCH_32) && defined(QMM_OS_LINUX)
+ #define MOD_DLL "i386.so"
+#else
+ #define MOD_DLL
+#endif
+
+static bool is_iortcw = false;
 
 // auto-detection logic for RTCWSP
 static bool RTCWSP_autodetect(bool is_GetGameAPI, supportedgame* game) {
     if (is_GetGameAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+    const char* official_dllname = "qagame" MOD_DLL;
+
+    // check for iortcw name in game->dllname or official engine name
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname) && !str_striequal(g_gameinfo.qmm_file, official_dllname))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "wolfsp"))
         return false;
+
+    // loaded in iortcw?
+    if (str_striequal(g_gameinfo.qmm_file, game->dllname)) {
+        is_iortcw = true;
+        // iortcw runs single player out of main dir
+        game->moddir = "main";
+    }
+
+    // set the default dllname to whatever we loaded as to load the correct mod DLL
+    game->dllname = g_gameinfo.qmm_file.c_str();
 
     return true;
 }
@@ -45,6 +70,10 @@ static eng_syscall orig_syscall = nullptr;
 
 // pointer to vmMain that comes from the mod
 static mod_vmMain orig_vmMain = nullptr;
+
+// store all the mallocs for G_ALLOC if this isn't running in ioRTCW engine
+static std::vector<void*> alloc_list;
+
 
 // wrapper syscall function that calls actual engine func in orig_syscall
 // this is how QMM and plugins will call into the engine
@@ -74,6 +103,18 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
             s += buf;
         }
         ret = (intptr_t)s.c_str();
+        break;
+    }
+    case G_ALLOC: {
+        // if we are using the iortcw game dll but not the engine, we need to handle G_ALLOC ourselves
+        // just malloc and store the pointer in alloc_list
+        // (at this time, it doesn't look like the rtcwsp game dll actually uses trap_Alloc)
+        if (is_iortcw) {
+            ret = orig_syscall(G_ALLOC, args[0]);
+            break;
+        }
+        ret = (intptr_t)malloc((size_t)args[0]);
+        alloc_list.push_back((void*)ret);
         break;
     }
 
@@ -144,6 +185,10 @@ static bool RTCWSP_mod_load(void* entry, bool) {
 
 static void RTCWSP_mod_unload() {
     orig_vmMain = nullptr;
+
+    // free the G_ALLOC list
+    for (void* ptr : alloc_list)
+        free(ptr);
 }
 
 
@@ -347,6 +392,9 @@ static const char* RTCWSP_eng_msg_names(intptr_t cmd) {
         GEN_CASE(BOTLIB_PC_SOURCE_FILE_AND_LINE);
         GEN_CASE(G_FS_COPY_FILE);
 
+        // iortcw
+        GEN_CASE(G_ALLOC);
+        
         // polyfills
         GEN_CASE(G_ARGS);
 

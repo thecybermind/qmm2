@@ -13,6 +13,8 @@ Created By:
 #include <jk2sp/game/g_public.h>
 #include "game_api.h"
 #include "log.h"
+#include <vector>
+#include <string>
 // QMM-specific JK2SP header
 #include "game_jk2sp.h"
 #include "main.h"

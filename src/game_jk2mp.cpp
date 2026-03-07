@@ -14,6 +14,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include <string>
 // QMM-specific JK2MP header
 #include "game_jk2mp.h"
 #include "main.h"
@@ -605,15 +606,21 @@ int JK2MP_qvmsyscall(uint8_t* membase, int cmd, int* args) {
     case BOTLIB_LIBVAR_GET:			// (char* var_name, char* value, int size)
     case BOTLIB_AI_STRING_CONTAINS:		// (char* str1, char* str2, int casesensitive)
     case BOTLIB_AI_FIND_MATCH:		// (char* str, void /*struct bot_match_s*/* match, unsigned long int context)
-    case G_MEMCPY:				// (void* dest, const void* src, size_t count)
-    case G_STRNCPY:				// (char* strDest, const char* strSource, size_t count)
     case SP_GETSTRINGTEXTSTRING:		// (const char* text, char* buffer, int bufferLength)
         ret = qmm_syscall(cmd, VMPTR(0), VMPTR(1), VMARG(2));
         break;
+    case G_MEMCPY:				// (void* dest, const void* src, size_t count)
+    case G_STRNCPY:				// (char* strDest, const char* strSource, size_t count)
+        qmm_syscall(cmd, VMPTR(0), VMPTR(1), VMARG(2));
+        ret = args[0];
+        break;
     case G_FS_READ:				// (void* buffer, int len, fileHandle_t f);
     case G_FS_WRITE:			// (const void* buffer, int len, fileHandle_t f);
-    case G_MEMSET:				// (void* dest, int c, size_t count)
         ret = qmm_syscall(cmd, VMPTR(0), VMARG(1), VMARG(2));
+        break;
+    case G_MEMSET:				// (void* dest, int c, size_t count)
+        qmm_syscall(cmd, VMPTR(0), VMARG(1), VMARG(2));
+        ret = args[0];
         break;
     case G_ENTITY_CONTACT:			// (const vec3_t mins, const vec3_t maxs, const gentity_t* ent);
     case G_MATRIXMULTIPLY:			// (float in1[3][3], float in2[3][3], float out[3][3])

@@ -14,6 +14,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include <string>
 // QMM-specific JAMP header
 #include "game_jamp.h"
 #include "main.h"
