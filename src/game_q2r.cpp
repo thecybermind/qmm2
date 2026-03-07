@@ -9,6 +9,8 @@ Created By:
 
 */
 
+#include "version.h"
+
 // AFAIK Quake 2 Remastered is only available on 64-bit Windows, so skip the whole file otherwise.
 // The game entry in game_api is similarly conditionally compiled.
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
