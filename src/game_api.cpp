@@ -9,6 +9,7 @@ Created By:
 
 */
 
+#include "version.h"
 #include "osdef.h"
 #include "game_api.h"
 
@@ -40,9 +41,9 @@ GEN_EXTS(SOF2SP);
 GEN_EXTS(STEF2);
 GEN_EXTS(STVOYSP);
 
-// SP_DLL + MP_DLL : COD, RTCWMP & WET filename changes between linux.windows
-// UO_DLL : "uo" location changes in filename between linux/windows
-// X64_SUF_DLL : ioRTCW and ET:Legacy use "x64" suffix for 64-bit windows
+// SP_DLL + MP_DLL - COD, RTCWMP & WET filename changes between linux/windows
+// UO_DLL - CODUO filename changes between linux/windows
+// X64_SUF_DLL - ioRTCW and ET:Legacy use "x64" suffix for 64-bit windows
 #if defined(QMM_OS_WINDOWS)
  #if defined(QMM_ARCH_64)
   #define X64_SUF_DLL "x64"
