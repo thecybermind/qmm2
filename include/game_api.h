@@ -15,6 +15,7 @@ Created By:
 #include "version.h"
 #include <cstdint>  // intptr_t
 #include <cstdarg>
+#include <vector>
 #include "qmmapi.h"
 #include "qvm.h"
 
@@ -50,7 +51,7 @@ struct supportedgame {
     int max_vmmain_args;			// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
 };
 
-extern supportedgame g_supportedgames[];
+extern std::vector<supportedgame> g_supportedgames;
 
 // macros to make game support a bit easier to do
 

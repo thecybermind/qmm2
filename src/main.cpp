@@ -556,9 +556,7 @@ static void main_load_config(std::string config_filename) {
 
 // general code to auto-detect what game engine loaded us
 static void main_detect_game(std::string cfg_game, bool is_GetGameAPI) {
-    for (int i = 0; g_supportedgames[i].dllname; i++) {
-        supportedgame& game = g_supportedgames[i];
-
+    for (supportedgame& game : g_supportedgames) {
         // if short name matches config option, we found it!
         if (str_striequal(cfg_game, game.gamename_short)) {
             LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);

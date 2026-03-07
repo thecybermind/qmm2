@@ -11,6 +11,7 @@ Created By:
 
 #include "version.h"
 #include "osdef.h"
+#include <vector>
 #include "game_api.h"
 
 // cache some dynamic message values that get evaluated a lot
@@ -66,7 +67,7 @@ GEN_EXTS(STVOYSP);
 #define X64_DLL X64_SUF_DLL "." EXT_DLL
 
 // add your game's info data here
-supportedgame g_supportedgames[] = {
+std::vector<supportedgame> g_supportedgames = {
     // mod filename		    	qvm mod filename	default moddir	full gamename									short name/funcs	#syscall#vmmain
 
     // vmMain games
@@ -106,6 +107,4 @@ supportedgame g_supportedgames[] = {
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
 	{ "game_x64.dll",			nullptr,			"baseq2",		"Quake 2 Remastered",							GEN_INFO(Q2R),		9,		6 },
 #endif
-
-	{ nullptr, }
 };

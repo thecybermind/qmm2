@@ -125,8 +125,8 @@ std::vector<std::string> util_get_proc_cmdline() {
 std::string util_get_cmdline_arg(std::string arg, std::string def) {
     std::vector<std::string> argv = util_get_proc_cmdline();
     // 1 to skip binary name
-    for (size_t i = 1; i < argv.size(); i++) {
-        if (str_striequal(argv[i], arg) && i != argv.size() - 1) {
+    for (size_t i = 1; i < argv.size() - 1; i++) { // don't read last arg because it can't have a "next" arg
+        if (str_striequal(argv[i], arg)) {
             return argv[i + 1];
         }
     }
@@ -177,7 +177,7 @@ void path_mkdir(std::string path) {
         path[path.size() - 1] = '\0';
 
     // loop through each character
-    for (; i < path.size(); i++)
+    for (; i < path.size(); i++) {
         // if we found a directory separator
         if (path[i] == '/') {
             // replace it with a null terminator
@@ -187,6 +187,7 @@ void path_mkdir(std::string path) {
             // put the directory separator back
             path[i] = '/';
         }
+    }
     // call mkdir on the entire path to make the final directory
     (void)mkdir(path.c_str(), S_IRWXU);
 }
