@@ -106,9 +106,9 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
         break;
     }
     case G_ALLOC: {
-        // if we are using the iortcw game dll but not the engine, we need to handle G_ALLOC ourselves
-        // just malloc and store the pointer in alloc_list
-        // (at this time, it doesn't look like the rtcwsp game dll actually uses trap_Alloc)
+        // if we are using the iortcw single player game dll but not the engine, we need to handle G_ALLOC
+        // ourselves just malloc and store the pointer in alloc_list (although, at this time, it doesn't
+        // look like the iortcw single player game dll actually uses trap_Alloc)
         if (is_iortcw) {
             ret = orig_syscall(G_ALLOC, args[0]);
             break;
