@@ -25,7 +25,7 @@ Created By:
 GEN_QMM_MSGS(RTCWSP);
 GEN_EXTS(RTCWSP);
 
-GEN_DLL(RTCWSP);
+GEN_FUNCS(RTCWSP);
 
 #if defined(QMM_ARCH_32) && defined(QMM_OS_WINDOWS)
  #define MOD_DLL "x86.dll"
@@ -58,7 +58,7 @@ static bool RTCWSP_autodetect(bool is_GetGameAPI, supportedgame* game) {
         game->moddir = "main";
     }
 
-    // set the default dllname to whatever we loaded as to load the correct mod DLL
+    // set the default dllname to whatever QMM loaded as to load the correct mod DLL
     game->dllname = g_gameinfo.qmm_file.c_str();
 
     return true;
@@ -160,11 +160,11 @@ static intptr_t RTCWSP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void RTCWSP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_dllEntry({}) called\n", (void*)syscall);
+static void* RTCWSP_entry(void* syscall, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = RTCWSP_vmMain;
@@ -172,11 +172,16 @@ static void RTCWSP_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = RTCWSP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-static bool RTCWSP_mod_load(void* entry, bool) {
+static bool RTCWSP_mod_load(void* entry, bool is_GetGameAPI) {
+    if (is_GetGameAPI)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
@@ -189,6 +194,8 @@ static void RTCWSP_mod_unload() {
     // free the G_ALLOC list
     for (void* ptr : alloc_list)
         free(ptr);
+
+    alloc_list.clear();
 }
 
 

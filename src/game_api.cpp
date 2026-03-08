@@ -103,7 +103,7 @@ std::vector<supportedgame> g_supportedgames = {
 	{ "efgame" MOD_DLL,			nullptr,			".",			"Star Trek Voyager: Elite Force (SP)",			GEN_INFO(STVOYSP),	13,		9 },
 #endif
 
-	// Q2R only exists for 64-bit Windows
+// Q2R only exists for 64-bit Windows
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
 	{ "game_x64.dll",			nullptr,			"baseq2",		"Quake 2 Remastered",							GEN_INFO(Q2R),		9,		6 },
 #endif

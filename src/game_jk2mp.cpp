@@ -24,7 +24,7 @@ Created By:
 GEN_QMM_MSGS(JK2MP);
 GEN_EXTS(JK2MP);
 
-GEN_DLLQVM(JK2MP);
+GEN_FUNCS_QVM(JK2MP);
 
 
 // auto-detection logic for JK2MP
@@ -127,11 +127,11 @@ static intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void JK2MP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_dllEntry({}) called\n", (void*)syscall);
+static void* JK2MP_entry(void* syscall, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = JK2MP_vmMain;
@@ -139,11 +139,16 @@ static void JK2MP_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = JK2MP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-static bool JK2MP_mod_load(void* entry, bool) {
+static bool JK2MP_mod_load(void* entry, bool is_GetGameAPI) {
+    if (is_GetGameAPI)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;

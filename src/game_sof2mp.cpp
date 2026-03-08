@@ -25,7 +25,7 @@ Created By:
 GEN_QMM_MSGS(SOF2MP);
 GEN_EXTS(SOF2MP);
 
-GEN_DLLQVM(SOF2MP);
+GEN_FUNCS_QVM(SOF2MP);
 
 
 // auto-detection logic for SOF2MP
@@ -163,11 +163,11 @@ static intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void SOF2MP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_dllEntry({}) called\n", (void*)syscall);
+static void* SOF2MP_entry(void* syscall, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = SOF2MP_vmMain;
@@ -175,12 +175,17 @@ static void SOF2MP_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = SOF2MP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
 // get mod's vmMain function pointer from mod.cpp::mod_load
-static bool SOF2MP_mod_load(void* entry, bool) {
+static bool SOF2MP_mod_load(void* entry, bool is_GetGameAPI) {
+    if (is_GetGameAPI)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     // we cannot verify data in the QVM since this engine both provides malloc functionality and has the gametype module,

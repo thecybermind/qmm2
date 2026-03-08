@@ -27,7 +27,7 @@ GEN_QMM_MSGS(CODUOMP);
 #undef GAME_INIT
 GEN_EXTS(CODUOMP);
 
-GEN_DLL(CODUOMP);
+GEN_FUNCS(CODUOMP);
 
 
 // auto-detection logic for CODUOMP
@@ -124,11 +124,11 @@ static intptr_t CODUOMP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void CODUOMP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_dllEntry({}) called\n", (void*)syscall);
+static void* CODUOMP_entry(void* syscall, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = CODUOMP_vmMain;
@@ -136,11 +136,16 @@ static void CODUOMP_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = CODUOMP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-static bool CODUOMP_mod_load(void* entry, bool) {
+static bool CODUOMP_mod_load(void* entry, bool is_GetGameAPI) {
+    if (is_GetGameAPI)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;

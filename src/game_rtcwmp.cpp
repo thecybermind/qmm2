@@ -23,7 +23,7 @@ Created By:
 GEN_QMM_MSGS(RTCWMP);
 GEN_EXTS(RTCWMP);
 
-GEN_DLLQVM(RTCWMP);
+GEN_FUNCS_QVM(RTCWMP);
 
 
 // auto-detection logic for RTCWMP
@@ -120,11 +120,11 @@ static intptr_t RTCWMP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void RTCWMP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_dllEntry({}) called\n", (void*)syscall);
+static void* RTCWMP_entry(void* syscall, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = RTCWMP_vmMain;
@@ -132,11 +132,16 @@ static void RTCWMP_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = RTCWMP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-static bool RTCWMP_mod_load(void* entry, bool) {
+static bool RTCWMP_mod_load(void* entry, bool is_GetGameAPI) {
+    if (is_GetGameAPI)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;

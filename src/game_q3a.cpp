@@ -24,7 +24,7 @@ Created By:
 GEN_QMM_MSGS(Q3A);
 GEN_EXTS(Q3A);
 
-GEN_DLLQVM(Q3A);
+GEN_FUNCS_QVM(Q3A);
 
 
 // auto-detection logic for Q3A
@@ -126,11 +126,11 @@ static intptr_t Q3A_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void Q3A_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_dllEntry({}) called\n", (void*)syscall);
+static void* Q3A_entry(void* syscall, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func
     g_gameinfo.pfnvmMain = Q3A_vmMain;
@@ -138,11 +138,16 @@ static void Q3A_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = Q3A_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-static bool Q3A_mod_load(void* entry, bool) {
+static bool Q3A_mod_load(void* entry, bool is_GetGameAPI) {
+    if (is_GetGameAPI)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;

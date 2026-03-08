@@ -38,7 +38,7 @@ GEN_QMM_MSGS(Q2R);
 #undef GAME_INIT
 GEN_EXTS(Q2R);
 
-GEN_GGA(Q2R);
+GEN_FUNCS(Q2R);
 
 
 // auto-detection logic for Q2R
@@ -598,8 +598,8 @@ static intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* Q2R_GetGameAPI(void* import, void*) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_GetGameAPI({}) called\n", import);
+static void* Q2R_entry(void* import, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -617,7 +617,7 @@ static void* Q2R_GetGameAPI(void* import, void*) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = Q2R_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_entry({}) returning {}\n", import, (void*)&qmm_export);
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -626,7 +626,10 @@ static void* Q2R_GetGameAPI(void* import, void*) {
 }
 
 
-static bool Q2R_mod_load(void* entry, bool) {
+static bool Q2R_mod_load(void* entry, bool is_GetGameAPI) {
+    if (!is_GetGameAPI)
+        return false;
+
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 

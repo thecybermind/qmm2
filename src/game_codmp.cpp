@@ -27,7 +27,7 @@ GEN_QMM_MSGS(CODMP);
 #undef GAME_INIT
 GEN_EXTS(CODMP);
 
-GEN_DLL(CODMP);
+GEN_FUNCS(CODMP);
 
 
 // auto-detection logic for CODMP
@@ -124,11 +124,11 @@ static intptr_t CODMP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void CODMP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_dllEntry({}) called\n", (void*)syscall);
+static void* CODMP_entry(void* syscall, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = CODMP_vmMain;
@@ -136,11 +136,16 @@ static void CODMP_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = CODMP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-static bool CODMP_mod_load(void* entry, bool) {
+static bool CODMP_mod_load(void* entry, bool is_GetGameAPI) {
+    if (is_GetGameAPI)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;

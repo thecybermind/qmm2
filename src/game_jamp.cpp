@@ -23,28 +23,7 @@ Created By:
 GEN_QMM_MSGS(JAMP);
 GEN_EXTS(JAMP);
 
-// do not use macro since this game supports both dllEntry and GetGameAPI entry points
-static const char* JAMP_eng_msg_names(intptr_t);
-static const char* JAMP_mod_msg_names(intptr_t);
-static bool JAMP_autodetect(bool, supportedgame*);
-static intptr_t JAMP_syscall(intptr_t cmd, ...);
-static intptr_t JAMP_vmMain(intptr_t cmd, ...);
-static void JAMP_dllEntry(eng_syscall);
-static void* JAMP_GetGameAPI(void*, void*);
-static bool JAMP_mod_load(void*, bool);
-static void JAMP_mod_unload();
-supportedgame_funcs JAMP_funcs = {
-    JAMP_qmm_eng_msgs,
-    JAMP_qmm_mod_msgs,
-    JAMP_eng_msg_names,
-    JAMP_mod_msg_names,
-    JAMP_autodetect,
-    nullptr,    // JAMP_qvmsyscall
-    JAMP_dllEntry,
-    JAMP_GetGameAPI,
-    JAMP_mod_load,
-    JAMP_mod_unload,
-};
+GEN_FUNCS(JAMP);
 
 
 // auto-detection logic for JAMP
@@ -53,10 +32,16 @@ static bool JAMP_autodetect(bool is_GetGameAPI, supportedgame* game) {
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname)
         && !str_striequal(g_gameinfo.qmm_file.substr(0, 3), "ojk")
         && !str_striequal(path_baseext(g_gameinfo.qmm_file), "tmp"))
+    {
         return false;
+    }
 
-    if (!str_stristr(g_gameinfo.exe_file, "jamp") && !str_stristr(g_gameinfo.exe_file, "openjk.") && !str_stristr(g_gameinfo.exe_file, "openjkded"))
+    if (!str_stristr(g_gameinfo.exe_file, "jamp")
+        && !str_stristr(g_gameinfo.exe_file, "openjk.")
+        && !str_stristr(g_gameinfo.exe_file, "openjkded"))
+    {
         return false;
+    }
 
     return true;
 }
@@ -836,12 +821,12 @@ static intptr_t JAMP_vmMain(intptr_t cmd, ...) {
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
-    // if QMM was loaded with the official JAMP or OpenJK "legacy" API (which shouldn't happen, but whatever)
+    // if the loaded JAMP mod uses the official JAMP or OpenJK "legacy" API
     if (orig_vmMain) {
         // all normal mod functions go to mod
         ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
     }
-    // if QMM was loaded with the OpenJK "new" API
+    // if the loaded JAMP mod uses the OpenJK "new" API
     else if (orig_export) {
         switch (cmd) {
             ROUTE_EXPORT(InitGame, GAME_INIT);
@@ -898,46 +883,45 @@ static intptr_t JAMP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void JAMP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_dllEntry({}) called\n", (void*)syscall);
+static void* JAMP_entry(void* arg0, void* arg1, bool is_GetGameAPI) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_entry({}, {}, {}) called\n", arg0, arg1, is_GetGameAPI);
 
-    // store original syscall from engine
-    orig_syscall = syscall;
+    if (is_GetGameAPI) {
+        orig_apiversion = (intptr_t)arg0;
 
-    // pointer to wrapper vmMain function that calls either orig_vmMain or func in orig_export
-    g_gameinfo.pfnvmMain = JAMP_vmMain;
+        // original import struct from engine
+        // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
+        game_import_t* gi = (game_import_t*)arg1;
+        orig_import = *gi;
 
-    // pointer to wrapper syscall function that calls either orig_syscall or func in orig_import
-    g_gameinfo.pfnsyscall = JAMP_syscall;
+        // fill in variables of our hooked import struct to pass to the mod
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_dllEntry({}) returning\n", (void*)syscall);
-}
+        // pointer to wrapper vmMain function that calls either orig_vmMain or func in orig_export
+        g_gameinfo.pfnvmMain = JAMP_vmMain;
 
+        // pointer to wrapper syscall function that calls either orig_syscall or func in orig_import
+        g_gameinfo.pfnsyscall = JAMP_syscall;
 
-static void* JAMP_GetGameAPI(void* apiversion, void* import) {
-    orig_apiversion = (intptr_t)apiversion;
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GetGameAPI({}, {}) called\n", orig_apiversion, import);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_entry({}, {}, {}) returning\n", arg0, arg1, is_GetGameAPI);
 
-    // original import struct from engine
-    // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
-    game_import_t* gi = (game_import_t*)import;
-    orig_import = *gi;
+        return nullptr;
+    }
+    else {
+        // store original syscall from engine
+        orig_syscall = (eng_syscall)arg0;
 
-    // fill in variables of our hooked import struct to pass to the mod
+        // pointer to wrapper vmMain function that calls either orig_vmMain or func in orig_export
+        g_gameinfo.pfnvmMain = JAMP_vmMain;
 
-    // pointer to wrapper vmMain function that calls either orig_vmMain or func in orig_export
-    g_gameinfo.pfnvmMain = JAMP_vmMain;
+        // pointer to wrapper syscall function that calls either orig_syscall or func in orig_import
+        g_gameinfo.pfnsyscall = JAMP_syscall;
 
-    // pointer to wrapper syscall function that calls either orig_syscall or func in orig_import
-    g_gameinfo.pfnsyscall = JAMP_syscall;
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_entry({}, {}, {}) returning {}\n", arg0, arg1, is_GetGameAPI, (void*)&qmm_export);
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GetGameAPI({}, {}) returning {}\n", orig_apiversion, import, (void*)&qmm_export);
-
-    // struct full of export lambdas to QMM's vmMain
-    // this gets returned to the game engine, but we haven't loaded the mod yet.
-    // the only thing in this struct the engine uses before calling Init is the apiversion
-    return &qmm_export;
-
+        // struct full of export lambdas to QMM's vmMain
+        // this gets returned to the game engine, but we haven't loaded the mod yet.
+        return &qmm_export;
+    }
 }
 
 

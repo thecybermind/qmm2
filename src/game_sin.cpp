@@ -28,7 +28,7 @@ Created By:
 GEN_QMM_MSGS(SIN);
 GEN_EXTS(SIN);
 
-GEN_GGA(SIN);
+GEN_FUNCS(SIN);
 
 
 // auto-detection logic for SIN
@@ -633,8 +633,8 @@ static intptr_t SIN_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* SIN_GetGameAPI(void* import, void*) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_GetGameAPI({}) called\n", import);
+static void* SIN_entry(void* import, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -651,7 +651,7 @@ static void* SIN_GetGameAPI(void* import, void*) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = SIN_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_entry({}) returning {}\n", import, (void*)&qmm_export);
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -660,7 +660,10 @@ static void* SIN_GetGameAPI(void* import, void*) {
 }
 
 
-static bool SIN_mod_load(void* entry, bool) {
+static bool SIN_mod_load(void* entry, bool is_GetGameAPI) {
+    if (!is_GetGameAPI)
+        return false;
+
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 

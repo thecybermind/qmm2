@@ -21,7 +21,7 @@ Created By:
 GEN_QMM_MSGS(COD11MP);
 GEN_EXTS(COD11MP);
 
-GEN_DLL(COD11MP);
+GEN_FUNCS(COD11MP);
 
 
 // auto-detection logic for COD11MP (never auto-detect)
@@ -109,11 +109,11 @@ static intptr_t COD11MP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void COD11MP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("COD11MP_dllEntry({}) called\n", (void*)syscall);
+static void* COD11MP_entry(void* syscall, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("COD11MP_entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = COD11MP_vmMain;
@@ -121,11 +121,16 @@ static void COD11MP_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = COD11MP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("COD11MP_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("COD11MP_entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-static bool COD11MP_mod_load(void* entry, bool) {
+static bool COD11MP_mod_load(void* entry, bool is_GetGameAPI) {
+    if (is_GetGameAPI)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;

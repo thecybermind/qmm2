@@ -16,17 +16,18 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-struct mod {
-    void* dll = nullptr;
-    qvm vm = {};
-    intptr_t vmbase = 0;
+struct qmm_mod {
     std::string path;
+    qvm vm = {};
+    void* dll = nullptr;
+    intptr_t vmbase = 0;
+    bool is_GetGameAPI = false;
 };
 
-extern mod g_mod;
+extern qmm_mod g_mod;
 
-bool mod_load(mod& mod, std::string file);
-void mod_unload(mod& mod);
+bool mod_load(qmm_mod& mod, std::string file);
+void mod_unload(qmm_mod& mod);
 
 #endif // QMM2_MOD_H
 

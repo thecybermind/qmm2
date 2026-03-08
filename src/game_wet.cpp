@@ -23,7 +23,7 @@ Created By:
 GEN_QMM_MSGS(WET);
 GEN_EXTS(WET);
 
-GEN_DLL(WET);
+GEN_FUNCS(WET);
 
 
 // auto-detection logic for WET
@@ -120,11 +120,11 @@ intptr_t WET_vmMain(intptr_t cmd, ...) {
 }
 
 
-void WET_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_dllEntry({}) called\n", (void*)syscall);
+void* WET_entry(void* syscall, void*, bool) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = WET_vmMain;
@@ -132,11 +132,16 @@ void WET_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = WET_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-bool WET_mod_load(void* entry, bool) {
+bool WET_mod_load(void* entry, bool is_GetGameAPI) {
+    if (is_GetGameAPI)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;

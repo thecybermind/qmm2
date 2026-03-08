@@ -21,7 +21,7 @@ Created By:
 GEN_QMM_MSGS(SOF2SP);
 GEN_EXTS(SOF2SP);
 
-GEN_GGA(SOF2SP);
+GEN_FUNCS(SOF2SP);
 
 
 // auto-detection logic for SOF2SP
@@ -442,9 +442,9 @@ static intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
+static void* SOF2SP_entry(void* apiversion, void* import, bool) {
     orig_apiversion = (intptr_t)apiversion;
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GetGameAPI({}, {}) called\n", orig_apiversion, import);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_entry({}, {}) called\n", orig_apiversion, import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -460,7 +460,7 @@ static void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = SOF2SP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GetGameAPI({}, {}) returning {}\n", orig_apiversion, import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_entry({}, {}) returning {}\n", orig_apiversion, import, (void*)&qmm_export);
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -469,7 +469,10 @@ static void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
 }
 
 
-static bool SOF2SP_mod_load(void* entry, bool) {
+static bool SOF2SP_mod_load(void* entry, bool is_GetGameAPI) {
+    if (!is_GetGameAPI)
+        return false;
+
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     // api version gets passed before import pointer
     orig_export = (game_export_t*)pfnGGA((void*)orig_apiversion, &qmm_import);
