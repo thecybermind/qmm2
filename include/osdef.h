@@ -36,14 +36,13 @@ Created By:
  #define EXT_DLL "dll"
  #define EXT_QVM "qvm"
 
- #define PATH_MAX			4096
- #define strcasecmp			_stricmp
+ #define PATH_MAX				MAX_PATH
  #define dlopen(file, x)		((void*)LoadLibrary(file))
- #define dlsym(dll, func)	((void*)GetProcAddress((HMODULE)(dll), (func)))
- #define dlclose(dll)		FreeLibrary((HMODULE)(dll))
- #define mkdir(path, x)		_mkdir(path)
- #define osdef_get_milliseconds GetTickCount64
- const char* dlerror();		// this will return the last error from any win32 function, not just library functions
+ #define dlsym(dll, func)		((void*)GetProcAddress((HMODULE)(dll), (func)))
+ #define dlclose(dll)			FreeLibrary((HMODULE)(dll))
+ #define mkdir(path, x)			_mkdir(path)
+ #define osdef_get_milliseconds	GetTickCount64
+ const char* dlerror();			// this will return the last error from any win32 function, not just library functions
 
 #elif defined(QMM_OS_LINUX)
 
@@ -67,7 +66,6 @@ Created By:
  #define EXT_DLL "so"
  #define EXT_QVM "qvm"
  uint64_t osdef_get_milliseconds();
- void MessageBoxA(void* handle, const char* message, const char* title, int flags);
 
 #else // !QMM_OS_WINDOWS && !QMM_OS_LINUX
 
