@@ -33,6 +33,7 @@ struct gameinfo {
     void* qmm_module_ptr = nullptr;			// qmm module pointer
     bool is_auto_detected = false;			// was this engine auto-detected?
     bool is_shutdown = false;				// is game shutting down due to G_ERROR? avoids calling G_ERROR again from GAME_SHUTDOWN
+    APIType api = QMM_API_ERROR;			// engine api that QMM was loaded with
 };
 extern gameinfo g_gameinfo;
 

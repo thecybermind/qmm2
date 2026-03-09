@@ -17,11 +17,11 @@ Created By:
 #include "qvm.h"
 
 struct qmm_mod {
-    std::string path;
-    qvm vm = {};
-    void* dll = nullptr;
-    intptr_t vmbase = 0;
-    api_engine engine;
+    std::string path;				// mod file path
+    qvm vm = {};					// QVM object
+    void* dll = nullptr;			// OS DLL handle
+    intptr_t vmbase = 0;			// base data segment address for QVMs (0 if DLL mod)
+    APIType api = QMM_API_ERROR;	// engine api the mod DLL was loaded with
 };
 
 extern qmm_mod g_mod;
