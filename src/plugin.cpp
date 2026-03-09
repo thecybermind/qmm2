@@ -491,7 +491,7 @@ static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], int
     // char* (*getConfigstring)(int index);
     // void trap_GetConfigstring(int num, char* buffer, int bufferSize);
     // some games don't return pointers because of QVM interaction, so if this returns anything but null
-    // (or true?), we probably are in an api game, and need to get the configstring from the return value
+    // (or true?), we need to get the configstring from the return value
     // instead
     if (buf && buflen) {
         intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], index, buf, buflen);
