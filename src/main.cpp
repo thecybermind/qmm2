@@ -534,7 +534,7 @@ static void main_load_config(std::string config_filename) {
 
 
 // general code to auto-detect what game engine loaded us
-static void main_detect_game(std::string cfg_game, api_engine engine) {
+static void main_detect_game(std::string cfg_game, APIType engine) {
     for (api_supportedgame& game : api_supportedgames) {
         // if short name matches config option, we found it!
         if (str_striequal(cfg_game, game.gamename_short)) {
