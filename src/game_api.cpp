@@ -109,13 +109,36 @@ std::vector<api_supportedgame> api_supportedgames = {
 #endif
 };
 
-const char* EngineAPIName(api_engine engine) {
-	switch (engine) {
-		GEN_CASE(QMM_ENGINEAPI_NONE);
 
-		GEN_CASE(QMM_ENGINEAPI_DLLENTRY);
-		GEN_CASE(QMM_ENGINEAPI_GETGAMEAPI);
+const char* APIType_Name(APIType api) {
+	switch (api) {
+		GEN_CASE(QMM_API_ERROR);
+
+		GEN_CASE(QMM_API_QVM);
+
+		GEN_CASE(QMM_API_DLLENTRY);
+		GEN_CASE(QMM_API_GETGAMEAPI);
+		GEN_CASE(QMM_API_GETMODULEAPI);
 	default:
-		return "";
+		return "unknown";
+	};
+}
+
+
+const char* APIType_Function(APIType api) {
+	switch (api) {
+		case QMM_API_ERROR:
+			return "(error)";
+
+		case QMM_API_QVM:
+			return "QVM";
+		case QMM_API_DLLENTRY:
+			return "dllEntry";
+		case QMM_API_GETGAMEAPI:
+			return "GetGameAPI";
+		case QMM_API_GETMODULEAPI:
+			return "GetModuleAPI";
+	default:
+		return "unknown";
 	};
 }

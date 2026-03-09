@@ -19,28 +19,30 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-// engine API type
-enum api_engine {
-    QMM_ENGINEAPI_NONE,
+// engine/mod API type
+enum APIType {
+    QMM_API_ERROR,
 
-    QMM_ENGINEAPI_DLLENTRY,
-    QMM_ENGINEAPI_GETGAMEAPI,
+    QMM_API_QVM,
 
-    QMM_VMMAIN = QMM_ENGINEAPI_DLLENTRY,
+    QMM_API_DLLENTRY,
+    QMM_API_GETGAMEAPI,
+    QMM_API_GETMODULEAPI,
 };
-extern const char* EngineAPIName(api_engine);
+const char* APIType_Name(APIType);
+const char* APIType_Function(APIType);
 
 struct api_supportedgame;
 // this struct is defined by GEN_GAME_FUNCS_QVM(GAME) or GEN_GAME_FUNCS(GAME)
 struct api_supportedgame_funcs {
     int* qmm_eng_msgs;							// array of engine messages used by QMM
     int* qmm_mod_msgs;							// array of mod messages used by QMM
-    const char* (*pfnEngMsgNames)(intptr_t);	// pointer to a function that returns a string for a given engine message
+    const char* (*pfnEngMsgNames)(intptr_t);	// pointer to a function that returns a string for a given api message
     const char* (*pfnModMsgNames)(intptr_t);	// pointer to a function that returns a string for a given mod message
 
-    bool(*pfnAutoDetect)(api_supportedgame*, api_engine);	// pointer to a function that handles auto-detection logic for a game. return true to say "that's me!"
-    void*(*pfnEntry)(void*, void*, api_engine);	// pointer to a function that handles entry point logic for a game
-    bool(*pfnModLoad)(void*, api_engine);		// pointer to a function that handles mod loading logic after a DLL is loaded
+    bool(*pfnAutoDetect)(api_supportedgame*, APIType);	// pointer to a function that handles auto-detection logic for a game. return true to say "that's me!"
+    void*(*pfnEntry)(void*, void*, APIType);	// pointer to a function that handles entry point logic for a game
+    bool(*pfnModLoad)(void*, APIType);			// pointer to a function that handles mod loading logic after a DLL is loaded with LoadLibrary/dlopen
     void(*pfnModUnload)();						// pointer to a function that handles mod unloading logic before a DLL is unloaded
 
     qvm_syscall pfnQVMSyscall;					// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
@@ -84,9 +86,9 @@ extern std::vector<api_supportedgame> api_supportedgames;
 #define GEN_GAME_FUNCS_QVM(game) \
 static const char* game##_EngMsgNames(intptr_t); \
 static const char* game##_ModMsgNames(intptr_t); \
-static bool game##_AutoDetect(api_supportedgame*, api_engine); \
-static void* game##_Entry(void*, void*, api_engine); \
-static bool game##_ModLoad(void*, api_engine); \
+static bool game##_AutoDetect(api_supportedgame*, APIType); \
+static void* game##_Entry(void*, void*, APIType); \
+static bool game##_ModLoad(void*, APIType); \
 static void game##_ModUnload(); \
 static intptr_t game##_syscall(intptr_t cmd, ...); \
 static intptr_t game##_vmMain(intptr_t cmd, ...); \
@@ -103,9 +105,9 @@ api_supportedgame_funcs game##_funcs = { \
 #define GEN_GAME_FUNCS(game) \
 static const char* game##_EngMsgNames(intptr_t); \
 static const char* game##_ModMsgNames(intptr_t); \
-static bool game##_AutoDetect(api_supportedgame*, api_engine); \
-static void* game##_Entry(void*, void*, api_engine); \
-static bool game##_ModLoad(void*, api_engine); \
+static bool game##_AutoDetect(api_supportedgame*, APIType); \
+static void* game##_Entry(void*, void*, APIType); \
+static bool game##_ModLoad(void*, APIType); \
 static void game##_ModUnload(); \
 static intptr_t game##_syscall(intptr_t cmd, ...); \
 static intptr_t game##_vmMain(intptr_t cmd, ...); \
