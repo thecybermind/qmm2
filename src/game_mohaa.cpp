@@ -33,8 +33,8 @@ GEN_GAME_FUNCS(MOHAA);
 
 
 // auto-detection logic for MOHAA
-static bool MOHAA_AutoDetect(api_supportedgame* game, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
+static bool MOHAA_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -743,7 +743,7 @@ static intptr_t MOHAA_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* MOHAA_Entry(void* import, void*, api_engine) {
+static void* MOHAA_Entry(void* import, void*, APIType) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_Entry({}) called\n", import);
 
     // original import struct from engine
@@ -773,8 +773,8 @@ static void* MOHAA_Entry(void* import, void*, api_engine) {
 }
 
 
-static bool MOHAA_ModLoad(void* entry, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
+static bool MOHAA_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;

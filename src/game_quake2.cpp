@@ -32,8 +32,8 @@ GEN_GAME_FUNCS(QUAKE2);
 
 
 // auto-detection logic for QUAKE2
-static bool QUAKE2_AutoDetect(api_supportedgame* game, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
+static bool QUAKE2_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -517,7 +517,7 @@ static intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* QUAKE2_Entry(void* import, void*, api_engine) {
+static void* QUAKE2_Entry(void* import, void*, APIType) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_Entry({}) called\n", import);
 
     // original import struct from engine
@@ -543,8 +543,8 @@ static void* QUAKE2_Entry(void* import, void*, api_engine) {
 }
 
 
-static bool QUAKE2_ModLoad(void* entry, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
+static bool QUAKE2_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;

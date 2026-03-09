@@ -25,7 +25,7 @@ GEN_GAME_FUNCS(COD11MP);
 
 
 // auto-detection logic for COD11MP (never auto-detect)
-static bool COD11MP_AutoDetect(api_supportedgame*, api_engine) {
+static bool COD11MP_AutoDetect(api_supportedgame*, APIType) {
     return false;
 }
 
@@ -68,7 +68,7 @@ static intptr_t COD11MP_syscall(intptr_t cmd, ...) {
     }
 
     default:
-        // all normal engine functions go to engine
+        // all normal engine functions go to syscall
         ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
@@ -109,7 +109,7 @@ static intptr_t COD11MP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* COD11MP_Entry(void* syscall, void*, api_engine) {
+static void* COD11MP_Entry(void* syscall, void*, APIType) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("COD11MP_Entry({}) called\n", syscall);
 
     // store original syscall from engine
@@ -127,8 +127,8 @@ static void* COD11MP_Entry(void* syscall, void*, api_engine) {
 }
 
 
-static bool COD11MP_ModLoad(void* entry, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_DLLENTRY)
+static bool COD11MP_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_DLLENTRY)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

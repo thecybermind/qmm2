@@ -42,8 +42,8 @@ GEN_GAME_FUNCS(Q2R);
 
 
 // auto-detection logic for Q2R
-static bool Q2R_AutoDetect(api_supportedgame* game, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
+static bool Q2R_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -598,7 +598,7 @@ static intptr_t Q2R_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* Q2R_Entry(void* import, void*, api_engine) {
+static void* Q2R_Entry(void* import, void*, APIType) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_Entry({}) called\n", import);
 
     // original import struct from engine
@@ -626,8 +626,8 @@ static void* Q2R_Entry(void* import, void*, api_engine) {
 }
 
 
-static bool Q2R_ModLoad(void* entry, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
+static bool Q2R_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;

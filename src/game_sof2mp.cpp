@@ -29,8 +29,8 @@ GEN_GAME_FUNCS_QVM(SOF2MP);
 
 
 // auto-detection logic for SOF2MP
-static bool SOF2MP_AutoDetect(api_supportedgame* game, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_DLLENTRY)
+static bool SOF2MP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_DLLENTRY)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -81,7 +81,7 @@ static intptr_t SOF2MP_syscall(intptr_t cmd, ...) {
     }
 
     default:
-        // all normal engine functions go to engine
+        // all normal engine functions go to syscall
         ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
@@ -163,7 +163,7 @@ static intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* SOF2MP_Entry(void* syscall, void*, api_engine) {
+static void* SOF2MP_Entry(void* syscall, void*, APIType) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_Entry({}) called\n", syscall);
 
     // store original syscall from engine
@@ -182,16 +182,15 @@ static void* SOF2MP_Entry(void* syscall, void*, api_engine) {
 
 
 // get mod's vmMain function pointer from mod.cpp::mod_load
-static bool SOF2MP_ModLoad(void* entry, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_DLLENTRY)
+static bool SOF2MP_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_DLLENTRY && modapi != QMM_API_QVM)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;
 
     // we cannot verify data in the QVM since this engine both provides malloc functionality and has the gametype module,
     // so some pointers may point into the engine or the gametype module
-    if (g_mod.vmbase)
-        g_mod.vm.verify_data = false;
+    g_mod.vm.verify_data = false;
 
     return !!orig_vmMain;
 }

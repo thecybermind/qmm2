@@ -27,8 +27,8 @@ GEN_GAME_FUNCS(WET);
 
 
 // auto-detection logic for WET
-static bool WET_AutoDetect(api_supportedgame* game, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_DLLENTRY)
+static bool WET_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_DLLENTRY)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -79,7 +79,7 @@ static intptr_t WET_syscall(intptr_t cmd, ...) {
     }
 
     default:
-        // all normal engine functions go to engine
+        // all normal engine functions go to syscall
         ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
@@ -120,7 +120,7 @@ static intptr_t WET_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* WET_Entry(void* syscall, void*, api_engine) {
+static void* WET_Entry(void* syscall, void*, APIType) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_Entry({}) called\n", syscall);
 
     // store original syscall from engine
@@ -138,8 +138,8 @@ static void* WET_Entry(void* syscall, void*, api_engine) {
 }
 
 
-static bool WET_ModLoad(void* entry, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_DLLENTRY)
+static bool WET_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_DLLENTRY)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

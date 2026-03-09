@@ -25,8 +25,8 @@ GEN_GAME_FUNCS(SOF2SP);
 
 
 // auto-detection logic for SOF2SP
-static bool SOF2SP_AutoDetect(api_supportedgame* game, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
+static bool SOF2SP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -442,7 +442,7 @@ static intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* SOF2SP_Entry(void* apiversion, void* import, api_engine) {
+static void* SOF2SP_Entry(void* apiversion, void* import, APIType) {
     orig_apiversion = (intptr_t)apiversion;
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_Entry({}, {}) called\n", orig_apiversion, import);
 
@@ -469,8 +469,8 @@ static void* SOF2SP_Entry(void* apiversion, void* import, api_engine) {
 }
 
 
-static bool SOF2SP_ModLoad(void* entry, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
+static bool SOF2SP_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;

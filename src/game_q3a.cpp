@@ -28,8 +28,8 @@ GEN_GAME_FUNCS_QVM(Q3A);
 
 
 // auto-detection logic for Q3A
-static bool Q3A_AutoDetect(api_supportedgame* game, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_DLLENTRY)
+static bool Q3A_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_DLLENTRY)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -79,7 +79,7 @@ static intptr_t Q3A_syscall(intptr_t cmd, ...) {
         break;
     }
     default:
-        // all normal engine functions go to engine
+        // all normal engine functions go to syscall
         ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
@@ -126,7 +126,7 @@ static intptr_t Q3A_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* Q3A_Entry(void* syscall, void*, api_engine) {
+static void* Q3A_Entry(void* syscall, void*, APIType) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_Entry({}) called\n", syscall);
 
     // store original syscall from engine
@@ -144,8 +144,8 @@ static void* Q3A_Entry(void* syscall, void*, api_engine) {
 }
 
 
-static bool Q3A_ModLoad(void* entry, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_DLLENTRY)
+static bool Q3A_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_DLLENTRY && modapi != QMM_API_QVM)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

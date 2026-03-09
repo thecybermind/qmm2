@@ -27,8 +27,8 @@ GEN_GAME_FUNCS(JAMP);
 
 
 // auto-detection logic for JAMP
-static bool JAMP_AutoDetect(api_supportedgame* game, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_DLLENTRY && engine != QMM_ENGINEAPI_GETGAMEAPI)
+static bool JAMP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_DLLENTRY && engineapi != QMM_API_GETMODULEAPI)
         return false;
 
     // QMM filename must match default or an OpenJK temp filename (if DLL was pulled from .pk3)
@@ -461,7 +461,7 @@ static intptr_t JAMP_syscall(intptr_t cmd, ...) {
         }
 
         default:
-            // all normal engine functions go to engine
+            // all normal engine functions go to syscall
             ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
         }
     }
@@ -886,10 +886,10 @@ static intptr_t JAMP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* JAMP_Entry(void* arg0, void* arg1, api_engine engine) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_Entry({}, {}, {}) called\n", arg0, arg1, EngineAPIName(engine));
+static void* JAMP_Entry(void* arg0, void* arg1, APIType engine) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_Entry({}, {}, {}) called\n", arg0, arg1, APIType_Name(engine));
 
-    if (engine == QMM_ENGINEAPI_GETGAMEAPI) {
+    if (engine == QMM_API_GETMODULEAPI) {
         orig_apiversion = (intptr_t)arg0;
 
         // original import struct from engine
@@ -905,13 +905,13 @@ static void* JAMP_Entry(void* arg0, void* arg1, api_engine engine) {
         // pointer to wrapper syscall function that calls either orig_syscall or func in orig_import
         g_gameinfo.pfnsyscall = JAMP_syscall;
 
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_Entry({}, {}, {}) returning {}\n", arg0, arg1, EngineAPIName(engine), (void*)&qmm_export);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_Entry({}, {}, {}) returning {}\n", arg0, arg1, APIType_Name(engine), (void*)&qmm_export);
 
         // struct full of export lambdas to QMM's vmMain
         // this gets returned to the game engine, but we haven't loaded the mod yet.
         return &qmm_export;
     }
-    else if (engine == QMM_ENGINEAPI_DLLENTRY) {
+    else if (engine == QMM_API_DLLENTRY) {
         // store original syscall from engine
         orig_syscall = (eng_syscall)arg0;
 
@@ -921,7 +921,7 @@ static void* JAMP_Entry(void* arg0, void* arg1, api_engine engine) {
         // pointer to wrapper syscall function that calls either orig_syscall or func in orig_import
         g_gameinfo.pfnsyscall = JAMP_syscall;
 
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_Entry({}, {}, {}) returning\n", arg0, arg1, EngineAPIName(engine));
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_Entry({}, {}, {}) returning\n", arg0, arg1, APIType_Name(engine));
 
         return nullptr;
     }
@@ -930,15 +930,18 @@ static void* JAMP_Entry(void* arg0, void* arg1, api_engine engine) {
 }
 
 
-static bool JAMP_ModLoad(void* entry, api_engine engine) {
-    if (engine == QMM_ENGINEAPI_GETGAMEAPI) {
+static bool JAMP_ModLoad(void* entry, APIType modapi) {
+    if (modapi == QMM_API_GETMODULEAPI) {
         mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
         // api version gets passed before import pointer
+        // if QMM was loaded with dllEntry, then orig_apiversion is 0 so try to get it from SDK
+        if (orig_syscall || !orig_apiversion)
+            orig_apiversion = GAME_API_VERSION;
         orig_export = (game_export_t*)pfnGGA((void*)orig_apiversion, &qmm_import);
 
         return !!orig_export;
     }
-    else if (engine == QMM_ENGINEAPI_DLLENTRY) {
+    else if (modapi == QMM_API_DLLENTRY) {
         orig_vmMain = (mod_vmMain)entry;
         return !!orig_vmMain;
     }

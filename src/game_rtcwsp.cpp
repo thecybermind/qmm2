@@ -38,13 +38,13 @@ GEN_GAME_FUNCS(RTCWSP);
 static bool is_iortcw = false;
 
 // auto-detection logic for RTCWSP
-static bool RTCWSP_AutoDetect(api_supportedgame* game, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_DLLENTRY)
+static bool RTCWSP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_DLLENTRY)
         return false;
 
     const char* official_dllname = "qagame" MOD_DLL;
 
-    // check for iortcw name in game->dllname or official engine name
+    // game->dllname holds the iortcw filenames, but we also need to check for official engine dll name
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname) && !str_striequal(g_gameinfo.qmm_file, official_dllname))
         return false;
 
@@ -119,7 +119,7 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
     }
 
     default:
-        // all normal engine functions go to engine
+        // all normal engine functions go to syscall
         ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
@@ -160,7 +160,7 @@ static intptr_t RTCWSP_vmMain(intptr_t cmd, ...) {
 }
 
 
-static void* RTCWSP_Entry(void* syscall, void*, api_engine) {
+static void* RTCWSP_Entry(void* syscall, void*, APIType) {
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_Entry({}) called\n", syscall);
 
     // store original syscall from engine
@@ -178,8 +178,8 @@ static void* RTCWSP_Entry(void* syscall, void*, api_engine) {
 }
 
 
-static bool RTCWSP_ModLoad(void* entry, api_engine engine) {
-    if (engine != QMM_ENGINEAPI_DLLENTRY)
+static bool RTCWSP_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_DLLENTRY)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;
