@@ -27,13 +27,13 @@ Created By:
 gameinfo g_gameinfo;
 
 // shared code for dllEntry and GetGameAPI entry points
-static void* main_handle_entry(void* import, void* extra, api_engine engine);
+static void* main_handle_entry(void* import, void* extra, APIType engine);
 // general code to get path/module/binary/etc information
 static void main_detect_env();
 // general code to load config file
 static void main_load_config(std::string config_filename);
 // general code to auto-detect what game engine loaded us
-static void main_detect_game(std::string cfg_game, api_engine engine);
+static void main_detect_game(std::string cfg_game, APIType engine);
 // general code to find a mod file to load
 static bool main_load_mod(std::string cfg_mod);
 // general code to find a plugin file to load
@@ -138,7 +138,7 @@ C_DLLEXPORT void dllEntry(void* syscall) {
     // if we don't detect a game, we can call syscall(G_ERROR) to shutdown in vmMain
     g_gameinfo.pfnsyscall = (eng_syscall)syscall;
 
-    main_handle_entry(syscall, nullptr, QMM_ENGINEAPI_DLLENTRY);
+    main_handle_entry(syscall, nullptr, QMM_API_DLLENTRY);
     return;
 }
 
@@ -194,13 +194,13 @@ C_DLLEXPORT void dllEntry(void* syscall) {
    to the proper function pointer in the struct.
 */
 C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
-    return main_handle_entry(import, extra, QMM_ENGINEAPI_GETGAMEAPI);
+    return main_handle_entry(import, extra, QMM_API_GETGAMEAPI);
 }
 
 
 // this is the same as the 2-arg GetGameAPI but OpenJK renamed it
 C_DLLEXPORT void* GetModuleAPI(void* import, void* extra) {
-    return main_handle_entry(import, extra, QMM_ENGINEAPI_GETGAMEAPI);
+    return main_handle_entry(import, extra, QMM_API_GETMODULEAPI);
 }
 
 
@@ -305,7 +305,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
             ENG_SYSCALL(QMM_FAIL_G_ERROR, "\nFatal QMM Error:\nQMM was unable to load the mod file.\nPlease set the \"mod\" option in qmm2.json.\nRefer to the documentation for more information.\n");
             return 0;
         }
-        LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} mod \"{}\"\n", g_mod.vmbase ? "VM" : "DLL", g_mod.path);
+        LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Successfully loaded {} mod \"{}\"\n", APIType_Function(g_mod.api), g_mod.path);
 
         // cgame passthrough hack:
         // mod DLL is loaded, so find the vmMain and dllEntry functions and call dllEntry.
@@ -423,22 +423,12 @@ intptr_t qmm_syscall(intptr_t cmd, ...) {
 }
 
 
-static void* main_handle_entry(void* import, void* extra, api_engine engine) {
-    const char* func_name = "unknown";
-    switch (engine) {
-    case QMM_ENGINEAPI_DLLENTRY:
-        func_name = "dllEntry";
-        break;
-    case QMM_ENGINEAPI_GETGAMEAPI:
-        func_name = "GetGameAPI";
-        break;
-    }
-
+static void* main_handle_entry(void* import, void* extra, APIType engine) {
     main_detect_env();
 
     log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
 
-    LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") ({}) loaded!\n", EngineAPIName(engine));
+    LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") ({}) loaded!\n", APIType_Function(engine));
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("QMM path: \"{}\"\n", g_gameinfo.qmm_path);
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Engine path: \"{}\"\n", g_gameinfo.exe_path);
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.mod_dir);
@@ -446,7 +436,7 @@ static void* main_handle_entry(void* import, void* extra, api_engine engine) {
     // ???
     // return nullptr to error out now. if GetGameAPI, Init() will never be called
     if (!import) {
-        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): engine pointer is NULL!\n", func_name);
+        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): engine pointer is NULL!\n", APIType_Function(engine));
         return nullptr;
     }
 
@@ -468,7 +458,7 @@ static void* main_handle_entry(void* import, void* extra, api_engine engine) {
     // if GetGameAPI, returning nullptr to error out now will make sure Init() will never be called.
     // if dllEntry, will check g_gameinfo.game in vmMain(GAME_INIT).
     if (!g_gameinfo.game || !g_gameinfo.game->funcs->pfnEntry) {
-        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Unable to determine game engine using \"{}\"\n", func_name, cfg_game);
+        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Unable to determine game engine using \"{}\"\n", APIType_Function(engine), cfg_game);
         return nullptr;
     }
 
@@ -670,14 +660,14 @@ static void main_handle_command_qmm(intptr_t arg_start) {
 
     if (str_striequal("status", arg1) || str_striequal("info", arg1)) {
         CONSOLE_PRINT("(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ")\n");
-        CONSOLE_PRINTF("(QMM) Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.is_auto_detected ? "Auto-detected" : "Config file");
+        CONSOLE_PRINTF("(QMM) Game: {}/\"{}\" ({}) (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, APIType_Function(g_gameinfo.api), g_gameinfo.is_auto_detected ? "Auto-detected" : "Config file");
         CONSOLE_PRINTF("(QMM) ModDir: {}\n", g_gameinfo.mod_dir);
         CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.empty() ? "(error)" : "");
         CONSOLE_PRINT("(QMM) Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
         CONSOLE_PRINT("(QMM) URL: " QMM_URL "\n");
         CONSOLE_PRINT("(QMM) Plugin interface: " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
         CONSOLE_PRINTF("(QMM) Plugins loaded: {}\n", g_plugins.size());
-        CONSOLE_PRINTF("(QMM) Loaded mod: {} ({})\n", g_mod.path, EngineAPIName(g_mod.engine));
+        CONSOLE_PRINTF("(QMM) Loaded mod: {} ({})\n", g_mod.path, APIType_Function(g_mod.api));
         if (g_mod.vmbase) {
             CONSOLE_PRINTF("(QMM) QVM magic number   : {:x} ({})\n", g_mod.vm.magic, g_mod.vm.magic == QVM_MAGIC ? "QVM_MAGIC" : "QVM_MAGIC_VER2");
             CONSOLE_PRINTF("(QMM) QVM file size      : {}\n", g_mod.vm.filesize);
