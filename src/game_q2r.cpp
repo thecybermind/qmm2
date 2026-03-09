@@ -34,16 +34,16 @@ Created By:
 // don't want to make plugins have to use separate code to handle the actual GAME_INIT message, so just
 // do a dirty redefine here for the QMM_GAME_INIT message definition
 #define GAME_INIT GAME_PREINIT
-GEN_QMM_MSGS(Q2R);
+GEN_GAME_QMM_MSGS(Q2R);
 #undef GAME_INIT
-GEN_EXTS(Q2R);
+GEN_GAME_EXTS(Q2R);
 
-GEN_FUNCS(Q2R);
+GEN_GAME_FUNCS(Q2R);
 
 
 // auto-detection logic for Q2R
-static bool Q2R_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (!is_GetGameAPI)
+static bool Q2R_AutoDetect(api_supportedgame* game, api_engine engine) {
+    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -284,7 +284,7 @@ static intptr_t Q2R_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_syscall({} {}) called\n", Q2R_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_syscall({} {}) called\n", Q2R_EngMsgNames(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -523,7 +523,7 @@ static intptr_t Q2R_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_syscall({} {}) returning {}\n", Q2R_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_syscall({} {}) returning {}\n", Q2R_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -536,7 +536,7 @@ static intptr_t Q2R_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) called\n", Q2R_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) called\n", Q2R_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -591,15 +591,15 @@ static intptr_t Q2R_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) returning {}\n", Q2R_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) returning {}\n", Q2R_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* Q2R_entry(void* import, void*, bool) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_entry({}) called\n", import);
+static void* Q2R_Entry(void* import, void*, api_engine) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_Entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -617,7 +617,7 @@ static void* Q2R_entry(void* import, void*, bool) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = Q2R_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_entry({}) returning {}\n", import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_Entry({}) returning {}\n", import, (void*)&qmm_export);
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -626,8 +626,8 @@ static void* Q2R_entry(void* import, void*, bool) {
 }
 
 
-static bool Q2R_mod_load(void* entry, bool is_GetGameAPI) {
-    if (!is_GetGameAPI)
+static bool Q2R_ModLoad(void* entry, api_engine engine) {
+    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
@@ -637,12 +637,12 @@ static bool Q2R_mod_load(void* entry, bool is_GetGameAPI) {
 }
 
 
-static void Q2R_mod_unload() {
+static void Q2R_ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* Q2R_eng_msg_names(intptr_t cmd) {
+static const char* Q2R_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_BROADCAST_PRINT);
         GEN_CASE(G_COM_PRINT);
@@ -737,7 +737,7 @@ static const char* Q2R_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* Q2R_mod_msg_names(intptr_t cmd) {
+static const char* Q2R_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_PREINIT);

@@ -20,15 +20,15 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_QMM_MSGS(RTCWMP);
-GEN_EXTS(RTCWMP);
+GEN_GAME_QMM_MSGS(RTCWMP);
+GEN_GAME_EXTS(RTCWMP);
 
-GEN_FUNCS_QVM(RTCWMP);
+GEN_GAME_FUNCS_QVM(RTCWMP);
 
 
 // auto-detection logic for RTCWMP
-static bool RTCWMP_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (is_GetGameAPI)
+static bool RTCWMP_AutoDetect(api_supportedgame* game, api_engine engine) {
+    if (engine != QMM_ENGINEAPI_DLLENTRY)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -54,7 +54,7 @@ static intptr_t RTCWMP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_syscall({} {}) called\n", RTCWMP_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_syscall({} {}) called\n", RTCWMP_EngMsgNames(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -87,7 +87,7 @@ static intptr_t RTCWMP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_syscall({} {}) returning {}\n", RTCWMP_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_syscall({} {}) returning {}\n", RTCWMP_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -100,7 +100,7 @@ static intptr_t RTCWMP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_vmMain({} {}) called\n", RTCWMP_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_vmMain({} {}) called\n", RTCWMP_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -113,15 +113,15 @@ static intptr_t RTCWMP_vmMain(intptr_t cmd, ...) {
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_vmMain({} {}) returning {}\n", RTCWMP_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_vmMain({} {}) returning {}\n", RTCWMP_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* RTCWMP_entry(void* syscall, void*, bool) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_entry({}) called\n", syscall);
+static void* RTCWMP_Entry(void* syscall, void*, api_engine) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_Entry({}) called\n", syscall);
 
     // store original syscall from engine
     orig_syscall = (eng_syscall)syscall;
@@ -132,14 +132,14 @@ static void* RTCWMP_entry(void* syscall, void*, bool) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = RTCWMP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_entry({}) returning\n", syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_Entry({}) returning\n", syscall);
 
     return nullptr;
 }
 
 
-static bool RTCWMP_mod_load(void* entry, bool is_GetGameAPI) {
-    if (is_GetGameAPI)
+static bool RTCWMP_ModLoad(void* entry, api_engine engine) {
+    if (engine != QMM_ENGINEAPI_DLLENTRY)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;
@@ -148,12 +148,12 @@ static bool RTCWMP_mod_load(void* entry, bool is_GetGameAPI) {
 }
 
 
-static void RTCWMP_mod_unload() {
+static void RTCWMP_ModUnload() {
     orig_vmMain = nullptr;
 }
 
 
-static const char* RTCWMP_eng_msg_names(intptr_t cmd) {
+static const char* RTCWMP_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -373,7 +373,7 @@ static const char* RTCWMP_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* RTCWMP_mod_msg_names(intptr_t cmd) {
+static const char* RTCWMP_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
@@ -402,9 +402,9 @@ static const char* RTCWMP_mod_msg_names(intptr_t cmd) {
 */
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
-static int RTCWMP_qvmsyscall(uint8_t* membase, int cmd, int* args) {
+static int RTCWMP_QVMSyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("RTCWMP_qvmsyscall({} {}) called\n", RTCWMP_eng_msg_names(cmd), cmd);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("RTCWMP_QVMSyscall({} {}) called\n", RTCWMP_EngMsgNames(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -701,7 +701,7 @@ static int RTCWMP_qvmsyscall(uint8_t* membase, int cmd, int* args) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("RTCWMP_qvmsyscall({} {}) returning {}\n", RTCWMP_eng_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("RTCWMP_QVMSyscall({} {}) returning {}\n", RTCWMP_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;

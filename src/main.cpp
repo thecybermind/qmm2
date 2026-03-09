@@ -27,13 +27,13 @@ Created By:
 gameinfo g_gameinfo;
 
 // shared code for dllEntry and GetGameAPI entry points
-static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI);
+static void* main_handle_entry(void* import, void* extra, api_engine engine);
 // general code to get path/module/binary/etc information
 static void main_detect_env();
 // general code to load config file
 static void main_load_config(std::string config_filename);
 // general code to auto-detect what game engine loaded us
-static void main_detect_game(std::string cfg_game, bool is_GetGameAPI);
+static void main_detect_game(std::string cfg_game, api_engine engine);
 // general code to find a mod file to load
 static bool main_load_mod(std::string cfg_mod);
 // general code to find a plugin file to load
@@ -65,7 +65,7 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args);
       is returned to engine
 
    syscall (mod->engine) call flow for QVM mods only:
-   1. QVM system calls <GAME>_qvmsyscall function
+   1. QVM system calls <GAME>_QVMSyscall function
    2. pointer arguments are converted: if not NULL, the QVM data segment base address is added
    3. call qmm_syscall with converted arguments (continue with next section as if it were a DLL mod)
 
@@ -138,7 +138,7 @@ C_DLLEXPORT void dllEntry(void* syscall) {
     // if we don't detect a game, we can call syscall(G_ERROR) to shutdown in vmMain
     g_gameinfo.pfnsyscall = (eng_syscall)syscall;
 
-    main_handle_entry(syscall, nullptr, false);     // false = !is_GetGameAPI
+    main_handle_entry(syscall, nullptr, QMM_ENGINEAPI_DLLENTRY);
     return;
 }
 
@@ -194,13 +194,13 @@ C_DLLEXPORT void dllEntry(void* syscall) {
    to the proper function pointer in the struct.
 */
 C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
-    return main_handle_entry(import, extra, true);      // true = is_GetGameAPI
+    return main_handle_entry(import, extra, QMM_ENGINEAPI_GETGAMEAPI);
 }
 
 
 // this is the same as the 2-arg GetGameAPI but OpenJK renamed it
 C_DLLEXPORT void* GetModuleAPI(void* import, void* extra) {
-    return main_handle_entry(import, extra, true);      // true = is_GetGameAPI
+    return main_handle_entry(import, extra, QMM_ENGINEAPI_GETGAMEAPI);
 }
 
 
@@ -423,14 +423,22 @@ intptr_t qmm_syscall(intptr_t cmd, ...) {
 }
 
 
-static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI) {
-    const char* func_name = is_GetGameAPI ? "GetGameAPI" : "dllEntry";
+static void* main_handle_entry(void* import, void* extra, api_engine engine) {
+    const char* func_name = "unknown";
+    switch (engine) {
+    case QMM_ENGINEAPI_DLLENTRY:
+        func_name = "dllEntry";
+        break;
+    case QMM_ENGINEAPI_GETGAMEAPI:
+        func_name = "GetGameAPI";
+        break;
+    }
 
     main_detect_env();
 
     log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
 
-    LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") ({}) loaded!\n", func_name);
+    LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") ({}) loaded!\n", EngineAPIName(engine));
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("QMM path: \"{}\"\n", g_gameinfo.qmm_path);
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Engine path: \"{}\"\n", g_gameinfo.exe_path);
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.mod_dir);
@@ -438,7 +446,7 @@ static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI) {
     // ???
     // return nullptr to error out now. if GetGameAPI, Init() will never be called
     if (!import) {
-        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): {} is NULL!\n", func_name, is_GetGameAPI ? "import" : "syscall");
+        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): engine pointer is NULL!\n", func_name);
         return nullptr;
     }
 
@@ -454,7 +462,7 @@ static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI) {
     std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
     // check command line arguments for a game code
     cfg_game = util_get_cmdline_arg("--qmm_game", cfg_game);
-    main_detect_game(cfg_game, is_GetGameAPI);
+    main_detect_game(cfg_game, engine);
 
     // failed to get engine information, or game does not have an entry handler
     // if GetGameAPI, returning nullptr to error out now will make sure Init() will never be called.
@@ -470,9 +478,9 @@ static void* main_handle_entry(void* import, void* extra, bool is_GetGameAPI) {
     msg_GAME_CONSOLE_COMMAND = QMM_MOD_MSG[QMM_GAME_CONSOLE_COMMAND];
     msg_GAME_SHUTDOWN = QMM_MOD_MSG[QMM_GAME_SHUTDOWN];
 
-    // call the game-specific entry handler (e.g. Q3A_entry) which will set up the internals to interact
+    // call the game-specific entry handler (e.g. Q3A_Entry) which will set up the internals to interact
     // the engine and the mod 
-    return g_gameinfo.game->funcs->pfnEntry(import, extra, is_GetGameAPI);
+    return g_gameinfo.game->funcs->pfnEntry(import, extra, engine);
 }
 
 
@@ -536,8 +544,8 @@ static void main_load_config(std::string config_filename) {
 
 
 // general code to auto-detect what game engine loaded us
-static void main_detect_game(std::string cfg_game, bool is_GetGameAPI) {
-    for (supportedgame& game : g_supportedgames) {
+static void main_detect_game(std::string cfg_game, api_engine engine) {
+    for (api_supportedgame& game : api_supportedgames) {
         // if short name matches config option, we found it!
         if (str_striequal(cfg_game, game.gamename_short)) {
             LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);
@@ -545,14 +553,14 @@ static void main_detect_game(std::string cfg_game, bool is_GetGameAPI) {
             g_gameinfo.is_auto_detected = false;
             // call the game's auto-detect function if it exists, since it may do some logic
             if (game.funcs->pfnAutoDetect)
-                (void)game.funcs->pfnAutoDetect(is_GetGameAPI, &game);
+                (void)game.funcs->pfnAutoDetect(&game, engine);
             return;
         }
 
         // otherwise, if auto, call the game's auto-detect function if available
         if (str_striequal(cfg_game, "auto")
             && game.funcs->pfnAutoDetect
-            && game.funcs->pfnAutoDetect(is_GetGameAPI, &game))
+            && game.funcs->pfnAutoDetect(&game, engine))
         {
             LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match with auto-detection - \"{}\"\n", game.gamename_short);
             g_gameinfo.game = &game;
@@ -669,7 +677,7 @@ static void main_handle_command_qmm(intptr_t arg_start) {
         CONSOLE_PRINT("(QMM) URL: " QMM_URL "\n");
         CONSOLE_PRINT("(QMM) Plugin interface: " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
         CONSOLE_PRINTF("(QMM) Plugins loaded: {}\n", g_plugins.size());
-        CONSOLE_PRINTF("(QMM) Loaded mod: {} ({})\n", g_mod.path, g_mod.is_GetGameAPI ? "GetGameAPI" : "dllEntry");
+        CONSOLE_PRINTF("(QMM) Loaded mod: {} ({})\n", g_mod.path, EngineAPIName(g_mod.engine));
         if (g_mod.vmbase) {
             CONSOLE_PRINTF("(QMM) QVM magic number   : {:x} ({})\n", g_mod.vm.magic, g_mod.vm.magic == QVM_MAGIC ? "QVM_MAGIC" : "QVM_MAGIC_VER2");
             CONSOLE_PRINTF("(QMM) QVM file size      : {}\n", g_mod.vm.filesize);

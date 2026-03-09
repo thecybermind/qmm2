@@ -23,15 +23,15 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_QMM_MSGS(STEF2);
-GEN_EXTS(STEF2);
+GEN_GAME_QMM_MSGS(STEF2);
+GEN_GAME_EXTS(STEF2);
 
-GEN_FUNCS(STEF2);
+GEN_GAME_FUNCS(STEF2);
 
 
 // auto-detection logic for STEF2
-static bool STEF2_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (!is_GetGameAPI)
+static bool STEF2_AutoDetect(api_supportedgame* game, api_engine engine) {
+    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -491,7 +491,7 @@ static intptr_t STEF2_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_syscall({} {}) called\n", STEF2_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_syscall({} {}) called\n", STEF2_EngMsgNames(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -882,7 +882,7 @@ static intptr_t STEF2_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_syscall({} {}) returning {}\n", STEF2_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_syscall({} {}) returning {}\n", STEF2_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -895,7 +895,7 @@ static intptr_t STEF2_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) called\n", STEF2_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) called\n", STEF2_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -953,15 +953,15 @@ static intptr_t STEF2_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) returning {}\n", STEF2_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) returning {}\n", STEF2_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* STEF2_entry(void* import, void*, bool) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_entry({}) called\n", import);
+static void* STEF2_Entry(void* import, void*, api_engine) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_Entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -978,7 +978,7 @@ static void* STEF2_entry(void* import, void*, bool) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = STEF2_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_entry({}) returning {}\n", import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_Entry({}) returning {}\n", import, (void*)&qmm_export);
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -987,8 +987,8 @@ static void* STEF2_entry(void* import, void*, bool) {
 }
 
 
-static bool STEF2_mod_load(void* entry, bool is_GetGameAPI) {
-    if (!is_GetGameAPI)
+static bool STEF2_ModLoad(void* entry, api_engine engine) {
+    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
@@ -998,12 +998,12 @@ static bool STEF2_mod_load(void* entry, bool is_GetGameAPI) {
 }
 
 
-static void STEF2_mod_unload() {
+static void STEF2_ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* STEF2_eng_msg_names(intptr_t cmd) {
+static const char* STEF2_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -1356,7 +1356,7 @@ static const char* STEF2_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* STEF2_mod_msg_names(intptr_t cmd) {
+static const char* STEF2_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);

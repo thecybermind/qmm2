@@ -25,15 +25,15 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_QMM_MSGS(SIN);
-GEN_EXTS(SIN);
+GEN_GAME_QMM_MSGS(SIN);
+GEN_GAME_EXTS(SIN);
 
-GEN_FUNCS(SIN);
+GEN_GAME_FUNCS(SIN);
 
 
 // auto-detection logic for SIN
-static bool SIN_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (!is_GetGameAPI)
+static bool SIN_AutoDetect(api_supportedgame* game, api_engine engine) {
+    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -294,7 +294,7 @@ static intptr_t SIN_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) called\n", SIN_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) called\n", SIN_EngMsgNames(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -562,7 +562,7 @@ static intptr_t SIN_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) returning {}\n", SIN_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) returning {}\n", SIN_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -575,7 +575,7 @@ static intptr_t SIN_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) called\n", SIN_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) called\n", SIN_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -626,15 +626,15 @@ static intptr_t SIN_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) returning {}\n", SIN_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) returning {}\n", SIN_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* SIN_entry(void* import, void*, bool) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_entry({}) called\n", import);
+static void* SIN_Entry(void* import, void*, api_engine) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_Entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -651,7 +651,7 @@ static void* SIN_entry(void* import, void*, bool) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = SIN_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_entry({}) returning {}\n", import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_Entry({}) returning {}\n", import, (void*)&qmm_export);
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -660,8 +660,8 @@ static void* SIN_entry(void* import, void*, bool) {
 }
 
 
-static bool SIN_mod_load(void* entry, bool is_GetGameAPI) {
-    if (!is_GetGameAPI)
+static bool SIN_ModLoad(void* entry, api_engine engine) {
+    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
@@ -671,12 +671,12 @@ static bool SIN_mod_load(void* entry, bool is_GetGameAPI) {
 }
 
 
-static void SIN_mod_unload() {
+static void SIN_ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* SIN_eng_msg_names(intptr_t cmd) {
+static const char* SIN_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_BPRINTF);
         GEN_CASE(G_DPRINTF);
@@ -792,7 +792,7 @@ static const char* SIN_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* SIN_mod_msg_names(intptr_t cmd) {
+static const char* SIN_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);

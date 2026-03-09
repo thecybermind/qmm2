@@ -21,7 +21,7 @@ struct qmm_mod {
     qvm vm = {};
     void* dll = nullptr;
     intptr_t vmbase = 0;
-    bool is_GetGameAPI = false;
+    api_engine engine;
 };
 
 extern qmm_mod g_mod;

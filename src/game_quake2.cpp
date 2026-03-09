@@ -25,15 +25,15 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_QMM_MSGS(QUAKE2);
-GEN_EXTS(QUAKE2);
+GEN_GAME_QMM_MSGS(QUAKE2);
+GEN_GAME_EXTS(QUAKE2);
 
-GEN_FUNCS(QUAKE2);
+GEN_GAME_FUNCS(QUAKE2);
 
 
 // auto-detection logic for QUAKE2
-static bool QUAKE2_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (!is_GetGameAPI)
+static bool QUAKE2_AutoDetect(api_supportedgame* game, api_engine engine) {
+    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -227,7 +227,7 @@ static intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_syscall({} {}) called\n", QUAKE2_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_syscall({} {}) called\n", QUAKE2_EngMsgNames(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -456,7 +456,7 @@ static intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_syscall({} {}) returning {}\n", QUAKE2_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_syscall({} {}) returning {}\n", QUAKE2_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -469,7 +469,7 @@ static intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) called\n", QUAKE2_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) called\n", QUAKE2_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -510,15 +510,15 @@ static intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) returning {}\n", QUAKE2_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) returning {}\n", QUAKE2_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* QUAKE2_entry(void* import, void*, bool) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_entry({}) called\n", import);
+static void* QUAKE2_Entry(void* import, void*, api_engine) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_Entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -534,7 +534,7 @@ static void* QUAKE2_entry(void* import, void*, bool) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = QUAKE2_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_entry({}) returning {}\n", import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_Entry({}) returning {}\n", import, (void*)&qmm_export);
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -543,8 +543,8 @@ static void* QUAKE2_entry(void* import, void*, bool) {
 }
 
 
-static bool QUAKE2_mod_load(void* entry, bool is_GetGameAPI) {
-    if (!is_GetGameAPI)
+static bool QUAKE2_ModLoad(void* entry, api_engine engine) {
+    if (engine != QMM_ENGINEAPI_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
@@ -554,12 +554,12 @@ static bool QUAKE2_mod_load(void* entry, bool is_GetGameAPI) {
 }
 
 
-static void QUAKE2_mod_unload() {
+static void QUAKE2_ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* QUAKE2_eng_msg_names(intptr_t cmd) {
+static const char* QUAKE2_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_BPRINTF);
         GEN_CASE(G_DPRINTF);
@@ -630,7 +630,7 @@ static const char* QUAKE2_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* QUAKE2_mod_msg_names(intptr_t cmd) {
+static const char* QUAKE2_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);

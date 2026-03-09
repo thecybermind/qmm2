@@ -29,7 +29,7 @@ struct gameinfo {
     std::string cfg_path;					// qmm config file path
     eng_syscall pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
     mod_vmMain pfnvmMain = nullptr;			// game-specific wrapper for vmMain. given to plugins and called by QMM
-    supportedgame* game = nullptr;			// loaded engine from supported games table from game_api.cpp
+    api_supportedgame* game = nullptr;		// loaded engine from supported games table from game_api.cpp
     void* qmm_module_ptr = nullptr;			// qmm module pointer
     bool is_auto_detected = false;			// was this engine auto-detected?
     bool is_shutdown = false;				// is game shutting down due to G_ERROR? avoids calling G_ERROR again from GAME_SHUTDOWN
