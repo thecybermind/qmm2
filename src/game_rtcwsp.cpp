@@ -149,7 +149,7 @@ static intptr_t RTCWSP_vmMain(intptr_t cmd, ...) {
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
-    // all normal mod functions go to mod
+    // all normal mod functions go to vmMain
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG

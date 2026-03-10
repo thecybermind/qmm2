@@ -109,7 +109,7 @@ static intptr_t Q3A_vmMain(intptr_t cmd, ...) {
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
-    // all normal mod functions go to mod
+    // all normal mod functions go to vmMain
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
     // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs

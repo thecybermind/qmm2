@@ -826,7 +826,7 @@ static intptr_t JAMP_vmMain(intptr_t cmd, ...) {
 
     // if the loaded JAMP mod uses the official JAMP or OpenJK "legacy" API
     if (orig_vmMain) {
-        // all normal mod functions go to mod
+        // all normal mod functions go to vmMain
         ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
     }
     // if the loaded JAMP mod uses the OpenJK "new" API
