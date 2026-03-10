@@ -68,19 +68,13 @@ extern std::vector<api_supportedgame> api_supportedgames;
 
 // macros to make game support a bit easier to do
 
-// used at the top of game_api.cpp and game_XYZ.cpp
-// ======
-// generate extern for each game's functions
+// generate extern for each game's functions (used at the top of game_api.cpp and game_XYZ.cpp)
 #define GEN_GAME_EXTS(game)	extern api_supportedgame_funcs game##_funcs;
 
-// used in supportedgames entry in game_api.cpp
-// ======
-// generate extern for each game's shortcode and supportedgame_funcs struct (used in game_api.cpp)
+// generate extern for each game's shortcode and funcs struct (used in supportedgames entry in game_api.cpp)
 #define GEN_GAME_INFO(game)  #game , &game##_funcs
 
-// used in game_XYZ.cpp
-// ======
-// generate struct info for the game-specific functions and arrays
+// generate struct info for the game-specific functions and arrays (used in game_XYZ.cpp)
 
 // game with QVM support
 #define GEN_GAME_FUNCS_QVM(game) \

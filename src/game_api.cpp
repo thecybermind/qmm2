@@ -127,17 +127,17 @@ const char* APIType_Name(APIType api) {
 
 const char* APIType_Function(APIType api) {
 	switch (api) {
-		case QMM_API_ERROR:
-			return "(error)";
+	case QMM_API_ERROR:
+		return "(error)";
 
-		case QMM_API_QVM:
-			return "QVM";
-		case QMM_API_DLLENTRY:
-			return "dllEntry";
-		case QMM_API_GETGAMEAPI:
-			return "GetGameAPI";
-		case QMM_API_GETMODULEAPI:
-			return "GetModuleAPI";
+	case QMM_API_QVM:
+		return "QVM";
+	case QMM_API_DLLENTRY:
+		return "dllEntry";
+	case QMM_API_GETGAMEAPI:
+		return "GetGameAPI";
+	case QMM_API_GETMODULEAPI:
+		return "GetModuleAPI";
 	default:
 		return "unknown";
 	};
