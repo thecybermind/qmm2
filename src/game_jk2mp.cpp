@@ -21,15 +21,15 @@ Created By:
 #include "mod.h"
 #include "util.h"
 
-GEN_QMM_MSGS(JK2MP);
-GEN_EXTS(JK2MP);
+GEN_GAME_QMM_MSGS(JK2MP);
+GEN_GAME_EXTS(JK2MP);
 
-GEN_DLLQVM(JK2MP);
+GEN_GAME_FUNCS_QVM(JK2MP);
 
 
 // auto-detection logic for JK2MP
-static bool JK2MP_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (is_GetGameAPI)
+static bool JK2MP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_DLLENTRY)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -55,7 +55,7 @@ static intptr_t JK2MP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_syscall({} {}) called\n", JK2MP_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_syscall({} {}) called\n", JK2MP_EngMsgNames(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -80,7 +80,7 @@ static intptr_t JK2MP_syscall(intptr_t cmd, ...) {
     }
 
     default:
-        // all normal engine functions go to engine
+        // all normal engine functions go to syscall
         ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
@@ -88,7 +88,7 @@ static intptr_t JK2MP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_syscall({} {}) returning {}\n", JK2MP_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_syscall({} {}) returning {}\n", JK2MP_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -101,7 +101,7 @@ static intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_vmMain({} {}) called\n", JK2MP_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_vmMain({} {}) called\n", JK2MP_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -120,18 +120,18 @@ static intptr_t JK2MP_vmMain(intptr_t cmd, ...) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_vmMain({} {}) returning {}\n", JK2MP_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_vmMain({} {}) returning {}\n", JK2MP_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void JK2MP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_dllEntry({}) called\n", (void*)syscall);
+static void* JK2MP_Entry(void* syscall, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_Entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = JK2MP_vmMain;
@@ -139,23 +139,28 @@ static void JK2MP_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = JK2MP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JK2MP_Entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-static bool JK2MP_mod_load(void* entry, bool) {
+static bool JK2MP_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_DLLENTRY && modapi != QMM_API_QVM)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-static void JK2MP_mod_unload() {
+static void JK2MP_ModUnload() {
     orig_vmMain = nullptr;
 }
 
 
-static const char* JK2MP_eng_msg_names(intptr_t cmd) {
+static const char* JK2MP_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -394,7 +399,7 @@ static const char* JK2MP_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* JK2MP_mod_msg_names(intptr_t cmd) {
+static const char* JK2MP_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
@@ -422,9 +427,9 @@ static const char* JK2MP_mod_msg_names(intptr_t cmd) {
 // vec3_t are arrays, so convert them as pointers
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
-int JK2MP_qvmsyscall(uint8_t* membase, int cmd, int* args) {
+int JK2MP_QVMSyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_qvmsyscall({} {}) called\n", JK2MP_eng_msg_names(cmd), cmd);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_QVMSyscall({} {}) called\n", JK2MP_EngMsgNames(cmd), cmd);
 #endif
 
     int ret = 0;
@@ -749,7 +754,7 @@ int JK2MP_qvmsyscall(uint8_t* membase, int cmd, int* args) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_qvmsyscall({} {}) returning {}\n", JK2MP_eng_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_QVMSyscall({} {}) returning {}\n", JK2MP_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;

@@ -18,15 +18,15 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_QMM_MSGS(SOF2SP);
-GEN_EXTS(SOF2SP);
+GEN_GAME_QMM_MSGS(SOF2SP);
+GEN_GAME_EXTS(SOF2SP);
 
-GEN_GGA(SOF2SP);
+GEN_GAME_FUNCS(SOF2SP);
 
 
 // auto-detection logic for SOF2SP
-static bool SOF2SP_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (!is_GetGameAPI)
+static bool SOF2SP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -214,7 +214,7 @@ static intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_syscall({} {}) called\n", SOF2SP_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_syscall({} {}) called\n", SOF2SP_EngMsgNames(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -376,7 +376,7 @@ static intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_syscall({} {}) returning {}\n", SOF2SP_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_syscall({} {}) returning {}\n", SOF2SP_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -389,7 +389,7 @@ static intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_vmMain({} {}) called\n", SOF2SP_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_vmMain({} {}) called\n", SOF2SP_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -435,16 +435,16 @@ static intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_vmMain({} {}) returning {}\n", SOF2SP_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_vmMain({} {}) returning {}\n", SOF2SP_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
+static void* SOF2SP_Entry(void* apiversion, void* import, APIType) {
     orig_apiversion = (intptr_t)apiversion;
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GetGameAPI({}, {}) called\n", orig_apiversion, import);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_Entry({}, {}) called\n", orig_apiversion, import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -460,7 +460,7 @@ static void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = SOF2SP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GetGameAPI({}, {}) returning {}\n", orig_apiversion, import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_Entry({}, {}) returning {}\n", orig_apiversion, import, (void*)&qmm_export);
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -469,7 +469,10 @@ static void* SOF2SP_GetGameAPI(void* apiversion, void* import) {
 }
 
 
-static bool SOF2SP_mod_load(void* entry, bool) {
+static bool SOF2SP_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_GETGAMEAPI)
+        return false;
+
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     // api version gets passed before import pointer
     orig_export = (game_export_t*)pfnGGA((void*)orig_apiversion, &qmm_import);
@@ -478,12 +481,12 @@ static bool SOF2SP_mod_load(void* entry, bool) {
 }
 
 
-static void SOF2SP_mod_unload() {
+static void SOF2SP_ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* SOF2SP_eng_msg_names(intptr_t cmd) {
+static const char* SOF2SP_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -608,7 +611,7 @@ static const char* SOF2SP_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* SOF2SP_mod_msg_names(intptr_t cmd) {
+static const char* SOF2SP_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

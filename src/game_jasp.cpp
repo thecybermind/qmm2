@@ -22,15 +22,15 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_QMM_MSGS(JASP);
-GEN_EXTS(JASP);
+GEN_GAME_QMM_MSGS(JASP);
+GEN_GAME_EXTS(JASP);
 
-GEN_GGA(JASP);
+GEN_GAME_FUNCS(JASP);
 
 
 // auto-detection logic for JASP
-static bool JASP_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (!is_GetGameAPI)
+static bool JASP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -262,7 +262,7 @@ static intptr_t JASP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_syscall({} {}) called\n", JASP_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_syscall({} {}) called\n", JASP_EngMsgNames(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -492,7 +492,7 @@ static intptr_t JASP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_syscall({} {}) returning {}\n", JASP_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_syscall({} {}) returning {}\n", JASP_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -505,7 +505,7 @@ static intptr_t JASP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_vmMain({} {}) called\n", JASP_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_vmMain({} {}) called\n", JASP_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -545,15 +545,15 @@ static intptr_t JASP_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_vmMain({} {}) returning {}\n", JASP_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_vmMain({} {}) returning {}\n", JASP_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* JASP_GetGameAPI(void* import, void*) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_GetGameAPI({}) called\n", import);
+static void* JASP_Entry(void* import, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_Entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -569,7 +569,7 @@ static void* JASP_GetGameAPI(void* import, void*) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = JASP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JASP_Entry({}) returning {}\n", import, (void*)&qmm_export);
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -578,7 +578,10 @@ static void* JASP_GetGameAPI(void* import, void*) {
 }
 
 
-static bool JASP_mod_load(void* entry, bool) {
+static bool JASP_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_GETGAMEAPI)
+        return false;
+
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
@@ -586,12 +589,12 @@ static bool JASP_mod_load(void* entry, bool) {
 }
 
 
-static void JASP_mod_unload() {
+static void JASP_ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* JASP_eng_msg_names(intptr_t cmd) {
+static const char* JASP_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_WRITECAM);
@@ -737,7 +740,7 @@ static const char* JASP_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* JASP_mod_msg_names(intptr_t cmd) {
+static const char* JASP_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);

@@ -18,29 +18,29 @@ Created By:
 intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_SHUTDOWN;
 
 // externs for each game's functions/structs
-GEN_EXTS(COD11MP);
-GEN_EXTS(CODMP);
-GEN_EXTS(CODUOMP);
-GEN_EXTS(JAMP);
-GEN_EXTS(JK2MP);
-GEN_EXTS(Q3A);
-GEN_EXTS(RTCWMP);
-GEN_EXTS(RTCWSP);
-GEN_EXTS(SOF2MP);
-GEN_EXTS(STVOYHM);
-GEN_EXTS(WET);
+GEN_GAME_EXTS(COD11MP);
+GEN_GAME_EXTS(CODMP);
+GEN_GAME_EXTS(CODUOMP);
+GEN_GAME_EXTS(JAMP);
+GEN_GAME_EXTS(JK2MP);
+GEN_GAME_EXTS(Q3A);
+GEN_GAME_EXTS(RTCWMP);
+GEN_GAME_EXTS(RTCWSP);
+GEN_GAME_EXTS(SOF2MP);
+GEN_GAME_EXTS(STVOYHM);
+GEN_GAME_EXTS(WET);
 
-GEN_EXTS(JASP);
-GEN_EXTS(JK2SP);
-GEN_EXTS(MOHAA);
-GEN_EXTS(MOHSH);
-GEN_EXTS(MOHBT);
-GEN_EXTS(Q2R);
-GEN_EXTS(QUAKE2);
-GEN_EXTS(SIN);
-GEN_EXTS(SOF2SP);
-GEN_EXTS(STEF2);
-GEN_EXTS(STVOYSP);
+GEN_GAME_EXTS(JASP);
+GEN_GAME_EXTS(JK2SP);
+GEN_GAME_EXTS(MOHAA);
+GEN_GAME_EXTS(MOHSH);
+GEN_GAME_EXTS(MOHBT);
+GEN_GAME_EXTS(Q2R);
+GEN_GAME_EXTS(QUAKE2);
+GEN_GAME_EXTS(SIN);
+GEN_GAME_EXTS(SOF2SP);
+GEN_GAME_EXTS(STEF2);
+GEN_GAME_EXTS(STVOYSP);
 
 // SP_DLL + MP_DLL - COD, RTCWMP & WET filename changes between linux/windows
 // UO_DLL - CODUO filename changes between linux/windows
@@ -67,44 +67,78 @@ GEN_EXTS(STVOYSP);
 #define X64_DLL X64_SUF_DLL "." EXT_DLL
 
 // add your game's info data here
-std::vector<supportedgame> g_supportedgames = {
+std::vector<api_supportedgame> api_supportedgames = {
     // mod filename		    	qvm mod filename	default moddir	full gamename									short name/funcs	#syscall#vmmain
 
     // vmMain games
-	{ "qagame" MOD_DLL,			"vm/qagame.qvm",	"baseq3",		"Quake 3 Arena",								GEN_INFO(Q3A),		13,		4 },
-	{ "qagame" SP_DLL X64_DLL,	nullptr,			".",			"Return to Castle Wolfenstein (SP)",			GEN_INFO(RTCWSP),	13,		5 },
-	{ "jk2mpgame" MOD_DLL,		"vm/jk2mpgame.qvm",	"base",			"Jedi Knight 2: Jedi Outcast (MP)",				GEN_INFO(JK2MP),	13,		3 },
-	{ "jampgame" MOD_DLL,		nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_INFO(JAMP),		13,		6 },
-	{ "qagame" MP_DLL X64_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_INFO(WET),		13,		5 },
-	{ "qagame" MP_DLL X64_DLL,	"vm/qagame.mp.qvm",	"main",			"Return to Castle Wolfenstein (MP)",			GEN_INFO(RTCWMP),	13,		5 },
+	{ "qagame" MOD_DLL,			"vm/qagame.qvm",	"baseq3",		"Quake 3 Arena",								GEN_GAME_INFO(Q3A),		13,		4 },
+	{ "qagame" SP_DLL X64_DLL,	nullptr,			".",			"Return to Castle Wolfenstein (SP)",			GEN_GAME_INFO(RTCWSP),	13,		5 },
+	{ "jk2mpgame" MOD_DLL,		"vm/jk2mpgame.qvm",	"base",			"Jedi Knight 2: Jedi Outcast (MP)",				GEN_GAME_INFO(JK2MP),	13,		3 },
+	{ "jampgame" MOD_DLL,		nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_GAME_INFO(JAMP),		13,		6 },
+	{ "qagame" MP_DLL X64_DLL,	nullptr,			"etmain",		"Wolfenstein: Enemy Territory",					GEN_GAME_INFO(WET),		13,		5 },
+	{ "qagame" MP_DLL X64_DLL,	"vm/qagame.mp.qvm",	"main",			"Return to Castle Wolfenstein (MP)",			GEN_GAME_INFO(RTCWMP),	13,		5 },
 // these games don't appear to have an official 64-bit version or source port
 #if defined(QMM_ARCH_32)
-	{ "qagame" MOD_DLL,			"vm/qagame.qvm",	"baseef",		"Star Trek Voyager: Elite Force (Holomatch)",	GEN_INFO(STVOYHM),	13,		3 },
-	{ "sof2mp_game" MOD_DLL,	"vm/sof2mp_game.qvm","base/mp",		"Soldier of Fortune 2: Double Helix (MP)",		GEN_INFO(SOF2MP),	13,		6 },
-	{ "game" MP_DLL MOD_DLL,	nullptr,			"Main",			"Call of Duty (MP)",							GEN_INFO(CODMP),	8,		4 },
-	{ "" UO_DLL MOD_DLL,		nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_INFO(CODUOMP),	8,		4 },
+	{ "qagame" MOD_DLL,			"vm/qagame.qvm",	"baseef",		"Star Trek Voyager: Elite Force (Holomatch)",	GEN_GAME_INFO(STVOYHM),	13,		3 },
+	{ "sof2mp_game" MOD_DLL,	"vm/sof2mp_game.qvm","base/mp",		"Soldier of Fortune 2: Double Helix (MP)",		GEN_GAME_INFO(SOF2MP),	13,		6 },
+	{ "game" MP_DLL MOD_DLL,	nullptr,			"Main",			"Call of Duty (MP)",							GEN_GAME_INFO(CODMP),	8,		4 },
+	{ "" UO_DLL MOD_DLL,		nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_GAME_INFO(CODUOMP),	8,		4 },
 	// allow a user to choose "COD11MP" manually if they are playing an old version of CoD (no auto-detection)
-	{ "game" MP_DLL MOD_DLL,	nullptr,			"Main",			"Call of Duty v1.1 (MP)",						GEN_INFO(COD11MP),	8,		4 },
+	{ "game" MP_DLL MOD_DLL,	nullptr,			"Main",			"Call of Duty v1.1 (MP)",						GEN_GAME_INFO(COD11MP),	8,		4 },
 #endif
 
 	// GetGameAPI games
-	{ "jk2game" MOD_DLL,		nullptr,			".",			"Jedi Knight 2: Jedi Outcast (SP)",				GEN_INFO(JK2SP),	13,		9 },
-	{ "jagame" MOD_DLL,			nullptr,			".",			"Jedi Knight: Jedi Academy (SP)",				GEN_INFO(JASP),		13,		9 },
-	{ "game" MOD_DLL,			nullptr,			"baseq2",		"Quake 2",										GEN_INFO(QUAKE2),	7,		3 },
-	{ "game" MOD_DLL,			nullptr,			"base",			"SiN",											GEN_INFO(SIN),		10,		3 },
+	{ "jk2game" MOD_DLL,		nullptr,			".",			"Jedi Knight 2: Jedi Outcast (SP)",				GEN_GAME_INFO(JK2SP),	13,		9 },
+	{ "jagame" MOD_DLL,			nullptr,			".",			"Jedi Knight: Jedi Academy (SP)",				GEN_GAME_INFO(JASP),		13,		9 },
+	{ "game" MOD_DLL,			nullptr,			"baseq2",		"Quake 2",										GEN_GAME_INFO(QUAKE2),	7,		3 },
+	{ "game" MOD_DLL,			nullptr,			"base",			"SiN",											GEN_GAME_INFO(SIN),		10,		3 },
 // OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
 // the rest of the games don't appear to have an official 64-bit version or source port
 #if defined(QMM_ARCH_32)
-	{ "game" MOD_DLL,			nullptr,			"main",			"Medal of Honor: Allied Assault",				GEN_INFO(MOHAA),	9,		7 },
-	{ "game" MOD_DLL,			nullptr,			"mainta",		"Medal of Honor: Spearhead",					GEN_INFO(MOHSH),	9,		7 },
-	{ "game" MOD_DLL,			nullptr,			"maintt",		"Medal of Honor: Breakthrough",					GEN_INFO(MOHBT),	9,		7 },
-	{ "game" MOD_DLL,			nullptr,			"base",			"Star Trek: Elite Force II",					GEN_INFO(STEF2),	17,		4 },
-	{ "game" MOD_DLL,			nullptr,			".",			"Soldier of Fortune 2: Double Helix (SP)",		GEN_INFO(SOF2SP),	0,		0 },
-	{ "efgame" MOD_DLL,			nullptr,			".",			"Star Trek Voyager: Elite Force (SP)",			GEN_INFO(STVOYSP),	13,		9 },
+	{ "game" MOD_DLL,			nullptr,			"main",			"Medal of Honor: Allied Assault",				GEN_GAME_INFO(MOHAA),	9,		7 },
+	{ "game" MOD_DLL,			nullptr,			"mainta",		"Medal of Honor: Spearhead",					GEN_GAME_INFO(MOHSH),	9,		7 },
+	{ "game" MOD_DLL,			nullptr,			"maintt",		"Medal of Honor: Breakthrough",					GEN_GAME_INFO(MOHBT),	9,		7 },
+	{ "game" MOD_DLL,			nullptr,			"base",			"Star Trek: Elite Force II",					GEN_GAME_INFO(STEF2),	17,		4 },
+	{ "game" MOD_DLL,			nullptr,			".",			"Soldier of Fortune 2: Double Helix (SP)",		GEN_GAME_INFO(SOF2SP),	0,		0 },
+	{ "efgame" MOD_DLL,			nullptr,			".",			"Star Trek Voyager: Elite Force (SP)",			GEN_GAME_INFO(STVOYSP),	13,		9 },
 #endif
 
-	// Q2R only exists for 64-bit Windows
+// Q2R only exists for 64-bit Windows
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
-	{ "game_x64.dll",			nullptr,			"baseq2",		"Quake 2 Remastered",							GEN_INFO(Q2R),		9,		6 },
+	{ "game_x64.dll",			nullptr,			"baseq2",		"Quake 2 Remastered",							GEN_GAME_INFO(Q2R),		9,		6 },
 #endif
 };
+
+
+const char* APIType_Name(APIType api) {
+	switch (api) {
+		GEN_CASE(QMM_API_ERROR);
+
+		GEN_CASE(QMM_API_QVM);
+
+		GEN_CASE(QMM_API_DLLENTRY);
+		GEN_CASE(QMM_API_GETGAMEAPI);
+		GEN_CASE(QMM_API_GETMODULEAPI);
+	default:
+		return "unknown";
+	};
+}
+
+
+const char* APIType_Function(APIType api) {
+	switch (api) {
+	case QMM_API_ERROR:
+		return "(error)";
+
+	case QMM_API_QVM:
+		return "QVM";
+	case QMM_API_DLLENTRY:
+		return "dllEntry";
+	case QMM_API_GETGAMEAPI:
+		return "GetGameAPI";
+	case QMM_API_GETMODULEAPI:
+		return "GetModuleAPI";
+	default:
+		return "unknown";
+	};
+}

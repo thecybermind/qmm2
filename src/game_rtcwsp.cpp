@@ -22,10 +22,10 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_QMM_MSGS(RTCWSP);
-GEN_EXTS(RTCWSP);
+GEN_GAME_QMM_MSGS(RTCWSP);
+GEN_GAME_EXTS(RTCWSP);
 
-GEN_DLL(RTCWSP);
+GEN_GAME_FUNCS(RTCWSP);
 
 #if defined(QMM_ARCH_32) && defined(QMM_OS_WINDOWS)
  #define MOD_DLL "x86.dll"
@@ -38,13 +38,13 @@ GEN_DLL(RTCWSP);
 static bool is_iortcw = false;
 
 // auto-detection logic for RTCWSP
-static bool RTCWSP_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (is_GetGameAPI)
+static bool RTCWSP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_DLLENTRY)
         return false;
 
     const char* official_dllname = "qagame" MOD_DLL;
 
-    // check for iortcw name in game->dllname or official engine name
+    // game->dllname holds the iortcw filenames, but we also need to check for official engine dll name
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname) && !str_striequal(g_gameinfo.qmm_file, official_dllname))
         return false;
 
@@ -58,7 +58,7 @@ static bool RTCWSP_autodetect(bool is_GetGameAPI, supportedgame* game) {
         game->moddir = "main";
     }
 
-    // set the default dllname to whatever we loaded as to load the correct mod DLL
+    // set the default dllname to whatever QMM loaded as to load the correct mod DLL
     game->dllname = g_gameinfo.qmm_file.c_str();
 
     return true;
@@ -82,7 +82,7 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_syscall({} {}) called\n", RTCWSP_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_syscall({} {}) called\n", RTCWSP_EngMsgNames(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -106,9 +106,9 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
         break;
     }
     case G_ALLOC: {
-        // if we are using the iortcw game dll but not the engine, we need to handle G_ALLOC ourselves
-        // just malloc and store the pointer in alloc_list
-        // (at this time, it doesn't look like the rtcwsp game dll actually uses trap_Alloc)
+        // if we are using the iortcw single player game dll but not the engine, we need to handle G_ALLOC
+        // ourselves just malloc and store the pointer in alloc_list (although, at this time, it doesn't
+        // look like the iortcw single player game dll actually uses trap_Alloc)
         if (is_iortcw) {
             ret = orig_syscall(G_ALLOC, args[0]);
             break;
@@ -119,7 +119,7 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
     }
 
     default:
-        // all normal engine functions go to engine
+        // all normal engine functions go to syscall
         ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
@@ -127,7 +127,7 @@ static intptr_t RTCWSP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_syscall({} {}) returning {}\n", RTCWSP_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_syscall({} {}) returning {}\n", RTCWSP_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -140,7 +140,7 @@ static intptr_t RTCWSP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_vmMain({} {}) called\n", RTCWSP_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_vmMain({} {}) called\n", RTCWSP_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -153,18 +153,18 @@ static intptr_t RTCWSP_vmMain(intptr_t cmd, ...) {
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_vmMain({} {}) returning {}\n", RTCWSP_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_vmMain({} {}) returning {}\n", RTCWSP_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void RTCWSP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_dllEntry({}) called\n", (void*)syscall);
+static void* RTCWSP_Entry(void* syscall, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_Entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = RTCWSP_vmMain;
@@ -172,27 +172,34 @@ static void RTCWSP_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = RTCWSP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWSP_Entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-static bool RTCWSP_mod_load(void* entry, bool) {
+static bool RTCWSP_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_DLLENTRY)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-static void RTCWSP_mod_unload() {
+static void RTCWSP_ModUnload() {
     orig_vmMain = nullptr;
 
     // free the G_ALLOC list
     for (void* ptr : alloc_list)
         free(ptr);
+
+    alloc_list.clear();
 }
 
 
-static const char* RTCWSP_eng_msg_names(intptr_t cmd) {
+static const char* RTCWSP_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -404,7 +411,7 @@ static const char* RTCWSP_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* RTCWSP_mod_msg_names(intptr_t cmd) {
+static const char* RTCWSP_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

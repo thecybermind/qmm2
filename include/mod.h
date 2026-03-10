@@ -16,17 +16,18 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
-struct mod {
-    void* dll = nullptr;
-    qvm vm = {};
-    intptr_t vmbase = 0;
-    std::string path;
+struct qmm_mod {
+    std::string path;				// mod file path
+    qvm vm = {};					// QVM object
+    void* dll = nullptr;			// OS DLL handle
+    intptr_t vmbase = 0;			// base data segment address for QVMs (0 if DLL mod)
+    APIType api = QMM_API_ERROR;	// engine api the mod DLL was loaded with
 };
 
-extern mod g_mod;
+extern qmm_mod g_mod;
 
-bool mod_load(mod& mod, std::string file);
-void mod_unload(mod& mod);
+bool mod_load(qmm_mod& mod, std::string file);
+void mod_unload(qmm_mod& mod);
 
 #endif // QMM2_MOD_H
 

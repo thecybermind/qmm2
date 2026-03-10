@@ -26,15 +26,15 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_QMM_MSGS(MOHSH);
-GEN_EXTS(MOHSH);
+GEN_GAME_QMM_MSGS(MOHSH);
+GEN_GAME_EXTS(MOHSH);
 
-GEN_GGA(MOHSH);
+GEN_GAME_FUNCS(MOHSH);
 
 
 // auto-detection logic for MOHSH
-static bool MOHSH_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (!is_GetGameAPI)
+static bool MOHSH_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -342,7 +342,7 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_syscall({} {}) called\n", MOHSH_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_syscall({} {}) called\n", MOHSH_EngMsgNames(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -700,7 +700,7 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_syscall({} {}) returning {}\n", MOHSH_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_syscall({} {}) returning {}\n", MOHSH_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -713,7 +713,7 @@ static intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_vmMain({} {}) called\n", MOHSH_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_vmMain({} {}) called\n", MOHSH_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -775,15 +775,15 @@ static intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_vmMain({} {}) returning {}\n", MOHSH_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_vmMain({} {}) returning {}\n", MOHSH_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* MOHSH_GetGameAPI(void* import, void*) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_GetGameAPI({}) called\n", import);
+static void* MOHSH_Entry(void* import, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_Entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -803,7 +803,7 @@ static void* MOHSH_GetGameAPI(void* import, void*) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = MOHSH_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_GetGameAPI({}) returning {}\n", import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_Entry({}) returning {}\n", import, (void*)&qmm_export);
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -812,7 +812,10 @@ static void* MOHSH_GetGameAPI(void* import, void*) {
 }
 
 
-static bool MOHSH_mod_load(void* entry, bool) {
+static bool MOHSH_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_GETGAMEAPI)
+        return false;
+
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
@@ -820,12 +823,12 @@ static bool MOHSH_mod_load(void* entry, bool) {
 }
 
 
-static void MOHSH_mod_unload() {
+static void MOHSH_ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* MOHSH_eng_msg_names(intptr_t cmd) {
+static const char* MOHSH_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -1014,7 +1017,7 @@ static const char* MOHSH_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* MOHSH_mod_msg_names(intptr_t cmd) {
+static const char* MOHSH_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);

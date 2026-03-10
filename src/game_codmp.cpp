@@ -23,16 +23,16 @@ Created By:
 // don't want to make plugins have to use separate code to handle the actual GAME_INIT message, so just
 // do a dirty redefine here for the QMM_GAME_INIT message definition
 #define GAME_INIT GAME_GET_APIVERSION
-GEN_QMM_MSGS(CODMP);
+GEN_GAME_QMM_MSGS(CODMP);
 #undef GAME_INIT
-GEN_EXTS(CODMP);
+GEN_GAME_EXTS(CODMP);
 
-GEN_DLL(CODMP);
+GEN_GAME_FUNCS(CODMP);
 
 
 // auto-detection logic for CODMP
-static bool CODMP_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (is_GetGameAPI)
+static bool CODMP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_DLLENTRY)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -58,7 +58,7 @@ static intptr_t CODMP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_syscall({} {}) called\n", CODMP_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_syscall({} {}) called\n", CODMP_EngMsgNames(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -83,7 +83,7 @@ static intptr_t CODMP_syscall(intptr_t cmd, ...) {
     }
 
     default:
-        // all normal engine functions go to engine
+        // all normal engine functions go to syscall
         ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
@@ -91,7 +91,7 @@ static intptr_t CODMP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_syscall({} {}) returning {}\n", CODMP_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_syscall({} {}) returning {}\n", CODMP_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -104,7 +104,7 @@ static intptr_t CODMP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_vmMain({} {}) called\n", CODMP_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_vmMain({} {}) called\n", CODMP_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -117,18 +117,18 @@ static intptr_t CODMP_vmMain(intptr_t cmd, ...) {
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_vmMain({} {}) returning {}\n", CODMP_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_vmMain({} {}) returning {}\n", CODMP_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void CODMP_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_dllEntry({}) called\n", (void*)syscall);
+static void* CODMP_Entry(void* syscall, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_Entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = CODMP_vmMain;
@@ -136,23 +136,28 @@ static void CODMP_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = CODMP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_Entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-static bool CODMP_mod_load(void* entry, bool) {
+static bool CODMP_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_DLLENTRY)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-static void CODMP_mod_unload() {
+static void CODMP_ModUnload() {
     orig_vmMain = nullptr;
 }
 
 
-static const char* CODMP_eng_msg_names(intptr_t cmd) {
+static const char* CODMP_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_ERROR);
@@ -304,7 +309,7 @@ static const char* CODMP_eng_msg_names(intptr_t cmd) {
 }
 
 
-static const char* CODMP_mod_msg_names(intptr_t cmd) {
+static const char* CODMP_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_DEFAULT_0);
         GEN_CASE(GAME_GET_APIVERSION);

@@ -20,15 +20,15 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_QMM_MSGS(WET);
-GEN_EXTS(WET);
+GEN_GAME_QMM_MSGS(WET);
+GEN_GAME_EXTS(WET);
 
-GEN_DLL(WET);
+GEN_GAME_FUNCS(WET);
 
 
 // auto-detection logic for WET
-static bool WET_autodetect(bool is_GetGameAPI, supportedgame* game) {
-    if (is_GetGameAPI)
+static bool WET_AutoDetect(api_supportedgame* game, APIType engineapi) {
+    if (engineapi != QMM_API_DLLENTRY)
         return false;
 
     if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
@@ -49,12 +49,12 @@ static mod_vmMain orig_vmMain = nullptr;
 
 // wrapper syscall function that calls actual engine func in orig_syscall
 // this is how QMM and plugins will call into the engine
-intptr_t WET_syscall(intptr_t cmd, ...) {
+static intptr_t WET_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_syscall({} {}) called\n", WET_eng_msg_names(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_syscall({} {}) called\n", WET_EngMsgNames(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -79,7 +79,7 @@ intptr_t WET_syscall(intptr_t cmd, ...) {
     }
 
     default:
-        // all normal engine functions go to engine
+        // all normal engine functions go to syscall
         ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
     }
 
@@ -87,7 +87,7 @@ intptr_t WET_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_syscall({} {}) returning {}\n", WET_eng_msg_names(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_syscall({} {}) returning {}\n", WET_EngMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -96,11 +96,11 @@ intptr_t WET_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func in orig_vmMain
 // this is how QMM and plugins will call into the mod
-intptr_t WET_vmMain(intptr_t cmd, ...) {
+static intptr_t WET_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) called\n", WET_mod_msg_names(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) called\n", WET_ModMsgNames(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -113,18 +113,18 @@ intptr_t WET_vmMain(intptr_t cmd, ...) {
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) returning {}\n", WET_mod_msg_names(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) returning {}\n", WET_ModMsgNames(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-void WET_dllEntry(eng_syscall syscall) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_dllEntry({}) called\n", (void*)syscall);
+static void* WET_Entry(void* syscall, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_Entry({}) called\n", syscall);
 
     // store original syscall from engine
-    orig_syscall = syscall;
+    orig_syscall = (eng_syscall)syscall;
 
     // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
     g_gameinfo.pfnvmMain = WET_vmMain;
@@ -132,23 +132,28 @@ void WET_dllEntry(eng_syscall syscall) {
     // pointer to wrapper syscall function that calls actual engine syscall func
     g_gameinfo.pfnsyscall = WET_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_dllEntry({}) returning\n", (void*)syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_Entry({}) returning\n", syscall);
+
+    return nullptr;
 }
 
 
-bool WET_mod_load(void* entry, bool) {
+static bool WET_ModLoad(void* entry, APIType modapi) {
+    if (modapi != QMM_API_DLLENTRY)
+        return false;
+
     orig_vmMain = (mod_vmMain)entry;
 
     return !!orig_vmMain;
 }
 
 
-void WET_mod_unload() {
+static void WET_ModUnload() {
     orig_vmMain = nullptr;
 }
 
 
-const char* WET_eng_msg_names(intptr_t cmd) {
+static const char* WET_EngMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -379,7 +384,7 @@ const char* WET_eng_msg_names(intptr_t cmd) {
 }
 
 
-const char* WET_mod_msg_names(intptr_t cmd) {
+static const char* WET_ModMsgNames(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
