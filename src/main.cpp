@@ -192,6 +192,8 @@ C_DLLEXPORT void dllEntry(void* syscall) {
    The original import/export tables are stored. When QMM and plugins need to call the mod or engine,
    g_gameinfo.pfnvmMain or g_gameinfo.pfnsyscall point to game-specific functions which will take the cmd, and route
    to the proper function pointer in the struct.
+
+   SOF2SP engine passes an apiversion as the first arg, and import is the second arg
 */
 C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
     return main_handle_entry(import, extra, QMM_API_GETGAMEAPI);
@@ -437,6 +439,7 @@ static void* main_handle_entry(void* import, void* extra, APIType engine) {
 
     // ???
     // return nullptr to error out now. if GetGameAPI, Init() will never be called
+    // if dllEntry, will check g_gameinfo.game in vmMain(GAME_INIT) and call G_ERROR
     if (!import) {
         LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): engine pointer is NULL!\n", APIType_Function(engine));
         return nullptr;
@@ -456,11 +459,22 @@ static void* main_handle_entry(void* import, void* extra, APIType engine) {
     cfg_game = util_get_cmdline_arg("--qmm_game", cfg_game);
     main_detect_game(cfg_game, engine);
 
-    // failed to get engine information, or game does not have an entry handler
+    // failed to get engine information
     // if GetGameAPI, returning nullptr to error out now will make sure Init() will never be called.
-    // if dllEntry, will check g_gameinfo.game in vmMain(GAME_INIT).
-    if (!g_gameinfo.game || !g_gameinfo.game->funcs->pfnEntry) {
+    // if dllEntry, will check g_gameinfo.game in vmMain(GAME_INIT) and call G_ERROR
+    if (!g_gameinfo.game) {
         LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Unable to determine game engine using \"{}\"\n", APIType_Function(engine), cfg_game);
+        return nullptr;
+    }
+
+    // game support must have an entry function and message arrays+functions
+    if (!g_gameinfo.game->funcs->pfnEntry
+        || !g_gameinfo.game->funcs->qmm_eng_msgs
+        || !g_gameinfo.game->funcs->qmm_mod_msgs
+        || !g_gameinfo.game->funcs->pfnEngMsgNames
+        || !g_gameinfo.game->funcs->pfnModMsgNames)
+    {
+        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Missing required function(s) for game \"{}\"\n", APIType_Function(engine), g_gameinfo.game->gamename_short);
         return nullptr;
     }
 
@@ -471,7 +485,7 @@ static void* main_handle_entry(void* import, void* extra, APIType engine) {
     msg_GAME_SHUTDOWN = QMM_MOD_MSG[QMM_GAME_SHUTDOWN];
 
     // call the game-specific entry handler (e.g. Q3A_Entry) which will set up the internals to interact
-    // the engine and the mod 
+    // the engine and the mod
     return g_gameinfo.game->funcs->pfnEntry(import, extra, engine);
 }
 
