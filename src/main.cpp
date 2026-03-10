@@ -26,17 +26,17 @@ Created By:
 
 gameinfo g_gameinfo;
 
-// shared code for dllEntry and GetGameAPI entry points
+// shared code for all API entry points
 static void* main_handle_entry(void* import, void* extra, APIType engine);
-// general code to get path/module/binary/etc information
+// get path/module/binary/etc information
 static void main_detect_env();
-// general code to load config file
+// load config file
 static void main_load_config(std::string config_filename);
-// general code to auto-detect what game engine loaded us
+// find what game engine loaded us
 static void main_detect_game(std::string cfg_game, APIType engine);
-// general code to find a mod file to load
+// find a mod file to load
 static bool main_load_mod(std::string cfg_mod);
-// general code to find a plugin file to load
+// find a plugin file to load
 static bool main_load_plugin(std::string plugin_path);
 // handle "qmm" console command
 static void main_handle_command_qmm(intptr_t arg_start);
@@ -80,43 +80,6 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args);
       is returned to mod
    =====================================================
 */
-
-
-/* About cgame passthrough hack (not Quake 2 Remaster (Q2R), see comments before GetCGameAPI() for that):
-   Some single player games, like Star Trek Voyager: Elite Force (STVOYSP), Jedi Knight 2 (JK2SP) and Jedi Academy (JASP),
-   place the game (server side) and cgame (client side) in the same DLL. The game system uses GetGameAPI and the cgame
-   system uses dllEntry/vmMain/syscall.
-
-   Since we don't care about the cgame system, QMM will forward the dllEntry call to the mod (with the real cgame syscall
-   pointer), and then forward all the incoming cgame vmMain calls directly to the mod's vmMain function.
-
-   We do this with a few fields in the "cgame" struct. First, the "cgame.syscall" pointer variable is used to store the
-   syscall pointer if dllEntry is called after QMM was already loaded from GetGameAPI. Then, dllEntry exits.
-
-   Next, the "cgame.is_from_QMM" bool is used to flag incoming calls to vmMain as coming from a game-specific
-   GetGameAPI vmMain wrapper struct (i.e. qmm_export) meaning the call actually came from the game system (as opposed to
-   cgame). This flag is set in the GEN_EXPORT macro and all of the custom static polyfill functions that route to vmMain.
-   It is set back to false immediately after checking and handling passthrough calls.
-
-   Next, when the GAME_INIT event comes through, and we load the actual mod DLL, we also check to see if "cgame.syscall"
-   is set. If it is, we look for "dllEntry" in the DLL, and pass "cgame.syscall" to it. Next, we look for "vmMain" in
-   the DLL and then store it in the "cgame.vmMain" pointer.
-
-   Whenever control enters vmMain and "cgame.is_from_QMM" is false (meaning it was called directly by the engine
-   for the cgame system), it routes the call to the mod's vmMain stored in "cgame.vmMain".
-
-   The final piece is that single player games shutdown and init the DLL a lot, particularly at every new level or
-   between-level cutscene. When QMM detects that it is being shutdown and "cgame.syscall" is set, it no longer unloads
-   the mod DLL and sets "cgame.shutdown" bool to true. Then, when a vmMain call is being handled as a passthrough, and
-   "cgame.shutdown" is true, it will then unload the mod DLL. This allows the cgame system to shutdown properly.
-*/
-cgameinfo cgame = {
-    nullptr,    // syscall
-    nullptr,    // vmMain
-    false,      // is_from_QMM
-    false,      // shutdown
-};
-
 
 /* Entry point: engine->qmm
    This is the first function called when a vmMain DLL is loaded. The address of the engine's syscall callback is given,
@@ -204,6 +167,42 @@ C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
 C_DLLEXPORT void* GetModuleAPI(void* import, void* extra) {
     return main_handle_entry(import, extra, QMM_API_GETMODULEAPI);
 }
+
+
+/* About cgame passthrough hack (not Quake 2 Remaster (Q2R), see comments before GetCGameAPI() for that):
+   Some single player games, like Star Trek Voyager: Elite Force (STVOYSP), Jedi Knight 2 (JK2SP) and Jedi Academy (JASP),
+   place the game (server side) and cgame (client side) in the same DLL. The game system uses GetGameAPI and the cgame
+   system uses dllEntry/vmMain/syscall.
+
+   Since we don't care about the cgame system, QMM will forward the dllEntry call to the mod (with the real cgame syscall
+   pointer), and then forward all the incoming cgame vmMain calls directly to the mod's vmMain function.
+
+   We do this with a few fields in the "cgame" struct. First, the "cgame.syscall" pointer variable is used to store the
+   syscall pointer if dllEntry is called after QMM was already loaded from GetGameAPI. Then, dllEntry exits.
+
+   Next, the "cgame.is_from_QMM" bool is used to flag incoming calls to vmMain as coming from a game-specific
+   GetGameAPI vmMain wrapper struct (i.e. qmm_export) meaning the call actually came from the game system (as opposed to
+   cgame). This flag is set in the GEN_EXPORT macro and all of the custom static polyfill functions that route to vmMain.
+   It is set back to false immediately after checking and handling passthrough calls.
+
+   Next, when the GAME_INIT event comes through, and we load the actual mod DLL, we also check to see if "cgame.syscall"
+   is set. If it is, we look for "dllEntry" in the DLL, and pass "cgame.syscall" to it. Next, we look for "vmMain" in
+   the DLL and then store it in the "cgame.vmMain" pointer.
+
+   Whenever control enters vmMain and "cgame.is_from_QMM" is false (meaning it was called directly by the engine
+   for the cgame system), it routes the call to the mod's vmMain stored in "cgame.vmMain".
+
+   The final piece is that single player games shutdown and init the DLL a lot, particularly at every new level or
+   between-level cutscene. When QMM detects that it is being shutdown and "cgame.syscall" is set, it no longer unloads
+   the mod DLL and sets "cgame.shutdown" bool to true. Then, when a vmMain call is being handled as a passthrough, and
+   "cgame.shutdown" is true, it will then unload the mod DLL. This allows the cgame system to shutdown properly.
+*/
+cgameinfo cgame = {
+    nullptr,    // syscall
+    nullptr,    // vmMain
+    false,      // is_from_QMM
+    false,      // shutdown
+};
 
 
 /* Entry point: engine->qmm
@@ -426,6 +425,15 @@ intptr_t qmm_syscall(intptr_t cmd, ...) {
 
 
 static void* main_handle_entry(void* import, void* extra, APIType engine) {
+    // return value is generally from the game-specific entry handler
+
+    // in GetGameAPI+GetModuleAPI, the return value should be a pointer to QMM's export struct
+    // in dllEntry, the return value is ignored by the engine
+
+    // on returning nullptr:    
+    // if GetGameAPI+GetModuleAPI, returning nullptr causes the engine to error out, so InitGame/vmMain will never be called
+    // if dllEntry, QMM will check !g_gameinfo.game in vmMain(GAME_INIT) and call G_ERROR
+
     main_detect_env();
 
     g_gameinfo.api = engine;
@@ -437,9 +445,7 @@ static void* main_handle_entry(void* import, void* extra, APIType engine) {
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Engine path: \"{}\"\n", g_gameinfo.exe_path);
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", g_gameinfo.mod_dir);
 
-    // ???
-    // return nullptr to error out now. if GetGameAPI, Init() will never be called
-    // if dllEntry, will check g_gameinfo.game in vmMain(GAME_INIT) and call G_ERROR
+    // syscall, import, or apiversion are null/0
     if (!import) {
         LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): engine pointer is NULL!\n", APIType_Function(engine));
         return nullptr;
@@ -448,31 +454,31 @@ static void* main_handle_entry(void* import, void* extra, APIType engine) {
     // load config file. check command line arguments for a config filename
     main_load_config(util_get_cmdline_arg("--qmm_config", "qmm2.json"));
 
-    // update log severity for file output
+    // update log severity from config file
     std::string cfg_loglevel = cfg_get_string(g_cfg, "loglevel", "");
     if (!cfg_loglevel.empty())
         log_set_severity(log_severity_from_name(cfg_loglevel));
 
-    // detect game
+    // detect game (possibly take setting from config file, or auto-detect)
     std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
     // check command line arguments for a game code
     cfg_game = util_get_cmdline_arg("--qmm_game", cfg_game);
     main_detect_game(cfg_game, engine);
 
     // failed to get engine information
-    // if GetGameAPI, returning nullptr to error out now will make sure Init() will never be called.
-    // if dllEntry, will check g_gameinfo.game in vmMain(GAME_INIT) and call G_ERROR
     if (!g_gameinfo.game) {
         LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Unable to determine game engine using \"{}\"\n", APIType_Function(engine), cfg_game);
         return nullptr;
     }
 
-    // game support must have an entry function and message arrays+functions
+    // make sure game support has all required arrays and functions
     if (!g_gameinfo.game->funcs->pfnEntry
         || !g_gameinfo.game->funcs->qmm_eng_msgs
         || !g_gameinfo.game->funcs->qmm_mod_msgs
         || !g_gameinfo.game->funcs->pfnEngMsgNames
-        || !g_gameinfo.game->funcs->pfnModMsgNames)
+        || !g_gameinfo.game->funcs->pfnModMsgNames
+        || !g_gameinfo.game->funcs->pfnModLoad
+        || !g_gameinfo.game->funcs->pfnModUnload)
     {
         LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Missing required function(s) for game \"{}\"\n", APIType_Function(engine), g_gameinfo.game->gamename_short);
         return nullptr;
@@ -486,7 +492,15 @@ static void* main_handle_entry(void* import, void* extra, APIType engine) {
 
     // call the game-specific entry handler (e.g. Q3A_Entry) which will set up the internals to interact
     // the engine and the mod
-    return g_gameinfo.game->funcs->pfnEntry(import, extra, engine);
+    void* ret = g_gameinfo.game->funcs->pfnEntry(import, extra, engine);
+
+    // make sure that g_gameinfo.pfnsyscall and g_gameinfo.pfnvmMain were set by the entry handler
+    if (!g_gameinfo.pfnsyscall || !g_gameinfo.pfnvmMain) {
+        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Game \"{}\" did not set up syscall or vmMain handlers\n", APIType_Function(engine), g_gameinfo.game->gamename_short);
+        return nullptr;
+    }
+
+    return ret;
 }
 
 

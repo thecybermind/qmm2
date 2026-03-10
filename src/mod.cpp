@@ -85,8 +85,7 @@ fail:
 
 void mod_unload(qmm_mod& mod) {
     // call the game-specific mod unload callback
-    if (g_gameinfo.game->funcs->pfnModUnload)
-        g_gameinfo.game->funcs->pfnModUnload();
+    g_gameinfo.game->funcs->pfnModUnload();
     qvm_unload(&mod.vm);
     if (mod.dll)
         dlclose(mod.dll);
@@ -181,12 +180,8 @@ static bool s_mod_load_qvm(qmm_mod& mod) {
 
     mod.vmbase = (intptr_t)mod.vm.datasegment;
 
-    // store the qvm vmMain pointer as a backup (should get overwritten in game-specific mod load handler)
-    g_gameinfo.pfnvmMain = s_mod_qvm_vmmain;
-
     // pass the qvm vmMain function pointer to the game-specific mod load handler
-    if (!g_gameinfo.game->funcs->pfnModLoad ||
-        !g_gameinfo.game->funcs->pfnModLoad((void*)s_mod_qvm_vmmain, QMM_API_QVM))
+    if (!g_gameinfo.game->funcs->pfnModLoad((void*)s_mod_qvm_vmmain, QMM_API_QVM))
     {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Mod load failed?\n", mod.path);
         goto fail;
@@ -208,10 +203,6 @@ static bool s_mod_load_dll(qmm_mod& mod, APIType api) {
     case QMM_API_GETMODULEAPI: {
         // these are together because they work the same, just with a different function name
 
-        // mod load handler is needed for these api types
-        if (!g_gameinfo.game->funcs->pfnModLoad)
-            return false;
-
         // look for GetGameAPI/GetModuleAPI function
         mod_GetGameAPI pfnGGA = (mod_GetGameAPI)dlsym(mod.dll, APIType_Function(api));
         if (!pfnGGA)
@@ -231,13 +222,8 @@ static bool s_mod_load_dll(qmm_mod& mod, APIType api) {
         if (!pfndllEntry || !pfnvmMain)
             return false;
 
-        // store the vmMain pointer as a backup (should get overwritten in game-specific mod load handler)
-        g_gameinfo.pfnvmMain = pfnvmMain;
-
-        // mod load handler isn't explicitly required for this api type, but pass vmMain to it if it exists
-        if (!g_gameinfo.game->funcs->pfnModLoad
-            || g_gameinfo.game->funcs->pfnModLoad((void*)pfnvmMain, api))
-        {
+        // pass vmMain to game-specific mod load handler
+        if (g_gameinfo.game->funcs->pfnModLoad((void*)pfnvmMain, api)) {
             // pass qmm_syscall to mod's dllEntry function
             pfndllEntry(qmm_syscall);
             mod.api = api;

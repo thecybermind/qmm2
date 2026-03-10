@@ -33,16 +33,16 @@ const char* APIType_Name(APIType);
 const char* APIType_Function(APIType);
 
 struct api_supportedgame;
-// this struct is defined by GEN_GAME_FUNCS_QVM(GAME) or GEN_GAME_FUNCS(GAME)
+// instances of this struct are defined by GEN_GAME_FUNCS_QVM(GAME) or GEN_GAME_FUNCS(GAME)
 struct api_supportedgame_funcs {
     int* qmm_eng_msgs;							// array of engine messages used by QMM
     int* qmm_mod_msgs;							// array of mod messages used by QMM
-    const char* (*pfnEngMsgNames)(intptr_t);	// pointer to a function that returns a string for a given api message
+    const char* (*pfnEngMsgNames)(intptr_t);	// pointer to a function that returns a string for a given engine message
     const char* (*pfnModMsgNames)(intptr_t);	// pointer to a function that returns a string for a given mod message
 
     bool(*pfnAutoDetect)(api_supportedgame*, APIType);	// pointer to a function that handles auto-detection logic for a game. return true to say "that's me!"
-    void*(*pfnEntry)(void*, void*, APIType);	// pointer to a function that handles entry point logic for a game
-    bool(*pfnModLoad)(void*, APIType);			// pointer to a function that handles mod loading logic after a DLL is loaded with LoadLibrary/dlopen
+    void*(*pfnEntry)(void*, void*, APIType);	// pointer to a function that handles entry point logic for a game. return value is passed back to engine
+    bool(*pfnModLoad)(void*, APIType);			// pointer to a function that handles mod loading logic after a DLL is loaded with LoadLibrary/dlopen. return true to accept DLL and continue.
     void(*pfnModUnload)();						// pointer to a function that handles mod unloading logic before a DLL is unloaded
 
     qvm_syscall pfnQVMSyscall;					// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
@@ -114,7 +114,7 @@ api_supportedgame_funcs game##_funcs = { \
 }
 
 // generate a case/string line for use in the *MsgNames functions
-#define GEN_CASE(x)				case x: return #x
+#define GEN_CASE(x)		case x: return #x
 
 // a list of all the engine messages/constants used by QMM. if you change this, update the GEN_GAME_QMM_MSGS macro
 enum {
@@ -147,7 +147,8 @@ extern intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_S
 // ----- API vararg stuff -----
 // ----------------------------
 
-constexpr int QVM_MAX_VMMAIN_ARGS = 6; // change whenever a QVM game has a vmMain call with more args
+// max amount of vmMain args for games that support QVM
+constexpr int QVM_MAX_VMMAIN_ARGS = 6;
 
 constexpr int QMM_MAX_VMMAIN_ARGS = 9;
 #define QMM_GET_VMMAIN_ARGS()   intptr_t args[QMM_MAX_VMMAIN_ARGS] = {}; \
