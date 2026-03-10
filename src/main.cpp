@@ -426,6 +426,8 @@ intptr_t qmm_syscall(intptr_t cmd, ...) {
 static void* main_handle_entry(void* import, void* extra, APIType engine) {
     main_detect_env();
 
+    g_gameinfo.api = engine;
+
     log_init(fmt::format("{}/qmm2.log", g_gameinfo.qmm_dir));
 
     LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") ({}) loaded!\n", APIType_Function(engine));
