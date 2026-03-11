@@ -97,8 +97,8 @@ C_DLLEXPORT void dllEntry(void* syscall) {
         return;
     }
 
-    // store the given syscall pointer as a backup (should get overwritten in game-specific entry handler), and so
-    // if we don't detect a game, we can call syscall(G_ERROR) to shutdown in vmMain
+    // store the given syscall pointer as a backup (should get overwritten in game-specific entry handler)
+    // also if we don't detect a game, we can call syscall(G_ERROR) to shutdown in vmMain
     g_gameinfo.pfnsyscall = (eng_syscall)syscall;
 
     main_handle_entry(syscall, nullptr, QMM_API_DLLENTRY);
