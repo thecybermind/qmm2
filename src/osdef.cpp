@@ -39,21 +39,6 @@ const char* dlerror() {
     return str.c_str();
 }
 #elif defined(QMM_OS_LINUX)
-// just output a big banner to stdout and stderr
-void MessageBoxA(void* handle, const char* message, const char* title, int flags) {
-    fprintf(stderr, "**************************************************************************\n");
-    fprintf(stderr, "%s\n", title);
-    fprintf(stderr, "**************************************************************************\n");
-    fprintf(stderr, "%s\n", message);
-    fprintf(stderr, "**************************************************************************\n");
-    printf("**************************************************************************\n");
-    printf("%s\n", title);
-    printf("**************************************************************************\n");
-    printf("%s\n", message);
-    printf("**************************************************************************\n");
-}
-
-
 uint64_t osdef_get_milliseconds() {
     struct timeval tp;
     struct timezone tzp;
@@ -124,4 +109,3 @@ const char* osdef_path_get_proc_path() {
 #endif
     return path;
 }
-
