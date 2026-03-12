@@ -11,7 +11,8 @@ Created By:
 
 #define _CRT_SECURE_NO_WARNINGS
 #include "osdef.h"
-#include <cstdlib>  // atoi
+#include <cstdlib>      // atoi
+#include <vector>
 #include <string>
 #include "log.h"
 #include "format.h"
@@ -20,11 +21,12 @@ Created By:
 #include "game_api.h"
 #include "qmmapi.h"
 #include "plugin.h"
-#include "mod.h"
+#include "mod.h"        // g_mod
+#include "qvm.h"        // QVM_MAGIC
 #include "util.h"
 #include "version.h"
 
-gameinfo g_gameinfo;
+gameinfo g_gameinfo;    // information about the engine and environment
 
 // shared code for all API entry points
 static void* main_handle_entry(void* import, void* extra, APIType engine);
@@ -197,6 +199,8 @@ C_DLLEXPORT void* GetModuleAPI(void* import, void* extra) {
    the mod DLL and sets "cgame.shutdown" bool to true. Then, when a vmMain call is being handled as a passthrough, and
    "cgame.shutdown" is true, it will then unload the mod DLL. This allows the cgame system to shutdown properly.
 */
+
+// basic information about the cgame for games where the DLL has both game and cgame
 cgameinfo cgame = {
     nullptr,    // syscall
     nullptr,    // vmMain
@@ -314,11 +318,11 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // so make sure we store vmMain first in case there's some re-entrancy
         if (cgame.syscall) {
             cgame.vmMain = (mod_vmMain)dlsym(g_mod.dll, "vmMain");
-            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Storing cgame vmMain = {}\n", (void*)cgame.vmMain);
+            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Storing cgame vmMain = {}\n", fmt::ptr(cgame.vmMain));
 
             // pass original cgame syscall to dllEntry in mod
             mod_dllEntry pfndllEntry = (mod_dllEntry)dlsym(g_mod.dll, "dllEntry");
-            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passing cgame syscall to dllEntry = {}\n", (void*)pfndllEntry);
+            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passing cgame syscall to dllEntry = {}\n", fmt::ptr(pfndllEntry));
             pfndllEntry(cgame.syscall);
         }
 
@@ -522,7 +526,9 @@ static void main_detect_env() {
     // since we don't have the mod directory yet (can only officially get it using engine functions), we can
     // attempt to get the mod directory from the qmm path. if the qmm dir is the same as the exe dir, it's
     // likely that this is a singleplayer game, so just set the temporary moddir to ".".
-    // this doesn't have to be exact, since it will only be used only for config loading.
+    // 
+    // this doesn't have to be exact, since it will only be used for config loading until the engine is
+    // determined and we can actually ask for the mod directory in vmMain(GAME_INIT)
     if (str_striequal(g_gameinfo.qmm_dir, g_gameinfo.exe_dir)) {
         g_gameinfo.mod_dir = ".";
     }
@@ -530,7 +536,7 @@ static void main_detect_env() {
         g_gameinfo.mod_dir = path_basename(g_gameinfo.qmm_dir);
     }
 
-    // hack for OpenJK
+    // hack for OpenJK if the DLL is loaded from a pak file
     if (str_striequal(g_gameinfo.mod_dir, "temp")) {
         g_gameinfo.mod_dir = "base";
     }
@@ -546,10 +552,12 @@ static void main_load_config(std::string config_filename) {
     std::string try_paths[] = {
         fmt::format("{}/{}", g_gameinfo.qmm_dir, config_filename),
         fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, config_filename),
-        fmt::format("./{}/{}", g_gameinfo.mod_dir, config_filename)
+        fmt::format("./{}/{}", g_gameinfo.mod_dir, config_filename),
     };
     for (std::string& try_path : try_paths) {
         try_path = path_normalize(try_path);
+        if (try_path.empty())
+            continue;
         g_cfg = cfg_load(try_path);
         if (!g_cfg.empty()) {
             g_gameinfo.cfg_path = try_path;
@@ -598,10 +606,9 @@ static bool main_load_mod(std::string cfg_mod) {
 
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to find mod using \"{}\"\n", cfg_mod);
     // if "mod" config setting is an absolute path, just attempt to load it directly
-    if (!path_is_relative(cfg_mod)) {
+    if (!str_striequal(cfg_mod, "auto") && path_is_absolute(cfg_mod)) {
         LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", cfg_mod);
-        if (!mod_load(g_mod, cfg_mod))
-            return false;
+        return mod_load(g_mod, cfg_mod);
     }
     // if "mod" config setting is "auto", try the following locations in order:
     // "<qvmname>" (if the game engine supports it)
@@ -633,6 +640,9 @@ static bool main_load_mod(std::string cfg_mod) {
         try_paths.push_back(fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, cfg_mod));
         try_paths.push_back(fmt::format("./{}/{}", g_gameinfo.mod_dir, cfg_mod));
         for (std::string& try_path : try_paths) {
+            try_path = path_normalize(try_path);
+            if (try_path.empty())
+                continue;
             LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
             if (mod_load(g_mod, try_path))
                 return true;
@@ -647,7 +657,7 @@ static bool main_load_mod(std::string cfg_mod) {
 static bool main_load_plugin(std::string plugin_path) {
     qmm_plugin p;
     // absolute path, just attempt to load it directly
-    if (!path_is_relative(plugin_path)) {
+    if (path_is_absolute(plugin_path)) {
         // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
         if (plugin_load(p, plugin_path) > 0) {
             g_plugins.push_back(p);
@@ -665,6 +675,9 @@ static bool main_load_plugin(std::string plugin_path) {
         fmt::format("./{}/{}", g_gameinfo.mod_dir, plugin_path)
     };
     for (std::string& try_path : try_paths) {
+        try_path = path_normalize(try_path);
+        if (try_path.empty())
+            continue;
         // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
         int ret = plugin_load(p, try_path);
         if (ret > 0) {
@@ -701,7 +714,7 @@ static void main_handle_command_qmm(intptr_t arg_start) {
         if (g_mod.vmbase) {
             CONSOLE_PRINTF("(QMM) QVM magic number   : {:x} ({})\n", g_mod.vm.magic, g_mod.vm.magic == QVM_MAGIC ? "QVM_MAGIC" : "QVM_MAGIC_VER2");
             CONSOLE_PRINTF("(QMM) QVM file size      : {}\n", g_mod.vm.filesize);
-            CONSOLE_PRINTF("(QMM) QVM memory base    : {}\n", (void*)g_mod.vm.memory);
+            CONSOLE_PRINTF("(QMM) QVM memory base    : {}\n", fmt::ptr(g_mod.vm.memory));
             CONSOLE_PRINTF("(QMM) QVM memory size    : {}\n", g_mod.vm.memorysize);
             CONSOLE_PRINTF("(QMM) QVM instr count    : {}\n", g_mod.vm.instructioncount);
             CONSOLE_PRINTF("(QMM) QVM codeseg size   : {}\n", g_mod.vm.codeseglen);
