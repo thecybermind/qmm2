@@ -35,7 +35,7 @@ Created By:
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
  #define SUF_DLL "x86_64"
  #define X64_SUF_DLL "x64"
-#elif defined(QMM_OS_WINDOWS) && defined(QMM_ARCH32)
+#elif defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_32)
  #define SUF_DLL "x86"
  #define X64_SUF_DLL "x86"
 #elif defined(QMM_OS_LINUX) && defined(QMM_ARCH_64)
@@ -52,12 +52,12 @@ Created By:
  #define EXT_DLL ".dll"
  #define SP_DLL "_sp_"
  #define MP_DLL "_mp_"
- #define UO_DLL "uo_game_mp_"
+ #define UO_DLL "uo_game" MP_DLL
 #elif defined(QMM_OS_LINUX)
  #define EXT_DLL ".so"
  #define SP_DLL ".sp."
  #define MP_DLL ".mp."
- #define UO_DLL "game.mp.uo."
+ #define UO_DLL "game" MP_DLL "uo."
 #endif 
 
 #define EXT_QVM ".qvm"
