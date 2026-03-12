@@ -14,6 +14,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 #include <vector>
 #include <string>
 // QMM-specific STVOYSP header
@@ -365,7 +366,7 @@ static void* STVOYSP_Entry(void* import, void*, APIType) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = STVOYSP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYSP_Entry({}) returning {}\n", import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYSP_Entry({}) returning {}\n", import, fmt::ptr(&qmm_export));
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.

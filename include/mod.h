@@ -24,9 +24,11 @@ struct qmm_mod {
     APIType api = QMM_API_ERROR;	// engine api the mod DLL was loaded with
 };
 
-extern qmm_mod g_mod;
+extern qmm_mod g_mod;               // the mod file that QMM has loaded
 
+// load the given file into the mod object
 bool mod_load(qmm_mod& mod, std::string file);
+// unload the given mod object
 void mod_unload(qmm_mod& mod);
 
 #endif // QMM2_MOD_H

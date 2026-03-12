@@ -14,6 +14,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 #include <string>
 // QMM-specific JK2MP header
 #include "game_jk2mp.h"
@@ -427,7 +428,7 @@ static const char* JK2MP_ModMsgNames(intptr_t cmd) {
 // vec3_t are arrays, so convert them as pointers
 // do NOT convert the "ghoul" void pointers, treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
-int JK2MP_QVMSyscall(uint8_t* membase, int cmd, int* args) {
+static int JK2MP_QVMSyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
     LOG(QMM_LOG_TRACE, "QMM") << fmt::format("JK2MP_QVMSyscall({} {}) called\n", JK2MP_EngMsgNames(cmd), cmd);
 #endif

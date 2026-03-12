@@ -14,6 +14,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 #include <string>
 // QMM-specific JAMP header
 #include "game_jamp.h"
@@ -905,7 +906,7 @@ static void* JAMP_Entry(void* arg0, void* arg1, APIType engine) {
         // pointer to wrapper syscall function that calls either orig_syscall or func in orig_import
         g_gameinfo.pfnsyscall = JAMP_syscall;
 
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_Entry({}, {}, {}) returning {}\n", arg0, arg1, APIType_Name(engine), (void*)&qmm_export);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_Entry({}, {}, {}) returning {}\n", arg0, arg1, APIType_Name(engine), fmt::ptr(&qmm_export));
 
         // struct full of export lambdas to QMM's vmMain
         // this gets returned to the game engine, but we haven't loaded the mod yet.

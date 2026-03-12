@@ -14,6 +14,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 #include <string>
 // QMM-specific STVOYHM header
 #include "game_stvoyhm.h"

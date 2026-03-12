@@ -13,6 +13,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 // QMM-specific SOF2SP header
 #include "game_sof2sp.h"
 #include "main.h"
@@ -460,7 +461,7 @@ static void* SOF2SP_Entry(void* apiversion, void* import, APIType) {
     // pointer to wrapper syscall function that calls actual engine func from orig_import
     g_gameinfo.pfnsyscall = SOF2SP_syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_Entry({}, {}) returning {}\n", orig_apiversion, import, (void*)&qmm_export);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_Entry({}, {}) returning {}\n", orig_apiversion, import, fmt::ptr(&qmm_export));
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.

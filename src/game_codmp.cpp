@@ -13,6 +13,7 @@ Created By:
 
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 #include <string>
 // QMM-specific CODMP header
 #include "game_codmp.h"

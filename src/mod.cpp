@@ -14,6 +14,7 @@ Created By:
 #include <vector>
 #include <string>
 #include "log.h"
+#include "format.h"
 #include "qmmapi.h"
 #include "game_api.h"
 #include "main.h"
@@ -147,7 +148,7 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
 }
 
 
-// load a QVM mod
+// load a QVM mod into the given qmm_mod object
 static bool s_mod_load_qvm(qmm_mod& mod) {
     int fpk3 = 0;
     intptr_t filelen;
@@ -197,6 +198,7 @@ fail:
 }
 
 
+// attempt to load a DLL mod with the given api type into the given qmm_mod object
 static bool s_mod_load_dll(qmm_mod& mod, APIType api) {
     switch (api) {
     case QMM_API_GETGAMEAPI:
