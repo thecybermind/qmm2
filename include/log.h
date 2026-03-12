@@ -46,7 +46,7 @@ struct SinkFileAppend : public AixLog::SinkFormat
     SinkFileAppend(const AixLog::Filter& filter, const std::string& filename, const std::string& format = "%Y-%m-%d %H:%M:%S.#ms [#severity] (#tag_func)")
         : SinkFormat(filter, format)
     {
-        ofs.open(filename.c_str(), std::ofstream::out | std::ios_base::app);
+        ofs.open(filename, std::ofstream::out | std::ios_base::app);
     }
 
     ~SinkFileAppend() override
