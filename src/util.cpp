@@ -19,12 +19,30 @@ Created By:
 #include <string>
 #include <filesystem>
 #include <fstream> // util_get_proc_cmdline in linux
+#include "main.h"
 #include "util.h"
 
 
 std::string path_normalize(std::string path) {
     std::filesystem::path fspath = path;
-    return fspath.lexically_normal().generic_u8string();
+    fspath = fspath.lexically_normal();
+    // check for empty or starting with ".." just in case
+    if (fspath.empty() || *fspath.begin() == "..")
+        return "";
+    return fspath.generic_u8string();
+}
+
+
+bool path_is_allowed(std::string path) {
+    path = path_normalize(path);
+    auto rel_qmm = std::filesystem::relative(path, g_gameinfo.qmm_dir);
+    auto rel_exe = std::filesystem::relative(path, g_gameinfo.exe_dir);
+    // if there is no relative path, the return is ""
+    // if the relative path requires going back up, it starts with ".."
+    // otherwise it should be the relative path from qmm_dir or exe_dir 
+    if ((!rel_qmm.empty() && rel_qmm.string()[0] != '.') || (!rel_exe.empty() && rel_exe.string()[0] != '.'))
+        return true;
+    return false;
 }
 
 
@@ -99,12 +117,12 @@ std::string util_get_cmdline_arg(std::string arg, std::string def) {
 
 
 std::string util_get_proc_path() {
-    return path_normalize(osdef_path_get_proc_path());
+    return osdef_path_get_proc_path();
 }
 
 
 std::string util_get_qmm_path() {
-    return path_normalize(osdef_path_get_qmm_path());
+    return osdef_path_get_qmm_path();
 }
 
 

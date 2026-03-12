@@ -16,6 +16,7 @@ Created By:
 #include <string>
 
 std::string path_normalize(std::string path);
+bool path_is_allowed(std::string path);
 std::string path_dirname(std::string path);
 std::string path_basename(std::string path);
 std::string path_baseext(std::string path);

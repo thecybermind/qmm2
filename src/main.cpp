@@ -548,15 +548,13 @@ static void main_load_config(std::string config_filename) {
     // load config file, try the following locations in order:
     // "<qmmdir>/qmm2.json"
     // "<exedir>/<moddir>/qmm2.json"
-    // "./<moddir>/qmm2.json"
     std::string try_paths[] = {
         fmt::format("{}/{}", g_gameinfo.qmm_dir, config_filename),
         fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, config_filename),
-        fmt::format("./{}/{}", g_gameinfo.mod_dir, config_filename),
     };
     for (std::string& try_path : try_paths) {
         try_path = path_normalize(try_path);
-        if (try_path.empty())
+        if (try_path.empty() || !path_is_allowed(try_path))
             continue;
         g_cfg = cfg_load(try_path);
         if (!g_cfg.empty()) {
@@ -614,13 +612,11 @@ static bool main_load_mod(std::string cfg_mod) {
     // "<qvmname>" (if the game engine supports it)
     // "<qmmdir>/qmm_<dllname>"
     // "<exedir>/<moddir>/qmm_<dllname>"
-    // "./<moddir>/qmm_<dllname>"
 
     // if "mod" config setting is a relative path, try the following locations in order:
     // "<mod>"
     // "<qmmdir>/<mod>"
     // "<exedir>/<moddir>/<mod>"
-    // "./<moddir>/<mod>"
     else {
         std::vector<std::string> try_paths;
         // if "mod" config setting was "auto"
@@ -638,10 +634,9 @@ static bool main_load_mod(std::string cfg_mod) {
         }
         try_paths.push_back(fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod));
         try_paths.push_back(fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, cfg_mod));
-        try_paths.push_back(fmt::format("./{}/{}", g_gameinfo.mod_dir, cfg_mod));
         for (std::string& try_path : try_paths) {
             try_path = path_normalize(try_path);
-            if (try_path.empty())
+            if (try_path.empty() || !path_is_allowed(try_path))
                 continue;
             LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
             if (mod_load(g_mod, try_path))
@@ -668,15 +663,13 @@ static bool main_load_plugin(std::string plugin_path) {
     // relative path, try the following locations in order:
     // "<qmmdir>/<plugin>"
     // "<exedir>/<moddir>/<plugin>"
-    // "./<moddir>/<plugin>"
     std::string try_paths[] = {
         fmt::format("{}/{}", g_gameinfo.qmm_dir, plugin_path),
         fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, plugin_path),
-        fmt::format("./{}/{}", g_gameinfo.mod_dir, plugin_path)
     };
     for (std::string& try_path : try_paths) {
         try_path = path_normalize(try_path);
-        if (try_path.empty())
+        if (try_path.empty() || !path_is_allowed(try_path))
             continue;
         // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
         int ret = plugin_load(p, try_path);
