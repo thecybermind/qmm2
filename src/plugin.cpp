@@ -14,6 +14,7 @@ Created By:
 #include <cstdarg>
 #include <vector>
 #include <string>
+#include <filesystem>
 #include "qmmapi.h"
 #include "game_api.h"
 #include "log.h"
@@ -400,18 +401,15 @@ static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused
 }
 
 
-static nlohmann::json s_plugin_cfg_get_node(plugin_id plid [[maybe_unused]], std::string key) {
+static nlohmann::json s_plugin_cfg_get_node(std::string key) {
     if (key[0] == '/')
         key = key.substr(1);
 
     nlohmann::json node = g_cfg;
 
-    size_t sep = key.find('/');
-    while (sep != std::string::npos) {
-        std::string segment = key.substr(0, sep);
-        node = cfg_get_object(node, segment);
-        key = key.substr(sep + 1);
-        sep = key.find('/');
+    std::filesystem::path keypath = key;
+    for (auto& segment : keypath.parent_path()) {
+        node = cfg_get_object(node, segment.u8string());
     }
 
     return node;
@@ -421,7 +419,7 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
     static std::string value[NUM_PLUGIN_STR_BUFFERS];
     static int index = 0;
 
-    nlohmann::json node = s_plugin_cfg_get_node(plid, key);
+    nlohmann::json node = s_plugin_cfg_get_node(key);
 
     // cycle rotating buffer and store string
     index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
@@ -433,7 +431,7 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
 
 
 static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const char* key) {
-    nlohmann::json node = s_plugin_cfg_get_node(plid, key);
+    nlohmann::json node = s_plugin_cfg_get_node(key);
     int ret = cfg_get_int(node, path_basename(key));
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnConfigGetInt(\"{}\", \"{}\") = {}\n", ((plugin_info*)plid)->name, key, ret);
     return ret;
@@ -441,7 +439,7 @@ static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const c
 
 
 static int s_plugin_helper_ConfigGetBool(plugin_id plid [[maybe_unused]], const char* key) {
-    nlohmann::json node = s_plugin_cfg_get_node(plid, key);
+    nlohmann::json node = s_plugin_cfg_get_node(key);
     int ret = (int)cfg_get_bool(node, path_basename(key));
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnConfigGetBool(\"{}\", \"{}\") = {}\n", ((plugin_info*)plid)->name, key, ret);
     return ret;
@@ -454,7 +452,7 @@ static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unu
     static std::vector<const char*> valuep[NUM_PLUGIN_STR_BUFFERS];
     static int index = 0;
 
-    nlohmann::json node = s_plugin_cfg_get_node(plid, key);
+    nlohmann::json node = s_plugin_cfg_get_node(key);
 
     // cycle rotating buffer and store array
     index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
@@ -474,7 +472,7 @@ static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], c
     static std::vector<int> value[NUM_PLUGIN_STR_BUFFERS];
     static int index = 0;
 
-    nlohmann::json node = s_plugin_cfg_get_node(plid, key);
+    nlohmann::json node = s_plugin_cfg_get_node(key);
 
     // cycle rotating buffer and store array
     index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
