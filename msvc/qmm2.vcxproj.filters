@@ -234,5 +234,8 @@
     <None Include="..\README.md">
       <Filter>Other</Filter>
     </None>
+    <None Include="cpp.hint">
+      <Filter>Other</Filter>
+    </None>
   </ItemGroup>
 </Project>
