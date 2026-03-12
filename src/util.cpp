@@ -34,6 +34,9 @@ std::string path_normalize(std::string path) {
 
 
 bool path_is_allowed(std::string path) {
+    if (path_baseext(path) == EXT_QVM)
+        return true;
+
     path = path_normalize(path);
     auto rel_qmm = std::filesystem::relative(path, g_gameinfo.qmm_dir);
     auto rel_exe = std::filesystem::relative(path, g_gameinfo.exe_dir);
