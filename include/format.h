@@ -13,7 +13,7 @@ Created By:
 #define QMM2_FORMAT_H
 
 #define FMT_HEADER_ONLY
-#include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/std.h>
 
 #endif // QMM2_FORMAT_H
