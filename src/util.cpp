@@ -14,91 +14,55 @@ Created By:
 #include <cctype>
 #include <cstring>
 #include <cstdint>
+#include <cstdlib>
 #include <vector>
 #include <string>
+#include <filesystem>
 #include <fstream> // util_get_proc_cmdline in linux
 #include "util.h"
 
 
 std::string path_normalize(std::string path) {
-    // switch \ to /
-    for (char& c : path) {
-        if (c == '\\')
-            c = '/';
-    }
-    // collapse /./ to /
-    size_t dotdir = path.rfind("/./");
-    while (dotdir != std::string::npos) {
-        path = path.substr(0, dotdir) + path.substr(dotdir + 2);
-        dotdir = path.rfind("/./");
-    }
-    // collapse /*/../ to /
-    size_t dotdotdir = path.rfind("/../");
-    while (dotdotdir != std::string::npos) {
-        size_t prev = path.rfind('/', dotdotdir - 1);
-        if (prev != std::string::npos)
-            path = path.substr(0, prev) + path.substr(dotdotdir + 3);
-        else
-            break;
-        dotdotdir = path.rfind("/../");
-    }
-    return path;
+    std::filesystem::path fspath = path;
+    return fspath.lexically_normal().generic_u8string();
 }
 
 
 std::string path_dirname(std::string path) {
-    size_t pos = path.find_last_of("/\\");
-    if (pos == std::string::npos)
-        return ".";
-    if (pos == 0)
-        return "/.";
-    return path.substr(0, pos);
+    std::filesystem::path fspath = path;
+    return fspath.parent_path().lexically_normal().generic_u8string();
 }
 
 
 std::string path_basename(std::string path) {
-    size_t pos = path.find_last_of("/\\");
-    if (pos == std::string::npos)
-        return path;
-    return path.substr(pos + 1);
+    std::filesystem::path fspath = path;
+    return fspath.filename().u8string();
+
 }
 
 
 std::string path_baseext(std::string path) {
-    std::string base = path_basename(path);
-    size_t pos = base.find_last_of('.');
-    if (pos == std::string::npos)
-        return base;
-    return base.substr(pos + 1);
+    std::filesystem::path fspath = path;
+    return fspath.extension().u8string();
+}
+
+
+bool path_is_absolute(std::string path) {
+    if (path.empty())
+        return false;
+    std::filesystem::path fspath = path;
+    return fspath.is_absolute();
 }
 
 
 bool path_is_relative(std::string path) {
     if (path.empty())
-        return false;   // not really a good result
-    // \\computer\dir\file
-    // \dir\file
-    // /dir/file
-    if (path[0] == '/' || path[0] == '\\')
         return false;
-    // ./file
-    // ..\file
-    // .ssh/known_hosts
-    if (path[0] == '.')
-        return true;
-#if defined(QMM_OS_WINDOWS)
-    // windows: C:\dir\file
-    if (path.size() > 1 && path[1] == ':' && std::isalpha((unsigned char)(path[0])))
-        return false;
-    // windows: colon ANYWHERE is probably absolute too?
-    if (path.find_first_of(':') != std::string::npos)
-        return false;
-#endif
-    return true;
+    return !path_is_absolute(path);
 }
 
 
-std::vector<std::string> util_get_proc_cmdline() {
+static std::vector<std::string> util_get_proc_cmdline() {
     std::vector<std::string> ret;
 #if defined(QMM_OS_WINDOWS)
     // CommandLineToArgvA doesn't exist, so we have to do this with wide strings and convert them to utf8 std::strings
@@ -135,12 +99,12 @@ std::string util_get_cmdline_arg(std::string arg, std::string def) {
 
 
 std::string util_get_proc_path() {
-    return osdef_path_get_proc_path();
+    return path_normalize(osdef_path_get_proc_path());
 }
 
 
 std::string util_get_qmm_path() {
-    return osdef_path_get_qmm_path();
+    return path_normalize(osdef_path_get_qmm_path());
 }
 
 
@@ -164,32 +128,14 @@ void path_mkdir(std::string path) {
     if (path.empty())
         return;
 
-    unsigned int i = 1; // start after a possible /
-#if defined(QMM_OS_WINDOWS)
-    // if this is an absolute path, start at the 3rd index (after "X:\")
-    if (path[1] == ':')
-        i = 3;
-#endif
-    path = path_normalize(path);
+    std::filesystem::path fspath = path;
 
-    // if the path ends with a /, remove it
-    if (path[path.size() - 1] == '/')
-        path[path.size() - 1] = '\0';
-
-    // loop through each character
-    for (; i < path.size(); i++) {
-        // if we found a directory separator
-        if (path[i] == '/') {
-            // replace it with a null terminator
-            path[i] = '\0';
-            // call mkdir on the whole path up to now to make the directory
-            (void)mkdir(path.c_str(), S_IRWXU);
-            // put the directory separator back
-            path[i] = '/';
-        }
+    std::filesystem::path build;
+    // loop through each segment of path and call mkdir on it
+    for (auto& seg : fspath.lexically_normal().parent_path()) {
+        build /= seg;
+        (void)mkdir(build.u8string().c_str(), S_IRWXU);
     }
-    // call mkdir on the entire path to make the final directory
-    (void)mkdir(path.c_str(), S_IRWXU);
 }
 
 

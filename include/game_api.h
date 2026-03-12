@@ -19,6 +19,51 @@ Created By:
 #include "qmmapi.h"
 #include "qvm.h"
 
+
+// mod suffixes and extensions
+
+// SUF_DLL: standard suffixes for mod DLLs per OS/arch ("x86", "i386", "x86_64", "x86_64")
+// X64_SUF_DLL: ioRTCW and ET:Legacy use "x64" suffix for 64-bit windows instead of "x86_64"
+// EXT_DLL: standard extensions for mod DLLs per OS (".dll", ".so")
+// SP_DLL + MP_DLL: COD, RTCWMP & WET filename changes between linux/windows
+// UO_DLL: CODUO filename changes between linux/windows
+
+// EXT_QVM: standard extension for mod QVM (".qvm")
+// MOD_DLL: concatenation of SUF_DLL and EXT_DLL
+// X64_DLL: concatenation of X64_SUF_DLL and EXT_DLL
+
+#if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
+ #define SUF_DLL "x86_64"
+ #define X64_SUF_DLL "x64"
+#elif defined(QMM_OS_WINDOWS) && defined(QMM_ARCH32)
+ #define SUF_DLL "x86"
+ #define X64_SUF_DLL "x86"
+#elif defined(QMM_OS_LINUX) && defined(QMM_ARCH_64)
+ #define SUF_DLL "x86_64"
+ #define X64_SUF_DLL "x86_64"
+#elif defined(QMM_OS_LINUX) && defined(QMM_ARCH_32)
+ #define SUF_DLL "i386"
+ #define X64_SUF_DLL "i386" 
+#else
+ #error Unknown architecture + OS combination
+#endif
+
+#if defined(QMM_OS_WINDOWS)
+ #define EXT_DLL ".dll"
+ #define SP_DLL "_sp_"
+ #define MP_DLL "_mp_"
+ #define UO_DLL "uo_game_mp_"
+#elif defined(QMM_OS_LINUX)
+ #define EXT_DLL ".so"
+ #define SP_DLL ".sp."
+ #define MP_DLL ".mp."
+ #define UO_DLL "game.mp.uo."
+#endif 
+
+#define EXT_QVM ".qvm"
+#define MOD_DLL SUF_DLL EXT_DLL
+#define X64_DLL X64_SUF_DLL EXT_DLL
+
 // engine/mod API type
 enum APIType {
     QMM_API_ERROR,

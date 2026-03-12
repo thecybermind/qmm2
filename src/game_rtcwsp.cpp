@@ -12,9 +12,9 @@ Created By:
 #include <rtcwsp/game/q_shared.h>
 #include <rtcwsp/game/g_public.h>
 
-#include "version.h"
 #include "game_api.h"
 #include "log.h"
+#include "format.h"
 #include <vector>
 #include <string>
 // QMM-specific RTCWSP header
@@ -27,14 +27,6 @@ GEN_GAME_EXTS(RTCWSP);
 
 GEN_GAME_FUNCS(RTCWSP);
 
-#if defined(QMM_ARCH_32) && defined(QMM_OS_WINDOWS)
- #define MOD_DLL "x86.dll"
-#elif defined(QMM_ARCH_32) && defined(QMM_OS_LINUX)
- #define MOD_DLL "i386.so"
-#else
- #define MOD_DLL
-#endif
-
 static bool is_iortcw = false;
 
 // auto-detection logic for RTCWSP
@@ -42,10 +34,8 @@ static bool RTCWSP_AutoDetect(api_supportedgame* game, APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    const char* official_dllname = "qagame" MOD_DLL;
-
     // game->dllname holds the iortcw filenames, but we also need to check for official engine dll name
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname) && !str_striequal(g_gameinfo.qmm_file, official_dllname))
+    if (!str_striequal(g_gameinfo.qmm_file, game->dllname) && !str_striequal(g_gameinfo.qmm_file, "qagame" MOD_DLL))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "wolfsp"))

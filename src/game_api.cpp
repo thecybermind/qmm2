@@ -10,7 +10,6 @@ Created By:
 */
 
 #include "version.h"
-#include "osdef.h"
 #include <vector>
 #include "game_api.h"
 
@@ -41,30 +40,6 @@ GEN_GAME_EXTS(SIN);
 GEN_GAME_EXTS(SOF2SP);
 GEN_GAME_EXTS(STEF2);
 GEN_GAME_EXTS(STVOYSP);
-
-// SP_DLL + MP_DLL - COD, RTCWMP & WET filename changes between linux/windows
-// UO_DLL - CODUO filename changes between linux/windows
-// X64_SUF_DLL - ioRTCW and ET:Legacy use "x64" suffix for 64-bit windows
-#if defined(QMM_OS_WINDOWS)
- #if defined(QMM_ARCH_64)
-  #define X64_SUF_DLL "x64"
- #else
-  #define X64_SUF_DLL "x86"
- #endif
- #define SP_DLL "_sp_"
- #define MP_DLL "_mp_"
- #define UO_DLL "uo_game_mp_"
-#else
- #if defined(QMM_ARCH_64)
-  #define X64_SUF_DLL "x86_64"
- #else
-  #define X64_SUF_DLL "i386"
- #endif
- #define SP_DLL ".sp."
- #define MP_DLL ".mp."
- #define UO_DLL "game.mp.uo."
-#endif
-#define X64_DLL X64_SUF_DLL "." EXT_DLL
 
 // add your game's info data here
 std::vector<api_supportedgame> api_supportedgames = {
@@ -105,7 +80,7 @@ std::vector<api_supportedgame> api_supportedgames = {
 
 // Q2R only exists for 64-bit Windows
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
-	{ "game_x64.dll",			nullptr,			"baseq2",		"Quake 2 Remastered",							GEN_GAME_INFO(Q2R),		9,		6 },
+	{ "game_" X64_DLL,			nullptr,			"baseq2",		"Quake 2 Remastered",							GEN_GAME_INFO(Q2R),		9,		6 },
 #endif
 };
 

@@ -25,17 +25,6 @@ Created By:
  #include <direct.h>
  #include <shellapi.h>
 
- #if defined(QMM_ARCH_64)
-  #define SUF_DLL "x86_64"
- #elif defined(QMM_ARCH_32)
-  #define SUF_DLL "x86"
- #else
-  #error Unknown architecture?
- #endif
-
- #define EXT_DLL "dll"
- #define EXT_QVM "qvm"
-
  #define PATH_MAX				MAX_PATH
  #define dlopen(file, x)		((void*)LoadLibrary(file))
  #define dlsym(dll, func)		((void*)GetProcAddress((HMODULE)(dll), (func)))
@@ -55,16 +44,6 @@ Created By:
  #include <sys/stat.h>
  #include <sys/types.h>
 
- #if defined(QMM_ARCH_64)
-  #define SUF_DLL "x86_64"
- #elif defined(QMM_ARCH_32)
-  #define SUF_DLL "i386"
- #else
-  #error Unknown architecture?
- #endif
-
- #define EXT_DLL "so"
- #define EXT_QVM "qvm"
  uint64_t osdef_get_milliseconds();
 
 #else // !QMM_OS_WINDOWS && !QMM_OS_LINUX
@@ -72,8 +51,6 @@ Created By:
  #error Unknown OS?
 
 #endif
-
-#define MOD_DLL SUF_DLL "." EXT_DLL
 
 void* osdef_path_get_qmm_handle();
 const char* osdef_path_get_qmm_path();

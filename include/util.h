@@ -19,13 +19,17 @@ std::string path_normalize(std::string path);
 std::string path_dirname(std::string path);
 std::string path_basename(std::string path);
 std::string path_baseext(std::string path);
+bool path_is_absolute(std::string path);
 bool path_is_relative(std::string path);
 
-std::vector<std::string> util_get_proc_cmdline();
+// look for the given argument in the command line, and return the next argv
+// e.g. if the command line was: "quake3 --qmm_cfg test.json +set dedicated 1 +map q3dm1"
+// then util_get_cmdline_arg("--qmm_cfg") returns "test.json"
 std::string util_get_cmdline_arg(std::string arg, std::string def = "");
 std::string util_get_proc_path();
 std::string util_get_qmm_path();
 void* util_get_qmm_handle();
+
 intptr_t util_get_milliseconds();
 
 void path_mkdir(std::string path);
