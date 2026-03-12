@@ -571,6 +571,9 @@ static void main_load_config(std::string config_filename) {
 
 // general code to auto-detect what game engine loaded us
 static void main_detect_game(std::string cfg_game, APIType engine) {
+    if (cfg_game.empty())
+        cfg_game = "auto";
+
     for (api_supportedgame& game : api_supportedgames) {
         // if short name matches config option, we found it!
         if (str_striequal(cfg_game, game.gamename_short)) {
@@ -600,7 +603,7 @@ static void main_detect_game(std::string cfg_game, APIType engine) {
 // general code to find a mod file to load
 static bool main_load_mod(std::string cfg_mod) {
     if (cfg_mod.empty())
-        return false;
+        cfg_mod = "auto";
 
     LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to find mod using \"{}\"\n", cfg_mod);
     // if "mod" config setting is an absolute path, just attempt to load it directly
