@@ -630,11 +630,7 @@ static bool main_load_mod(std::string cfg_mod) {
             if (g_gameinfo.game->qvmname)
                 try_paths.push_back(g_gameinfo.game->qvmname);
         }
-        // "mod" config setting was a relative path
-        else {
-            // add config setting to list
-            try_paths.push_back(cfg_mod);
-        }
+        // if "mod" config setting was a relative path, do nothing special
         try_paths.push_back(fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod));
         try_paths.push_back(fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, cfg_mod));
         for (std::string& try_path : try_paths) {
