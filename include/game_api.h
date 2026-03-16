@@ -68,16 +68,18 @@ Created By:
 enum APIType {
     QMM_API_ERROR,
 
-    QMM_API_QVM,
+    QMM_API_QVM,			// mod-only
 
     QMM_API_DLLENTRY,
     QMM_API_GETGAMEAPI,
     QMM_API_GETMODULEAPI,
 };
-const char* APIType_Name(APIType);
-const char* APIType_Function(APIType);
+const char* APIType_Name(APIType);		// return the string form of the enum
+const char* APIType_Function(APIType);	// return the entry function name
 
 struct api_supportedgame;
+
+// pointers for all the messages/handlers associated with a single game's game support.
 // instances of this struct are defined by GEN_GAME_FUNCS_QVM(GAME) or GEN_GAME_FUNCS(GAME)
 struct api_supportedgame_funcs {
     int* qmm_eng_msgs;							// array of engine messages used by QMM
@@ -113,7 +115,7 @@ extern std::vector<api_supportedgame> api_supportedgames;
 
 // macros to make game support a bit easier to do
 
-// generate extern for each game's functions (used at the top of game_api.cpp and game_XYZ.cpp)
+// generate extern for each game's functions (used at the top of game_api.cpp)
 #define GEN_GAME_EXTS(game)	extern api_supportedgame_funcs game##_funcs;
 
 // generate extern for each game's shortcode and funcs struct (used in supportedgames entry in game_api.cpp)

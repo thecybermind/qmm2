@@ -320,7 +320,7 @@ int str_stricmp(std::string s1, std::string s2) {
 }
 
 
-int str_striequal(std::string s1, std::string s2) {
+bool str_striequal(std::string s1, std::string s2) {
     return str_stricmp(s1, s2) == 0;
 }
 
