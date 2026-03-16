@@ -42,9 +42,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD, LPVOID) {
 
 #elif defined(QMM_OS_LINUX)
 
-#include <cstring>			// memset in linux only
 #include <cstdlib>
-#include <fstream>			// util_get_proc_cmdline in linux
+#include <fstream>			// getline for util_get_proc_cmdline
 #include <dlfcn.h>			// dlopen, dlclose, dlsym
 #include <unistd.h>			// readlink
 #include <limits.h>			// PATH_MAX
