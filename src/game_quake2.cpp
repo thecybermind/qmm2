@@ -26,7 +26,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(QUAKE2);
-GEN_GAME_EXTS(QUAKE2);
 
 GEN_GAME_FUNCS(QUAKE2);
 

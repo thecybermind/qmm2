@@ -24,7 +24,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(JASP);
-GEN_GAME_EXTS(JASP);
 
 GEN_GAME_FUNCS(JASP);
 

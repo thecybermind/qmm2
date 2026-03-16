@@ -26,7 +26,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(SIN);
-GEN_GAME_EXTS(SIN);
 
 GEN_GAME_FUNCS(SIN);
 

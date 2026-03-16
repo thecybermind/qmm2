@@ -23,7 +23,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(STVOYHM);
-GEN_GAME_EXTS(STVOYHM);
 
 GEN_GAME_FUNCS_QVM(STVOYHM);
 

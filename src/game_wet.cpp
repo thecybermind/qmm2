@@ -22,7 +22,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(WET);
-GEN_GAME_EXTS(WET);
 
 GEN_GAME_FUNCS(WET);
 

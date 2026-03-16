@@ -22,7 +22,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(RTCWMP);
-GEN_GAME_EXTS(RTCWMP);
 
 GEN_GAME_FUNCS_QVM(RTCWMP);
 

@@ -23,7 +23,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(STVOYSP);
-GEN_GAME_EXTS(STVOYSP);
 
 GEN_GAME_FUNCS(STVOYSP);
 

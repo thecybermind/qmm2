@@ -20,7 +20,6 @@ Created By:
 #include "main.h"
 
 GEN_GAME_QMM_MSGS(COD11MP);
-GEN_GAME_EXTS(COD11MP);
 
 GEN_GAME_FUNCS(COD11MP);
 

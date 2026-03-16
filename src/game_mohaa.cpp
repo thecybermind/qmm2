@@ -27,7 +27,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(MOHAA);
-GEN_GAME_EXTS(MOHAA);
 
 GEN_GAME_FUNCS(MOHAA);
 

@@ -24,7 +24,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(SOF2MP);
-GEN_GAME_EXTS(SOF2MP);
 
 GEN_GAME_FUNCS_QVM(SOF2MP);
 

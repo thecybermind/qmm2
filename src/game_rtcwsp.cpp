@@ -23,7 +23,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(RTCWSP);
-GEN_GAME_EXTS(RTCWSP);
 
 GEN_GAME_FUNCS(RTCWSP);
 

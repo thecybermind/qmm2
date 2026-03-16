@@ -20,7 +20,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(SOF2SP);
-GEN_GAME_EXTS(SOF2SP);
 
 GEN_GAME_FUNCS(SOF2SP);
 

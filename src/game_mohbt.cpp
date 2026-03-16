@@ -27,7 +27,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(MOHBT);
-GEN_GAME_EXTS(MOHBT);
 
 GEN_GAME_FUNCS(MOHBT);
 

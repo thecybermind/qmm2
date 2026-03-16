@@ -23,7 +23,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(Q3A);
-GEN_GAME_EXTS(Q3A);
 
 GEN_GAME_FUNCS_QVM(Q3A);
 

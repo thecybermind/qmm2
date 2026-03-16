@@ -23,7 +23,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(JK2MP);
-GEN_GAME_EXTS(JK2MP);
 
 GEN_GAME_FUNCS_QVM(JK2MP);
 

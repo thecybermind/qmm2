@@ -22,7 +22,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(JAMP);
-GEN_GAME_EXTS(JAMP);
 
 GEN_GAME_FUNCS(JAMP);
 

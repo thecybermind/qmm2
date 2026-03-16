@@ -25,7 +25,6 @@ Created By:
 #include "util.h"
 
 GEN_GAME_QMM_MSGS(STEF2);
-GEN_GAME_EXTS(STEF2);
 
 GEN_GAME_FUNCS(STEF2);
 
