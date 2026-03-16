@@ -215,7 +215,6 @@
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\mod.cpp" />
-    <ClCompile Include="..\src\osdef.cpp" />
     <ClCompile Include="..\src\plugin.cpp" />
     <ClCompile Include="..\src\qvm.c">
       <LanguageStandard_C Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdc17</LanguageStandard_C>
@@ -254,7 +253,6 @@
     <ClInclude Include="..\include\log.h" />
     <ClInclude Include="..\include\main.h" />
     <ClInclude Include="..\include\mod.h" />
-    <ClInclude Include="..\include\osdef.h" />
     <ClInclude Include="..\include\plugin.h" />
     <ClInclude Include="..\include\qmmapi.h" />
     <ClInclude Include="..\include\qvm.h" />

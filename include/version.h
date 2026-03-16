@@ -45,6 +45,8 @@ Created By:
   #define QMM_ARCH      "x86"
   #define QMM_ARCH_32
  #endif
+#else
+ #error Unknown OS
 #endif
 
 #define QMM_VERSION_DWORD	QMM_VERSION_MAJOR , QMM_VERSION_MINOR , QMM_VERSION_REV , 0

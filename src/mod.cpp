@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "osdef.h"
+#include "version.h"
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -48,9 +48,9 @@ bool mod_load(qmm_mod& mod, std::string file) {
     // if DLL
     else if (str_striequal(ext, EXT_DLL)) {
         // load DLL
-        mod.dll = dlopen(file.c_str(), RTLD_NOW);
+        mod.dll = dll_load(file.c_str());
         if (!mod.dll) {
-            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL load failed: {}\n", file, dlerror());
+            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): DLL load failed: {}\n", file, dll_error());
             goto fail;
         }
 
@@ -77,8 +77,6 @@ bool mod_load(qmm_mod& mod, std::string file) {
     }
 
 fail:
-    if (mod.dll)
-        dlclose(mod.dll);
     mod_unload(mod);
     return false;
 }
@@ -89,7 +87,7 @@ void mod_unload(qmm_mod& mod) {
     g_gameinfo.game->funcs->pfnModUnload();
     qvm_unload(&mod.vm);
     if (mod.dll)
-        dlclose(mod.dll);
+        dll_close(mod.dll);
     mod = qmm_mod();
 }
 
@@ -206,7 +204,7 @@ static bool s_mod_load_dll(qmm_mod& mod, APIType api) {
         // these are together because they work the same, just with a different function name
 
         // look for GetGameAPI/GetModuleAPI function
-        mod_GetGameAPI pfnGGA = (mod_GetGameAPI)dlsym(mod.dll, APIType_Function(api));
+        mod_GetGameAPI pfnGGA = (mod_GetGameAPI)dll_symbol(mod.dll, APIType_Function(api));
         if (!pfnGGA)
             return false;
 
@@ -219,8 +217,8 @@ static bool s_mod_load_dll(qmm_mod& mod, APIType api) {
         return false;
     }
     case QMM_API_DLLENTRY: {
-        mod_dllEntry pfndllEntry = (mod_dllEntry)dlsym(mod.dll, "dllEntry");
-        mod_vmMain pfnvmMain = (mod_vmMain)dlsym(mod.dll, "vmMain");
+        mod_dllEntry pfndllEntry = (mod_dllEntry)dll_symbol(mod.dll, "dllEntry");
+        mod_vmMain pfnvmMain = (mod_vmMain)dll_symbol(mod.dll, "vmMain");
         if (!pfndllEntry || !pfnvmMain)
             return false;
 

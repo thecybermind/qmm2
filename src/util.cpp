@@ -10,17 +10,58 @@ Created By:
 */
 
 #define _CRT_SECURE_NO_WARNINGS 1
-#include "osdef.h"
+#include "version.h"
 #include <cctype>
 #include <cstring>
 #include <cstdint>
-#include <cstdlib>
 #include <vector>
 #include <string>
 #include <filesystem>
-#include <fstream> // util_get_proc_cmdline in linux
 #include "main.h"
 #include "util.h"
+
+
+#if defined(QMM_OS_WINDOWS)
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <direct.h>				// _mkdir
+#include <shellapi.h>			// CommandLineToArgvW
+
+#define PATH_MAX				MAX_PATH
+#define mkdir(path, x)			_mkdir(path)
+#define s_get_ticks				GetTickCount64
+
+
+// store module handle
+static HMODULE s_dll = nullptr;
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD, LPVOID) {
+    s_dll = hinstDLL;
+    return TRUE;
+}
+
+#elif defined(QMM_OS_LINUX)
+
+#include <cstring>			// memset in linux only
+#include <cstdlib>
+#include <fstream>			// util_get_proc_cmdline in linux
+#include <dlfcn.h>			// dlopen, dlclose, dlsym
+#include <unistd.h>			// readlink
+#include <limits.h>			// PATH_MAX
+#include <sys/stat.h>		// mkdir
+#include <sys/time.h>
+
+
+static uint64_t s_get_ticks() {
+    struct timeval tp;
+    struct timezone tzp;
+
+    gettimeofday(&tp, &tzp);
+
+    return tp.tv_sec * 1000 + tp.tv_usec / 1000;
+}
+
+#endif
 
 
 std::string path_normalize(std::string path) {
@@ -83,6 +124,21 @@ bool path_is_relative(std::string path) {
 }
 
 
+void path_mkdir(std::string path) {
+    if (path.empty())
+        return;
+
+    std::filesystem::path fspath = path;
+
+    std::filesystem::path build;
+    // loop through each segment of path and call mkdir on it
+    for (auto& seg : fspath.lexically_normal().parent_path()) {
+        build /= seg;
+        (void)mkdir(build.u8string().c_str(), S_IRWXU);
+    }
+}
+
+
 static std::vector<std::string> util_get_proc_cmdline() {
     std::vector<std::string> ret;
 #if defined(QMM_OS_WINDOWS)
@@ -120,17 +176,63 @@ std::string util_get_cmdline_arg(std::string arg, std::string def) {
 
 
 std::string util_get_proc_path() {
-    return osdef_path_get_proc_path();
+    static char path[PATH_MAX];
+    if (path[0])
+        return path;
+
+#if defined(QMM_OS_WINDOWS)
+    if (!GetModuleFileName(nullptr, path, sizeof(path)))
+        return "";
+#elif defined(QMM_OS_LINUX)
+    // readlink does NOT null terminate at all
+    // we pass sizeof-1 to guarantee the \0 from memset is still present at the end of the string
+    // as a null terminator. also we write a \0 at the specific end of the written buffer.
+    ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+    if (len != -1)
+        path[len] = '\0';
+#endif
+    return path;
 }
 
 
 std::string util_get_qmm_path() {
-    return osdef_path_get_qmm_path();
+    static char path[PATH_MAX];
+    if (path[0])
+        return path;
+
+#if defined(QMM_OS_WINDOWS)
+    if (!GetModuleFileName(s_dll, path, sizeof(path)))
+        return "";
+#elif defined(QMM_OS_LINUX)
+    Dl_info dli;
+    memset(&dli, 0, sizeof(dli));
+
+    if (!dladdr(&dli, &dli))
+        return "";
+
+    strncpyz(path, dli.dli_fname, sizeof(path));
+#endif
+    return path;
 }
 
 
 void* util_get_qmm_handle() {
-    return osdef_path_get_qmm_handle();
+#if defined(QMM_OS_WINDOWS)
+    return s_dll;
+#elif defined(QMM_OS_LINUX)
+    static void* module;
+    if (module)
+        return module;
+
+    Dl_info dli;
+    memset(&dli, 0, sizeof(dli));
+
+    if (!dladdr(&dli, &dli))
+        return nullptr;
+
+    module = dli.dli_fbase;
+    return module;
+#endif
 }
 
 
@@ -139,24 +241,57 @@ intptr_t util_get_milliseconds() {
     static uint64_t startTime = 0;
     if (!initialized) {
         initialized = true;
-        startTime = osdef_get_milliseconds();
+        startTime = s_get_ticks();
     }
-    return (intptr_t)(osdef_get_milliseconds() - startTime);
+    return (intptr_t)(s_get_ticks() - startTime);
 }
 
 
-void path_mkdir(std::string path) {
-    if (path.empty())
-        return;
+void* dll_load(const char* filename) {
+#if defined(QMM_OS_WINDOWS)
+    return (void*)LoadLibraryA(filename);
+#elif defined(QMM_OS_LINUX)
+    return dlopen(filename, RTLD_NOW);
+#endif
+}
 
-    std::filesystem::path fspath = path;
 
-    std::filesystem::path build;
-    // loop through each segment of path and call mkdir on it
-    for (auto& seg : fspath.lexically_normal().parent_path()) {
-        build /= seg;
-        (void)mkdir(build.u8string().c_str(), S_IRWXU);
-    }
+void* dll_symbol(void* dll, const char* symbol) {
+#if defined(QMM_OS_WINDOWS)
+    return GetProcAddress((HMODULE)dll, symbol);
+#elif defined(QMM_OS_LINUX)
+    return dlsym(dll, symbol);
+#endif
+}
+
+
+int dll_close(void* dll) {
+#if defined(QMM_OS_WINDOWS)
+    return FreeLibrary((HMODULE)dll);
+#elif defined(QMM_OS_LINUX)
+    return dlclose(dll);
+#endif
+}
+
+
+const char* dll_error() {
+#if defined(QMM_OS_WINDOWS)
+    // this will return the last error from any win32 function, not just library functions
+    static std::string str;
+    char* buf = nullptr;
+    str = "";
+
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&buf, 0, nullptr);
+
+    str = buf;
+
+    LocalFree(buf);
+
+    return str.c_str();
+#elif defined(QMM_OS_LINUX)
+    return dlerror();
+#endif
 }
 
 

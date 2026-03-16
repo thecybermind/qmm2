@@ -12,8 +12,11 @@ Created By:
 #ifndef QMM2_UTIL_H
 #define QMM2_UTIL_H
 
+#include "version.h"
 #include <vector>
 #include <string>
+#include <cstddef>		// size_t
+
 
 std::string path_normalize(std::string path);
 bool path_is_allowed(std::string path);
@@ -22,6 +25,8 @@ std::string path_basename(std::string path);
 std::string path_baseext(std::string path);
 bool path_is_absolute(std::string path);
 bool path_is_relative(std::string path);
+
+void path_mkdir(std::string path);
 
 // look for the given argument in the command line, and return the next argv
 // e.g. if the command line was: "quake3 --qmm_cfg test.json +set dedicated 1 +map q3dm1"
@@ -33,7 +38,10 @@ void* util_get_qmm_handle();
 
 intptr_t util_get_milliseconds();
 
-void path_mkdir(std::string path);
+void* dll_load(const char* filename);
+void* dll_symbol(void* dll, const char* symbol);
+int dll_close(void* dll);
+const char* dll_error();
 
 std::string str_tolower(std::string str);
 std::string str_toupper(std::string str);

@@ -9,8 +9,9 @@ Created By:
 
 */
 
+
 #define _CRT_SECURE_NO_WARNINGS
-#include "osdef.h"
+#include "version.h"
 #include <cstdlib>      // atoi
 #include <vector>
 #include <string>
@@ -24,7 +25,6 @@ Created By:
 #include "mod.h"        // g_mod
 #include "qvm.h"        // QVM_MAGIC
 #include "util.h"
-#include "version.h"
 
 gameinfo g_gameinfo;    // information about the engine and environment
 
@@ -317,11 +317,11 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // JASP+JK2SP's cgame dllEntry functions actually call into the syscall almost immediately,
         // so make sure we store vmMain first in case there's some re-entrancy
         if (cgame.syscall) {
-            cgame.vmMain = (mod_vmMain)dlsym(g_mod.dll, "vmMain");
+            cgame.vmMain = (mod_vmMain)dll_symbol(g_mod.dll, "vmMain");
             LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Storing cgame vmMain = {}\n", fmt::ptr(cgame.vmMain));
 
             // pass original cgame syscall to dllEntry in mod
-            mod_dllEntry pfndllEntry = (mod_dllEntry)dlsym(g_mod.dll, "dllEntry");
+            mod_dllEntry pfndllEntry = (mod_dllEntry)dll_symbol(g_mod.dll, "dllEntry");
             LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Passing cgame syscall to dllEntry = {}\n", fmt::ptr(pfndllEntry));
             pfndllEntry(cgame.syscall);
         }
@@ -908,6 +908,7 @@ void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
 
 
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
+
 /* Entry point: engine->qmm (Q2R only)
    Quake 2 Remastered has a heavily modified engine + API, and includes Game and CGame in the same DLL, with this GetCGameAPI as
    the entry point. This is the first function called when a Q2R mod DLL is loaded. The only thing the engine does at first,
@@ -931,7 +932,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
         if (!g_mod.dll)
             return nullptr;
         LOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Passing on call to mod DLL.\n";
-        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)dlsym(g_mod.dll, "GetCGameAPI");
+        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)dll_symbol(g_mod.dll, "GetCGameAPI");
         return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
     }
 
@@ -939,11 +940,11 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
     main_detect_env();
 
     std::string modpath = fmt::format("{}/qmm_{}", g_gameinfo.qmm_dir, g_gameinfo.qmm_file);
-    void* dll = dlopen(modpath.c_str(), RTLD_NOW);
+    void* dll = dll_load(modpath.c_str());
     if (!dll)
         return nullptr;
 
-    mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)dlsym(dll, "GetCGameAPI");
+    mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)dll_symbol(dll, "GetCGameAPI");
 
     // return CGame export from mod DLL
     // note we do not unload the DLL

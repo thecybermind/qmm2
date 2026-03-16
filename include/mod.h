@@ -13,7 +13,8 @@ Created By:
 #define QMM2_MOD_H
 
 #include <string>
-#include "qmmapi.h"
+// #include "qmmapi.h"
+#include "game_api.h"
 #include "qvm.h"
 
 struct qmm_mod {

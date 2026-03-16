@@ -87,7 +87,7 @@ struct api_supportedgame_funcs {
 
     bool(*pfnAutoDetect)(api_supportedgame*, APIType);	// pointer to a function that handles auto-detection logic for a game. return true to say "that's me!"
     void*(*pfnEntry)(void*, void*, APIType);	// pointer to a function that handles entry point logic for a game. return value is passed back to engine
-    bool(*pfnModLoad)(void*, APIType);			// pointer to a function that handles mod loading logic after a DLL is loaded with LoadLibrary/dlopen. return true to accept DLL and continue.
+    bool(*pfnModLoad)(void*, APIType);			// pointer to a function that handles mod loading logic after a DLL is loaded with dll_open. return true to accept DLL and continue.
     void(*pfnModUnload)();						// pointer to a function that handles mod unloading logic before a DLL is unloaded
 
     qvm_syscall pfnQVMSyscall;					// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
