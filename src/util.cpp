@@ -33,7 +33,7 @@ Created By:
 #define s_get_ticks				GetTickCount64
 
 
-// store module handle
+// store module handle for util_get_qmm_path and util_get_qmm_handle
 static HMODULE s_dll = nullptr;
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD, LPVOID) {
     s_dll = hinstDLL;
