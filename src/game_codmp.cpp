@@ -21,12 +21,16 @@ Created By:
 #include "util.h"
 
 // GAME_GET_APIVERSION gets called first, which is when QMM has to perform mod/plugin loading, but we
-// don't want to make plugins have to use separate code to handle the actual GAME_INIT message, so just
-// do a dirty redefine here for the QMM_GAME_INIT message definition
-#define GAME_INIT GAME_GET_APIVERSION
-GEN_GAME_QMM_MSGS(CODMP);
-#undef GAME_INIT
-GEN_GAME_EXTS(CODMP);
+// don't want to make plugins have to use separate code to handle the actual GAME_INIT message, so we
+// manually fill out the msg arrays
+static int CODMP_qmm_eng_msgs[] = {
+    G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING,
+    G_CVAR_REGISTER, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM,
+    G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ,
+};
+static int CODMP_qmm_mod_msgs[] = {
+    GAME_GET_APIVERSION, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND,
+};
 
 GEN_GAME_FUNCS(CODMP);
 
