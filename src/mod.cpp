@@ -9,7 +9,6 @@ Created By:
 
 */
 
-#include "version.h"
 #include <cstdint>
 #include <vector>
 #include <string>
