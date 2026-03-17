@@ -56,7 +56,7 @@ static intptr_t SOF2MP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_syscall({} {}) called\n", SOF2MP_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_syscall({} {}) called\n", SOF2MP_EngMsgName(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -90,7 +90,7 @@ static intptr_t SOF2MP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_syscall({} {}) returning {}\n", SOF2MP_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_syscall({} {}) returning {}\n", SOF2MP_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -103,7 +103,7 @@ static intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_vmMain({} {}) called\n", SOF2MP_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_vmMain({} {}) called\n", SOF2MP_ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -156,7 +156,7 @@ static intptr_t SOF2MP_vmMain(intptr_t cmd, ...) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_vmMain({} {}) returning {}\n", SOF2MP_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_vmMain({} {}) returning {}\n", SOF2MP_ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -201,7 +201,7 @@ static void SOF2MP_ModUnload() {
 }
 
 
-static const char* SOF2MP_EngMsgNames(intptr_t cmd) {
+static const char* SOF2MP_EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -474,7 +474,7 @@ static const char* SOF2MP_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* SOF2MP_ModMsgNames(intptr_t cmd) {
+static const char* SOF2MP_ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
@@ -508,7 +508,7 @@ static const char* SOF2MP_ModMsgNames(intptr_t cmd) {
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
 static int SOF2MP_QVMSyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_QVMSyscall({} {}) called\n", SOF2MP_EngMsgNames(cmd), cmd);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_QVMSyscall({} {}) called\n", SOF2MP_EngMsgName(cmd), cmd);
 #endif
 
     int ret = 0;
@@ -880,7 +880,7 @@ static int SOF2MP_QVMSyscall(uint8_t* membase, int cmd, int* args) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_QVMSyscall({} {}) returning {}\n", SOF2MP_EngMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_QVMSyscall({} {}) returning {}\n", SOF2MP_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;

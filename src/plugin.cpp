@@ -111,6 +111,20 @@ const char* plugin_result_to_str(plugin_res res) {
 }
 
 
+// wrapper free function for GameSupport::syscall to pass to plugins
+static intptr_t s_plugin_game_syscall(intptr_t cmd, ...) {
+    QMM_GET_SYSCALL_ARGS();
+    return g_gameinfo.game->syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+}
+
+
+// wrapper free function for GameSupport::vmMain to pass to plugins
+static intptr_t s_plugin_game_vmMain(intptr_t cmd, ...) {
+    QMM_GET_VMMAIN_ARGS();
+    return g_gameinfo.game->vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+}
+
+
 // returns: -1 if failed to load and don't continue, 0 if failed to load and continue, 1 if loaded
 int plugin_load(qmm_plugin& p, std::string file) {
     int ret = 0;
@@ -211,7 +225,7 @@ int plugin_load(qmm_plugin& p, std::string file) {
 
     // call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
     // QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
-    if (!(p.QMM_Attach(g_gameinfo.pfnsyscall, g_gameinfo.pfnvmMain, &g_plugin_globals.plugin_result, &s_pluginfuncs, &s_pluginvars))) {
+    if (!(p.QMM_Attach(s_plugin_game_syscall, s_plugin_game_vmMain, &g_plugin_globals.plugin_result, &s_pluginfuncs, &s_pluginvars))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
         // treat this failure specially. this is a valid plugin, but it decided on its own that it shouldn't be loaded
         ret = -1;
@@ -283,7 +297,7 @@ static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]]) {
 
 
 static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
-    const char* ret = g_gameinfo.game->funcs->pfnEngMsgNames(msg);
+    const char* ret = g_gameinfo.game->EngMsgName(msg);
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnEngMsgName(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, msg, ret);
@@ -294,7 +308,7 @@ static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], i
 
 
 static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
-    const char* ret = g_gameinfo.game->funcs->pfnModMsgNames(msg);
+    const char* ret = g_gameinfo.game->ModMsgName(msg);
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnModMsgName(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, msg, ret);
@@ -307,7 +321,7 @@ static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], i
 static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], const char* cvar) {
     intptr_t ret = 0;
     if (cvar && *cvar)
-        ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_INTEGER_VALUE], cvar);
+        ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_INTEGER_VALUE), cvar);
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetIntCvar(\"{}\", \"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, cvar, ret);
@@ -327,7 +341,7 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
     if (cvar && *cvar) {
         // cycle rotating buffer and store string
         index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
-        ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], cvar, str[index], (intptr_t)sizeof(str[index]));
+        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), cvar, str[index], (intptr_t)sizeof(str[index]));
         ret = str[index];
     }
 
@@ -340,7 +354,7 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
 
 
 static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]]) {
-    const char* ret = g_gameinfo.game->gamename_short;
+    const char* ret = g_gameinfo.game->GameCode();
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetGameEngine(\"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, ret);
@@ -491,7 +505,7 @@ static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], int
     // (or true?), we need to get the configstring from the return value
     // instead
     if (buf && buflen) {
-        intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], index, buf, buflen);
+        intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), index, buf, buflen);
         if (ret > 1)
             strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
@@ -621,7 +635,7 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
     // some games don't return pointers because of QVM interaction, so if this returns anything but null
     // (or true?), we probably are in an api game, and need to get the configstring from the return value
     // instead
-    intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_GET_CONFIGSTRING], configindex, str[index], sizeof(str[index]));
+    intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), configindex, str[index], sizeof(str[index]));
     if (ret > 1)
         strncpyz(str[index], (const char*)ret, sizeof(str[index]));
 

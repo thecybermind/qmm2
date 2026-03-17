@@ -288,7 +288,7 @@ static intptr_t Q2R_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_syscall({} {}) called\n", Q2R_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_syscall({} {}) called\n", Q2R_EngMsgName(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -527,7 +527,7 @@ static intptr_t Q2R_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_syscall({} {}) returning {}\n", Q2R_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_syscall({} {}) returning {}\n", Q2R_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -540,7 +540,7 @@ static intptr_t Q2R_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) called\n", Q2R_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) called\n", Q2R_ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -595,7 +595,7 @@ static intptr_t Q2R_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) returning {}\n", Q2R_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q2R_vmMain({} {}) returning {}\n", Q2R_ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -646,7 +646,7 @@ static void Q2R_ModUnload() {
 }
 
 
-static const char* Q2R_EngMsgNames(intptr_t cmd) {
+static const char* Q2R_EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_BROADCAST_PRINT);
         GEN_CASE(G_COM_PRINT);
@@ -741,7 +741,7 @@ static const char* Q2R_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* Q2R_ModMsgNames(intptr_t cmd) {
+static const char* Q2R_ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_PREINIT);

@@ -293,7 +293,7 @@ static intptr_t SIN_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) called\n", SIN_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) called\n", SIN_EngMsgName(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -561,7 +561,7 @@ static intptr_t SIN_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) returning {}\n", SIN_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) returning {}\n", SIN_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -574,7 +574,7 @@ static intptr_t SIN_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) called\n", SIN_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) called\n", SIN_ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -625,7 +625,7 @@ static intptr_t SIN_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) returning {}\n", SIN_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) returning {}\n", SIN_ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -675,7 +675,7 @@ static void SIN_ModUnload() {
 }
 
 
-static const char* SIN_EngMsgNames(intptr_t cmd) {
+static const char* SIN_EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_BPRINTF);
         GEN_CASE(G_DPRINTF);
@@ -791,7 +791,7 @@ static const char* SIN_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* SIN_ModMsgNames(intptr_t cmd) {
+static const char* SIN_ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);

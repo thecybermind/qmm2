@@ -16,7 +16,7 @@ Created By:
 // cache some dynamic message values that get evaluated a lot
 intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_SHUTDOWN;
 
-// externs for each game's functions/structs
+// externs for each game's support objects
 GEN_GAME_EXTS(COD11MP);
 GEN_GAME_EXTS(CODMP);
 GEN_GAME_EXTS(CODUOMP);
@@ -41,12 +41,11 @@ GEN_GAME_EXTS(SOF2SP);
 GEN_GAME_EXTS(STEF2);
 GEN_GAME_EXTS(STVOYSP);
 
-// add your game's info data here
-std::vector<api_supportedgame> api_supportedgames = {
-    // mod filename		    	qvm mod filename	default moddir	full gamename									short name/funcs	#syscall#vmmain
+std::vector<GameSupport*> api_supportedgames = {
+	Q3A_gamesupport,
+};
 
-    // vmMain games
-	{ "qagame" MOD_DLL,			"vm/qagame.qvm",	"baseq3",		"Quake 3 Arena",								GEN_GAME_INFO(Q3A),		13,		4 },
+#if 0
 	{ "qagame" SP_DLL X64_DLL,	nullptr,			".",			"Return to Castle Wolfenstein (SP)",			GEN_GAME_INFO(RTCWSP),	13,		5 },
 	{ "jk2mpgame" MOD_DLL,		"vm/jk2mpgame.qvm",	"base",			"Jedi Knight 2: Jedi Outcast (MP)",				GEN_GAME_INFO(JK2MP),	13,		3 },
 	{ "jampgame" MOD_DLL,		nullptr,			"base",			"Jedi Knight: Jedi Academy (MP)",				GEN_GAME_INFO(JAMP),		13,		6 },
@@ -84,6 +83,7 @@ std::vector<api_supportedgame> api_supportedgames = {
 #endif
 };
 
+#endif
 
 const char* APIType_Name(APIType api) {
 	switch (api) {

@@ -55,7 +55,7 @@ static intptr_t STVOYHM_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_syscall({} {}) called\n", STVOYHM_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_syscall({} {}) called\n", STVOYHM_EngMsgName(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -88,7 +88,7 @@ static intptr_t STVOYHM_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_syscall({} {}) returning {}\n", STVOYHM_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_syscall({} {}) returning {}\n", STVOYHM_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -101,7 +101,7 @@ static intptr_t STVOYHM_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_vmMain({} {}) called\n", STVOYHM_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_vmMain({} {}) called\n", STVOYHM_ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -120,7 +120,7 @@ static intptr_t STVOYHM_vmMain(intptr_t cmd, ...) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_vmMain({} {}) returning {}\n", STVOYHM_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_vmMain({} {}) returning {}\n", STVOYHM_ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -160,7 +160,7 @@ static void STVOYHM_ModUnload() {
 }
 
 
-static const char* STVOYHM_EngMsgNames(intptr_t cmd) {
+static const char* STVOYHM_EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -360,7 +360,7 @@ static const char* STVOYHM_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* STVOYHM_ModMsgNames(intptr_t cmd) {
+static const char* STVOYHM_ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
@@ -388,7 +388,7 @@ static const char* STVOYHM_ModMsgNames(intptr_t cmd) {
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
 static int STVOYHM_QVMSyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYHM_QVMSyscall({} {}) called\n", STVOYHM_EngMsgNames(cmd), cmd);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYHM_QVMSyscall({} {}) called\n", STVOYHM_EngMsgName(cmd), cmd);
 #endif
 
     int ret = 0;
@@ -653,7 +653,7 @@ static int STVOYHM_QVMSyscall(uint8_t* membase, int cmd, int* args) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYHM_QVMSyscall({} {}) returning {}\n", STVOYHM_EngMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYHM_QVMSyscall({} {}) returning {}\n", STVOYHM_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;

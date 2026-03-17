@@ -433,7 +433,7 @@ static intptr_t JAMP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_syscall({} {}) called\n", JAMP_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_syscall({} {}) called\n", JAMP_EngMsgName(cmd), cmd);
 #endif
 
     // store return value since we do some stuff after the function call is over
@@ -805,7 +805,7 @@ static intptr_t JAMP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_syscall({} {}) returning {}\n", JAMP_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_syscall({} {}) returning {}\n", JAMP_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -818,7 +818,7 @@ static intptr_t JAMP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_vmMain({} {}) called\n", JAMP_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_vmMain({} {}) called\n", JAMP_ModMsgName(cmd), cmd);
 #endif
 
     // store return value since we do some stuff after the function call is over
@@ -879,7 +879,7 @@ static intptr_t JAMP_vmMain(intptr_t cmd, ...) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_vmMain({} {}) returning {}\n", JAMP_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_vmMain({} {}) returning {}\n", JAMP_ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -955,7 +955,7 @@ static void JAMP_ModUnload() {
 }
 
 
-static const char* JAMP_EngMsgNames(intptr_t cmd) {
+static const char* JAMP_EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -1296,7 +1296,7 @@ static const char* JAMP_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* JAMP_ModMsgNames(intptr_t cmd) {
+static const char* JAMP_ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

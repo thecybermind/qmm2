@@ -63,7 +63,7 @@ static intptr_t CODMP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_syscall({} {}) called\n", CODMP_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_syscall({} {}) called\n", CODMP_EngMsgName(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -96,7 +96,7 @@ static intptr_t CODMP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_syscall({} {}) returning {}\n", CODMP_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_syscall({} {}) returning {}\n", CODMP_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -109,7 +109,7 @@ static intptr_t CODMP_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_vmMain({} {}) called\n", CODMP_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_vmMain({} {}) called\n", CODMP_ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -122,7 +122,7 @@ static intptr_t CODMP_vmMain(intptr_t cmd, ...) {
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_vmMain({} {}) returning {}\n", CODMP_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODMP_vmMain({} {}) returning {}\n", CODMP_ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -162,7 +162,7 @@ static void CODMP_ModUnload() {
 }
 
 
-static const char* CODMP_EngMsgNames(intptr_t cmd) {
+static const char* CODMP_EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_ERROR);
@@ -314,7 +314,7 @@ static const char* CODMP_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* CODMP_ModMsgNames(intptr_t cmd) {
+static const char* CODMP_ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_DEFAULT_0);
         GEN_CASE(GAME_GET_APIVERSION);

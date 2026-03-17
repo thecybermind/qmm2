@@ -333,7 +333,7 @@ static intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_syscall({} {}) called\n", MOHAA_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_syscall({} {}) called\n", MOHAA_EngMsgName(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -660,7 +660,7 @@ static intptr_t MOHAA_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_syscall({} {}) returning {}\n", MOHAA_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_syscall({} {}) returning {}\n", MOHAA_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -673,7 +673,7 @@ static intptr_t MOHAA_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_vmMain({} {}) called\n", MOHAA_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_vmMain({} {}) called\n", MOHAA_ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -735,7 +735,7 @@ static intptr_t MOHAA_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_vmMain({} {}) returning {}\n", MOHAA_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHAA_vmMain({} {}) returning {}\n", MOHAA_ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -788,7 +788,7 @@ static void MOHAA_ModUnload() {
 }
 
 
-static const char* MOHAA_EngMsgNames(intptr_t cmd) {
+static const char* MOHAA_EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -970,7 +970,7 @@ static const char* MOHAA_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* MOHAA_ModMsgNames(intptr_t cmd) {
+static const char* MOHAA_ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);

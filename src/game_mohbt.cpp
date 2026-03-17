@@ -341,7 +341,7 @@ static intptr_t MOHBT_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_syscall({} {}) called\n", MOHBT_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_syscall({} {}) called\n", MOHBT_EngMsgName(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -699,7 +699,7 @@ static intptr_t MOHBT_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_syscall({} {}) returning {}\n", MOHBT_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_syscall({} {}) returning {}\n", MOHBT_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -712,7 +712,7 @@ static intptr_t MOHBT_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_vmMain({} {}) called\n", MOHBT_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_vmMain({} {}) called\n", MOHBT_ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -774,7 +774,7 @@ static intptr_t MOHBT_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_vmMain({} {}) returning {}\n", MOHBT_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_vmMain({} {}) returning {}\n", MOHBT_ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -827,7 +827,7 @@ static void MOHBT_ModUnload() {
 }
 
 
-static const char* MOHBT_EngMsgNames(intptr_t cmd) {
+static const char* MOHBT_EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -1016,7 +1016,7 @@ static const char* MOHBT_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* MOHBT_ModMsgNames(intptr_t cmd) {
+static const char* MOHBT_ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);

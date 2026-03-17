@@ -226,7 +226,7 @@ static intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_syscall({} {}) called\n", QUAKE2_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_syscall({} {}) called\n", QUAKE2_EngMsgName(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -455,7 +455,7 @@ static intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_syscall({} {}) returning {}\n", QUAKE2_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_syscall({} {}) returning {}\n", QUAKE2_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -468,7 +468,7 @@ static intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) called\n", QUAKE2_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) called\n", QUAKE2_ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -509,7 +509,7 @@ static intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
     s_update_export();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) returning {}\n", QUAKE2_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) returning {}\n", QUAKE2_ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -558,7 +558,7 @@ static void QUAKE2_ModUnload() {
 }
 
 
-static const char* QUAKE2_EngMsgNames(intptr_t cmd) {
+static const char* QUAKE2_EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_BPRINTF);
         GEN_CASE(G_DPRINTF);
@@ -629,7 +629,7 @@ static const char* QUAKE2_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* QUAKE2_ModMsgNames(intptr_t cmd) {
+static const char* QUAKE2_ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);

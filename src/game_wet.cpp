@@ -54,7 +54,7 @@ static intptr_t WET_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_syscall({} {}) called\n", WET_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_syscall({} {}) called\n", WET_EngMsgName(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -87,7 +87,7 @@ static intptr_t WET_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_syscall({} {}) returning {}\n", WET_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_syscall({} {}) returning {}\n", WET_EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -100,7 +100,7 @@ static intptr_t WET_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) called\n", WET_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) called\n", WET_ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -113,7 +113,7 @@ static intptr_t WET_vmMain(intptr_t cmd, ...) {
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) returning {}\n", WET_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_vmMain({} {}) returning {}\n", WET_ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -153,7 +153,7 @@ static void WET_ModUnload() {
 }
 
 
-static const char* WET_EngMsgNames(intptr_t cmd) {
+static const char* WET_EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -384,7 +384,7 @@ static const char* WET_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* WET_ModMsgNames(intptr_t cmd) {
+static const char* WET_ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

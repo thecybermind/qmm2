@@ -84,8 +84,8 @@ struct api_supportedgame;
 struct api_supportedgame_funcs {
     int* qmm_eng_msgs;							// array of engine messages used by QMM
     int* qmm_mod_msgs;							// array of mod messages used by QMM
-    const char* (*pfnEngMsgNames)(intptr_t);	// pointer to a function that returns a string for a given engine message
-    const char* (*pfnModMsgNames)(intptr_t);	// pointer to a function that returns a string for a given mod message
+    const char* (*pfnEngMsgName)(intptr_t);	// pointer to a function that returns a string for a given engine message
+    const char* (*pfnModMsgName)(intptr_t);	// pointer to a function that returns a string for a given mod message
 
     bool(*pfnAutoDetect)(api_supportedgame*, APIType);	// pointer to a function that handles auto-detection logic for a game. return true to say "that's me!"
     void*(*pfnEntry)(void*, void*, APIType);	// pointer to a function that handles entry point logic for a game. return value is passed back to engine
@@ -95,75 +95,41 @@ struct api_supportedgame_funcs {
     qvm_syscall pfnQVMSyscall;					// pointer to a function that handles mod->engine calls from a QVM (NULL = not supported)	
 };
 
+struct GameSupport {
+    virtual int QMMEngMsg(int) = 0;
+    virtual int QMMModMsg(int) = 0;
+    virtual const char* EngMsgName(intptr_t) = 0;
+    virtual const char* ModMsgName(intptr_t) = 0;
+    virtual bool AutoDetect(APIType) = 0;
+    virtual void* Entry(void*, void*, APIType) = 0;
+    virtual bool ModLoad(void*, APIType) = 0;
+    virtual void ModUnload() = 0;
 
-// some information for each game engine supported by QMM
-struct api_supportedgame {
-    const char* dllname;			// default dll mod filename
-    const char* qvmname;			// default qvm mod filename (NULL = not supported)
-    const char* moddir;				// default moddir name
-    const char* gamename_long;		// long, descriptive, game name
+    virtual intptr_t syscall(intptr_t, ...) = 0;
+    virtual intptr_t vmMain(intptr_t, ...) = 0;
 
-    // this section is made by GEN_GAME_INFO(GAME)
-    const char* gamename_short;		// short initials for game
-    api_supportedgame_funcs* funcs;	// function pointers for this game
+    virtual const char* DefaultDLLName() = 0;
+    virtual const char* DefaultQVMName() { return nullptr; }
+    virtual const char* DefaultModDir() = 0;
+    virtual const char* GameName() = 0;
+    virtual const char* GameCode() = 0;
 
-    int max_syscall_args;			// max number of syscall args that this game needs (unused for now, but nice to have easily available)
-    int max_vmmain_args;			// max number of vmmain args that this game needs (unused for now, but nice to have easily available)
+    virtual int QVMSyscall(uint8_t*, int, int*) { return 0; }
 };
 
-extern std::vector<api_supportedgame> api_supportedgames;
+extern std::vector<GameSupport*> api_supportedgames;
 
 // macros to make game support a bit easier to do
 
-// generate extern for each game's functions (used at the top of game_api.cpp)
-#define GEN_GAME_EXTS(game)	extern api_supportedgame_funcs game##_funcs;
+// generate extern for each game's support object (used at the top of game_api.cpp)
+#define GEN_GAME_EXTS(game)	extern GameSupport* game##_gamesupport
 
-// generate extern for each game's shortcode and funcs struct (used in supportedgames entry in game_api.cpp)
-#define GEN_GAME_INFO(game)  #game , &game##_funcs
-
-// generate struct info for the game-specific functions and arrays (used in game_XYZ.cpp)
-
-// game with QVM support
-#define GEN_GAME_FUNCS_QVM(game) \
-static const char* game##_EngMsgNames(intptr_t); \
-static const char* game##_ModMsgNames(intptr_t); \
-static bool game##_AutoDetect(api_supportedgame*, APIType); \
-static void* game##_Entry(void*, void*, APIType); \
-static bool game##_ModLoad(void*, APIType); \
-static void game##_ModUnload(); \
-static intptr_t game##_syscall(intptr_t cmd, ...); \
-static intptr_t game##_vmMain(intptr_t cmd, ...); \
-static int game##_QVMSyscall(uint8_t*, int, int*); \
-api_supportedgame_funcs game##_funcs = { \
-	game##_qmm_eng_msgs, game##_qmm_mod_msgs, \
-	game##_EngMsgNames, game##_ModMsgNames, \
-	game##_AutoDetect, game##_Entry, \
-	game##_ModLoad, game##_ModUnload, \
-	game##_QVMSyscall, \
-}
-
-// game with no QVM support
-#define GEN_GAME_FUNCS(game) \
-static const char* game##_EngMsgNames(intptr_t); \
-static const char* game##_ModMsgNames(intptr_t); \
-static bool game##_AutoDetect(api_supportedgame*, APIType); \
-static void* game##_Entry(void*, void*, APIType); \
-static bool game##_ModLoad(void*, APIType); \
-static void game##_ModUnload(); \
-static intptr_t game##_syscall(intptr_t cmd, ...); \
-static intptr_t game##_vmMain(intptr_t cmd, ...); \
-api_supportedgame_funcs game##_funcs = { \
-	game##_qmm_eng_msgs, game##_qmm_mod_msgs, \
-	game##_EngMsgNames, game##_ModMsgNames, \
-	game##_AutoDetect, game##_Entry, \
-	game##_ModLoad, game##_ModUnload, \
-	nullptr, \
-}
+#define GEN_GAME_OBJ(game) static game##_GameSupport gamesupport; GameSupport* game##_gamesupport = &gamesupport
 
 // generate a case/string line for use in the *MsgNames functions
 #define GEN_CASE(x)		case x: return #x
 
-// a list of all the engine messages/constants used by QMM. if you change this, update the GEN_GAME_QMM_MSGS macro
+// a list of all the engine messages/constants used by QMM. if you change this, update the GEN_GAME_QMM_*_MSGS macros
 enum {
     // general purpose
     QMM_G_PRINT, QMM_G_ERROR, QMM_G_ARGV, QMM_G_ARGC, QMM_G_SEND_CONSOLE_COMMAND, QMM_G_GET_CONFIGSTRING,
@@ -171,19 +137,26 @@ enum {
     QMM_G_CVAR_REGISTER, QMM_G_CVAR_VARIABLE_STRING_BUFFER, QMM_G_CVAR_VARIABLE_INTEGER_VALUE, QMM_CVAR_SERVERINFO, QMM_CVAR_ROM,
     // files
     QMM_G_FS_FOPEN_FILE, QMM_G_FS_READ, QMM_G_FS_WRITE, QMM_G_FS_FCLOSE_FILE, QMM_EXEC_APPEND, QMM_FS_READ,
+
+    QMM_ENGINE_MSG_COUNT,
 };
 
 // a list of all the mod messages used by QMM. if you change this, update the GEN_GAME_QMM_MSGS macro
-enum { QMM_GAME_INIT, QMM_GAME_SHUTDOWN, QMM_GAME_CONSOLE_COMMAND, };
+enum {
+    QMM_GAME_INIT, QMM_GAME_SHUTDOWN, QMM_GAME_CONSOLE_COMMAND,
 
-// macro to easily output game-specific message values to match the enums above. this macro goes in game_*.cpp
-#define GEN_GAME_QMM_MSGS(game) \
-	static int game##_qmm_eng_msgs[] = { \
+    QMM_MOD_MSG_COUNT,
+};
+
+// macros to easily output game-specific message values to match the enums above
+#define GEN_GAME_QMM_ENG_MSGS() \
+	const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = { \
 		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING, \
 		G_CVAR_REGISTER, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, \
 		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, \
-	}; \
-	static int game##_qmm_mod_msgs[] = { \
+	}
+#define GEN_GAME_QMM_MOD_MSGS() \
+	const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = { \
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
 	}
 

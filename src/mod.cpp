@@ -41,7 +41,7 @@ bool mod_load(qmm_mod& mod, std::string file) {
     std::string ext = path_baseext(file);
 
     // only allow qvm mods if the game engine supports it
-    if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->funcs->pfnQVMSyscall) {
+    if (str_striequal(ext, EXT_QVM) && g_gameinfo.game->DefaultQVMName()) {
         return s_mod_load_qvm(mod);
     }
     // if DLL
@@ -83,7 +83,7 @@ fail:
 
 void mod_unload(qmm_mod& mod) {
     // call the game-specific mod unload callback
-    g_gameinfo.game->funcs->pfnModUnload();
+    g_gameinfo.game->ModUnload();
     qvm_unload(&mod.vm);
     if (mod.dll)
         dll_close(mod.dll);
@@ -97,8 +97,8 @@ static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
     if (!g_mod.vm.memory) {
         if (!g_gameinfo.is_shutdown) {
             g_gameinfo.is_shutdown = true;
-            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded during previous execution due to a run-time error\n", g_gameinfo.game->funcs->pfnModMsgNames(cmd));
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\nFatal QMM Error:\nThe QVM was unloaded during previous execution due to a run-time error.\n");
+            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_vmmain({}): QVM unloaded during previous execution due to a run-time error\n", g_gameinfo.game->ModMsgName(cmd));
+            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ERROR), "\nFatal QMM Error:\nThe QVM was unloaded during previous execution due to a run-time error.\n");
         }
         return 0;
     }
@@ -118,16 +118,6 @@ static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
 
 // handle syscalls from the QVM. passed to qvm_load
 static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
-    // if no game-specific qvm handler, we need to error
-    if (!g_gameinfo.game->funcs->pfnQVMSyscall) {
-        if (!g_gameinfo.is_shutdown) {
-            g_gameinfo.is_shutdown = true;
-            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("s_mod_qvm_syscall({}): No QVM syscall handler found\n", g_gameinfo.game->funcs->pfnEngMsgNames(cmd));
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ERROR], "\nFatal QMM Error:\nNo QVM syscall handler found.\n");
-        }
-        return 0;
-    }
-
     // check for plugin qvm function registration
     if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
         qmm_plugin* p = g_registered_qvm_funcs[cmd];
@@ -141,7 +131,7 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
     }
 
     // call the game-specific QVM syscall handler
-    return g_gameinfo.game->funcs->pfnQVMSyscall(membase, cmd, args);
+    return g_gameinfo.game->QVMSyscall(membase, cmd, args);
 }
 
 
@@ -154,17 +144,17 @@ static bool s_mod_load_qvm(qmm_mod& mod) {
     bool loaded;
 
     // load file using engine functions to read into pk3s if necessary
-    filelen = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FOPEN_FILE], mod.path.c_str(), &fpk3, QMM_ENG_MSG[QMM_FS_READ]);
+    filelen = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FOPEN_FILE), mod.path.c_str(), &fpk3, QMM_ENG_MSG(QMM_FS_READ));
     if (filelen <= 0 || !fpk3) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Could not open QVM for reading\n", mod.path);
         if (fpk3)
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
+            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), fpk3);
         goto fail;
     }
     filemem.resize((size_t)filelen);
 
-    ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_READ], filemem.data(), filelen, fpk3);
-    ENG_SYSCALL(QMM_ENG_MSG[QMM_G_FS_FCLOSE_FILE], fpk3);
+    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_READ), filemem.data(), filelen, fpk3);
+    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), fpk3);
 
     // get data verification setting from config
     verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
@@ -179,7 +169,7 @@ static bool s_mod_load_qvm(qmm_mod& mod) {
     mod.vmbase = (intptr_t)mod.vm.datasegment;
 
     // pass the qvm vmMain function pointer to the game-specific mod load handler
-    if (!g_gameinfo.game->funcs->pfnModLoad((void*)s_mod_qvm_vmmain, QMM_API_QVM))
+    if (!g_gameinfo.game->ModLoad((void*)s_mod_qvm_vmmain, QMM_API_QVM))
     {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("mod_load(\"{}\"): Mod load failed?\n", mod.path);
         goto fail;
@@ -208,7 +198,7 @@ static bool s_mod_load_dll(qmm_mod& mod, APIType api) {
             return false;
 
         // if mod load handler says good to go, we do too
-        if (g_gameinfo.game->funcs->pfnModLoad((void*)pfnGGA, api)) {
+        if (g_gameinfo.game->ModLoad((void*)pfnGGA, api)) {
             mod.api = api;
             return true;
         }
@@ -222,7 +212,7 @@ static bool s_mod_load_dll(qmm_mod& mod, APIType api) {
             return false;
 
         // pass vmMain to game-specific mod load handler
-        if (g_gameinfo.game->funcs->pfnModLoad((void*)pfnvmMain, api)) {
+        if (g_gameinfo.game->ModLoad((void*)pfnvmMain, api)) {
             // pass qmm_syscall to mod's dllEntry function
             pfndllEntry(qmm_syscall);
             mod.api = api;
