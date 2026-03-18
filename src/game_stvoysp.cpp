@@ -479,7 +479,7 @@ void STVOYSP_GameSupport::Init(const char* mapname, const char* spawntarget, int
         token_counter = 0;
     }
     cgame.is_from_QMM = true;
-    ::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
+    (void)::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
 }
 
 

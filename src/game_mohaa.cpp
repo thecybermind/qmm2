@@ -996,14 +996,14 @@ void MOHAA_GameSupport::SpawnEntities(char* entstring, int levelTime) {
         token_counter = 0;
     }
     cgame.is_from_QMM = true;
-    ::vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
+    (void)::vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
 }
 
 
 // at least one of first four args is a float (see big comment regarding sound in game_q2r.cpp), so use specific types
 void MOHAA_GameSupport::DebugCircle(float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6) {
     cgame.is_from_QMM = true;
-    ::vmMain(GAME_DEBUG_CIRCLE, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+    (void)::vmMain(GAME_DEBUG_CIRCLE, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 

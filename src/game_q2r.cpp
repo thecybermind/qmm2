@@ -758,7 +758,7 @@ void Q2R_GameSupport::ClientUserinfoChanged(edict_t* ent, const char* userinfo) 
             userinfos[clientnum] = userinfo;
     }
     cgame.is_from_QMM = true;
-    ::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
+    (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
 
@@ -770,7 +770,7 @@ void Q2R_GameSupport::SpawnEntities(const char* mapname, const char* entstring, 
         token_counter = 0;
     }
     cgame.is_from_QMM = true;
-    ::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
+    (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 
 

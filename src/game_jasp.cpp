@@ -771,7 +771,7 @@ void JASP_GameSupport::Init(const char* mapname, const char* spawntarget, int ch
         token_counter[-1] = 0;
     }
     cgame.is_from_QMM = true;
-    ::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
+    (void)::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
 }
 
 

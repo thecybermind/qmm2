@@ -662,7 +662,7 @@ void JK2SP_GameSupport::Init(const char* mapname, const char* spawntarget, int c
         token_counter = 0;
     }
     cgame.is_from_QMM = true;
-    ::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
+    (void)::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
 }
 
 

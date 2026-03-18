@@ -17,7 +17,6 @@ Created By:
 #include <cstdarg>
 #include <vector>
 #include "qmmapi.h"
-#include "qvm.h"
 
 
 // mod suffixes and extensions

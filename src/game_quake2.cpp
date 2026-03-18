@@ -649,7 +649,7 @@ void QUAKE2_GameSupport::ClientUserinfoChanged(edict_t* ent, char* userinfo) {
             userinfos[clientnum] = userinfo;
     }
     cgame.is_from_QMM = true;
-    ::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
+    (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
 
@@ -662,7 +662,7 @@ void QUAKE2_GameSupport::SpawnEntities(char* mapname, char* entstring, char* spa
         token_counter = 0;
     }
     cgame.is_from_QMM = true;
-    ::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
+    (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 
 
