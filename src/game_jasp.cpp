@@ -40,11 +40,10 @@ struct JASP_GameSupport : public GameSupport {
     virtual const char* GameCode() { return "JASP"; }
 
 private:
+    // update the export variables from orig_export
     static void update_exports();
 
     // track entstrings for our G_GET_ENTITY_TOKEN syscall
-    // TODO find a way to make this more elegant instead of statics 
-// track entstrings for our G_GET_ENTITY_TOKEN syscall
     static std::map<intptr_t, std::vector<std::string>> subbsp_entity_tokens;  // -1 = main map entities
     static std::map<intptr_t, size_t> token_counter;
     static intptr_t active_subbsp;
@@ -590,7 +589,6 @@ const char* JASP_GameSupport::ModMsgName(intptr_t cmd) {
 }
 
 
-// update the export variables from orig_export
 void JASP_GameSupport::update_exports() {
     if (!orig_export)
         return;

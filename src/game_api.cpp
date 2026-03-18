@@ -88,7 +88,6 @@ std::vector<GameSupport*> api_supportedgames = {
 // the rest of the games don't appear to have an official 64-bit version or source port
 #if defined(QMM_ARCH_32)
 	{ "game" MOD_DLL,			nullptr,	"base",			"Star Trek: Elite Force II",		GEN_GAME_INFO(STEF2),	17,		4 },
-	{ "game" MOD_DLL,			nullptr,	".",			"Soldier of Fortune 2: Double Helix (SP)",	GEN_GAME_INFO(SOF2SP),	0,		0 },
 	{ "efgame" MOD_DLL,			nullptr,	".",			"Star Trek Voyager: Elite Force (SP)",	GEN_GAME_INFO(STVOYSP),	13,		9 },
 #endif
 

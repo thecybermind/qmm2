@@ -39,10 +39,10 @@ struct JK2SP_GameSupport : public GameSupport {
     virtual const char* GameCode() { return "JK2SP"; }
 
 private:
+    // update the export variables from orig_export
     static void update_exports();
 
     // track entstrings for our G_GET_ENTITY_TOKEN syscall
-    // TODO find a way to make this more elegant instead of statics 
     static std::vector<std::string> entity_tokens;
     static size_t token_counter;
     static void Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition);
@@ -512,7 +512,6 @@ const char* JK2SP_GameSupport::ModMsgName(intptr_t cmd) {
 }
 
 
-// update the export variables from orig_export
 void JK2SP_GameSupport::update_exports() {
     if (!orig_export)
         return;

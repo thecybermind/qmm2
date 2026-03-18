@@ -28,17 +28,56 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_GAME_QMM_MSGS(STEF2);
+struct STEF2_GameSupport : public GameSupport {
+    virtual const char* EngMsgName(intptr_t msg);
+    virtual const char* ModMsgName(intptr_t msg);
+    virtual bool AutoDetect(APIType engine_api);
+    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual bool ModLoad(void* entry, APIType mod_api);
+    virtual void ModUnload();
 
-GEN_GAME_FUNCS(STEF2);
+    virtual intptr_t syscall(intptr_t, ...);
+    virtual intptr_t vmMain(intptr_t, ...);
+
+    virtual const char* DefaultDLLName() { return "game" MOD_DLL; }
+    virtual const char* DefaultModDir() { return "BASE"; }
+    virtual const char* GameName() { return "Star Trek: Elite Force II"; }
+    virtual const char* GameCode() { return "STEF2"; }
+
+private:
+    // update the export variables from orig_export
+    static void update_exports();
+
+    // track entstrings for our G_GET_ENTITY_TOKEN syscall
+    static std::vector<std::string> entity_tokens;
+    static size_t token_counter;
+    static void SpawnEntities(const char* mapname, const char* entstring, int levelTime);
+
+    // a copy of the original import struct that comes from the game engine
+    static game_import_t orig_import;
+
+    // a copy of the original export struct pointer that comes from the mod
+    static game_export_t* orig_export;
+
+    // struct with lambdas that call QMM's syscall function. this is given to the mod
+    static game_import_t qmm_import;
+
+    // struct with lambdas that call QMM's vmMain function. this is given to the game engine
+    static game_export_t qmm_export;
+
+    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
+};
+
+GEN_GAME_OBJ(STEF2);
 
 
 // auto-detection logic for STEF2
-static bool STEF2_AutoDetect(APIType engineapi) {
+bool STEF2_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "ef"))
@@ -48,454 +87,14 @@ static bool STEF2_AutoDetect(APIType engineapi) {
 }
 
 
-// a copy of the original import struct that comes from the game engine
-static game_import_t orig_import;
-
-// a copy of the original export struct pointer that comes from the mod
-static game_export_t* orig_export = nullptr;
-
-// struct with lambdas that call QMM's syscall function. this is given to the mod
-static game_import_t qmm_import = {
-    GEN_IMPORT(Printf, G_PRINTF),
-    GEN_IMPORT(DPrintf, G_DPRINTF),
-    GEN_IMPORT(WPrintf, G_WPRINTF),
-    GEN_IMPORT(WDPrintf, G_WDPRINTF),
-    GEN_IMPORT(DebugPrintf, G_DEBUGPRINTF),
-    GEN_IMPORT(LocalizeFilePath, G_LOCALIZEFILEPATH),
-    GEN_IMPORT(Error, G_ERROR),
-    GEN_IMPORT(Milliseconds, G_MILLISECONDS),
-    GEN_IMPORT(Malloc, G_MALLOC),
-    GEN_IMPORT(Free, G_FREE),
-    GEN_IMPORT(cvar, G_CVAR),
-    GEN_IMPORT(cvar_get, G_CVAR_GET),
-    GEN_IMPORT(cvar_set, G_CVAR_SET),
-    GEN_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER),
-    GEN_IMPORT(Cvar_Register, G_CVAR_REGISTER),
-    GEN_IMPORT(Cvar_VariableValue, G_CVAR_VARIABLEVALUE),
-    GEN_IMPORT(Cvar_Update, G_CVAR_UPDATE),
-    GEN_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE),
-    GEN_IMPORT(argc, G_ARGC),
-    GEN_IMPORT(argv, G_ARGV),
-    GEN_IMPORT(args, G_ARGS),
-    GEN_IMPORT(AddCommand, G_ADDCOMMAND),
-    GEN_IMPORT(FS_ReadFile, G_FS_READFILE),
-    GEN_IMPORT(FS_Exists, G_FS_EXISTS),
-    GEN_IMPORT(FS_FreeFile, G_FS_FREEFILE),
-    GEN_IMPORT(FS_WriteFile, G_FS_WRITEFILE),
-    GEN_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE),
-    GEN_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND),
-    GEN_IMPORT(FS_ListFiles, G_FS_LISTFILES),
-    GEN_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE),
-    GEN_IMPORT(FS_Write, G_FS_WRITE),
-    GEN_IMPORT(FS_Read, G_FS_READ),
-    GEN_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE),
-    GEN_IMPORT(FS_FTell, G_FS_FTELL),
-    GEN_IMPORT(FS_FSeek, G_FS_FSEEK),
-    GEN_IMPORT(FS_Flush, G_FS_FLUSH),
-    GEN_IMPORT(FS_DeleteFile, G_FS_DELETEFILE),
-    GEN_IMPORT(FS_GetFileList, G_FS_GETFILELIST),
-    GEN_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME),
-    GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
-    GEN_IMPORT_2(DebugGraph, G_DEBUGGRAPH, void, float, int),
-    GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
-    GEN_IMPORT(GetNumFreeReliableServerCommands, G_GETNUMFREERELIABLESERVERCOMMANDS),
-    GEN_IMPORT(setConfigstring, G_SET_CONFIGSTRING),
-    GEN_IMPORT(getConfigstring, G_GET_CONFIGSTRING),
-    GEN_IMPORT(setUserinfo, G_SET_USERINFO),
-    GEN_IMPORT(getUserinfo, G_GET_USERINFO),
-    GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
-    GEN_IMPORT(trace, G_TRACE),
-    GEN_IMPORT(fulltrace, G_FULLTRACE),
-    GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
-    GEN_IMPORT(pointbrushnum, G_POINTBRUSHNUM),
-    GEN_IMPORT(inPVS, G_IN_PVS),
-    GEN_IMPORT(inPVSIgnorePortals, G_IN_PVS_IGNOREPORTALS),
-    GEN_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE),
-    GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
-    GEN_IMPORT(GetLightingGroup, G_GETLIGHTINGGROUP),
-    GEN_IMPORT_2(SetDynamicLight, G_SETDYNAMICLIGHT, void, int, float),
-    GEN_IMPORT_2(SetDynamicLightDefault, G_SETDYNAMICLIGHTDEFAULT, void, int, float),
-    GEN_IMPORT(SetWindDirection, G_SETWINDDIRECTION),
-    GEN_IMPORT_1(SetWindIntensity, G_SETWINDINTENSITY, void, float),
-    GEN_IMPORT(SetWeatherInfo, G_SETWEATHERINFO),
-    GEN_IMPORT_1(SetTimeScale, G_SETTIMESCALE, void, float),
-    GEN_IMPORT(linkentity, G_LINKENTITY),
-    GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
-    GEN_IMPORT(AreaEntities, G_AREAENTITIES),
-    GEN_IMPORT(ClipToEntity, G_CLIPTOENTITY),
-    GEN_IMPORT(objectivenameindex, G_OBJECTIVENAMEINDEX),
-    GEN_IMPORT(archetypeindex, G_ARCHETYPEINDEX),
-    GEN_IMPORT(imageindex, G_IMAGEINDEX),
-    GEN_IMPORT(failedcondition, G_FAILEDCONDITION),
-    GEN_IMPORT(itemindex, G_ITEMINDEX),
-    GEN_IMPORT(soundindex, G_SOUNDINDEX),
-    GEN_IMPORT(modelindex, G_MODELINDEX),
-    GEN_IMPORT(SetLightStyle, G_SETLIGHTSTYLE),
-    GEN_IMPORT(GameDir, G_GAMEDIR),
-    GEN_IMPORT(IsModel, G_ISMODEL),
-    GEN_IMPORT(setmodel, G_SETMODEL),
-    GEN_IMPORT(setviewmodel, G_SETVIEWMODEL),
-    GEN_IMPORT(NumAnims, G_NUMANIMS),
-    GEN_IMPORT(NumSkins, G_NUMSKINS),
-    GEN_IMPORT(NumSurfaces, G_NUMSURFACES),
-    GEN_IMPORT(NumTags, G_NUMTAGS),
-    GEN_IMPORT(NumMorphs, G_NUMMORPHS),
-    GEN_IMPORT(InitCommands, G_INITCOMMANDS),
-    GEN_IMPORT_4(CalculateBounds, G_CALCULATEBOUNDS, void, int, float, vec3_t, vec3_t),
-    GEN_IMPORT(TIKI_CacheAnim, G_TIKI_CACHEANIM),
-    GEN_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM),
-    GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
-    GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
-    GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
-    GEN_IMPORT(Anim_Time, G_ANIM_TIME),
-    GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
-    GEN_IMPORT(Anim_AbsoluteDelta, G_ANIM_ABSOLUTEDELTA),
-    GEN_IMPORT(Anim_Flags, G_ANIM_FLAGS),
-    GEN_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS),
-    GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
-    GEN_IMPORT(Frame_Delta, G_FRAME_DELTA),
-    GEN_IMPORT(Frame_Time, G_FRAME_TIME),
-    GEN_IMPORT_6(Frame_Bounds, G_FRAME_BOUNDS, void, int, int, int, float, vec3_t, vec3_t),
-    GEN_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM),
-    GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
-    GEN_IMPORT(Surface_Flags, G_SURFACE_FLAGS),
-    GEN_IMPORT(Surface_NumSkins, G_SURFACE_NUMSKINS),
-    GEN_IMPORT(Morph_NumForName, G_MORPH_NUMFORNAME),
-    GEN_IMPORT(Morph_NameForNum, G_MORPH_NAMEFORNUM),
-    GEN_IMPORT(GetExpression, G_GETEXPRESSION),
-    GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
-    GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
-    GEN_IMPORT(Tag_Orientation, G_TAG_ORIENTATION),
-    GEN_IMPORT(Tag_OrientationEx, G_TAG_ORIENTATIONEX),	// todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
-    GEN_IMPORT(Bone_GetParentNum, G_BONE_GETPARENTNUM),
-    GEN_IMPORT(Alias_Add, G_ALIAS_ADD),
-    GEN_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM),
-    GEN_IMPORT(Alias_Find, G_ALIAS_FIND),
-    GEN_IMPORT(Alias_Dump, G_ALIAS_DUMP),
-    GEN_IMPORT(Alias_Clear, G_ALIAS_CLEAR),
-    GEN_IMPORT(Alias_FindDialog, G_ALIAS_FINDDIALOG),
-    GEN_IMPORT(Alias_FindSpecificAnim, G_ALIAS_FINDSPECIFICANIM),
-    GEN_IMPORT(Alias_CheckLoopAnim, G_ALIAS_CHECKLOOPANIM),
-    GEN_IMPORT(Alias_GetList, G_ALIAS_GETLIST),
-    GEN_IMPORT(Alias_UpdateDialog, G_ALIAS_UPDATEDIALOG),
-    GEN_IMPORT(Alias_AddActorDialog, G_ALIAS_ADDACTORDIALOG),
-    GEN_IMPORT(NameForNum, G_NAMEFORNUM),
-    GEN_IMPORT(GlobalAlias_Add, G_GLOBALALIAS_ADD),
-    GEN_IMPORT(GlobalAlias_FindRandom, G_GLOBALALIAS_FINDRANDOM),
-    GEN_IMPORT(GlobalAlias_Find, G_GLOBALALIAS_FIND),
-    GEN_IMPORT(GlobalAlias_Dump, G_GLOBALALIAS_DUMP),
-    GEN_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR),
-    GEN_IMPORT(isClientActive, G_ISCLIENTACTIVE),
-    GEN_IMPORT(centerprintf, G_CENTERPRINTF),
-    GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
-    GEN_IMPORT(Sound, G_SOUND),
-    GEN_IMPORT(StopSound, G_STOPSOUND),
-    GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
-    GEN_IMPORT(GetNextMorphTarget, G_GETNEXTMORPHTARGET),
-    GEN_IMPORT(CalcCRC, G_CALCCRC),
-    nullptr,	// DebugLines
-    nullptr,	// numDebugLines
-    GEN_IMPORT(LocateGameData, G_LOCATE_GAME_DATA),
-    GEN_IMPORT(SetFarPlane, G_SETFARPLANE),
-    GEN_IMPORT(TikiReload, G_TIKIRELOAD),
-    GEN_IMPORT(TikiLoadFromTS, G_TIKILOADFROMTS),
-    GEN_IMPORT(ToolServerGetData, G_TOOLSERVERGETDATA),
-    GEN_IMPORT(SetSkyPortal, G_SETSKYPORTAL),
-    GEN_IMPORT(WidgetPrintf, G_WIDGETPRINTF),
-    GEN_IMPORT(ProcessLoadingScreen, G_PROCESSLOADINGSCREEN),
-    GEN_IMPORT(MObjective_GetDescription, G_MOBJECTIVE_GETDESCRIPTION),
-    GEN_IMPORT(MObjective_SetDescription, G_MOBJECTIVE_SETDESCRIPTION),
-    GEN_IMPORT(MObjective_GetShowObjective, G_MOBJECTIVE_GETSHOWOBJECTIVE),
-    GEN_IMPORT(MObjective_SetShowObjective, G_MOBJECTIVE_SETSHOWOBJECTIVE),
-    GEN_IMPORT(MObjective_GetObjectiveComplete, G_MOBJECTIVE_GETOBJECTIVECOMPLETE),
-    GEN_IMPORT(MObjective_SetObjectiveComplete, G_MOBJECTIVE_SETOBJECTIVECOMPLETE),
-    GEN_IMPORT(MObjective_GetObjectiveFailed, G_MOBJECTIVE_GETOBJECTIVEFAILED),
-    GEN_IMPORT(MObjective_SetObjectiveFailed, G_MOBJECTIVE_SETOBJECTIVEFAILED),
-    GEN_IMPORT(MObjective_GetNameFromIndex, G_MOBJECTIVE_GETNAMEFROMINDEX),
-    GEN_IMPORT(MObjective_GetIndexFromName, G_MOBJECTIVE_GETINDEXFROMNAME),
-    GEN_IMPORT(MObjective_NewObjective, G_MOBJECTIVE_NEWOBJECTIVE),
-    GEN_IMPORT(MObjective_ClearObjectiveList, G_MOBJECTIVE_CLEAROBJECTIVELIST),
-    GEN_IMPORT(MObjective_ParseObjectiveFile, G_MOBJECTIVE_PARSEOBJECTIVEFILE),
-    GEN_IMPORT(MObjective_Update, G_MOBJECTIVE_UPDATE),
-    GEN_IMPORT(MObjective_GetNumObjectives, G_MOBJECTIVE_GETNUMOBJECTIVES),
-    GEN_IMPORT(MObjective_GetNumActiveObjectives, G_MOBJECTIVE_GETNUMACTIVEOBJECTIVES),
-    GEN_IMPORT(MObjective_GetNumCompleteObjectives, G_MOBJECTIVE_GETNUMCOMPLETEOBJECTIVES),
-    GEN_IMPORT(MObjective_GetNumFailedObjectives, G_MOBJECTIVE_GETNUMFAILEDOBJECTIVES),
-    GEN_IMPORT(MObjective_GetNumIncompleteObjectives, G_MOBJECTIVE_GETNUMINCOMPLETEOBJECTIVES),
-    GEN_IMPORT(MI_GetShader, G_MI_GETSHADER),
-    GEN_IMPORT(MI_SetShader, G_MI_SETSHADER),
-    GEN_IMPORT(MI_GetInformationData, G_MI_GETINFORMATIONDATA),
-    GEN_IMPORT(MI_SetInformationData, G_MI_SETINFORMATIONDATA),
-    GEN_IMPORT(MI_GetNameFromIndex, G_MI_GETNAMEFROMINDEX),
-    GEN_IMPORT(MI_GetIndexFromName, G_MI_GETINDEXFROMNAME),
-    GEN_IMPORT(MI_NewInformation, G_MI_NEWINFORMATION),
-    GEN_IMPORT(MI_ClearInformationList, G_MI_CLEARINFORMATIONLIST),
-    GEN_IMPORT(MI_SetShowInformation, G_MI_SETSHOWINFORMATION),
-    GEN_IMPORT(MI_GetShowInformation, G_MI_GETSHOWINFORMATION),
-    GEN_IMPORT(SR_InitializeStringResource, G_SR_INITIALIZESTRINGRESOURCE),
-    GEN_IMPORT(SR_UninitializeStringResource, G_SR_UNINITIALIZESTRINGRESOURCE),
-    GEN_IMPORT(SR_LoadLevelStrings, G_SR_LOADLEVELSTRINGS),
-    GEN_IMPORT(GetViewModeMask, G_GETVIEWMODEMASK),
-    GEN_IMPORT(GetViewModeClassMask, G_GETVIEWMODECLASSMASK),
-    GEN_IMPORT(GetViewModeSendInMode, G_GETVIEWMODESENDINMODE),
-    GEN_IMPORT(GetViewModeSendNotInMode, G_GETVIEWMODESENDNOTINMODE),
-    GEN_IMPORT(GetViewModeScreenBlend, G_GETVIEWMODESCREENBLEND),
-    GEN_IMPORT(GetLevelDefs, G_GETLEVELDEFS),
-    GEN_IMPORT(areSublevels, G_ARESUBLEVELS),
-    GEN_IMPORT(SurfaceTypeToName, G_SURFACETYPETONAME),
-    GEN_IMPORT(AAS_EntityInfo, G_AAS_ENTITYINFO),
-    GEN_IMPORT(AAS_Initialized, G_AAS_INITIALIZED),
-    GEN_IMPORT(AAS_PresenceTypeBoundingBox, G_AAS_PRESENCETYPEBOUNDINGBOX),
-    GEN_IMPORT(AAS_Time, G_AAS_TIME),
-    GEN_IMPORT(AAS_PointAreaNum, G_AAS_POINTAREANUM),
-    GEN_IMPORT(AAS_PointReachabilityAreaIndex, G_AAS_POINTREACHABILITYAREAINDEX),
-    GEN_IMPORT(AAS_TraceAreas, G_AAS_TRACEAREAS),
-    GEN_IMPORT(AAS_BBoxAreas, G_AAS_BBOXAREAS),
-    GEN_IMPORT(AAS_AreaInfo, G_AAS_AREAINFO),
-    GEN_IMPORT(AAS_PointContents, G_AAS_POINTCONTENTS),
-    GEN_IMPORT(AAS_NextBSPEntity, G_AAS_NEXTBSPENTITY),
-    GEN_IMPORT(AAS_ValueForBSPEpairKey, G_AAS_VALUEFORBSPEPAIRKEY),
-    GEN_IMPORT(AAS_VectorForBSPEpairKey, G_AAS_VECTORFORBSPEPAIRKEY),
-    GEN_IMPORT(AAS_FloatForBSPEpairKey, G_AAS_FLOATFORBSPEPAIRKEY),
-    GEN_IMPORT(AAS_IntForBSPEpairKey, G_AAS_INTFORBSPEPAIRKEY),
-    GEN_IMPORT(AAS_AreaReachability, G_AAS_AREAREACHABILITY),
-    GEN_IMPORT(AAS_AreaTravelTimeToGoalArea, G_AAS_AREATRAVELTIMETOGOALAREA),
-    GEN_IMPORT(AAS_EnableRoutingArea, G_AAS_ENABLEROUTINGAREA),
-    GEN_IMPORT(AAS_PredictRoute, G_AAS_PREDICTROUTE),
-    GEN_IMPORT(AAS_AlternativeRouteGoals, G_AAS_ALTERNATIVEROUTEGOALS),
-    GEN_IMPORT(AAS_Swimming, G_AAS_SWIMMING),
-    GEN_IMPORT_13(AAS_PredictClientMovement, G_AAS_PREDICTCLIENTMOVEMENT, int, struct aas_clientmove_s*, int, vec3_t, int, int, vec3_t, vec3_t, int, int, float, int, int, int),
-    GEN_IMPORT(EA_Command, G_EA_COMMAND),
-    GEN_IMPORT(EA_Say, G_EA_SAY),
-    GEN_IMPORT(EA_SayTeam, G_EA_SAYTEAM),
-    GEN_IMPORT(EA_Action, G_EA_ACTION),
-    GEN_IMPORT(EA_Gesture, G_EA_GESTURE),
-    GEN_IMPORT(EA_Talk, G_EA_TALK),
-    GEN_IMPORT(EA_ToggleFireState, G_EA_TOGGLEFIRESTATE),
-    GEN_IMPORT(EA_Attack, G_EA_ATTACK),
-    GEN_IMPORT(EA_Use, G_EA_USE),
-    GEN_IMPORT(EA_Respawn, G_EA_RESPAWN),
-    GEN_IMPORT(EA_MoveUp, G_EA_MOVEUP),
-    GEN_IMPORT(EA_MoveDown, G_EA_MOVEDOWN),
-    GEN_IMPORT(EA_MoveForward, G_EA_MOVEFORWARD),
-    GEN_IMPORT(EA_MoveBack, G_EA_MOVEBACK),
-    GEN_IMPORT(EA_MoveLeft, G_EA_MOVELEFT),
-    GEN_IMPORT(EA_MoveRight, G_EA_MOVERIGHT),
-    GEN_IMPORT(EA_Crouch, G_EA_CROUCH),
-    GEN_IMPORT(EA_SelectWeapon, G_EA_SELECTWEAPON),
-    GEN_IMPORT(EA_Jump, G_EA_JUMP),
-    GEN_IMPORT(EA_DelayedJump, G_EA_DELAYEDJUMP),
-    GEN_IMPORT_3(EA_Move, G_EA_MOVE, void, int, vec3_t, float),
-    GEN_IMPORT(EA_View, G_EA_VIEW),
-    GEN_IMPORT_2(EA_EndRegular, G_EA_ENDREGULAR, void, int, float),
-    GEN_IMPORT_3(EA_GetInput, G_EA_GETINPUT, void, int, float, bot_input_t*),
-    GEN_IMPORT(EA_ResetInput, G_EA_RESETINPUT),
-    GEN_IMPORT_2(BotLoadCharacter, G_BOTLOADCHARACTER, int, char*, float),
-    GEN_IMPORT(BotFreeCharacter, G_BOTFREECHARACTER),
-    GEN_IMPORT(Characteristic_Float, G_CHARACTERISTIC_FLOAT),
-    GEN_IMPORT(Characteristic_BFloat, G_CHARACTERISTIC_BFLOAT),
-    GEN_IMPORT(Characteristic_Integer, G_CHARACTERISTIC_INTEGER),
-    GEN_IMPORT(Characteristic_BInteger, G_CHARACTERISTIC_BINTEGER),
-    GEN_IMPORT(Characteristic_String, G_CHARACTERISTIC_STRING),
-    GEN_IMPORT(BotAllocChatState, G_BOTALLOCCHATSTATE),
-    GEN_IMPORT(BotFreeChatState, G_BOTFREECHATSTATE),
-    GEN_IMPORT(BotQueueConsoleMessage, G_BOTQUEUECONSOLEMESSAGE),
-    GEN_IMPORT(BotRemoveConsoleMessage, G_BOTREMOVECONSOLEMESSAGE),
-    GEN_IMPORT(BotNextConsoleMessage, G_BOTNEXTCONSOLEMESSAGE),
-    GEN_IMPORT(BotNumConsoleMessages, G_BOTNUMCONSOLEMESSAGES),
-    GEN_IMPORT(BotInitialChat, G_BOTINITIALCHAT),
-    GEN_IMPORT(BotNumInitialChats, G_BOTNUMINITIALCHATS),
-    GEN_IMPORT(BotReplyChat, G_BOTREPLYCHAT),
-    GEN_IMPORT(BotChatLength, G_BOTCHATLENGTH),
-    GEN_IMPORT(BotEnterChat, G_BOTENTERCHAT),
-    GEN_IMPORT(BotGetChatMessage, G_BOTGETCHATMESSAGE),
-    GEN_IMPORT(StringContains, G_STRINGCONTAINS),
-    GEN_IMPORT(BotFindMatch, G_BOTFINDMATCH),
-    GEN_IMPORT(BotMatchVariable, G_BOTMATCHVARIABLE),
-    GEN_IMPORT(UnifyWhiteSpaces, G_UNIFYWHITESPACES),
-    GEN_IMPORT(BotReplaceSynonyms, G_BOTREPLACESYNONYMS),
-    GEN_IMPORT(BotLoadChatFile, G_BOTLOADCHATFILE),
-    GEN_IMPORT(BotSetChatGender, G_BOTSETCHATGENDER),
-    GEN_IMPORT(BotSetChatName, G_BOTSETCHATNAME),
-    GEN_IMPORT(BotResetGoalState, G_BOTRESETGOALSTATE),
-    GEN_IMPORT(BotResetAvoidGoals, G_BOTRESETAVOIDGOALS),
-    GEN_IMPORT(BotRemoveFromAvoidGoals, G_BOTREMOVEFROMAVOIDGOALS),
-    GEN_IMPORT(BotPushGoal, G_BOTPUSHGOAL),
-    GEN_IMPORT(BotPopGoal, G_BOTPOPGOAL),
-    GEN_IMPORT(BotEmptyGoalStack, G_BOTEMPTYGOALSTACK),
-    GEN_IMPORT(BotDumpAvoidGoals, G_BOTDUMPAVOIDGOALS),
-    GEN_IMPORT(BotDumpGoalStack, G_BOTDUMPGOALSTACK),
-    GEN_IMPORT(BotGoalName, G_BOTGOALNAME),
-    GEN_IMPORT(BotGetTopGoal, G_BOTGETTOPGOAL),
-    GEN_IMPORT(BotGetSecondGoal, G_BOTGETSECONDGOAL),
-    GEN_IMPORT(BotChooseLTGItem, G_BOTCHOOSELTGITEM),
-    GEN_IMPORT_6(BotChooseNBGItem, G_BOTCHOOSENBGITEM, int, int, vec3_t, int*, int, struct bot_goal_s*, float),
-    GEN_IMPORT(BotTouchingGoal, G_BOTTOUCHINGGOAL),
-    GEN_IMPORT(BotItemGoalInVisButNotVisible, G_BOTITEMGOALINVISBUTNOTVISIBLE),
-    GEN_IMPORT(BotGetLevelItemGoal, G_BOTGETLEVELITEMGOAL),
-    GEN_IMPORT(BotGetNextCampSpotGoal, G_BOTGETNEXTCAMPSPOTGOAL),
-    GEN_IMPORT(BotGetMapLocationGoal, G_BOTGETMAPLOCATIONGOAL),
-    GEN_IMPORT(BotAvoidGoalTime, G_BOTAVOIDGOALTIME),
-    GEN_IMPORT_3(BotSetAvoidGoalTime, G_BOTSETAVOIDGOALTIME, void, int, int, float),
-    GEN_IMPORT(BotInitLevelItems, G_BOTINITLEVELITEMS),
-    GEN_IMPORT(BotUpdateEntityItems, G_BOTUPDATEENTITYITEMS),
-    GEN_IMPORT(BotLoadItemWeights, G_BOTLOADITEMWEIGHTS),
-    GEN_IMPORT(BotFreeItemWeights, G_BOTFREEITEMWEIGHTS),
-    GEN_IMPORT(BotInterbreedGoalFuzzyLogic, G_BOTINTERBREEDGOALFUZZYLOGIC),
-    GEN_IMPORT(BotSaveGoalFuzzyLogic, G_BOTSAVEGOALFUZZYLOGIC),
-    GEN_IMPORT_2(BotMutateGoalFuzzyLogic, G_BOTMUTATEGOALFUZZYLOGIC, void, int, float),
-    GEN_IMPORT(BotAllocGoalState, G_BOTALLOCGOALSTATE),
-    GEN_IMPORT(BotFreeGoalState, G_BOTFREEGOALSTATE),
-    GEN_IMPORT(BotResetMoveState, G_BOTRESETMOVESTATE),
-    GEN_IMPORT(BotMoveToGoal, G_BOTMOVETOGOAL),
-    GEN_IMPORT_4(BotMoveInDirection, G_BOTMOVEINDIRECTION, int, int, vec3_t, float, int),
-    GEN_IMPORT(BotResetAvoidReach, G_BOTRESETAVOIDREACH),
-    GEN_IMPORT(BotResetLastAvoidReach, G_BOTRESETLASTAVOIDREACH),
-    GEN_IMPORT(BotReachabilityArea, G_BOTREACHABILITYAREA),
-    GEN_IMPORT_5(BotMovementViewTarget, G_BOTMOVEMENTVIEWTARGET, int, int, struct bot_goal_s*, int, float, vec3_t),
-    GEN_IMPORT(BotPredictVisiblePosition, G_BOTPREDICTVISIBLEPOSITION),
-    GEN_IMPORT(BotAllocMoveState, G_BOTALLOCMOVESTATE),
-    GEN_IMPORT(BotFreeMoveState, G_BOTFREEMOVESTATE),
-    GEN_IMPORT(BotInitMoveState, G_BOTINITMOVESTATE),
-    GEN_IMPORT_4(BotAddAvoidSpot, G_BOTADDAVOIDSPOT, void, int, vec3_t, float, int),
-    GEN_IMPORT(BotChooseBestFightWeapon, G_BOTCHOOSEBESTFIGHTWEAPON),
-    GEN_IMPORT(BotGetWeaponInfo, G_BOTGETWEAPONINFO),
-    GEN_IMPORT(BotLoadWeaponWeights, G_BOTLOADWEAPONWEIGHTS),
-    GEN_IMPORT(BotAllocWeaponState, G_BOTALLOCWEAPONSTATE),
-    GEN_IMPORT(BotFreeWeaponState, G_BOTFREEWEAPONSTATE),
-    GEN_IMPORT(BotResetWeaponState, G_BOTRESETWEAPONSTATE),
-    GEN_IMPORT(GeneticParentsAndChildSelection, G_GENETICPARENTSANDCHILDSELECTION),
-    GEN_IMPORT(Print, G_BOTPRINT),
-    GEN_IMPORT(PointContents, G_BOTPOINTCONTENTS),
-    GEN_IMPORT(BSPEntityData, G_BSPENTITYDATA),
-    GEN_IMPORT(BSPModelMinsMaxsOrigin, G_BSPMODELMINSMAXSORIGIN),
-    GEN_IMPORT(BotClientCommand, G_BOTCLIENTCOMMAND),
-    GEN_IMPORT(AvailableMemory, G_AVAILABLEMEMORY),
-    GEN_IMPORT(HunkAlloc, G_HUNKALLOC),
-    GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
-    GEN_IMPORT(FS_Seek, G_FS_SEEK),
-    GEN_IMPORT(DebugLineCreate, G_DEBUGLINECREATE),
-    GEN_IMPORT(DebugLineDelete, G_DEBUGLINEDELETE),
-    GEN_IMPORT(DebugLineShow, G_DEBUGLINESHOW),
-    GEN_IMPORT(DebugPolygonCreate, G_DEBUGPOLYGONCREATE),
-    GEN_IMPORT(DebugPolygonDelete, G_DEBUGPOLYGONDELETE),
-    GEN_IMPORT(DropClient, G_DROP_CLIENT),
-    GEN_IMPORT(SV_GetServerinfo, G_SV_GETSERVERINFO),
-    GEN_IMPORT(BotAllocateClient, G_BOTALLOCATECLIENT),
-    GEN_IMPORT(BotGetSnapshotEntity, G_BOTGETSNAPSHOTENTITY),
-    GEN_IMPORT(BotGetConsoleMessage, G_BOTGETCONSOLEMESSAGE),
-    GEN_IMPORT(BotLibSetup, G_BOTLIBSETUP),
-    GEN_IMPORT(BotLibShutdown, G_BOTLIBSHUTDOWN),
-    GEN_IMPORT(BotLibVarSet, G_BOTLIBVARSET),
-    GEN_IMPORT(BotLibVarGet, G_BOTLIBVARGET),
-    GEN_IMPORT(PC_AddGlobalDefine, G_PC_ADDGLOBALDEFINE),
-    GEN_IMPORT(PC_LoadSourceHandle, G_PC_LOADSOURCEHANDLE),
-    GEN_IMPORT(PC_FreeSourceHandle, G_PC_FREESOURCEHANDLE),
-    GEN_IMPORT(PC_SourceFileAndLine, G_PC_SOURCEFILEANDLINE),
-    GEN_IMPORT_1(BotLibStartFrame, G_BOTLIBSTARTFRAME, int, float),
-    GEN_IMPORT(BotLibLoadMap, G_BOTLIBLOADMAP),
-    GEN_IMPORT(BotLibUpdateEntity, G_BOTLIBUPDATEENTITY),
-    GEN_IMPORT(Test, G_TEST),
-    GEN_IMPORT(BotUserCommand, G_BOTUSERCOMMAND),
-};
-
-
-// these are "pre" hooks for storing some data for polyfills.
-// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
-
-// track entstrings for our G_GET_ENTITY_TOKEN syscall
-static std::vector<std::string> entity_tokens;
-static size_t token_counter = 0;
-static void STEF2_SpawnEntities(const char* mapname, const char* entstring, int levelTime) {
-    if (entstring) {
-        entity_tokens = util_parse_entstring(entstring);
-        token_counter = 0;
-    }
-    cgame.is_from_QMM = true;
-    vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, levelTime);
-}
-
-
-// struct with lambdas that call QMM's vmMain function. this is given to the game engine
-static game_export_t qmm_export = {
-    GAME_API_VERSION,	// apiversion
-    GEN_EXPORT(Init, GAME_INIT),
-    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
-    GEN_EXPORT(Cleanup, GAME_CLEANUP),
-    STEF2_SpawnEntities,
-    GEN_EXPORT(PostLoad, GAME_POSTLOAD),
-    GEN_EXPORT(PostSublevelLoad, GAME_POSTSUBLEVELLOAD),
-    GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
-    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
-    GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
-    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
-    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
-    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
-    GEN_EXPORT(PrepFrame, GAME_PREP_FRAME),
-    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
-    GEN_EXPORT(SendEntity, GAME_SEND_ENTITY),
-    GEN_EXPORT(UpdateEntityStateForClient, GAME_UPDATE_ENTITYSTATE_FOR_CLIENT),
-    GEN_EXPORT(UpdatePlayerStateForClient, GAME_UPDATE_PLAYERSTATE_FOR_CLIENT),
-    GEN_EXPORT(ExtraEntitiesToSend, GAME_EXTRA_ENTITIES_TO_SEND),
-    GEN_EXPORT(GetEntityCurrentAnimFrame, GAME_GETENTITY_CURRENT_ANIMFRAME),
-    GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
-    GEN_EXPORT(WritePersistant, GAME_WRITE_PERSISTANT),
-    GEN_EXPORT(ReadPersistant, GAME_READ_PERSISTANT),
-    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
-    GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
-    GEN_EXPORT(LevelArchiveValid, GAME_LEVEL_ARCHIVE_VALID),
-    GEN_EXPORT(inMultiplayerGame, GAME_IN_MULTIPLAYER_GAME),
-    GEN_EXPORT(isDefined, GAME_IS_DEFINED),
-    GEN_EXPORT(getDefine, GAME_GET_DEFINE),
-    GEN_EXPORT(BotAIStartFrame, BOTAI_START_FRAME),
-    GEN_EXPORT(AddBot_f, GAME_ADDBOT_F),
-    GEN_EXPORT(GetTotalGameFrames, GAME_GETTOTALGAMEFRAMES),
-    // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
-    nullptr,	// gentities
-    0,			// gentitySize
-    0,			// num_entities
-    0,			// max_entities
-    nullptr,	// errorMessage
-};
-
-
-// update the export variables from orig_export
-static void update_exports() {
-    if (!orig_export)
-        return;
-
-    bool changed = false;
-
-    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
-    if (qmm_export.gentities != orig_export->gentities
-        || qmm_export.gentitySize != orig_export->gentitySize
-        || qmm_export.num_entities != orig_export->num_entities
-        ) {
-        changed = true;
-    }
-
-    qmm_export.gentities = orig_export->gentities;
-    qmm_export.gentitySize = orig_export->gentitySize;
-    qmm_export.num_entities = orig_export->num_entities;
-    qmm_export.max_entities = orig_export->max_entities;
-    qmm_export.error_message = orig_export->error_message;
-
-    if (changed) {
-        // this will trigger this message to be fired to plugins, and then it will be handled
-        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
-        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, nullptr, 0);
-    }
-}
-
-
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-static intptr_t STEF2_syscall(intptr_t cmd, ...) {
+intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_syscall({} {}) called\n", STEF2_EngMsgName(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
@@ -886,7 +485,7 @@ static intptr_t STEF2_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_syscall({} {}) returning {}\n", STEF2_EngMsgName(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -895,11 +494,11 @@ static intptr_t STEF2_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-static intptr_t STEF2_vmMain(intptr_t cmd, ...) {
+intptr_t STEF2_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) called\n", STEF2_ModMsgName(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -957,15 +556,15 @@ static intptr_t STEF2_vmMain(intptr_t cmd, ...) {
     update_exports();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_vmMain({} {}) returning {}\n", STEF2_ModMsgName(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* STEF2_Entry(void* import, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_Entry({}) called\n", import);
+void* STEF2_GameSupport::Entry(void* import, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_GameSupport::Entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -976,13 +575,7 @@ static void* STEF2_Entry(void* import, void*, APIType) {
     qmm_import.DebugLines = orig_import.DebugLines;
     qmm_import.numDebugLines = orig_import.numDebugLines;
 
-    // pointer to wrapper vmMain function that calls actual mod func from orig_export
-    g_gameinfo.pfnvmMain = STEF2_vmMain;
-
-    // pointer to wrapper syscall function that calls actual engine func from orig_import
-    g_gameinfo.pfnsyscall = STEF2_syscall;
-
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_Entry({}) returning {}\n", import, fmt::ptr(&qmm_export));
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STEF2_GameSupport::Entry({}) returning {}\n", import, fmt::ptr(&qmm_export));
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -991,7 +584,7 @@ static void* STEF2_Entry(void* import, void*, APIType) {
 }
 
 
-static bool STEF2_ModLoad(void* entry, APIType modapi) {
+bool STEF2_GameSupport::ModLoad(void* entry, APIType modapi) {
     if (modapi != QMM_API_GETGAMEAPI)
         return false;
 
@@ -1001,13 +594,12 @@ static bool STEF2_ModLoad(void* entry, APIType modapi) {
     return !!orig_export;
 }
 
-
-static void STEF2_ModUnload() {
+void STEF2_GameSupport::ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* STEF2_EngMsgName(intptr_t cmd) {
+const char* STEF2_GameSupport::EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -1360,7 +952,7 @@ static const char* STEF2_EngMsgName(intptr_t cmd) {
 }
 
 
-static const char* STEF2_ModMsgName(intptr_t cmd) {
+const char* STEF2_GameSupport::ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);
@@ -1403,5 +995,438 @@ static const char* STEF2_ModMsgName(intptr_t cmd) {
         return "unknown";
     }
 }
+
+
+void STEF2_GameSupport::update_exports() {
+    if (!orig_export)
+        return;
+
+    bool changed = false;
+
+    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
+    if (qmm_export.gentities != orig_export->gentities
+        || qmm_export.gentitySize != orig_export->gentitySize
+        || qmm_export.num_entities != orig_export->num_entities
+        ) {
+        changed = true;
+    }
+
+    qmm_export.gentities = orig_export->gentities;
+    qmm_export.gentitySize = orig_export->gentitySize;
+    qmm_export.num_entities = orig_export->num_entities;
+    qmm_export.max_entities = orig_export->max_entities;
+    qmm_export.error_message = orig_export->error_message;
+
+    if (changed) {
+        // this will trigger this message to be fired to plugins, and then it will be handled
+        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
+        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, nullptr, 0);
+    }
+}
+
+
+game_import_t STEF2_GameSupport::orig_import;
+
+
+game_export_t* STEF2_GameSupport::orig_export = nullptr;
+
+
+game_import_t STEF2_GameSupport::qmm_import = {
+    GEN_IMPORT(Printf, G_PRINTF),
+    GEN_IMPORT(DPrintf, G_DPRINTF),
+    GEN_IMPORT(WPrintf, G_WPRINTF),
+    GEN_IMPORT(WDPrintf, G_WDPRINTF),
+    GEN_IMPORT(DebugPrintf, G_DEBUGPRINTF),
+    GEN_IMPORT(LocalizeFilePath, G_LOCALIZEFILEPATH),
+    GEN_IMPORT(Error, G_ERROR),
+    GEN_IMPORT(Milliseconds, G_MILLISECONDS),
+    GEN_IMPORT(Malloc, G_MALLOC),
+    GEN_IMPORT(Free, G_FREE),
+    GEN_IMPORT(cvar, G_CVAR),
+    GEN_IMPORT(cvar_get, G_CVAR_GET),
+    GEN_IMPORT(cvar_set, G_CVAR_SET),
+    GEN_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER),
+    GEN_IMPORT(Cvar_Register, G_CVAR_REGISTER),
+    GEN_IMPORT(Cvar_VariableValue, G_CVAR_VARIABLEVALUE),
+    GEN_IMPORT(Cvar_Update, G_CVAR_UPDATE),
+    GEN_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE),
+    GEN_IMPORT(argc, G_ARGC),
+    GEN_IMPORT(argv, G_ARGV),
+    GEN_IMPORT(args, G_ARGS),
+    GEN_IMPORT(AddCommand, G_ADDCOMMAND),
+    GEN_IMPORT(FS_ReadFile, G_FS_READFILE),
+    GEN_IMPORT(FS_Exists, G_FS_EXISTS),
+    GEN_IMPORT(FS_FreeFile, G_FS_FREEFILE),
+    GEN_IMPORT(FS_WriteFile, G_FS_WRITEFILE),
+    GEN_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE),
+    GEN_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND),
+    GEN_IMPORT(FS_ListFiles, G_FS_LISTFILES),
+    GEN_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE),
+    GEN_IMPORT(FS_Write, G_FS_WRITE),
+    GEN_IMPORT(FS_Read, G_FS_READ),
+    GEN_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE),
+    GEN_IMPORT(FS_FTell, G_FS_FTELL),
+    GEN_IMPORT(FS_FSeek, G_FS_FSEEK),
+    GEN_IMPORT(FS_Flush, G_FS_FLUSH),
+    GEN_IMPORT(FS_DeleteFile, G_FS_DELETEFILE),
+    GEN_IMPORT(FS_GetFileList, G_FS_GETFILELIST),
+    GEN_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME),
+    GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
+    GEN_IMPORT_2(DebugGraph, G_DEBUGGRAPH, void, float, int),
+    GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
+    GEN_IMPORT(GetNumFreeReliableServerCommands, G_GETNUMFREERELIABLESERVERCOMMANDS),
+    GEN_IMPORT(setConfigstring, G_SET_CONFIGSTRING),
+    GEN_IMPORT(getConfigstring, G_GET_CONFIGSTRING),
+    GEN_IMPORT(setUserinfo, G_SET_USERINFO),
+    GEN_IMPORT(getUserinfo, G_GET_USERINFO),
+    GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
+    GEN_IMPORT(trace, G_TRACE),
+    GEN_IMPORT(fulltrace, G_FULLTRACE),
+    GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
+    GEN_IMPORT(pointbrushnum, G_POINTBRUSHNUM),
+    GEN_IMPORT(inPVS, G_IN_PVS),
+    GEN_IMPORT(inPVSIgnorePortals, G_IN_PVS_IGNOREPORTALS),
+    GEN_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE),
+    GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
+    GEN_IMPORT(GetLightingGroup, G_GETLIGHTINGGROUP),
+    GEN_IMPORT_2(SetDynamicLight, G_SETDYNAMICLIGHT, void, int, float),
+    GEN_IMPORT_2(SetDynamicLightDefault, G_SETDYNAMICLIGHTDEFAULT, void, int, float),
+    GEN_IMPORT(SetWindDirection, G_SETWINDDIRECTION),
+    GEN_IMPORT_1(SetWindIntensity, G_SETWINDINTENSITY, void, float),
+    GEN_IMPORT(SetWeatherInfo, G_SETWEATHERINFO),
+    GEN_IMPORT_1(SetTimeScale, G_SETTIMESCALE, void, float),
+    GEN_IMPORT(linkentity, G_LINKENTITY),
+    GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
+    GEN_IMPORT(AreaEntities, G_AREAENTITIES),
+    GEN_IMPORT(ClipToEntity, G_CLIPTOENTITY),
+    GEN_IMPORT(objectivenameindex, G_OBJECTIVENAMEINDEX),
+    GEN_IMPORT(archetypeindex, G_ARCHETYPEINDEX),
+    GEN_IMPORT(imageindex, G_IMAGEINDEX),
+    GEN_IMPORT(failedcondition, G_FAILEDCONDITION),
+    GEN_IMPORT(itemindex, G_ITEMINDEX),
+    GEN_IMPORT(soundindex, G_SOUNDINDEX),
+    GEN_IMPORT(modelindex, G_MODELINDEX),
+    GEN_IMPORT(SetLightStyle, G_SETLIGHTSTYLE),
+    GEN_IMPORT(GameDir, G_GAMEDIR),
+    GEN_IMPORT(IsModel, G_ISMODEL),
+    GEN_IMPORT(setmodel, G_SETMODEL),
+    GEN_IMPORT(setviewmodel, G_SETVIEWMODEL),
+    GEN_IMPORT(NumAnims, G_NUMANIMS),
+    GEN_IMPORT(NumSkins, G_NUMSKINS),
+    GEN_IMPORT(NumSurfaces, G_NUMSURFACES),
+    GEN_IMPORT(NumTags, G_NUMTAGS),
+    GEN_IMPORT(NumMorphs, G_NUMMORPHS),
+    GEN_IMPORT(InitCommands, G_INITCOMMANDS),
+    GEN_IMPORT_4(CalculateBounds, G_CALCULATEBOUNDS, void, int, float, vec3_t, vec3_t),
+    GEN_IMPORT(TIKI_CacheAnim, G_TIKI_CACHEANIM),
+    GEN_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM),
+    GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
+    GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
+    GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
+    GEN_IMPORT(Anim_Time, G_ANIM_TIME),
+    GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
+    GEN_IMPORT(Anim_AbsoluteDelta, G_ANIM_ABSOLUTEDELTA),
+    GEN_IMPORT(Anim_Flags, G_ANIM_FLAGS),
+    GEN_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS),
+    GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
+    GEN_IMPORT(Frame_Delta, G_FRAME_DELTA),
+    GEN_IMPORT(Frame_Time, G_FRAME_TIME),
+    GEN_IMPORT_6(Frame_Bounds, G_FRAME_BOUNDS, void, int, int, int, float, vec3_t, vec3_t),
+    GEN_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM),
+    GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
+    GEN_IMPORT(Surface_Flags, G_SURFACE_FLAGS),
+    GEN_IMPORT(Surface_NumSkins, G_SURFACE_NUMSKINS),
+    GEN_IMPORT(Morph_NumForName, G_MORPH_NUMFORNAME),
+    GEN_IMPORT(Morph_NameForNum, G_MORPH_NAMEFORNUM),
+    GEN_IMPORT(GetExpression, G_GETEXPRESSION),
+    GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
+    GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
+    GEN_IMPORT(Tag_Orientation, G_TAG_ORIENTATION),
+    GEN_IMPORT(Tag_OrientationEx, G_TAG_ORIENTATIONEX),	// todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
+    GEN_IMPORT(Bone_GetParentNum, G_BONE_GETPARENTNUM),
+    GEN_IMPORT(Alias_Add, G_ALIAS_ADD),
+    GEN_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM),
+    GEN_IMPORT(Alias_Find, G_ALIAS_FIND),
+    GEN_IMPORT(Alias_Dump, G_ALIAS_DUMP),
+    GEN_IMPORT(Alias_Clear, G_ALIAS_CLEAR),
+    GEN_IMPORT(Alias_FindDialog, G_ALIAS_FINDDIALOG),
+    GEN_IMPORT(Alias_FindSpecificAnim, G_ALIAS_FINDSPECIFICANIM),
+    GEN_IMPORT(Alias_CheckLoopAnim, G_ALIAS_CHECKLOOPANIM),
+    GEN_IMPORT(Alias_GetList, G_ALIAS_GETLIST),
+    GEN_IMPORT(Alias_UpdateDialog, G_ALIAS_UPDATEDIALOG),
+    GEN_IMPORT(Alias_AddActorDialog, G_ALIAS_ADDACTORDIALOG),
+    GEN_IMPORT(NameForNum, G_NAMEFORNUM),
+    GEN_IMPORT(GlobalAlias_Add, G_GLOBALALIAS_ADD),
+    GEN_IMPORT(GlobalAlias_FindRandom, G_GLOBALALIAS_FINDRANDOM),
+    GEN_IMPORT(GlobalAlias_Find, G_GLOBALALIAS_FIND),
+    GEN_IMPORT(GlobalAlias_Dump, G_GLOBALALIAS_DUMP),
+    GEN_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR),
+    GEN_IMPORT(isClientActive, G_ISCLIENTACTIVE),
+    GEN_IMPORT(centerprintf, G_CENTERPRINTF),
+    GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
+    GEN_IMPORT(Sound, G_SOUND),
+    GEN_IMPORT(StopSound, G_STOPSOUND),
+    GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
+    GEN_IMPORT(GetNextMorphTarget, G_GETNEXTMORPHTARGET),
+    GEN_IMPORT(CalcCRC, G_CALCCRC),
+    nullptr,	// DebugLines
+    nullptr,	// numDebugLines
+    GEN_IMPORT(LocateGameData, G_LOCATE_GAME_DATA),
+    GEN_IMPORT(SetFarPlane, G_SETFARPLANE),
+    GEN_IMPORT(TikiReload, G_TIKIRELOAD),
+    GEN_IMPORT(TikiLoadFromTS, G_TIKILOADFROMTS),
+    GEN_IMPORT(ToolServerGetData, G_TOOLSERVERGETDATA),
+    GEN_IMPORT(SetSkyPortal, G_SETSKYPORTAL),
+    GEN_IMPORT(WidgetPrintf, G_WIDGETPRINTF),
+    GEN_IMPORT(ProcessLoadingScreen, G_PROCESSLOADINGSCREEN),
+    GEN_IMPORT(MObjective_GetDescription, G_MOBJECTIVE_GETDESCRIPTION),
+    GEN_IMPORT(MObjective_SetDescription, G_MOBJECTIVE_SETDESCRIPTION),
+    GEN_IMPORT(MObjective_GetShowObjective, G_MOBJECTIVE_GETSHOWOBJECTIVE),
+    GEN_IMPORT(MObjective_SetShowObjective, G_MOBJECTIVE_SETSHOWOBJECTIVE),
+    GEN_IMPORT(MObjective_GetObjectiveComplete, G_MOBJECTIVE_GETOBJECTIVECOMPLETE),
+    GEN_IMPORT(MObjective_SetObjectiveComplete, G_MOBJECTIVE_SETOBJECTIVECOMPLETE),
+    GEN_IMPORT(MObjective_GetObjectiveFailed, G_MOBJECTIVE_GETOBJECTIVEFAILED),
+    GEN_IMPORT(MObjective_SetObjectiveFailed, G_MOBJECTIVE_SETOBJECTIVEFAILED),
+    GEN_IMPORT(MObjective_GetNameFromIndex, G_MOBJECTIVE_GETNAMEFROMINDEX),
+    GEN_IMPORT(MObjective_GetIndexFromName, G_MOBJECTIVE_GETINDEXFROMNAME),
+    GEN_IMPORT(MObjective_NewObjective, G_MOBJECTIVE_NEWOBJECTIVE),
+    GEN_IMPORT(MObjective_ClearObjectiveList, G_MOBJECTIVE_CLEAROBJECTIVELIST),
+    GEN_IMPORT(MObjective_ParseObjectiveFile, G_MOBJECTIVE_PARSEOBJECTIVEFILE),
+    GEN_IMPORT(MObjective_Update, G_MOBJECTIVE_UPDATE),
+    GEN_IMPORT(MObjective_GetNumObjectives, G_MOBJECTIVE_GETNUMOBJECTIVES),
+    GEN_IMPORT(MObjective_GetNumActiveObjectives, G_MOBJECTIVE_GETNUMACTIVEOBJECTIVES),
+    GEN_IMPORT(MObjective_GetNumCompleteObjectives, G_MOBJECTIVE_GETNUMCOMPLETEOBJECTIVES),
+    GEN_IMPORT(MObjective_GetNumFailedObjectives, G_MOBJECTIVE_GETNUMFAILEDOBJECTIVES),
+    GEN_IMPORT(MObjective_GetNumIncompleteObjectives, G_MOBJECTIVE_GETNUMINCOMPLETEOBJECTIVES),
+    GEN_IMPORT(MI_GetShader, G_MI_GETSHADER),
+    GEN_IMPORT(MI_SetShader, G_MI_SETSHADER),
+    GEN_IMPORT(MI_GetInformationData, G_MI_GETINFORMATIONDATA),
+    GEN_IMPORT(MI_SetInformationData, G_MI_SETINFORMATIONDATA),
+    GEN_IMPORT(MI_GetNameFromIndex, G_MI_GETNAMEFROMINDEX),
+    GEN_IMPORT(MI_GetIndexFromName, G_MI_GETINDEXFROMNAME),
+    GEN_IMPORT(MI_NewInformation, G_MI_NEWINFORMATION),
+    GEN_IMPORT(MI_ClearInformationList, G_MI_CLEARINFORMATIONLIST),
+    GEN_IMPORT(MI_SetShowInformation, G_MI_SETSHOWINFORMATION),
+    GEN_IMPORT(MI_GetShowInformation, G_MI_GETSHOWINFORMATION),
+    GEN_IMPORT(SR_InitializeStringResource, G_SR_INITIALIZESTRINGRESOURCE),
+    GEN_IMPORT(SR_UninitializeStringResource, G_SR_UNINITIALIZESTRINGRESOURCE),
+    GEN_IMPORT(SR_LoadLevelStrings, G_SR_LOADLEVELSTRINGS),
+    GEN_IMPORT(GetViewModeMask, G_GETVIEWMODEMASK),
+    GEN_IMPORT(GetViewModeClassMask, G_GETVIEWMODECLASSMASK),
+    GEN_IMPORT(GetViewModeSendInMode, G_GETVIEWMODESENDINMODE),
+    GEN_IMPORT(GetViewModeSendNotInMode, G_GETVIEWMODESENDNOTINMODE),
+    GEN_IMPORT(GetViewModeScreenBlend, G_GETVIEWMODESCREENBLEND),
+    GEN_IMPORT(GetLevelDefs, G_GETLEVELDEFS),
+    GEN_IMPORT(areSublevels, G_ARESUBLEVELS),
+    GEN_IMPORT(SurfaceTypeToName, G_SURFACETYPETONAME),
+    GEN_IMPORT(AAS_EntityInfo, G_AAS_ENTITYINFO),
+    GEN_IMPORT(AAS_Initialized, G_AAS_INITIALIZED),
+    GEN_IMPORT(AAS_PresenceTypeBoundingBox, G_AAS_PRESENCETYPEBOUNDINGBOX),
+    GEN_IMPORT(AAS_Time, G_AAS_TIME),
+    GEN_IMPORT(AAS_PointAreaNum, G_AAS_POINTAREANUM),
+    GEN_IMPORT(AAS_PointReachabilityAreaIndex, G_AAS_POINTREACHABILITYAREAINDEX),
+    GEN_IMPORT(AAS_TraceAreas, G_AAS_TRACEAREAS),
+    GEN_IMPORT(AAS_BBoxAreas, G_AAS_BBOXAREAS),
+    GEN_IMPORT(AAS_AreaInfo, G_AAS_AREAINFO),
+    GEN_IMPORT(AAS_PointContents, G_AAS_POINTCONTENTS),
+    GEN_IMPORT(AAS_NextBSPEntity, G_AAS_NEXTBSPENTITY),
+    GEN_IMPORT(AAS_ValueForBSPEpairKey, G_AAS_VALUEFORBSPEPAIRKEY),
+    GEN_IMPORT(AAS_VectorForBSPEpairKey, G_AAS_VECTORFORBSPEPAIRKEY),
+    GEN_IMPORT(AAS_FloatForBSPEpairKey, G_AAS_FLOATFORBSPEPAIRKEY),
+    GEN_IMPORT(AAS_IntForBSPEpairKey, G_AAS_INTFORBSPEPAIRKEY),
+    GEN_IMPORT(AAS_AreaReachability, G_AAS_AREAREACHABILITY),
+    GEN_IMPORT(AAS_AreaTravelTimeToGoalArea, G_AAS_AREATRAVELTIMETOGOALAREA),
+    GEN_IMPORT(AAS_EnableRoutingArea, G_AAS_ENABLEROUTINGAREA),
+    GEN_IMPORT(AAS_PredictRoute, G_AAS_PREDICTROUTE),
+    GEN_IMPORT(AAS_AlternativeRouteGoals, G_AAS_ALTERNATIVEROUTEGOALS),
+    GEN_IMPORT(AAS_Swimming, G_AAS_SWIMMING),
+    GEN_IMPORT_13(AAS_PredictClientMovement, G_AAS_PREDICTCLIENTMOVEMENT, int, struct aas_clientmove_s*, int, vec3_t, int, int, vec3_t, vec3_t, int, int, float, int, int, int),
+    GEN_IMPORT(EA_Command, G_EA_COMMAND),
+    GEN_IMPORT(EA_Say, G_EA_SAY),
+    GEN_IMPORT(EA_SayTeam, G_EA_SAYTEAM),
+    GEN_IMPORT(EA_Action, G_EA_ACTION),
+    GEN_IMPORT(EA_Gesture, G_EA_GESTURE),
+    GEN_IMPORT(EA_Talk, G_EA_TALK),
+    GEN_IMPORT(EA_ToggleFireState, G_EA_TOGGLEFIRESTATE),
+    GEN_IMPORT(EA_Attack, G_EA_ATTACK),
+    GEN_IMPORT(EA_Use, G_EA_USE),
+    GEN_IMPORT(EA_Respawn, G_EA_RESPAWN),
+    GEN_IMPORT(EA_MoveUp, G_EA_MOVEUP),
+    GEN_IMPORT(EA_MoveDown, G_EA_MOVEDOWN),
+    GEN_IMPORT(EA_MoveForward, G_EA_MOVEFORWARD),
+    GEN_IMPORT(EA_MoveBack, G_EA_MOVEBACK),
+    GEN_IMPORT(EA_MoveLeft, G_EA_MOVELEFT),
+    GEN_IMPORT(EA_MoveRight, G_EA_MOVERIGHT),
+    GEN_IMPORT(EA_Crouch, G_EA_CROUCH),
+    GEN_IMPORT(EA_SelectWeapon, G_EA_SELECTWEAPON),
+    GEN_IMPORT(EA_Jump, G_EA_JUMP),
+    GEN_IMPORT(EA_DelayedJump, G_EA_DELAYEDJUMP),
+    GEN_IMPORT_3(EA_Move, G_EA_MOVE, void, int, vec3_t, float),
+    GEN_IMPORT(EA_View, G_EA_VIEW),
+    GEN_IMPORT_2(EA_EndRegular, G_EA_ENDREGULAR, void, int, float),
+    GEN_IMPORT_3(EA_GetInput, G_EA_GETINPUT, void, int, float, bot_input_t*),
+    GEN_IMPORT(EA_ResetInput, G_EA_RESETINPUT),
+    GEN_IMPORT_2(BotLoadCharacter, G_BOTLOADCHARACTER, int, char*, float),
+    GEN_IMPORT(BotFreeCharacter, G_BOTFREECHARACTER),
+    GEN_IMPORT(Characteristic_Float, G_CHARACTERISTIC_FLOAT),
+    GEN_IMPORT(Characteristic_BFloat, G_CHARACTERISTIC_BFLOAT),
+    GEN_IMPORT(Characteristic_Integer, G_CHARACTERISTIC_INTEGER),
+    GEN_IMPORT(Characteristic_BInteger, G_CHARACTERISTIC_BINTEGER),
+    GEN_IMPORT(Characteristic_String, G_CHARACTERISTIC_STRING),
+    GEN_IMPORT(BotAllocChatState, G_BOTALLOCCHATSTATE),
+    GEN_IMPORT(BotFreeChatState, G_BOTFREECHATSTATE),
+    GEN_IMPORT(BotQueueConsoleMessage, G_BOTQUEUECONSOLEMESSAGE),
+    GEN_IMPORT(BotRemoveConsoleMessage, G_BOTREMOVECONSOLEMESSAGE),
+    GEN_IMPORT(BotNextConsoleMessage, G_BOTNEXTCONSOLEMESSAGE),
+    GEN_IMPORT(BotNumConsoleMessages, G_BOTNUMCONSOLEMESSAGES),
+    GEN_IMPORT(BotInitialChat, G_BOTINITIALCHAT),
+    GEN_IMPORT(BotNumInitialChats, G_BOTNUMINITIALCHATS),
+    GEN_IMPORT(BotReplyChat, G_BOTREPLYCHAT),
+    GEN_IMPORT(BotChatLength, G_BOTCHATLENGTH),
+    GEN_IMPORT(BotEnterChat, G_BOTENTERCHAT),
+    GEN_IMPORT(BotGetChatMessage, G_BOTGETCHATMESSAGE),
+    GEN_IMPORT(StringContains, G_STRINGCONTAINS),
+    GEN_IMPORT(BotFindMatch, G_BOTFINDMATCH),
+    GEN_IMPORT(BotMatchVariable, G_BOTMATCHVARIABLE),
+    GEN_IMPORT(UnifyWhiteSpaces, G_UNIFYWHITESPACES),
+    GEN_IMPORT(BotReplaceSynonyms, G_BOTREPLACESYNONYMS),
+    GEN_IMPORT(BotLoadChatFile, G_BOTLOADCHATFILE),
+    GEN_IMPORT(BotSetChatGender, G_BOTSETCHATGENDER),
+    GEN_IMPORT(BotSetChatName, G_BOTSETCHATNAME),
+    GEN_IMPORT(BotResetGoalState, G_BOTRESETGOALSTATE),
+    GEN_IMPORT(BotResetAvoidGoals, G_BOTRESETAVOIDGOALS),
+    GEN_IMPORT(BotRemoveFromAvoidGoals, G_BOTREMOVEFROMAVOIDGOALS),
+    GEN_IMPORT(BotPushGoal, G_BOTPUSHGOAL),
+    GEN_IMPORT(BotPopGoal, G_BOTPOPGOAL),
+    GEN_IMPORT(BotEmptyGoalStack, G_BOTEMPTYGOALSTACK),
+    GEN_IMPORT(BotDumpAvoidGoals, G_BOTDUMPAVOIDGOALS),
+    GEN_IMPORT(BotDumpGoalStack, G_BOTDUMPGOALSTACK),
+    GEN_IMPORT(BotGoalName, G_BOTGOALNAME),
+    GEN_IMPORT(BotGetTopGoal, G_BOTGETTOPGOAL),
+    GEN_IMPORT(BotGetSecondGoal, G_BOTGETSECONDGOAL),
+    GEN_IMPORT(BotChooseLTGItem, G_BOTCHOOSELTGITEM),
+    GEN_IMPORT_6(BotChooseNBGItem, G_BOTCHOOSENBGITEM, int, int, vec3_t, int*, int, struct bot_goal_s*, float),
+    GEN_IMPORT(BotTouchingGoal, G_BOTTOUCHINGGOAL),
+    GEN_IMPORT(BotItemGoalInVisButNotVisible, G_BOTITEMGOALINVISBUTNOTVISIBLE),
+    GEN_IMPORT(BotGetLevelItemGoal, G_BOTGETLEVELITEMGOAL),
+    GEN_IMPORT(BotGetNextCampSpotGoal, G_BOTGETNEXTCAMPSPOTGOAL),
+    GEN_IMPORT(BotGetMapLocationGoal, G_BOTGETMAPLOCATIONGOAL),
+    GEN_IMPORT(BotAvoidGoalTime, G_BOTAVOIDGOALTIME),
+    GEN_IMPORT_3(BotSetAvoidGoalTime, G_BOTSETAVOIDGOALTIME, void, int, int, float),
+    GEN_IMPORT(BotInitLevelItems, G_BOTINITLEVELITEMS),
+    GEN_IMPORT(BotUpdateEntityItems, G_BOTUPDATEENTITYITEMS),
+    GEN_IMPORT(BotLoadItemWeights, G_BOTLOADITEMWEIGHTS),
+    GEN_IMPORT(BotFreeItemWeights, G_BOTFREEITEMWEIGHTS),
+    GEN_IMPORT(BotInterbreedGoalFuzzyLogic, G_BOTINTERBREEDGOALFUZZYLOGIC),
+    GEN_IMPORT(BotSaveGoalFuzzyLogic, G_BOTSAVEGOALFUZZYLOGIC),
+    GEN_IMPORT_2(BotMutateGoalFuzzyLogic, G_BOTMUTATEGOALFUZZYLOGIC, void, int, float),
+    GEN_IMPORT(BotAllocGoalState, G_BOTALLOCGOALSTATE),
+    GEN_IMPORT(BotFreeGoalState, G_BOTFREEGOALSTATE),
+    GEN_IMPORT(BotResetMoveState, G_BOTRESETMOVESTATE),
+    GEN_IMPORT(BotMoveToGoal, G_BOTMOVETOGOAL),
+    GEN_IMPORT_4(BotMoveInDirection, G_BOTMOVEINDIRECTION, int, int, vec3_t, float, int),
+    GEN_IMPORT(BotResetAvoidReach, G_BOTRESETAVOIDREACH),
+    GEN_IMPORT(BotResetLastAvoidReach, G_BOTRESETLASTAVOIDREACH),
+    GEN_IMPORT(BotReachabilityArea, G_BOTREACHABILITYAREA),
+    GEN_IMPORT_5(BotMovementViewTarget, G_BOTMOVEMENTVIEWTARGET, int, int, struct bot_goal_s*, int, float, vec3_t),
+    GEN_IMPORT(BotPredictVisiblePosition, G_BOTPREDICTVISIBLEPOSITION),
+    GEN_IMPORT(BotAllocMoveState, G_BOTALLOCMOVESTATE),
+    GEN_IMPORT(BotFreeMoveState, G_BOTFREEMOVESTATE),
+    GEN_IMPORT(BotInitMoveState, G_BOTINITMOVESTATE),
+    GEN_IMPORT_4(BotAddAvoidSpot, G_BOTADDAVOIDSPOT, void, int, vec3_t, float, int),
+    GEN_IMPORT(BotChooseBestFightWeapon, G_BOTCHOOSEBESTFIGHTWEAPON),
+    GEN_IMPORT(BotGetWeaponInfo, G_BOTGETWEAPONINFO),
+    GEN_IMPORT(BotLoadWeaponWeights, G_BOTLOADWEAPONWEIGHTS),
+    GEN_IMPORT(BotAllocWeaponState, G_BOTALLOCWEAPONSTATE),
+    GEN_IMPORT(BotFreeWeaponState, G_BOTFREEWEAPONSTATE),
+    GEN_IMPORT(BotResetWeaponState, G_BOTRESETWEAPONSTATE),
+    GEN_IMPORT(GeneticParentsAndChildSelection, G_GENETICPARENTSANDCHILDSELECTION),
+    GEN_IMPORT(Print, G_BOTPRINT),
+    GEN_IMPORT(PointContents, G_BOTPOINTCONTENTS),
+    GEN_IMPORT(BSPEntityData, G_BSPENTITYDATA),
+    GEN_IMPORT(BSPModelMinsMaxsOrigin, G_BSPMODELMINSMAXSORIGIN),
+    GEN_IMPORT(BotClientCommand, G_BOTCLIENTCOMMAND),
+    GEN_IMPORT(AvailableMemory, G_AVAILABLEMEMORY),
+    GEN_IMPORT(HunkAlloc, G_HUNKALLOC),
+    GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
+    GEN_IMPORT(FS_Seek, G_FS_SEEK),
+    GEN_IMPORT(DebugLineCreate, G_DEBUGLINECREATE),
+    GEN_IMPORT(DebugLineDelete, G_DEBUGLINEDELETE),
+    GEN_IMPORT(DebugLineShow, G_DEBUGLINESHOW),
+    GEN_IMPORT(DebugPolygonCreate, G_DEBUGPOLYGONCREATE),
+    GEN_IMPORT(DebugPolygonDelete, G_DEBUGPOLYGONDELETE),
+    GEN_IMPORT(DropClient, G_DROP_CLIENT),
+    GEN_IMPORT(SV_GetServerinfo, G_SV_GETSERVERINFO),
+    GEN_IMPORT(BotAllocateClient, G_BOTALLOCATECLIENT),
+    GEN_IMPORT(BotGetSnapshotEntity, G_BOTGETSNAPSHOTENTITY),
+    GEN_IMPORT(BotGetConsoleMessage, G_BOTGETCONSOLEMESSAGE),
+    GEN_IMPORT(BotLibSetup, G_BOTLIBSETUP),
+    GEN_IMPORT(BotLibShutdown, G_BOTLIBSHUTDOWN),
+    GEN_IMPORT(BotLibVarSet, G_BOTLIBVARSET),
+    GEN_IMPORT(BotLibVarGet, G_BOTLIBVARGET),
+    GEN_IMPORT(PC_AddGlobalDefine, G_PC_ADDGLOBALDEFINE),
+    GEN_IMPORT(PC_LoadSourceHandle, G_PC_LOADSOURCEHANDLE),
+    GEN_IMPORT(PC_FreeSourceHandle, G_PC_FREESOURCEHANDLE),
+    GEN_IMPORT(PC_SourceFileAndLine, G_PC_SOURCEFILEANDLINE),
+    GEN_IMPORT_1(BotLibStartFrame, G_BOTLIBSTARTFRAME, int, float),
+    GEN_IMPORT(BotLibLoadMap, G_BOTLIBLOADMAP),
+    GEN_IMPORT(BotLibUpdateEntity, G_BOTLIBUPDATEENTITY),
+    GEN_IMPORT(Test, G_TEST),
+    GEN_IMPORT(BotUserCommand, G_BOTUSERCOMMAND),
+};
+
+
+std::vector<std::string> STEF2_GameSupport::entity_tokens;
+size_t STEF2_GameSupport::token_counter = 0;
+void STEF2_GameSupport::SpawnEntities(const char* mapname, const char* entstring, int levelTime) {
+    if (entstring) {
+        entity_tokens = util_parse_entstring(entstring);
+        token_counter = 0;
+    }
+    cgame.is_from_QMM = true;
+    ::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, levelTime);
+}
+
+
+game_export_t STEF2_GameSupport::qmm_export = {
+    GAME_API_VERSION,	// apiversion
+    GEN_EXPORT(Init, GAME_INIT),
+    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
+    GEN_EXPORT(Cleanup, GAME_CLEANUP),
+    STEF2_GameSupport::SpawnEntities,
+    GEN_EXPORT(PostLoad, GAME_POSTLOAD),
+    GEN_EXPORT(PostSublevelLoad, GAME_POSTSUBLEVELLOAD),
+    GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
+    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
+    GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
+    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
+    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
+    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
+    GEN_EXPORT(PrepFrame, GAME_PREP_FRAME),
+    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
+    GEN_EXPORT(SendEntity, GAME_SEND_ENTITY),
+    GEN_EXPORT(UpdateEntityStateForClient, GAME_UPDATE_ENTITYSTATE_FOR_CLIENT),
+    GEN_EXPORT(UpdatePlayerStateForClient, GAME_UPDATE_PLAYERSTATE_FOR_CLIENT),
+    GEN_EXPORT(ExtraEntitiesToSend, GAME_EXTRA_ENTITIES_TO_SEND),
+    GEN_EXPORT(GetEntityCurrentAnimFrame, GAME_GETENTITY_CURRENT_ANIMFRAME),
+    GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
+    GEN_EXPORT(WritePersistant, GAME_WRITE_PERSISTANT),
+    GEN_EXPORT(ReadPersistant, GAME_READ_PERSISTANT),
+    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
+    GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
+    GEN_EXPORT(LevelArchiveValid, GAME_LEVEL_ARCHIVE_VALID),
+    GEN_EXPORT(inMultiplayerGame, GAME_IN_MULTIPLAYER_GAME),
+    GEN_EXPORT(isDefined, GAME_IS_DEFINED),
+    GEN_EXPORT(getDefine, GAME_GET_DEFINE),
+    GEN_EXPORT(BotAIStartFrame, BOTAI_START_FRAME),
+    GEN_EXPORT(AddBot_f, GAME_ADDBOT_F),
+    GEN_EXPORT(GetTotalGameFrames, GAME_GETTOTALGAMEFRAMES),
+    // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
+    nullptr,	// gentities
+    0,			// gentitySize
+    0,			// num_entities
+    0,			// max_entities
+    nullptr,	// errorMessage
+};
 
 #endif // QMM_ARCH_32
