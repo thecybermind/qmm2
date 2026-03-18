@@ -22,9 +22,8 @@ Created By:
 #include "mod.h"
 #include "util.h"
 
-struct Q3A_GameSupport : GameSupport {
-    virtual int QMMEngMsg(int msg);
-    virtual int QMMModMsg(int msg);
+
+struct Q3A_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
     virtual const char* ModMsgName(intptr_t msg);
     virtual bool AutoDetect(APIType engine_api);
@@ -37,8 +36,8 @@ struct Q3A_GameSupport : GameSupport {
 
     virtual const char* DefaultDLLName() { return "qagame" MOD_DLL; }
     virtual const char* DefaultQVMName() { return "vm/qagame.qvm"; }
-    virtual const char* DefaultModDir() { return "baseq3"; };
-    virtual const char* GameName() { return "Quake 3 Arena"; };
+    virtual const char* DefaultModDir() { return "baseq3"; }
+    virtual const char* GameName() { return "Quake 3 Arena"; }
     virtual const char* GameCode() { return "Q3A"; }
 
     virtual int QVMSyscall(uint8_t* membase, int cmd, int* args);
@@ -47,18 +46,19 @@ private:
     eng_syscall orig_syscall = nullptr;
     mod_vmMain orig_vmMain = nullptr;
 
-    GEN_GAME_QMM_ENG_MSGS();
-    GEN_GAME_QMM_MOD_MSGS();
+    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
 };
 
 GEN_GAME_OBJ(Q3A);
+
 
 // auto-detection logic for Q3A
 bool Q3A_GameSupport::AutoDetect(APIType engine_api) {
     if (engine_api != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, this->DefaultDLLName()))
+    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "quake3") && !str_stristr(g_gameinfo.exe_file, "q3ded"))
@@ -170,16 +170,6 @@ bool Q3A_GameSupport::ModLoad(void* entry, APIType modapi) {
 
 void Q3A_GameSupport::ModUnload() {
     orig_vmMain = nullptr;
-}
-
-
-int Q3A_GameSupport::QMMEngMsg(int msg) {
-    return this->qmm_eng_msgs[msg];
-}
-
-
-int Q3A_GameSupport::QMMModMsg(int msg) {
-    return this->qmm_mod_msgs[msg];
 }
 
 
