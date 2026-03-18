@@ -83,16 +83,6 @@ std::vector<GameSupport*> api_supportedgames = {
 #endif
 };
 
-#if 0
-// OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
-// the rest of the games don't appear to have an official 64-bit version or source port
-#if defined(QMM_ARCH_32)
-	{ "game" MOD_DLL,			nullptr,	"base",			"Star Trek: Elite Force II",		GEN_GAME_INFO(STEF2),	17,		4 },
-	{ "efgame" MOD_DLL,			nullptr,	".",			"Star Trek Voyager: Elite Force (SP)",	GEN_GAME_INFO(STVOYSP),	13,		9 },
-#endif
-
-
-#endif
 
 const char* APIType_Name(APIType api) {
 	switch (api) {

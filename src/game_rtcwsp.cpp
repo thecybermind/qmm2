@@ -29,12 +29,20 @@ struct RTCWSP_GameSupport : public GameSupport {
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
     virtual void ModUnload();
+    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
+    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
     virtual intptr_t syscall(intptr_t, ...);
     virtual intptr_t vmMain(intptr_t, ...);
 
-    virtual const char* DefaultDLLName() { return is_iortcw ? iortcw_dllname : official_dllname; }
-    virtual const char* DefaultModDir() { /* iortcw runs single player out of main dir */ return is_iortcw ? "main" : "."; }
+    virtual const char* DefaultDLLName() {
+        // ioRTCW has a different DLL name
+        return is_iortcw ? iortcw_dllname : official_dllname;
+    }
+    virtual const char* DefaultModDir() {
+        // iortcw runs single player out of main dir
+        return is_iortcw ? "main" : ".";
+    }
     virtual const char* GameName() { return "Return to Castle Wolfenstein (SP)"; }
     virtual const char* GameCode() { return "RTCWSP"; }
 

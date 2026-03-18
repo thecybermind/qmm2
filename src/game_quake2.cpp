@@ -32,6 +32,8 @@ struct QUAKE2_GameSupport : public GameSupport {
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
     virtual void ModUnload();
+    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
+    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
     virtual intptr_t syscall(intptr_t, ...);
     virtual intptr_t vmMain(intptr_t, ...);
@@ -42,6 +44,7 @@ struct QUAKE2_GameSupport : public GameSupport {
     virtual const char* GameCode() { return "QUAKE2"; }
 
 private:
+    // update the export variables from orig_export
     static void update_exports();
 
     // track configstrings for our G_GET_CONFIGSTRING syscall

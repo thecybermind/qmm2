@@ -86,6 +86,7 @@ enum {
     // files
     QMM_G_FS_FOPEN_FILE, QMM_G_FS_READ, QMM_G_FS_WRITE, QMM_G_FS_FCLOSE_FILE, QMM_EXEC_APPEND, QMM_FS_READ,
 
+    // array size
     QMM_ENGINE_MSG_COUNT,
 };
 
@@ -93,18 +94,36 @@ enum {
 enum {
     QMM_GAME_INIT, QMM_GAME_SHUTDOWN, QMM_GAME_CONSOLE_COMMAND,
 
+    // array size
     QMM_MOD_MSG_COUNT,
 };
 
+// macros to output game-specific message values to match the QMM_ enums above
+#define GEN_GAME_QMM_ENG_MSGS() \
+	{ \
+		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING, \
+		G_CVAR_REGISTER, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, \
+		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, \
+	}
+#define GEN_GAME_QMM_MOD_MSGS() \
+	{ \
+		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
+	}
+
+// pure virtual base class for game support
+// need to implement all functions except:
+// * DefaultQVMName - only need if the game supports QVMs. default will return nullptr (this is how QMM determines support)
+// * QVMSyscall - only need if the game supports QVMs. default returns 0
+// need to implement qmm_eng_msgs and qmm_mod_msgs (use GEN_GAME_QMM_ENG_MSGS() and GEN_GAME_QMM_MOD_MSGS() macros)
 struct GameSupport {
-    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
-    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
     virtual const char* EngMsgName(intptr_t) = 0;
     virtual const char* ModMsgName(intptr_t) = 0;
     virtual bool AutoDetect(APIType) = 0;
     virtual void* Entry(void*, void*, APIType) = 0;
     virtual bool ModLoad(void*, APIType) = 0;
     virtual void ModUnload() = 0;
+    virtual int QMMEngMsg(int msg) = 0;
+    virtual int QMMModMsg(int msg) = 0;
 
     virtual intptr_t syscall(intptr_t, ...) = 0;
     virtual intptr_t vmMain(intptr_t, ...) = 0;
@@ -116,9 +135,6 @@ struct GameSupport {
     virtual const char* GameCode() = 0;
 
     virtual int QVMSyscall(uint8_t*, int, int*) { return 0; }
-private:
-    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = {};
-    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = {};
 };
 
 extern std::vector<GameSupport*> api_supportedgames;
@@ -136,18 +152,6 @@ extern std::vector<GameSupport*> api_supportedgames;
 
 // generate a case/string line for use in the *MsgNames functions
 #define GEN_CASE(x)		case x: return #x
-
-// macros to output game-specific message values to match the QMM_ enums above
-#define GEN_GAME_QMM_ENG_MSGS() \
-	{ \
-		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING, \
-		G_CVAR_REGISTER, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, \
-		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, \
-	}
-#define GEN_GAME_QMM_MOD_MSGS() \
-	{ \
-		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
-	}
 
 // cache some dynamic message values that get evaluated a lot
 extern intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_SHUTDOWN;

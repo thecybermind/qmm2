@@ -262,7 +262,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
             g_gameinfo.is_shutdown = true;
             // if syscall passed to dllEntry was null, revert to std::exit because *shrug*
             if (!g_gameinfo.syscall) {
-                
+                printf("\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
                 std::exit(-1);
             }
             g_gameinfo.syscall(QMM_FAIL_G_ERROR, "\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
@@ -485,7 +485,7 @@ static void* main_handle_entry(void* import, void* extra, APIType engine) {
     msg_GAME_CONSOLE_COMMAND = QMM_MOD_MSG(QMM_GAME_CONSOLE_COMMAND);
     msg_GAME_SHUTDOWN = QMM_MOD_MSG(QMM_GAME_SHUTDOWN);
 
-    // call the game-specific entry handler (e.g. Q3A_Entry) which will set up the internals to interact
+    // call the game-specific entry handler (e.g. Q3A_GameSupport::Entry) which will set up the internals to interact
     // the engine and the mod
     void* ret = g_gameinfo.game->Entry(import, extra, engine);
 
@@ -612,7 +612,9 @@ static bool main_load_mod(std::string cfg_mod) {
             if (g_gameinfo.game->DefaultQVMName())
                 try_paths.push_back(g_gameinfo.game->DefaultQVMName());
         }
-        // if "mod" config setting was a relative path, do nothing special
+        // if "mod" config setting was a relative path, do nothing special unless QVM
+        if (str_striequal(path_baseext(cfg_mod), EXT_QVM) && g_gameinfo.game->DefaultQVMName())
+            try_paths.push_back(cfg_mod);
         try_paths.push_back(fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod));
         try_paths.push_back(fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, cfg_mod));
         for (std::string& try_path : try_paths) {
