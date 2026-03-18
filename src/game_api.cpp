@@ -84,33 +84,14 @@ std::vector<GameSupport*> api_supportedgames = {
 };
 
 #if 0
-// these games don't appear to have an official 64-bit version or source port
-#if defined(QMM_ARCH_32)
-	{ "game" MP_DLL MOD_DLL,	nullptr,			"Main",			"Call of Duty (MP)",							GEN_GAME_INFO(CODMP),	8,		4 },
-	{ "" UO_DLL MOD_DLL,		nullptr,			"uo",			"Call of Duty: United Offensive (MP)",			GEN_GAME_INFO(CODUOMP),	8,		4 },
-#endif
-
-	// GetGameAPI games
-	{ "jk2game" MOD_DLL,		nullptr,			".",			"Jedi Knight 2: Jedi Outcast (SP)",				GEN_GAME_INFO(JK2SP),	13,		9 },
-	{ "jagame" MOD_DLL,			nullptr,			".",			"Jedi Knight: Jedi Academy (SP)",				GEN_GAME_INFO(JASP),		13,		9 },
-	{ "game" MOD_DLL,			nullptr,			"baseq2",		"Quake 2",										GEN_GAME_INFO(QUAKE2),	7,		3 },
-	{ "game" MOD_DLL,			nullptr,			"base",			"SiN",											GEN_GAME_INFO(SIN),		10,		3 },
 // OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
 // the rest of the games don't appear to have an official 64-bit version or source port
 #if defined(QMM_ARCH_32)
-	{ "game" MOD_DLL,			nullptr,			"main",			"Medal of Honor: Allied Assault",				GEN_GAME_INFO(MOHAA),	9,		7 },
-	{ "game" MOD_DLL,			nullptr,			"mainta",		"Medal of Honor: Spearhead",					GEN_GAME_INFO(MOHSH),	9,		7 },
-	{ "game" MOD_DLL,			nullptr,			"maintt",		"Medal of Honor: Breakthrough",					GEN_GAME_INFO(MOHBT),	9,		7 },
-	{ "game" MOD_DLL,			nullptr,			"base",			"Star Trek: Elite Force II",					GEN_GAME_INFO(STEF2),	17,		4 },
-	{ "game" MOD_DLL,			nullptr,			".",			"Soldier of Fortune 2: Double Helix (SP)",		GEN_GAME_INFO(SOF2SP),	0,		0 },
-	{ "efgame" MOD_DLL,			nullptr,			".",			"Star Trek Voyager: Elite Force (SP)",			GEN_GAME_INFO(STVOYSP),	13,		9 },
+	{ "game" MOD_DLL,			nullptr,	"base",			"Star Trek: Elite Force II",		GEN_GAME_INFO(STEF2),	17,		4 },
+	{ "game" MOD_DLL,			nullptr,	".",			"Soldier of Fortune 2: Double Helix (SP)",	GEN_GAME_INFO(SOF2SP),	0,		0 },
+	{ "efgame" MOD_DLL,			nullptr,	".",			"Star Trek Voyager: Elite Force (SP)",	GEN_GAME_INFO(STVOYSP),	13,		9 },
 #endif
 
-// Q2R only exists for 64-bit Windows
-#if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
-	{ "game_" X64_DLL,			nullptr,			"baseq2",		"Quake 2 Remastered",							GEN_GAME_INFO(Q2R),		9,		6 },
-#endif
-};
 
 #endif
 

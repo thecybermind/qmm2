@@ -9,6 +9,10 @@ Created By:
 
 */
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 #include <stvoysp/game/q_shared.h>
 #include <stvoysp/game/g_public.h>
 
@@ -28,7 +32,7 @@ GEN_GAME_FUNCS(STVOYSP);
 
 
 // auto-detection logic for STVOYSP
-static bool STVOYSP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+static bool STVOYSP_AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
@@ -99,12 +103,12 @@ static game_import_t qmm_import = {
 // we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
 
 // track entstrings for our G_GET_ENTITY_TOKEN syscall
-static std::vector<std::string> s_entity_tokens;
-static size_t s_tokencount = 0;
+static std::vector<std::string> entity_tokens;
+static size_t token_counter = 0;
 static void STVOYSP_Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition) {
     if (entstring) {
-        s_entity_tokens = util_parse_entstring(entstring);
-        s_tokencount = 0;
+        entity_tokens = util_parse_entstring(entstring);
+        token_counter = 0;
     }
     cgame.is_from_QMM = true;
     vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
@@ -136,7 +140,7 @@ static game_export_t qmm_export = {
 
 
 // update the export variables from orig_export
-static void s_update_export() {
+static void update_exports() {
     if (!orig_export)
         return;
 
@@ -173,7 +177,7 @@ static intptr_t STVOYSP_syscall(intptr_t cmd, ...) {
 #endif
 
     // update export vars before calling into the engine
-    s_update_export();
+    update_exports();
 
     intptr_t ret = 0;
 
@@ -256,7 +260,7 @@ static intptr_t STVOYSP_syscall(intptr_t cmd, ...) {
     }
     case G_GET_ENTITY_TOKEN: {
         // qboolean trap_GetEntityToken(char *buffer, int bufferSize);
-        if (s_tokencount >= s_entity_tokens.size()) {
+        if (token_counter >= entity_tokens.size()) {
             ret = qfalse;
             break;
         }
@@ -264,7 +268,7 @@ static intptr_t STVOYSP_syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), (size_t)bufferSize);
+        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }
@@ -338,7 +342,7 @@ static intptr_t STVOYSP_vmMain(intptr_t cmd, ...) {
     };
 
     // update export vars after returning from the mod
-    s_update_export();
+    update_exports();
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYSP_vmMain({} {}) returning {}\n", STVOYSP_ModMsgName(cmd), cmd, ret);
@@ -470,3 +474,5 @@ static const char* STVOYSP_ModMsgName(intptr_t cmd) {
         return "unknown";
     }
 }
+
+#endif // QMM_ARCH_32

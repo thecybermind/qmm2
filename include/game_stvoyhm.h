@@ -12,6 +12,9 @@ Created By:
 #ifndef QMM2_GAME_STVOYMP_H
 #define QMM2_GAME_STVOYMP_H
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
 
 // these function ids are defined either in the g_syscalls.asm file or in qcommon.h from ioef source,
 // but they do not appear in the enum in stvoyhm/game/g_public.h
@@ -36,5 +39,7 @@ enum {
 enum {
 	G_ARGS = -100,					// char* (void)
 };
+
+#endif // QMM_ARCH_32
 
 #endif // QMM2_GAME_STVOYMP_H

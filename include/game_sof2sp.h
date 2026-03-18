@@ -12,6 +12,10 @@ Created By:
 #ifndef QMM2_GAME_SOF2SP_H
 #define QMM2_GAME_SOF2SP_H
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 // import ("syscall") cmds
 enum {
 	G_PRINTF,
@@ -166,5 +170,7 @@ enum {
 enum {
     G_ERROR = -100,                     // void (const char* msg)
 };
+
+#endif // QMM_ARCH_32
 
 #endif // QMM2_GAME_SOF2SP_H

@@ -41,7 +41,10 @@ struct RTCWMP_GameSupport : public GameSupport {
     virtual int QVMSyscall(uint8_t* membase, int cmd, int* args);
 
 private:
+    // a copy of the original syscall from the engine
     eng_syscall orig_syscall = nullptr;
+
+    // a copy of the vmMain function from the mod
     mod_vmMain orig_vmMain = nullptr;
 
     const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();

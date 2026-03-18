@@ -9,6 +9,10 @@ Created By:
 
 */
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 #include <sof2mp/game/q_shared.h>
 #include <sof2mp/game/g_public.h>
 #include <sof2mp/gametype/gt_public.h>
@@ -43,7 +47,10 @@ struct SOF2MP_GameSupport : public GameSupport {
     virtual int QVMSyscall(uint8_t* membase, int cmd, int* args);
 
 private:
+    // a copy of the original syscall from the engine
     eng_syscall orig_syscall = nullptr;
+
+    // a copy of the vmMain function from the mod
     mod_vmMain orig_vmMain = nullptr;
 
     const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
@@ -898,3 +905,5 @@ int SOF2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
 
     return ret;
 }
+
+#endif // QMM_ARCH_32

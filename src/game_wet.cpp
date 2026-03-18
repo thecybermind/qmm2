@@ -38,7 +38,10 @@ struct WET_GameSupport : public GameSupport {
     virtual const char* GameCode() { return "WET"; }
 
 private:
+    // a copy of the original syscall from the engine
     eng_syscall orig_syscall = nullptr;
+
+    // a copy of the vmMain function from the mod
     mod_vmMain orig_vmMain = nullptr;
 
     const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();

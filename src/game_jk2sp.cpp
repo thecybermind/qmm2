@@ -39,7 +39,7 @@ struct JK2SP_GameSupport : public GameSupport {
     virtual const char* GameCode() { return "JK2SP"; }
 
 private:
-    void update_exports();
+    static void update_exports();
 
     // track entstrings for our G_GET_ENTITY_TOKEN syscall
     // TODO find a way to make this more elegant instead of statics 
@@ -48,142 +48,16 @@ private:
     static void Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition);
 
     // a copy of the original import struct that comes from the game engine
-    game_import_t orig_import = {};
+    static game_import_t orig_import;
 
     // a copy of the original export struct pointer that comes from the mod
-    game_export_t* orig_export = nullptr;
+    static game_export_t* orig_export;
 
     // struct with lambdas that call QMM's syscall function. this is given to the mod
-    game_import_t qmm_import = {
-        GEN_IMPORT(Printf, G_PRINTF),
-        GEN_IMPORT(WriteCam, G_WRITECAM),
-        GEN_IMPORT(Error, G_ERROR),
-        GEN_IMPORT(Milliseconds, G_MILLISECONDS),
-        GEN_IMPORT(cvar, G_CVAR),
-        GEN_IMPORT(cvar_set, G_CVAR_SET),
-        GEN_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE),
-        GEN_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER),
-        GEN_IMPORT(argc, G_ARGC),
-        GEN_IMPORT(argv, G_ARGV),
-        GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
-        GEN_IMPORT(FS_Read, G_FS_READ),
-        GEN_IMPORT(FS_Write, G_FS_WRITE),
-        GEN_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE),
-        GEN_IMPORT(FS_ReadFile, G_FS_READFILE),
-        GEN_IMPORT(FS_FreeFile, G_FS_FREEFILE),
-        GEN_IMPORT(FS_GetFileList, G_FS_GETFILELIST),
-        GEN_IMPORT(AppendToSaveGame, G_APPENDTOSAVEGAME),
-        GEN_IMPORT(ReadFromSaveGame, G_READFROMSAVEGAME),
-        GEN_IMPORT(ReadFromSaveGameOptional, G_READFROMSAVEGAMEOPTIONAL),
-        GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
-        GEN_IMPORT(DropClient, G_DROP_CLIENT),
-        GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
-        GEN_IMPORT(SetConfigstring, G_SET_CONFIGSTRING),
-        GEN_IMPORT(GetConfigstring, G_GET_CONFIGSTRING),
-        GEN_IMPORT(GetUserinfo, G_GET_USERINFO),
-        GEN_IMPORT(SetUserinfo, G_SET_USERINFO),
-        GEN_IMPORT(GetServerinfo, G_GET_SERVERINFO),
-        GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
-        GEN_IMPORT(trace, G_TRACE),
-        GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
-        GEN_IMPORT(inPVS, G_IN_PVS),
-        GEN_IMPORT(inPVSIgnorePortals, G_IN_PVS_IGNOREPORTALS),
-        GEN_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE),
-        GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
-        GEN_IMPORT(linkentity, G_LINKENTITY),
-        GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
-        GEN_IMPORT(EntitiesInBox, G_ENTITIES_IN_BOX),
-        GEN_IMPORT(EntityContact, G_ENTITY_CONTACT),
-        nullptr, // int* VoiceVolume;
-        GEN_IMPORT(Malloc, G_MALLOC),	// see qcommon/tags.h for choices
-        GEN_IMPORT(Free, G_FREE),
-        GEN_IMPORT(G2API_PrecacheGhoul2Model, G_G2API_PRECACHEGHOUL2MODEL),
-        GEN_IMPORT(G2API_InitGhoul2Model, G_G2API_INITGHOUL2MODEL),
-        GEN_IMPORT(G2API_SetLodBias, G_G2API_SETLODBIAS),
-        GEN_IMPORT(G2API_SetSkin, G_G2API_SETSKIN),
-        GEN_IMPORT(G2API_SetShader, G_G2API_SETSHADER),
-        GEN_IMPORT(G2API_RemoveGhoul2Model, G_G2API_REMOVEGHOUL2MODEL),
-        GEN_IMPORT(G2API_SetSurfaceOnOff, G_G2API_SETSURFACEONOFF),
-        GEN_IMPORT(G2API_SetRootSurface, G_G2API_SETROOTSURFACE),
-        GEN_IMPORT(G2API_RemoveSurface, G_G2API_REMOVESURFACE),
-        GEN_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, int, CGhoul2Info*, int, int, float, float, int),
-        GEN_IMPORT(G2API_SetBoneAnim, G_G2API_SETBONEANIM),
-        GEN_IMPORT(G2API_GetBoneAnim, G_G2API_GETBONEANIM),
-        GEN_IMPORT(G2API_GetBoneAnimIndex, G_G2API_GETBONEANIMINDEX),
-        GEN_IMPORT(G2API_GetAnimRange, G_G2API_GETANIMRANGE),
-        GEN_IMPORT(G2API_GetAnimRangeIndex, G_G2API_GETANIMRANGEINDEX),
-        GEN_IMPORT(G2API_PauseBoneAnim, G_G2API_PAUSEBONEANIM),
-        GEN_IMPORT(G2API_PauseBoneAnimIndex, G_G2API_PAUSEBONEANIMINDEX),
-        GEN_IMPORT(G2API_IsPaused, G_G2API_ISPAUSED),
-        GEN_IMPORT(G2API_StopBoneAnim, G_G2API_STOPBONEANIM),
-        GEN_IMPORT(G2API_SetBoneAngles, G_G2API_SETBONEANGLES),
-        GEN_IMPORT(G2API_SetBoneAnglesMatrix, G_G2API_SETBONEANGLESMATRIX),
-        GEN_IMPORT(G2API_StopBoneAngles, G_G2API_STOPBONEANGLES),
-        GEN_IMPORT(G2API_RemoveBone, G_G2API_REMOVEBONE),
-        GEN_IMPORT(G2API_RemoveBolt, G_G2API_REMOVEBOLT),
-        GEN_IMPORT(G2API_AddBolt, G_G2API_ADDBOLT),
-        GEN_IMPORT(G2API_AddBoltSurfNum, G_G2API_ADDBOLTSURFNUM),
-        GEN_IMPORT(G2API_AttachG2Model, G_G2API_ATTACHG2MODEL),
-        GEN_IMPORT(G2API_DetachG2Model, G_G2API_DETACHG2MODEL),
-        GEN_IMPORT(G2API_AttachEnt, G_G2API_ATTACHENT),
-        GEN_IMPORT(G2API_DetachEnt, G_G2API_DETACHENT),
-        GEN_IMPORT(G2API_GetBoltMatrix, G_G2API_GETBOLTMATRIX),
-        GEN_IMPORT(G2API_ListSurfaces, G_G2API_LISTSURFACES),
-        GEN_IMPORT(G2API_ListBones, G_G2API_LISTBONES),
-        GEN_IMPORT(G2API_HaveWeGhoul2Models, G_G2API_HAVEWEGHOUL2MODELS),
-        GEN_IMPORT(G2API_SetGhoul2ModelFlags, G_G2API_SETGHOUL2MODELFLAGS),
-        GEN_IMPORT(G2API_GetGhoul2ModelFlags, G_G2API_GETGHOUL2MODELFLAGS),
-        GEN_IMPORT(G2API_GetAnimFileName, G_G2API_GETANIMFILENAME),
-        GEN_IMPORT(G2API_CollisionDetect, G_G2API_COLLISIONDETECT),
-        GEN_IMPORT(G2API_GiveMeVectorFromMatrix, G_G2API_GIVEMEVECTORFROMMATRIX),
-        GEN_IMPORT(G2API_CopyGhoul2Instance, G_G2API_COPYGHOUL2INSTANCE),
-        GEN_IMPORT(G2API_CleanGhoul2Models, G_G2API_CLEANGHOUL2MODELS),
-        GEN_IMPORT(TheGhoul2InfoArray, G_THEGHOUL2INFOARRAY),
-        GEN_IMPORT(G2API_GetParentSurface, G_G2API_GETPARENTSURFACE),
-        GEN_IMPORT(G2API_GetSurfaceIndex, G_G2API_GETSURFACEINDEX),
-        GEN_IMPORT(G2API_GetSurfaceName, G_G2API_GETSURFACENAME),
-        GEN_IMPORT(G2API_GetGLAName, G_G2API_GETGLANAME),
-        GEN_IMPORT(G2API_SetNewOrigin, G_G2API_SETNEWORIGIN),
-        GEN_IMPORT(G2API_GetBoneIndex, G_G2API_GETBONEINDEX),
-        GEN_IMPORT(G2API_StopBoneAnglesIndex, G_G2API_STOPBONEANGLESINDEX),
-        GEN_IMPORT(G2API_StopBoneAnimIndex, G_G2API_STOPBONEANIMINDEX),
-        GEN_IMPORT(G2API_SetBoneAnglesIndex, G_G2API_SETBONEANGLESINDEX),
-        GEN_IMPORT(G2API_SetBoneAnglesMatrixIndex, G_G2API_SETBONEANGLESMATRIXINDEX),
-        GEN_IMPORT(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX),
-        GEN_IMPORT(G2API_SaveGhoul2Models, G_G2API_SAVEGHOUL2MODELS),
-        GEN_IMPORT(G2API_LoadGhoul2Models, G_G2API_LOADGHOUL2MODELS),
-        GEN_IMPORT(G2API_LoadSaveCodeDestructGhoul2Info, G_G2API_LOADSAVECODEDESTRUCTGHOUL2INFO),
-        GEN_IMPORT(G2API_FreeSaveBuffer, G_G2API_FREESAVEBUFFER),
-        GEN_IMPORT(G2API_GetAnimFileNameIndex, G_G2API_GETANIMFILENAMEINDEX),
-        GEN_IMPORT(G2API_GetSurfaceRenderStatus, G_G2API_GETSURFACERENDERSTATUS),
-        GEN_IMPORT(RE_RegisterSkin, G_RE_REGISTERSKIN),
-        GEN_IMPORT(RE_GetAnimationCFG, G_RE_GETANIMATIONCFG),
-    };
+    static game_import_t qmm_import;
 
     // struct with lambdas that call QMM's vmMain function. this is given to the game engine
-    game_export_t qmm_export = {
-        GAME_API_VERSION,	// apiversion
-        JK2SP_GameSupport::Init,
-        GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
-        GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
-        GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
-        GEN_EXPORT(GameAllowedToSaveHere, GAME_GAMEALLOWEDTOSAVEHERE),
-        GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
-        GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
-        GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
-        GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
-        GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
-        GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
-        GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
-        GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
-        GEN_EXPORT(PrintEntClassname, GAME_PRINTENTCLASSNAME),
-        GEN_EXPORT(ValidateAnimRange, GAME_VALIDATEANIMRANGE),
-
-        // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
-        nullptr,	// gentities
-        0,			// gentitySize
-        0,			// num_entities
-    };
+    static game_export_t qmm_export;
 
     const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
     const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
@@ -205,50 +79,6 @@ bool JK2SP_GameSupport::AutoDetect(APIType engineapi) {
         return false;
 
     return true;
-}
-
-
-// these are "pre" hooks for storing some data for polyfills.
-// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
-
-// track entstrings for our G_GET_ENTITY_TOKEN syscall
-std::vector<std::string> JK2SP_GameSupport::entity_tokens;
-size_t JK2SP_GameSupport::token_counter = 0;
-
-void JK2SP_GameSupport::Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition) {
-    if (entstring) {
-        entity_tokens = util_parse_entstring(entstring);
-        token_counter = 0;
-    }
-    cgame.is_from_QMM = true;
-    ::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
-}
-
-
-// update the export variables from orig_export
-void JK2SP_GameSupport::update_exports() {
-    if (!orig_export)
-        return;
-
-    bool changed = false;
-
-    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
-    if (qmm_export.gentities != orig_export->gentities
-        || qmm_export.gentitySize != orig_export->gentitySize
-        || qmm_export.num_entities != orig_export->num_entities
-        ) {
-        changed = true;
-    }
-
-    qmm_export.gentities = orig_export->gentities;
-    qmm_export.gentitySize = orig_export->gentitySize;
-    qmm_export.num_entities = orig_export->num_entities;
-
-    if (changed) {
-        // this will trigger this message to be fired to plugins, and then it will be handled
-        // by the empty "case G_LOCATE_GAME_DATA" in JASP_syscall
-        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, nullptr, 0);
-    }
 }
 
 
@@ -680,3 +510,181 @@ const char* JK2SP_GameSupport::ModMsgName(intptr_t cmd) {
         return "unknown";
     }
 }
+
+
+// update the export variables from orig_export
+void JK2SP_GameSupport::update_exports() {
+    if (!orig_export)
+        return;
+
+    bool changed = false;
+
+    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
+    if (qmm_export.gentities != orig_export->gentities
+        || qmm_export.gentitySize != orig_export->gentitySize
+        || qmm_export.num_entities != orig_export->num_entities
+        ) {
+        changed = true;
+    }
+
+    qmm_export.gentities = orig_export->gentities;
+    qmm_export.gentitySize = orig_export->gentitySize;
+    qmm_export.num_entities = orig_export->num_entities;
+
+    if (changed) {
+        // this will trigger this message to be fired to plugins, and then it will be handled
+        // by the empty "case G_LOCATE_GAME_DATA" in syscall
+        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, nullptr, 0);
+    }
+}
+
+
+game_import_t JK2SP_GameSupport::orig_import = {};
+
+
+game_export_t* JK2SP_GameSupport::orig_export = nullptr;
+
+
+game_import_t JK2SP_GameSupport::qmm_import = {
+    GEN_IMPORT(Printf, G_PRINTF),
+    GEN_IMPORT(WriteCam, G_WRITECAM),
+    GEN_IMPORT(Error, G_ERROR),
+    GEN_IMPORT(Milliseconds, G_MILLISECONDS),
+    GEN_IMPORT(cvar, G_CVAR),
+    GEN_IMPORT(cvar_set, G_CVAR_SET),
+    GEN_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE),
+    GEN_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER),
+    GEN_IMPORT(argc, G_ARGC),
+    GEN_IMPORT(argv, G_ARGV),
+    GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
+    GEN_IMPORT(FS_Read, G_FS_READ),
+    GEN_IMPORT(FS_Write, G_FS_WRITE),
+    GEN_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE),
+    GEN_IMPORT(FS_ReadFile, G_FS_READFILE),
+    GEN_IMPORT(FS_FreeFile, G_FS_FREEFILE),
+    GEN_IMPORT(FS_GetFileList, G_FS_GETFILELIST),
+    GEN_IMPORT(AppendToSaveGame, G_APPENDTOSAVEGAME),
+    GEN_IMPORT(ReadFromSaveGame, G_READFROMSAVEGAME),
+    GEN_IMPORT(ReadFromSaveGameOptional, G_READFROMSAVEGAMEOPTIONAL),
+    GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
+    GEN_IMPORT(DropClient, G_DROP_CLIENT),
+    GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
+    GEN_IMPORT(SetConfigstring, G_SET_CONFIGSTRING),
+    GEN_IMPORT(GetConfigstring, G_GET_CONFIGSTRING),
+    GEN_IMPORT(GetUserinfo, G_GET_USERINFO),
+    GEN_IMPORT(SetUserinfo, G_SET_USERINFO),
+    GEN_IMPORT(GetServerinfo, G_GET_SERVERINFO),
+    GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
+    GEN_IMPORT(trace, G_TRACE),
+    GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
+    GEN_IMPORT(inPVS, G_IN_PVS),
+    GEN_IMPORT(inPVSIgnorePortals, G_IN_PVS_IGNOREPORTALS),
+    GEN_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE),
+    GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
+    GEN_IMPORT(linkentity, G_LINKENTITY),
+    GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
+    GEN_IMPORT(EntitiesInBox, G_ENTITIES_IN_BOX),
+    GEN_IMPORT(EntityContact, G_ENTITY_CONTACT),
+    nullptr, // int* VoiceVolume;
+    GEN_IMPORT(Malloc, G_MALLOC),	// see qcommon/tags.h for choices
+    GEN_IMPORT(Free, G_FREE),
+    GEN_IMPORT(G2API_PrecacheGhoul2Model, G_G2API_PRECACHEGHOUL2MODEL),
+    GEN_IMPORT(G2API_InitGhoul2Model, G_G2API_INITGHOUL2MODEL),
+    GEN_IMPORT(G2API_SetLodBias, G_G2API_SETLODBIAS),
+    GEN_IMPORT(G2API_SetSkin, G_G2API_SETSKIN),
+    GEN_IMPORT(G2API_SetShader, G_G2API_SETSHADER),
+    GEN_IMPORT(G2API_RemoveGhoul2Model, G_G2API_REMOVEGHOUL2MODEL),
+    GEN_IMPORT(G2API_SetSurfaceOnOff, G_G2API_SETSURFACEONOFF),
+    GEN_IMPORT(G2API_SetRootSurface, G_G2API_SETROOTSURFACE),
+    GEN_IMPORT(G2API_RemoveSurface, G_G2API_REMOVESURFACE),
+    GEN_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, int, CGhoul2Info*, int, int, float, float, int),
+    GEN_IMPORT(G2API_SetBoneAnim, G_G2API_SETBONEANIM),
+    GEN_IMPORT(G2API_GetBoneAnim, G_G2API_GETBONEANIM),
+    GEN_IMPORT(G2API_GetBoneAnimIndex, G_G2API_GETBONEANIMINDEX),
+    GEN_IMPORT(G2API_GetAnimRange, G_G2API_GETANIMRANGE),
+    GEN_IMPORT(G2API_GetAnimRangeIndex, G_G2API_GETANIMRANGEINDEX),
+    GEN_IMPORT(G2API_PauseBoneAnim, G_G2API_PAUSEBONEANIM),
+    GEN_IMPORT(G2API_PauseBoneAnimIndex, G_G2API_PAUSEBONEANIMINDEX),
+    GEN_IMPORT(G2API_IsPaused, G_G2API_ISPAUSED),
+    GEN_IMPORT(G2API_StopBoneAnim, G_G2API_STOPBONEANIM),
+    GEN_IMPORT(G2API_SetBoneAngles, G_G2API_SETBONEANGLES),
+    GEN_IMPORT(G2API_SetBoneAnglesMatrix, G_G2API_SETBONEANGLESMATRIX),
+    GEN_IMPORT(G2API_StopBoneAngles, G_G2API_STOPBONEANGLES),
+    GEN_IMPORT(G2API_RemoveBone, G_G2API_REMOVEBONE),
+    GEN_IMPORT(G2API_RemoveBolt, G_G2API_REMOVEBOLT),
+    GEN_IMPORT(G2API_AddBolt, G_G2API_ADDBOLT),
+    GEN_IMPORT(G2API_AddBoltSurfNum, G_G2API_ADDBOLTSURFNUM),
+    GEN_IMPORT(G2API_AttachG2Model, G_G2API_ATTACHG2MODEL),
+    GEN_IMPORT(G2API_DetachG2Model, G_G2API_DETACHG2MODEL),
+    GEN_IMPORT(G2API_AttachEnt, G_G2API_ATTACHENT),
+    GEN_IMPORT(G2API_DetachEnt, G_G2API_DETACHENT),
+    GEN_IMPORT(G2API_GetBoltMatrix, G_G2API_GETBOLTMATRIX),
+    GEN_IMPORT(G2API_ListSurfaces, G_G2API_LISTSURFACES),
+    GEN_IMPORT(G2API_ListBones, G_G2API_LISTBONES),
+    GEN_IMPORT(G2API_HaveWeGhoul2Models, G_G2API_HAVEWEGHOUL2MODELS),
+    GEN_IMPORT(G2API_SetGhoul2ModelFlags, G_G2API_SETGHOUL2MODELFLAGS),
+    GEN_IMPORT(G2API_GetGhoul2ModelFlags, G_G2API_GETGHOUL2MODELFLAGS),
+    GEN_IMPORT(G2API_GetAnimFileName, G_G2API_GETANIMFILENAME),
+    GEN_IMPORT(G2API_CollisionDetect, G_G2API_COLLISIONDETECT),
+    GEN_IMPORT(G2API_GiveMeVectorFromMatrix, G_G2API_GIVEMEVECTORFROMMATRIX),
+    GEN_IMPORT(G2API_CopyGhoul2Instance, G_G2API_COPYGHOUL2INSTANCE),
+    GEN_IMPORT(G2API_CleanGhoul2Models, G_G2API_CLEANGHOUL2MODELS),
+    GEN_IMPORT(TheGhoul2InfoArray, G_THEGHOUL2INFOARRAY),
+    GEN_IMPORT(G2API_GetParentSurface, G_G2API_GETPARENTSURFACE),
+    GEN_IMPORT(G2API_GetSurfaceIndex, G_G2API_GETSURFACEINDEX),
+    GEN_IMPORT(G2API_GetSurfaceName, G_G2API_GETSURFACENAME),
+    GEN_IMPORT(G2API_GetGLAName, G_G2API_GETGLANAME),
+    GEN_IMPORT(G2API_SetNewOrigin, G_G2API_SETNEWORIGIN),
+    GEN_IMPORT(G2API_GetBoneIndex, G_G2API_GETBONEINDEX),
+    GEN_IMPORT(G2API_StopBoneAnglesIndex, G_G2API_STOPBONEANGLESINDEX),
+    GEN_IMPORT(G2API_StopBoneAnimIndex, G_G2API_STOPBONEANIMINDEX),
+    GEN_IMPORT(G2API_SetBoneAnglesIndex, G_G2API_SETBONEANGLESINDEX),
+    GEN_IMPORT(G2API_SetBoneAnglesMatrixIndex, G_G2API_SETBONEANGLESMATRIXINDEX),
+    GEN_IMPORT(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX),
+    GEN_IMPORT(G2API_SaveGhoul2Models, G_G2API_SAVEGHOUL2MODELS),
+    GEN_IMPORT(G2API_LoadGhoul2Models, G_G2API_LOADGHOUL2MODELS),
+    GEN_IMPORT(G2API_LoadSaveCodeDestructGhoul2Info, G_G2API_LOADSAVECODEDESTRUCTGHOUL2INFO),
+    GEN_IMPORT(G2API_FreeSaveBuffer, G_G2API_FREESAVEBUFFER),
+    GEN_IMPORT(G2API_GetAnimFileNameIndex, G_G2API_GETANIMFILENAMEINDEX),
+    GEN_IMPORT(G2API_GetSurfaceRenderStatus, G_G2API_GETSURFACERENDERSTATUS),
+    GEN_IMPORT(RE_RegisterSkin, G_RE_REGISTERSKIN),
+    GEN_IMPORT(RE_GetAnimationCFG, G_RE_GETANIMATIONCFG),
+};
+
+
+// track entstrings for our G_GET_ENTITY_TOKEN syscall
+std::vector<std::string> JK2SP_GameSupport::entity_tokens;
+size_t JK2SP_GameSupport::token_counter = 0;
+void JK2SP_GameSupport::Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition) {
+    if (entstring) {
+        entity_tokens = util_parse_entstring(entstring);
+        token_counter = 0;
+    }
+    cgame.is_from_QMM = true;
+    ::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
+}
+
+
+game_export_t JK2SP_GameSupport::qmm_export = {
+    GAME_API_VERSION,	// apiversion
+    JK2SP_GameSupport::Init,
+    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
+    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
+    GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
+    GEN_EXPORT(GameAllowedToSaveHere, GAME_GAMEALLOWEDTOSAVEHERE),
+    GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
+    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
+    GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
+    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
+    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
+    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
+    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
+    GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
+    GEN_EXPORT(PrintEntClassname, GAME_PRINTENTCLASSNAME),
+    GEN_EXPORT(ValidateAnimRange, GAME_VALIDATEANIMRANGE),
+
+    // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
+    nullptr,	// gentities
+    0,			// gentitySize
+    0,			// num_entities
+};

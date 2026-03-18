@@ -9,6 +9,10 @@ Created By:
 
 */
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 #include <sof2sp/g_public.h>
 
 #include "game_api.h"
@@ -25,7 +29,7 @@ GEN_GAME_FUNCS(SOF2SP);
 
 
 // auto-detection logic for SOF2SP
-static bool SOF2SP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+static bool SOF2SP_AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
@@ -198,7 +202,7 @@ static game_export_t qmm_export = {
 
 
 // update the export variables from orig_export
-static void s_update_export() {
+static void update_exports() {
     if (!orig_export)
         return;
 
@@ -218,7 +222,7 @@ static intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
 #endif
 
     // update export vars before calling into the engine
-    s_update_export();
+    update_exports();
 
     intptr_t ret = 0;
 
@@ -432,7 +436,7 @@ static intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
     };
 
     // update export vars after returning from the mod
-    s_update_export();
+    update_exports();
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_vmMain({} {}) returning {}\n", SOF2SP_ModMsgName(cmd), cmd, ret);
@@ -644,3 +648,5 @@ static const char* SOF2SP_ModMsgName(intptr_t cmd) {
         return "unknown";
     }
 }
+
+#endif // QMM_ARCH_32

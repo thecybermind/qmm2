@@ -9,6 +9,10 @@ Created By:
 
 */
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 #include <codmp/game/g_public.h>
 
 #include "game_api.h"
@@ -37,7 +41,10 @@ struct CODMP_GameSupport : public GameSupport {
     virtual const char* GameCode() { return "CODMP"; }
 
 private:
+    // a copy of the original syscall from the engine
     eng_syscall orig_syscall = nullptr;
+
+    // a copy of the vmMain function from the mod
     mod_vmMain orig_vmMain = nullptr;
 
     const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
@@ -347,3 +354,5 @@ const char* CODMP_GameSupport::ModMsgName(intptr_t cmd) {
         return "unknown";
     }
 }
+
+#endif // QMM_ARCH_32

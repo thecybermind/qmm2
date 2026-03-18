@@ -9,6 +9,10 @@ Created By:
 
 */
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <cstdio>
 #include <mohsh/qcommon/q_shared.h>
@@ -26,326 +30,78 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_GAME_QMM_MSGS(MOHSH);
+struct MOHSH_GameSupport : public GameSupport {
+    virtual const char* EngMsgName(intptr_t msg);
+    virtual const char* ModMsgName(intptr_t msg);
+    virtual bool AutoDetect(APIType engine_api);
+    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual bool ModLoad(void* entry, APIType mod_api);
+    virtual void ModUnload();
 
-GEN_GAME_FUNCS(MOHSH);
+    virtual intptr_t syscall(intptr_t, ...);
+    virtual intptr_t vmMain(intptr_t, ...);
+
+    virtual const char* DefaultDLLName() { return "game" MOD_DLL; }
+    virtual const char* DefaultModDir() { return "mainta"; }
+    virtual const char* GameName() { return "Medal of Honor: Spearhead"; }
+    virtual const char* GameCode() { return "MOHSH"; }
+
+private:
+    static void update_exports();
+
+    // track entstrings for our G_GET_ENTITY_TOKEN syscall
+    static std::vector<std::string> entity_tokens;
+    static size_t token_counter;
+    static void SpawnEntities(char* entstring, int levelTime);
+
+    static void DebugCircle(float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6);
+
+    // a copy of the original import struct that comes from the game engine
+    static game_import_t orig_import;
+
+    // a copy of the original export struct pointer that comes from the mod
+    static game_export_t* orig_export;
+
+    // struct with lambdas that call QMM's syscall function. this is given to the mod
+    static game_import_t qmm_import;
+
+    // struct with lambdas that call QMM's vmMain function. this is given to the game engine
+    static game_export_t qmm_export;
+
+    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
+};
+
+GEN_GAME_OBJ(MOHSH);
 
 
 // auto-detection logic for MOHSH
-static bool MOHSH_AutoDetect(api_supportedgame* game, APIType engineapi) {
+bool MOHSH_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(g_gameinfo.exe_file, "spear"))
+    if (!str_stristr(g_gameinfo.exe_file, "break"))
         return false;
 
     return true;
 }
 
 
-// a copy of the original import struct that comes from the game engine
-static game_import_t orig_import;
-
-// a copy of the original export struct pointer that comes from the mod
-static game_export_t* orig_export = nullptr;
-
-// struct with lambdas that call QMM's syscall function. this is given to the mod
-static game_import_t qmm_import = {
-    GEN_IMPORT(Printf, G_PRINTF),
-    GEN_IMPORT(DPrintf, G_DPRINTF),
-    GEN_IMPORT(DPrintf2, G_DPRINTF2),
-    GEN_IMPORT(DebugPrintf, G_DEBUGPRINTF),
-    GEN_IMPORT(Error, G_ERROR),
-    GEN_IMPORT(Milliseconds, G_MILLISECONDS),
-    GEN_IMPORT(LV_ConvertString, G_LV_CONVERTSTRING),
-    GEN_IMPORT(CL_LV_ConvertString, G_CL_LV_CONVERTSTRING),
-    GEN_IMPORT(Malloc, G_MALLOC),
-    GEN_IMPORT(Free, G_FREE),
-    GEN_IMPORT(Cvar_Get, G_CVAR_GET),
-    GEN_IMPORT(cvar_set, G_CVAR_SET),
-    GEN_IMPORT(cvar_set2, G_CVAR_SET2),
-    GEN_IMPORT(NextCvar, G_NEXTCVAR),
-    GEN_IMPORT(Argc, G_ARGC),
-    GEN_IMPORT(Argv, G_ARGV),
-    GEN_IMPORT(Args, G_ARGS),
-    GEN_IMPORT(AddCommand, G_ADDCOMMAND),
-    GEN_IMPORT(FS_ReadFile, G_FS_READFILE),
-    GEN_IMPORT(FS_FreeFile, G_FS_FREEFILE),
-    GEN_IMPORT(FS_WriteFile, G_FS_WRITEFILE),
-    GEN_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE),
-    GEN_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND),
-    GEN_IMPORT(FS_FOpenFile, G_FS_UNKNOWN),
-    GEN_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE),
-    GEN_IMPORT(FS_Write, G_FS_WRITE),
-    GEN_IMPORT(FS_Read, G_FS_READ),
-    GEN_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE),
-    GEN_IMPORT(FS_Tell, G_FS_TELL),
-    GEN_IMPORT(FS_Seek, G_FS_SEEK),
-    GEN_IMPORT(FS_Flush, G_FS_FLUSH),
-    GEN_IMPORT(FS_FileNewer, G_FS_FILENEWER),
-    GEN_IMPORT(FS_CanonicalFilename, G_FS_CANONICALFILENAME),
-    GEN_IMPORT(FS_ListFiles, G_FS_LISTFILES),
-    GEN_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST),
-    GEN_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME),
-    GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
-    GEN_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND),
-    GEN_IMPORT_1(DebugGraph, G_DEBUGGRAPH, void, float),
-    GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
-    GEN_IMPORT(DropClient, G_DROP_CLIENT),
-    GEN_IMPORT(MSG_WriteBits, G_MSG_WRITEBITS),
-    GEN_IMPORT(MSG_WriteChar, G_MSG_WRITECHAR),
-    GEN_IMPORT(MSG_WriteByte, G_MSG_WRITEBYTE),
-    GEN_IMPORT(MSG_WriteSVC, G_MSG_WRITESVC),
-    GEN_IMPORT(MSG_WriteShort, G_MSG_WRITESHORT),
-    GEN_IMPORT(MSG_WriteLong, G_MSG_WRITELONG),
-    GEN_IMPORT_1(MSG_WriteFloat, G_MSG_WRITEFLOAT, void, float),
-    GEN_IMPORT(MSG_WriteString, G_MSG_WRITESTRING),
-    GEN_IMPORT_1(MSG_WriteAngle8, G_MSG_WRITEANGLE8, void, float),
-    GEN_IMPORT_1(MSG_WriteAngle16, G_MSG_WRITEANGLE16, void, float),
-    GEN_IMPORT_1(MSG_WriteCoord, G_MSG_WRITECOORD, void, float),
-    GEN_IMPORT(MSG_WriteDir, G_MSG_WRITEDIR),
-    GEN_IMPORT(MSG_StartCGM, G_MSG_STARTCGM),
-    GEN_IMPORT(MSG_EndCGM, G_MSG_ENDCGM),
-    GEN_IMPORT(MSG_SetClient, G_MSG_SETCLIENT),
-    GEN_IMPORT(SetBroadcastVisible, G_SETBROADCASTVISIBLE),
-    GEN_IMPORT(SetBroadcastHearable, G_SETBROADCASTHEARABLE),
-    GEN_IMPORT(SetBroadcastAll, G_SETBROADCASTALL),
-    GEN_IMPORT(setConfigstring, G_SET_CONFIGSTRING),
-    GEN_IMPORT(getConfigstring, G_GET_CONFIGSTRING),
-    GEN_IMPORT(SetUserinfo, G_SET_USERINFO),
-    GEN_IMPORT(GetUserinfo, G_GET_USERINFO),
-    GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
-    GEN_IMPORT(ModelBoundsFromName, G_MODELBOUNDSFROMNAME),
-    GEN_IMPORT(SightTraceEntity, G_SIGHTTRACEENTITY),
-    GEN_IMPORT(SightTrace, G_SIGHTTRACE),
-    GEN_IMPORT(trace, G_TRACE),
-    GEN_IMPORT(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION),
-    GEN_IMPORT(GetShader, G_GETSHADER),
-    GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
-    GEN_IMPORT(PointBrushnum, G_POINTBRUSHNUM),
-    GEN_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE),
-    GEN_IMPORT(AreaForPoint, G_AREAFORPOINT),
-    GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
-    GEN_IMPORT(InPVS, G_IN_PVS),
-    GEN_IMPORT(linkentity, G_LINKENTITY),
-    GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
-    GEN_IMPORT(AreaEntities, G_AREAENTITIES),
-    GEN_IMPORT(ClipToEntity, G_CLIPTOENTITY),
-    GEN_IMPORT(HitEntity, G_HITENTITY),
-    GEN_IMPORT(imageindex, G_IMAGEINDEX),
-    GEN_IMPORT(itemindex, G_ITEMINDEX),
-    GEN_IMPORT(soundindex, G_SOUNDINDEX),
-    GEN_IMPORT(TIKI_RegisterModel, G_TIKI_REGISTERMODEL),
-    GEN_IMPORT(modeltiki, G_MODELTIKI),
-    GEN_IMPORT(modeltikianim, G_MODELTIKIANIM),
-    GEN_IMPORT(SetLightStyle, G_SETLIGHTSTYLE),
-    GEN_IMPORT(GameDir, G_GAMEDIR),
-    GEN_IMPORT(setmodel, G_SETMODEL),
-    GEN_IMPORT(clearmodel, G_CLEARMODEL),
-    GEN_IMPORT(TIKI_NumAnims, G_TIKI_NUMANIMS),
-    GEN_IMPORT(TIKI_NumSurfaces, G_TIKI_NUMSURFACES),
-    GEN_IMPORT(TIKI_NumTags, G_TIKI_NUMTAGS),
-    GEN_IMPORT_4(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS, void, dtiki_t*, float, vec3_t, vec3_t),
-    GEN_IMPORT(TIKI_GetSkeletor, G_TIKI_GETSKELETOR),
-    GEN_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM),
-    GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
-    GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
-    GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
-    GEN_IMPORT(Anim_Time, G_ANIM_TIME),
-    GEN_IMPORT(Anim_Frametime, G_ANIM_FRAMETIME),
-    GEN_IMPORT(Anim_CrossTime, G_ANIM_CROSSTIME),
-    GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
-    GEN_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA),
-    GEN_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA),
-    GEN_IMPORT_5(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME, void, dtiki_t*, int, float, float, float*),
-    GEN_IMPORT_5(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME, void, dtiki_t*, int, float, float, float*),
-    GEN_IMPORT(Anim_Flags, G_ANIM_FLAGS),
-    GEN_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL),
-    GEN_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS),
-    GEN_IMPORT(NumHeadModels, G_NUMHEADMODELS),
-    GEN_IMPORT(GetHeadModel, G_GETHEADMODEL),
-    GEN_IMPORT(NumHeadSkins, G_NUMHEADSKINS),
-    GEN_IMPORT(GetHeadSkin, G_GETHEADSKIN),
-    GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
-    GEN_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM),
-    GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
-    GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
-    GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
-    GEN_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL), // todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
-    GEN_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL),
-    GEN_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, qboolean, dtiki_t*, int, int, float),
-    GEN_IMPORT_6(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, void, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, float),
-    GEN_IMPORT(CM_GetHitLocationInfo, G_CM_GETHITLOCATIONINFO),
-    GEN_IMPORT(CM_GetHitLocationInfoSecondary, G_CM_GETHITLOCATIONINFOSECONDARY),
-    GEN_IMPORT(Alias_Add, G_ALIAS_ADD),
-    GEN_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM),
-    GEN_IMPORT(Alias_Dump, G_ALIAS_DUMP),
-    GEN_IMPORT(Alias_Clear, G_ALIAS_CLEAR),
-    GEN_IMPORT(Alias_UpdateDialog, G_ALIAS_UPDATEDIALOG),
-    GEN_IMPORT(TIKI_NameForNum, G_TIKI_NAMEFORNUM),
-    GEN_IMPORT(GlobalAlias_Add, G_GLOBALALIAS_ADD),
-    GEN_IMPORT(GlobalAlias_FindRandom, G_GLOBALALIAS_FINDRANDOM),
-    GEN_IMPORT(GlobalAlias_Dump, G_GLOBALALIAS_DUMP),
-    GEN_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR),
-    GEN_IMPORT(centerprintf, G_CENTERPRINTF),
-    GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
-    GEN_IMPORT_9(Sound, G_SOUND, void, vec3_t*, int, int, const char*, float, float, float, float, int),
-    GEN_IMPORT(StopSound, G_STOPSOUND),
-    GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
-    GEN_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES),
-    GEN_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING),
-    GEN_IMPORT(CalcCRC, G_CALCCRC),
-    nullptr,	// DebugLines
-    nullptr,	// numDebugLines
-    nullptr,	// DebugStrings
-    nullptr,	// numDebugStrings
-    GEN_IMPORT(LocateGameData, G_LOCATE_GAME_DATA),
-    GEN_IMPORT(SetFarPlane, G_SETFARPLANE),
-    GEN_IMPORT(SetSkyPortal, G_SETSKYPORTAL),
-    GEN_IMPORT(Popmenu, G_POPMENU),
-    GEN_IMPORT(Showmenu, G_SHOWMENU),
-    GEN_IMPORT(Hidemenu, G_HIDEMENU),
-    GEN_IMPORT(Pushmenu, G_PUSHMENU),
-    GEN_IMPORT(HideMouseCursor, G_HIDEMOUSECURSOR),
-    GEN_IMPORT(ShowMouseCursor, G_SHOWMOUSECURSOR),
-    GEN_IMPORT(MapTime, G_MAPTIME),
-    GEN_IMPORT(LoadResource, G_LOADRESOURCE),
-    GEN_IMPORT(ClearResource, G_CLEARRESOURCE),
-    GEN_IMPORT(Key_StringToKeynum, G_KEY_STRINGTOKEYNUM),
-    GEN_IMPORT(Key_KeynumToBindString, G_KEY_KEYNUMTOBINDSTRING),
-    GEN_IMPORT(Key_GetKeysForCommand, G_KEY_GETKEYSFORCOMMAND),
-    GEN_IMPORT(ArchiveLevel, G_ARCHIVELEVEL),
-    GEN_IMPORT(AddSvsTimeFixup, G_ADDSVSTIMEFIXUP),
-    GEN_IMPORT(HudDrawShader, G_HUDDRAWSHADER),
-    GEN_IMPORT(HudDrawAlign, G_HUDDRAWALIGN),
-    GEN_IMPORT(HudDrawRect, G_HUDDRAWRECT),
-    GEN_IMPORT(HudDrawVirtualSize, G_HUDDRAWVIRTUALSIZE),
-    GEN_IMPORT(HudDrawColor, G_HUDDRAWCOLOR),
-    GEN_IMPORT_2(HudDrawAlpha, G_HUDDRAWALPHA, void, int, float),
-    GEN_IMPORT(HudDrawString, G_HUDDRAWSTRING),
-    GEN_IMPORT(HudDrawFont, G_HUDDRAWFONT),
-    GEN_IMPORT(SanitizeName, G_SANITIZENAME),
-    GEN_IMPORT(pvssoundindex, G_PVSSOUNDINDEX),
-    nullptr,	//fsDebug
-};
-
-
-// these are "pre" hooks for storing some data for polyfills.
-// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
-
-// track entstrings for our G_GET_ENTITY_TOKEN syscall
-static std::vector<std::string> s_entity_tokens;
-static size_t s_tokencount = 0;
-static void MOHSH_SpawnEntities(char* entstring, int levelTime) {
-    if (entstring) {
-        s_entity_tokens = util_parse_entstring(entstring);
-        s_tokencount = 0;
-    }
-    cgame.is_from_QMM = true;
-    vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
-}
-
-
-// at least one of first four args is a float (see big comment at top of game_q2r.cpp), so use specific types
-static void MOHSH_DebugCircle(float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6) {
-    cgame.is_from_QMM = true;
-    vmMain(GAME_DEBUG_CIRCLE, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
-}
-
-
-// struct with lambdas that call QMM's vmMain function. this is given to the game engine
-static game_export_t qmm_export = {
-    GAME_API_VERSION,	// apiversion
-    GEN_EXPORT(Init, GAME_INIT),
-    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
-    GEN_EXPORT(Cleanup, GAME_CLEANUP),
-    GEN_EXPORT(Precache, GAME_PRECACHE),
-    GEN_EXPORT(SetMap, GAME_SETMAP),
-    GEN_EXPORT(Restart, GAME_RESTART),
-    GEN_EXPORT(SetTime, GAME_SETTIME),
-    MOHSH_SpawnEntities,
-    GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
-    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
-    GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
-    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
-    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
-    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
-    GEN_EXPORT(BotBegin, GAME_BOTBEGIN),
-    GEN_EXPORT(BotThink, GAME_BOTTHINK),
-    GEN_EXPORT(PrepFrame, GAME_PREP_FRAME),
-    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
-    GEN_EXPORT(ServerSpawned, GAME_SERVER_SPAWNED),
-    GEN_EXPORT(RegisterSounds, GAME_REGISTER_SOUNDS),
-    GEN_EXPORT(AllowPaused, GAME_ALLOW_PAUSED),
-    GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
-    GEN_EXPORT(ArchivePersistant, GAME_ARCHIVE_PERSISTANT),
-    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
-    GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
-    GEN_EXPORT(LevelArchiveValid, GAME_LEVEL_ARCHIVE_VALID),
-    GEN_EXPORT(ArchiveInteger, GAME_ARCHIVE_INTEGER),
-    GEN_EXPORT(ArchiveFloat, GAME_ARCHIVE_FLOAT),
-    GEN_EXPORT(ArchiveString, GAME_ARCHIVE_STRING),
-    GEN_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME),
-    GEN_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION), // todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
-    MOHSH_DebugCircle,
-    GEN_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER),
-    GEN_EXPORT(SoundCallback, GAME_SOUND_CALLBACK),
-
-    // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
-    nullptr,	// profStruct
-    nullptr,	// gentities
-    0,			// gentitySize
-    0,			// num_entities
-    0,			// max_entities
-    nullptr,	// errorMessage
-};
-
-
-// update the export variables from orig_export
-static void s_update_export() {
-    if (!orig_export)
-        return;
-
-    bool changed = false;
-
-    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
-    if (qmm_export.gentities != orig_export->gentities
-        || qmm_export.gentitySize != orig_export->gentitySize
-        || qmm_export.num_entities != orig_export->num_entities
-        ) {
-        changed = true;
-    }
-
-    qmm_export.profStruct = orig_export->profStruct;
-    qmm_export.gentities = orig_export->gentities;
-    qmm_export.gentitySize = orig_export->gentitySize;
-    qmm_export.num_entities = orig_export->num_entities;
-    qmm_export.max_entities = orig_export->max_entities;
-    qmm_export.errorMessage = orig_export->errorMessage;
-
-    if (changed) {
-        // this will trigger this message to be fired to plugins, and then it will be handled
-        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
-        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, nullptr, 0);
-    }
-}
-
-
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
+intptr_t MOHSH_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_syscall({} {}) called\n", MOHSH_EngMsgName(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
-    s_update_export();
+    update_exports();
 
     intptr_t ret = 0;
 
@@ -376,7 +132,7 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(FS_FOpenFile, G_FS_UNKNOWN);
         ROUTE_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE);
         // handled below since we do special handling for these for FILE* access
-        //ROUTE_IMPORT(FS_Write, G_FS_WRITE);
+        // ROUTE_IMPORT(FS_Write, G_FS_WRITE);
         // ROUTE_IMPORT(FS_Read, G_FS_READ);
         // ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
         ROUTE_IMPORT(FS_Tell, G_FS_TELL);
@@ -388,8 +144,8 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST);
         ROUTE_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME);
         // handled below since we do special handling to deal with the "when" argument
-        // ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
-        // ROUTE_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND);
+        //ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
+        //ROUTE_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND);
         ROUTE_IMPORT(DebugGraph, G_DEBUGGRAPH);
         ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
         ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
@@ -532,7 +288,7 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 
     // handle special cmds which QMM uses but MOHSH doesn't have an analogue for
     case G_CVAR_REGISTER: {
-        // mohsh: cvar_t* (*Cvar_Get)(const char* varName, const char* varValue, int varFlags)
+        // mohaa: cvar_t* (*Cvar_Get)(const char* varName, const char* varValue, int varFlags)
         // q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
         // qmm always passes NULL for vmCvar so don't worry about it
         const char* varName = (const char*)(args[1]);
@@ -542,7 +298,7 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         break;
     }
     case G_CVAR_VARIABLE_STRING_BUFFER: {
-        // mohsh: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
+        // mohaa: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
         // q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
         const char* varName = (const char*)(args[0]);
         char* buffer = (char*)(args[1]);
@@ -554,7 +310,7 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         break;
     }
     case G_CVAR_VARIABLE_INTEGER_VALUE: {
-        // mohsh: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
+        // mohaa: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
         // q3a: int trap_Cvar_VariableIntegerValue(const char* var_name)
         const char* varName = (const char*)(args[0]);
         cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
@@ -584,7 +340,7 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         // bypassing them entirely when opening. if somehow a real fileHandle_t gets passed to G_FS_READ,
         // G_FS_WRITE, or G_FS_FCLOSE_FILE, then they will be passed to the real engine functions. otherwise,
         // they just use FILE* functions
-
+        
         // int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
         const char* qpath = (const char*)args[0];
         fileHandle_t* f = (fileHandle_t*)args[1];
@@ -678,7 +434,7 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
     }
     case G_GET_ENTITY_TOKEN: {
         // qboolean trap_GetEntityToken(char *buffer, int bufferSize);
-        if (s_tokencount >= s_entity_tokens.size()) {
+        if (token_counter >= entity_tokens.size()) {
             ret = qfalse;
             break;
         }
@@ -686,7 +442,7 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), (size_t)bufferSize);
+        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }
@@ -699,7 +455,7 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_syscall({} {}) returning {}\n", MOHSH_EngMsgName(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -708,11 +464,11 @@ static intptr_t MOHSH_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-static intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
+intptr_t MOHSH_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_vmMain({} {}) called\n", MOHSH_ModMsgName(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -771,18 +527,18 @@ static intptr_t MOHSH_vmMain(intptr_t cmd, ...) {
     };
 
     // update export vars after returning from the mod
-    s_update_export();
+    update_exports();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_vmMain({} {}) returning {}\n", MOHSH_ModMsgName(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* MOHSH_Entry(void* import, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_Entry({}) called\n", import);
+void* MOHSH_GameSupport::Entry(void* import, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_GameSupport::Entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -796,13 +552,7 @@ static void* MOHSH_Entry(void* import, void*, APIType) {
     qmm_import.numDebugStrings = orig_import.numDebugStrings;
     qmm_import.fsDebug = orig_import.fsDebug;
 
-    // pointer to wrapper vmMain function that calls actual mod func from orig_export
-    g_gameinfo.pfnvmMain = MOHSH_vmMain;
-
-    // pointer to wrapper syscall function that calls actual engine func from orig_import
-    g_gameinfo.pfnsyscall = MOHSH_syscall;
-
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_Entry({}) returning {}\n", import, fmt::ptr(&qmm_export));
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHSH_GameSupport::Entry({}) returning {}\n", import, fmt::ptr(&qmm_export));
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -811,7 +561,7 @@ static void* MOHSH_Entry(void* import, void*, APIType) {
 }
 
 
-static bool MOHSH_ModLoad(void* entry, APIType modapi) {
+bool MOHSH_GameSupport::ModLoad(void* entry, APIType modapi) {
     if (modapi != QMM_API_GETGAMEAPI)
         return false;
 
@@ -822,12 +572,12 @@ static bool MOHSH_ModLoad(void* entry, APIType modapi) {
 }
 
 
-static void MOHSH_ModUnload() {
+void MOHSH_GameSupport::ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* MOHSH_EngMsgName(intptr_t cmd) {
+const char* MOHSH_GameSupport::EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -1016,7 +766,7 @@ static const char* MOHSH_EngMsgName(intptr_t cmd) {
 }
 
 
-static const char* MOHSH_ModMsgName(intptr_t cmd) {
+const char* MOHSH_GameSupport::ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);
@@ -1063,3 +813,287 @@ static const char* MOHSH_ModMsgName(intptr_t cmd) {
         return "unknown";
     }
 }
+
+
+void MOHSH_GameSupport::update_exports() {
+    if (!orig_export)
+        return;
+
+    bool changed = false;
+
+    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
+    if (qmm_export.gentities != orig_export->gentities
+        || qmm_export.gentitySize != orig_export->gentitySize
+        || qmm_export.num_entities != orig_export->num_entities
+        ) {
+        changed = true;
+    }
+
+    qmm_export.profStruct = orig_export->profStruct;
+    qmm_export.gentities = orig_export->gentities;
+    qmm_export.gentitySize = orig_export->gentitySize;
+    qmm_export.num_entities = orig_export->num_entities;
+    qmm_export.max_entities = orig_export->max_entities;
+    qmm_export.errorMessage = orig_export->errorMessage;
+
+    if (changed) {
+        // this will trigger this message to be fired to plugins, and then it will be handled
+        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
+        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, nullptr, 0);
+    }
+}
+
+
+game_import_t MOHSH_GameSupport::orig_import;
+
+
+game_export_t* MOHSH_GameSupport::orig_export = nullptr;
+
+
+game_import_t MOHSH_GameSupport::qmm_import = {
+    GEN_IMPORT(Printf, G_PRINTF),
+    GEN_IMPORT(DPrintf, G_DPRINTF),
+    GEN_IMPORT(DPrintf2, G_DPRINTF2),
+    GEN_IMPORT(DebugPrintf, G_DEBUGPRINTF),
+    GEN_IMPORT(Error, G_ERROR),
+    GEN_IMPORT(Milliseconds, G_MILLISECONDS),
+    GEN_IMPORT(LV_ConvertString, G_LV_CONVERTSTRING),
+    GEN_IMPORT(CL_LV_ConvertString, G_CL_LV_CONVERTSTRING),
+    GEN_IMPORT(Malloc, G_MALLOC),
+    GEN_IMPORT(Free, G_FREE),
+    GEN_IMPORT(Cvar_Get, G_CVAR_GET),
+    GEN_IMPORT(cvar_set, G_CVAR_SET),
+    GEN_IMPORT(cvar_set2, G_CVAR_SET2),
+    GEN_IMPORT(NextCvar, G_NEXTCVAR),
+    GEN_IMPORT(Argc, G_ARGC),
+    GEN_IMPORT(Argv, G_ARGV),
+    GEN_IMPORT(Args, G_ARGS),
+    GEN_IMPORT(AddCommand, G_ADDCOMMAND),
+    GEN_IMPORT(FS_ReadFile, G_FS_READFILE),
+    GEN_IMPORT(FS_FreeFile, G_FS_FREEFILE),
+    GEN_IMPORT(FS_WriteFile, G_FS_WRITEFILE),
+    GEN_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE),
+    GEN_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND),
+    GEN_IMPORT(FS_FOpenFile, G_FS_UNKNOWN),
+    GEN_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE),
+    GEN_IMPORT(FS_Write, G_FS_WRITE),
+    GEN_IMPORT(FS_Read, G_FS_READ),
+    GEN_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE),
+    GEN_IMPORT(FS_Tell, G_FS_TELL),
+    GEN_IMPORT(FS_Seek, G_FS_SEEK),
+    GEN_IMPORT(FS_Flush, G_FS_FLUSH),
+    GEN_IMPORT(FS_FileNewer, G_FS_FILENEWER),
+    GEN_IMPORT(FS_CanonicalFilename, G_FS_CANONICALFILENAME),
+    GEN_IMPORT(FS_ListFiles, G_FS_LISTFILES),
+    GEN_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST),
+    GEN_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME),
+    GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
+    GEN_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND),
+    GEN_IMPORT_1(DebugGraph, G_DEBUGGRAPH, void, float),
+    GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
+    GEN_IMPORT(DropClient, G_DROP_CLIENT),
+    GEN_IMPORT(MSG_WriteBits, G_MSG_WRITEBITS),
+    GEN_IMPORT(MSG_WriteChar, G_MSG_WRITECHAR),
+    GEN_IMPORT(MSG_WriteByte, G_MSG_WRITEBYTE),
+    GEN_IMPORT(MSG_WriteSVC, G_MSG_WRITESVC),
+    GEN_IMPORT(MSG_WriteShort, G_MSG_WRITESHORT),
+    GEN_IMPORT(MSG_WriteLong, G_MSG_WRITELONG),
+    GEN_IMPORT_1(MSG_WriteFloat, G_MSG_WRITEFLOAT, void, float),
+    GEN_IMPORT(MSG_WriteString, G_MSG_WRITESTRING),
+    GEN_IMPORT_1(MSG_WriteAngle8, G_MSG_WRITEANGLE8, void, float),
+    GEN_IMPORT_1(MSG_WriteAngle16, G_MSG_WRITEANGLE16, void, float),
+    GEN_IMPORT_1(MSG_WriteCoord, G_MSG_WRITECOORD, void, float),
+    GEN_IMPORT(MSG_WriteDir, G_MSG_WRITEDIR),
+    GEN_IMPORT(MSG_StartCGM, G_MSG_STARTCGM),
+    GEN_IMPORT(MSG_EndCGM, G_MSG_ENDCGM),
+    GEN_IMPORT(MSG_SetClient, G_MSG_SETCLIENT),
+    GEN_IMPORT(SetBroadcastVisible, G_SETBROADCASTVISIBLE),
+    GEN_IMPORT(SetBroadcastHearable, G_SETBROADCASTHEARABLE),
+    GEN_IMPORT(SetBroadcastAll, G_SETBROADCASTALL),
+    GEN_IMPORT(setConfigstring, G_SET_CONFIGSTRING),
+    GEN_IMPORT(getConfigstring, G_GET_CONFIGSTRING),
+    GEN_IMPORT(SetUserinfo, G_SET_USERINFO),
+    GEN_IMPORT(GetUserinfo, G_GET_USERINFO),
+    GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
+    GEN_IMPORT(ModelBoundsFromName, G_MODELBOUNDSFROMNAME),
+    GEN_IMPORT(SightTraceEntity, G_SIGHTTRACEENTITY),
+    GEN_IMPORT(SightTrace, G_SIGHTTRACE),
+    GEN_IMPORT(trace, G_TRACE),
+    GEN_IMPORT(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION),
+    GEN_IMPORT(GetShader, G_GETSHADER),
+    GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
+    GEN_IMPORT(PointBrushnum, G_POINTBRUSHNUM),
+    GEN_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE),
+    GEN_IMPORT(AreaForPoint, G_AREAFORPOINT),
+    GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
+    GEN_IMPORT(InPVS, G_IN_PVS),
+    GEN_IMPORT(linkentity, G_LINKENTITY),
+    GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
+    GEN_IMPORT(AreaEntities, G_AREAENTITIES),
+    GEN_IMPORT(ClipToEntity, G_CLIPTOENTITY),
+    GEN_IMPORT(HitEntity, G_HITENTITY),
+    GEN_IMPORT(imageindex, G_IMAGEINDEX),
+    GEN_IMPORT(itemindex, G_ITEMINDEX),
+    GEN_IMPORT(soundindex, G_SOUNDINDEX),
+    GEN_IMPORT(TIKI_RegisterModel, G_TIKI_REGISTERMODEL),
+    GEN_IMPORT(modeltiki, G_MODELTIKI),
+    GEN_IMPORT(modeltikianim, G_MODELTIKIANIM),
+    GEN_IMPORT(SetLightStyle, G_SETLIGHTSTYLE),
+    GEN_IMPORT(GameDir, G_GAMEDIR),
+    GEN_IMPORT(setmodel, G_SETMODEL),
+    GEN_IMPORT(clearmodel, G_CLEARMODEL),
+    GEN_IMPORT(TIKI_NumAnims, G_TIKI_NUMANIMS),
+    GEN_IMPORT(TIKI_NumSurfaces, G_TIKI_NUMSURFACES),
+    GEN_IMPORT(TIKI_NumTags, G_TIKI_NUMTAGS),
+    GEN_IMPORT_4(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS, void, dtiki_t*, float, vec3_t, vec3_t),
+    GEN_IMPORT(TIKI_GetSkeletor, G_TIKI_GETSKELETOR),
+    GEN_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM),
+    GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
+    GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
+    GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
+    GEN_IMPORT(Anim_Time, G_ANIM_TIME),
+    GEN_IMPORT(Anim_Frametime, G_ANIM_FRAMETIME),
+    GEN_IMPORT(Anim_CrossTime, G_ANIM_CROSSTIME),
+    GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
+    GEN_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA),
+    GEN_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA),
+    GEN_IMPORT_5(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME, void, dtiki_t*, int, float, float, float*),
+    GEN_IMPORT_5(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME, void, dtiki_t*, int, float, float, float*),
+    GEN_IMPORT(Anim_Flags, G_ANIM_FLAGS),
+    GEN_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL),
+    GEN_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS),
+    GEN_IMPORT(NumHeadModels, G_NUMHEADMODELS),
+    GEN_IMPORT(GetHeadModel, G_GETHEADMODEL),
+    GEN_IMPORT(NumHeadSkins, G_NUMHEADSKINS),
+    GEN_IMPORT(GetHeadSkin, G_GETHEADSKIN),
+    GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
+    GEN_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM),
+    GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
+    GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
+    GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
+    GEN_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL),	// todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
+    GEN_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL),
+    GEN_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, qboolean, dtiki_t*, int, int, float),
+    GEN_IMPORT_6(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, void, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, float),
+    GEN_IMPORT(CM_GetHitLocationInfo, G_CM_GETHITLOCATIONINFO),
+    GEN_IMPORT(CM_GetHitLocationInfoSecondary, G_CM_GETHITLOCATIONINFOSECONDARY),
+    GEN_IMPORT(Alias_Add, G_ALIAS_ADD),
+    GEN_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM),
+    GEN_IMPORT(Alias_Dump, G_ALIAS_DUMP),
+    GEN_IMPORT(Alias_Clear, G_ALIAS_CLEAR),
+    GEN_IMPORT(Alias_UpdateDialog, G_ALIAS_UPDATEDIALOG),
+    GEN_IMPORT(TIKI_NameForNum, G_TIKI_NAMEFORNUM),
+    GEN_IMPORT(GlobalAlias_Add, G_GLOBALALIAS_ADD),
+    GEN_IMPORT(GlobalAlias_FindRandom, G_GLOBALALIAS_FINDRANDOM),
+    GEN_IMPORT(GlobalAlias_Dump, G_GLOBALALIAS_DUMP),
+    GEN_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR),
+    GEN_IMPORT(centerprintf, G_CENTERPRINTF),
+    GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
+    GEN_IMPORT_9(Sound, G_SOUND, void, vec3_t*, int, int, const char*, float, float, float, float, int),
+    GEN_IMPORT(StopSound, G_STOPSOUND),
+    GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
+    GEN_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES),
+    GEN_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING),
+    GEN_IMPORT(CalcCRC, G_CALCCRC),
+    nullptr,	// DebugLines
+    nullptr,	// numDebugLines
+    nullptr,	// DebugStrings
+    nullptr,	// numDebugStrings
+    GEN_IMPORT(LocateGameData, G_LOCATE_GAME_DATA),
+    GEN_IMPORT(SetFarPlane, G_SETFARPLANE),
+    GEN_IMPORT(SetSkyPortal, G_SETSKYPORTAL),
+    GEN_IMPORT(Popmenu, G_POPMENU),
+    GEN_IMPORT(Showmenu, G_SHOWMENU),
+    GEN_IMPORT(Hidemenu, G_HIDEMENU),
+    GEN_IMPORT(Pushmenu, G_PUSHMENU),
+    GEN_IMPORT(HideMouseCursor, G_HIDEMOUSECURSOR),
+    GEN_IMPORT(ShowMouseCursor, G_SHOWMOUSECURSOR),
+    GEN_IMPORT(MapTime, G_MAPTIME),
+    GEN_IMPORT(LoadResource, G_LOADRESOURCE),
+    GEN_IMPORT(ClearResource, G_CLEARRESOURCE),
+    GEN_IMPORT(Key_StringToKeynum, G_KEY_STRINGTOKEYNUM),
+    GEN_IMPORT(Key_KeynumToBindString, G_KEY_KEYNUMTOBINDSTRING),
+    GEN_IMPORT(Key_GetKeysForCommand, G_KEY_GETKEYSFORCOMMAND),
+    GEN_IMPORT(ArchiveLevel, G_ARCHIVELEVEL),
+    GEN_IMPORT(AddSvsTimeFixup, G_ADDSVSTIMEFIXUP),
+    GEN_IMPORT(HudDrawShader, G_HUDDRAWSHADER),
+    GEN_IMPORT(HudDrawAlign, G_HUDDRAWALIGN),
+    GEN_IMPORT(HudDrawRect, G_HUDDRAWRECT),
+    GEN_IMPORT(HudDrawVirtualSize, G_HUDDRAWVIRTUALSIZE),
+    GEN_IMPORT(HudDrawColor, G_HUDDRAWCOLOR),
+    GEN_IMPORT_2(HudDrawAlpha, G_HUDDRAWALPHA, void, int, float),
+    GEN_IMPORT(HudDrawString, G_HUDDRAWSTRING),
+    GEN_IMPORT(HudDrawFont, G_HUDDRAWFONT),
+    GEN_IMPORT(SanitizeName, G_SANITIZENAME),
+    GEN_IMPORT(pvssoundindex, G_PVSSOUNDINDEX),
+    nullptr,	//fsDebug
+};
+
+
+std::vector<std::string> MOHSH_GameSupport::entity_tokens;
+size_t MOHSH_GameSupport::token_counter = 0;
+void MOHSH_GameSupport::SpawnEntities(char* entstring, int levelTime) {
+    if (entstring) {
+        entity_tokens = util_parse_entstring(entstring);
+        token_counter = 0;
+    }
+    cgame.is_from_QMM = true;
+    ::vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
+}
+
+
+// at least one of first four args is a float (see big comment at top of game_q2r.cpp), so use specific types
+void MOHSH_GameSupport::DebugCircle(float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6) {
+    cgame.is_from_QMM = true;
+    ::vmMain(GAME_DEBUG_CIRCLE, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+
+// struct with lambdas that call QMM's vmMain function. this is given to the game engine
+game_export_t MOHSH_GameSupport::qmm_export = {
+    GAME_API_VERSION,	// apiversion
+    GEN_EXPORT(Init, GAME_INIT),
+    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
+    GEN_EXPORT(Cleanup, GAME_CLEANUP),
+    GEN_EXPORT(Precache, GAME_PRECACHE),
+    GEN_EXPORT(SetMap, GAME_SETMAP),
+    GEN_EXPORT(Restart, GAME_RESTART),
+    GEN_EXPORT(SetTime, GAME_SETTIME),
+    MOHSH_GameSupport::SpawnEntities,
+    GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
+    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
+    GEN_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED),
+    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
+    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
+    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
+    GEN_EXPORT(BotBegin, GAME_BOTBEGIN),
+    GEN_EXPORT(BotThink, GAME_BOTTHINK),
+    GEN_EXPORT(PrepFrame, GAME_PREP_FRAME),
+    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
+    GEN_EXPORT(ServerSpawned, GAME_SERVER_SPAWNED),
+    GEN_EXPORT(RegisterSounds, GAME_REGISTER_SOUNDS),
+    GEN_EXPORT(AllowPaused, GAME_ALLOW_PAUSED),
+    GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
+    GEN_EXPORT(ArchivePersistant, GAME_ARCHIVE_PERSISTANT),
+    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
+    GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
+    GEN_EXPORT(LevelArchiveValid, GAME_LEVEL_ARCHIVE_VALID),
+    GEN_EXPORT(ArchiveInteger, GAME_ARCHIVE_INTEGER),
+    GEN_EXPORT(ArchiveFloat, GAME_ARCHIVE_FLOAT),
+    GEN_EXPORT(ArchiveString, GAME_ARCHIVE_STRING),
+    GEN_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME),
+    GEN_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION), // todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
+    MOHSH_GameSupport::DebugCircle,
+    GEN_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER),
+    GEN_EXPORT(SoundCallback, GAME_SOUND_CALLBACK),
+
+    // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
+    nullptr,	// profStruct
+    nullptr,	// gentities
+    0,			// gentitySize
+    0,			// num_entities
+    0,			// max_entities
+    nullptr,	// errorMessage
+};
+
+#endif // QMM_ARCH_32

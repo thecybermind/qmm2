@@ -39,7 +39,10 @@ struct RTCWSP_GameSupport : public GameSupport {
     virtual const char* GameCode() { return "RTCWSP"; }
 
 private:
+    // a copy of the original syscall from the engine
     eng_syscall orig_syscall = nullptr;
+
+    // a copy of the vmMain function from the mod
     mod_vmMain orig_vmMain = nullptr;
 
     // was QMM loaded by the ioRTCW engine?
