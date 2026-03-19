@@ -9,6 +9,10 @@ Created By:
 
 */
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 #include <sof2sp/g_public.h>
 
 #include "game_api.h"
@@ -19,17 +23,56 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_GAME_QMM_MSGS(SOF2SP);
+struct SOF2SP_GameSupport : public GameSupport {
+    virtual const char* EngMsgName(intptr_t msg);
+    virtual const char* ModMsgName(intptr_t msg);
+    virtual bool AutoDetect(APIType engine_api);
+    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual bool ModLoad(void* entry, APIType mod_api);
+    virtual void ModUnload();
+    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
+    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-GEN_GAME_FUNCS(SOF2SP);
+    virtual intptr_t syscall(intptr_t, ...);
+    virtual intptr_t vmMain(intptr_t, ...);
+
+    virtual const char* DefaultDLLName() { return "game" MOD_DLL; }
+    virtual const char* DefaultModDir() { return "."; }
+    virtual const char* GameName() { return "Soldier of Fortune 2: Double Helix (SP)"; }
+    virtual const char* GameCode() { return "SOF2SP"; }
+
+private:
+    // update the export variables from orig_export
+    static void update_exports();
+
+    // a copy of the apiversion int that comes from the game engine
+    static intptr_t orig_apiversion;
+
+    // a copy of the original import struct that comes from the game engine
+    static game_import_t orig_import;
+
+    // a copy of the original export struct pointer that comes from the mod
+    static game_export_t* orig_export;
+
+    // struct with lambdas that call QMM's syscall function. this is given to the mod
+    static game_import_t qmm_import;
+
+    // struct with lambdas that call QMM's vmMain function. this is given to the game engine
+    static game_export_t qmm_export;
+
+    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
+};
+
+GEN_GAME_OBJ(SOF2SP);
 
 
 // auto-detection logic for SOF2SP
-static bool SOF2SP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+bool SOF2SP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "sof2"))
@@ -39,186 +82,18 @@ static bool SOF2SP_AutoDetect(api_supportedgame* game, APIType engineapi) {
 }
 
 
-// a copy of the apiversion int that comes from the game engine
-static intptr_t orig_apiversion = 0;
-
-// a copy of the original import struct that comes from the game engine
-static game_import_t orig_import;
-
-// a copy of the original export struct pointer that comes from the mod
-static game_export_t* orig_export = nullptr;
-
-// struct with lambdas that call QMM's syscall function. this is given to the mod
-static game_import_t qmm_import = {
-    GEN_IMPORT(Printf, G_PRINTF),
-    GEN_IMPORT(DPrintf, G_DPRINTF),
-    GEN_IMPORT(DPrintf2, G_DPRINTF2),
-    GEN_IMPORT(snprintf, G_SNPRINTF),
-    GEN_IMPORT(ErrorF, G_ERRORF),
-    GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
-    GEN_IMPORT(FS_Read, G_FS_READ),
-    GEN_IMPORT(FS_Write, G_FS_WRITE),
-    GEN_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE),
-    GEN_IMPORT(FS_ReadFile, G_FS_READFILE),
-    GEN_IMPORT(FS_FreeFile, G_FS_FREEFILE),
-    GEN_IMPORT(FS_FileAvailable, G_FS_FILEAVAILABLE),
-    GEN_IMPORT(FS_ListFiles, G_FS_LISTFILES),
-    GEN_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST),
-    GEN_IMPORT(unknown14, G_UNKNOWN14),
-    GEN_IMPORT(Milliseconds, G_MILLISECONDS),
-    GEN_IMPORT(unknown16, G_UNKNOWN16),
-    GEN_IMPORT(unknown17, G_UNKNOWN17),
-    GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
-    GEN_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND),
-    GEN_IMPORT(Argc, G_ARGC),
-    GEN_IMPORT(Argv, G_ARGV),
-    GEN_IMPORT(Args, G_ARGS),
-    GEN_IMPORT(Cvar_IsModified, G_CVAR_ISMODIFIED),
-    GEN_IMPORT(Cvar_Register, G_CVAR_REGISTER),
-    GEN_IMPORT(Cvar_Update, G_CVAR_UPDATE),
-    GEN_IMPORT(Cvar_Set, G_CVAR_SET),
-    GEN_IMPORT(Cvar_Get, G_CVAR_GET),
-    GEN_IMPORT(Cvar_SetValue, G_CVAR_SETVALUE),
-    GEN_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE),
-    GEN_IMPORT(Cvar_VariableFloatValue, G_CVAR_VARIABLE_FLOAT_VALUE),
-    GEN_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER),
-    GEN_IMPORT(Malloc, G_MALLOC),
-    GEN_IMPORT(Free, G_FREE),
-    GEN_IMPORT(unknown34, G_UNKNOWN34),
-    GEN_IMPORT(CM_RegisterTerrain, G_CM_REGISTERTERRAIN),
-    GEN_IMPORT(unknown36, G_UNKNOWN36),
-    GEN_IMPORT(unknown37, G_UNKNOWN37),
-    GEN_IMPORT(unknown38, G_UNKNOWN38),
-    GEN_IMPORT(unknown39, G_UNKNOWN39),
-    GEN_IMPORT(unknown40, G_UNKNOWN40),
-    GEN_IMPORT(unknown41, G_UNKNOWN41),
-    GEN_IMPORT(unknown42, G_UNKNOWN42),
-    GEN_IMPORT(unknown43, G_UNKNOWN43),
-    GEN_IMPORT(unknown44, G_UNKNOWN44),
-    GEN_IMPORT(unknown45, G_UNKNOWN45),
-    GEN_IMPORT(unknown46, G_UNKNOWN46),
-    GEN_IMPORT(unknown47, G_UNKNOWN47),
-    GEN_IMPORT(unknown48, G_UNKNOWN48),
-    GEN_IMPORT(unknown49, G_UNKNOWN49),
-    GEN_IMPORT(unknown50, G_UNKNOWN50),
-    GEN_IMPORT(Trace, G_TRACE),
-    GEN_IMPORT(unknown52, G_UNKNOWN52),
-    GEN_IMPORT(unknown53, G_UNKNOWN53),
-    GEN_IMPORT(LocateGameData, G_LOCATE_GAME_DATA),
-    GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
-    GEN_IMPORT(unknown56, G_UNKNOWN56),
-    GEN_IMPORT(unknown57, G_UNKNOWN57),
-    GEN_IMPORT(unknown58, G_UNKNOWN58),
-    GEN_IMPORT(unknown59, G_UNKNOWN59),
-    GEN_IMPORT(unknown60, G_UNKNOWN60),
-    GEN_IMPORT(unknown61, G_UNKNOWN61),
-    GEN_IMPORT(unknown62, G_UNKNOWN62),
-    GEN_IMPORT(unknown63, G_UNKNOWN63),
-    GEN_IMPORT(unknown64, G_UNKNOWN64),
-    GEN_IMPORT(unknown65, G_UNKNOWN65),
-    GEN_IMPORT(unknown66, G_UNKNOWN66),
-    0, // unknown67
-    0, // unknown68
-    GEN_IMPORT(unknown69, G_UNKNOWN69),
-    GEN_IMPORT(unknown70, G_UNKNOWN70),
-    GEN_IMPORT(PointContents, G_POINT_CONTENTS),
-    GEN_IMPORT(unknown72, G_UNKNOWN72),
-    GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
-    GEN_IMPORT(SetActiveSubBSP, G_SET_ACTIVE_SUBBSP),
-    GEN_IMPORT(unknown75, G_UNKNOWN75),
-    GEN_IMPORT(unknown76, G_UNKNOWN76),
-    GEN_IMPORT(SetConfigstring, G_SET_CONFIGSTRING),
-    GEN_IMPORT(GetConfigstring, G_GET_CONFIGSTRING),
-    GEN_IMPORT(GetServerInfo, G_GET_SERVERINFO),
-    GEN_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE),
-    GEN_IMPORT(unknown81, G_UNKNOWN81),
-    GEN_IMPORT(unknown82, G_UNKNOWN82),
-    GEN_IMPORT(unknown83, G_UNKNOWN83),
-    GEN_IMPORT(unknown84, G_UNKNOWN84),
-    GEN_IMPORT(TIKI_RegisterModel, G_TIKI_REGISTERMODEL),
-    GEN_IMPORT(unknown86, G_UNKNOWN86),
-    GEN_IMPORT(unknown87, G_UNKNOWN87),
-    GEN_IMPORT(unknown88, G_UNKNOWN88),
-    GEN_IMPORT(unknown89, G_UNKNOWN89),
-    GEN_IMPORT(unknown90, G_UNKNOWN90),
-    GEN_IMPORT(unknown91, G_UNKNOWN91),
-    GEN_IMPORT(unknown92, G_UNKNOWN92),
-    GEN_IMPORT(unknown93, G_UNKNOWN93),
-    GEN_IMPORT(unknown94, G_UNKNOWN94),
-    GEN_IMPORT(unknown95, G_UNKNOWN95),
-    GEN_IMPORT(GetEntityToken, G_GET_ENTITY_TOKEN),
-    GEN_IMPORT(unknown97, G_UNKNOWN97),
-    GEN_IMPORT(unknown98, G_UNKNOWN98),
-    GEN_IMPORT(unknown99, G_UNKNOWN99),
-    GEN_IMPORT(unknown100, G_UNKNOWN100),
-    GEN_IMPORT(unknown101, G_UNKNOWN101),
-    GEN_IMPORT(unknown102, G_UNKNOWN102),
-    GEN_IMPORT(unknown103, G_UNKNOWN103),
-    GEN_IMPORT(unknown104, G_UNKNOWN104),
-    GEN_IMPORT(unknown105, G_UNKNOWN105),
-    GEN_IMPORT(unknown106, G_UNKNOWN106),
-    GEN_IMPORT(unknown107, G_UNKNOWN107),
-    GEN_IMPORT(unknown108, G_UNKNOWN108),
-    GEN_IMPORT(unknown109, G_UNKNOWN109),
-    GEN_IMPORT(unknown110, G_UNKNOWN110),
-    GEN_IMPORT(CM_TM_Upload, G_CM_TM_UPLOAD),
-    GEN_IMPORT(SaveTerrainImageToDisk, G_SAVETERRAINIMAGETODISK),
-};
-
-
-// struct with lambdas that call QMM's vmMain function. this is given to the game engine
-static game_export_t qmm_export = {
-    GEN_EXPORT(Init, GAME_INIT),
-    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
-    GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
-    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
-    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
-    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
-    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
-    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
-    GEN_EXPORT(IsClientActive, GAME_IS_CLIENT_ACTIVE),
-    GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
-    0, // unknown10
-    GEN_EXPORT(SpawnRMGEntity, GAME_SPAWN_RMG_ENTITY),
-    GEN_EXPORT(arioche, GAME_ARIOCHE),
-    GEN_EXPORT(EntityList, GAME_ENTITY_LIST),
-    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
-    0, // unknown15
-    GEN_EXPORT(unknown16, GAME_UNKNOWN16),
-    GEN_EXPORT(Save, GAME_SAVE),
-    GEN_EXPORT(GameAllowedToSaveHere, GAME_GAMEALLOWEDTOSAVEHERE),
-    GEN_EXPORT(CanPlayCinematic, GAME_CAN_PLAY_CINEMATIC),
-    GEN_EXPORT(unknown20, GAME_UNKNOWN20),
-    GEN_EXPORT(unknown21, GAME_UNKNOWN21),
-    GEN_EXPORT(unknown22, GAME_UNKNOWN22),
-    GEN_EXPORT(unknown23, GAME_UNKNOWN23),
-    GEN_EXPORT(unknown24, GAME_UNKNOWN24),
-    GEN_EXPORT(unknown25, GAME_UNKNOWN25),
-};
-
-
-// update the export variables from orig_export
-static void s_update_export() {
-    if (!orig_export)
-        return;
-
-    qmm_export.unknown10 = orig_export->unknown10;
-    qmm_export.unknown15 = orig_export->unknown15;
-}
-
-
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-static intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
+intptr_t SOF2SP_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_syscall({} {}) called\n", SOF2SP_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
-    s_update_export();
+    update_exports();
 
     intptr_t ret = 0;
 
@@ -376,7 +251,7 @@ static intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_syscall({} {}) returning {}\n", SOF2SP_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -385,11 +260,11 @@ static intptr_t SOF2SP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-static intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
+intptr_t SOF2SP_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_vmMain({} {}) called\n", SOF2SP_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -432,19 +307,19 @@ static intptr_t SOF2SP_vmMain(intptr_t cmd, ...) {
     };
 
     // update export vars after returning from the mod
-    s_update_export();
+    update_exports();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_vmMain({} {}) returning {}\n", SOF2SP_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* SOF2SP_Entry(void* apiversion, void* import, APIType) {
+void* SOF2SP_GameSupport::Entry(void* apiversion, void* import, APIType) {
     orig_apiversion = (intptr_t)apiversion;
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_Entry({}, {}) called\n", orig_apiversion, import);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GameSupport::Entry({}, {}) called\n", orig_apiversion, import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -453,12 +328,6 @@ static void* SOF2SP_Entry(void* apiversion, void* import, APIType) {
 
     // fill in variables of our hooked import struct to pass to the mod
     // qmm_import.unknown = orig_import.unknown;
-
-    // pointer to wrapper vmMain function that calls actual mod func from orig_export
-    g_gameinfo.pfnvmMain = SOF2SP_vmMain;
-
-    // pointer to wrapper syscall function that calls actual engine func from orig_import
-    g_gameinfo.pfnsyscall = SOF2SP_syscall;
 
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_Entry({}, {}) returning {}\n", orig_apiversion, import, fmt::ptr(&qmm_export));
 
@@ -469,7 +338,7 @@ static void* SOF2SP_Entry(void* apiversion, void* import, APIType) {
 }
 
 
-static bool SOF2SP_ModLoad(void* entry, APIType modapi) {
+bool SOF2SP_GameSupport::ModLoad(void* entry, APIType modapi) {
     if (modapi != QMM_API_GETGAMEAPI)
         return false;
 
@@ -481,12 +350,12 @@ static bool SOF2SP_ModLoad(void* entry, APIType modapi) {
 }
 
 
-static void SOF2SP_ModUnload() {
+void SOF2SP_GameSupport::ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* SOF2SP_EngMsgNames(intptr_t cmd) {
+const char* SOF2SP_GameSupport::EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
@@ -611,7 +480,7 @@ static const char* SOF2SP_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* SOF2SP_ModMsgNames(intptr_t cmd) {
+const char* SOF2SP_GameSupport::ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
@@ -644,3 +513,170 @@ static const char* SOF2SP_ModMsgNames(intptr_t cmd) {
         return "unknown";
     }
 }
+
+
+void SOF2SP_GameSupport::update_exports() {
+    if (!orig_export)
+        return;
+
+    qmm_export.unknown10 = orig_export->unknown10;
+    qmm_export.unknown15 = orig_export->unknown15;
+}
+
+
+intptr_t SOF2SP_GameSupport::orig_apiversion = 0;
+
+
+game_import_t SOF2SP_GameSupport::orig_import;
+
+
+game_export_t* SOF2SP_GameSupport::orig_export = nullptr;
+
+
+game_import_t SOF2SP_GameSupport::qmm_import = {
+    GEN_IMPORT(Printf, G_PRINTF),
+    GEN_IMPORT(DPrintf, G_DPRINTF),
+    GEN_IMPORT(DPrintf2, G_DPRINTF2),
+    GEN_IMPORT(snprintf, G_SNPRINTF),
+    GEN_IMPORT(ErrorF, G_ERRORF),
+    GEN_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE),
+    GEN_IMPORT(FS_Read, G_FS_READ),
+    GEN_IMPORT(FS_Write, G_FS_WRITE),
+    GEN_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE),
+    GEN_IMPORT(FS_ReadFile, G_FS_READFILE),
+    GEN_IMPORT(FS_FreeFile, G_FS_FREEFILE),
+    GEN_IMPORT(FS_FileAvailable, G_FS_FILEAVAILABLE),
+    GEN_IMPORT(FS_ListFiles, G_FS_LISTFILES),
+    GEN_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST),
+    GEN_IMPORT(unknown14, G_UNKNOWN14),
+    GEN_IMPORT(Milliseconds, G_MILLISECONDS),
+    GEN_IMPORT(unknown16, G_UNKNOWN16),
+    GEN_IMPORT(unknown17, G_UNKNOWN17),
+    GEN_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND),
+    GEN_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND),
+    GEN_IMPORT(Argc, G_ARGC),
+    GEN_IMPORT(Argv, G_ARGV),
+    GEN_IMPORT(Args, G_ARGS),
+    GEN_IMPORT(Cvar_IsModified, G_CVAR_ISMODIFIED),
+    GEN_IMPORT(Cvar_Register, G_CVAR_REGISTER),
+    GEN_IMPORT(Cvar_Update, G_CVAR_UPDATE),
+    GEN_IMPORT(Cvar_Set, G_CVAR_SET),
+    GEN_IMPORT(Cvar_Get, G_CVAR_GET),
+    GEN_IMPORT(Cvar_SetValue, G_CVAR_SETVALUE),
+    GEN_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE),
+    GEN_IMPORT(Cvar_VariableFloatValue, G_CVAR_VARIABLE_FLOAT_VALUE),
+    GEN_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER),
+    GEN_IMPORT(Malloc, G_MALLOC),
+    GEN_IMPORT(Free, G_FREE),
+    GEN_IMPORT(unknown34, G_UNKNOWN34),
+    GEN_IMPORT(CM_RegisterTerrain, G_CM_REGISTERTERRAIN),
+    GEN_IMPORT(unknown36, G_UNKNOWN36),
+    GEN_IMPORT(unknown37, G_UNKNOWN37),
+    GEN_IMPORT(unknown38, G_UNKNOWN38),
+    GEN_IMPORT(unknown39, G_UNKNOWN39),
+    GEN_IMPORT(unknown40, G_UNKNOWN40),
+    GEN_IMPORT(unknown41, G_UNKNOWN41),
+    GEN_IMPORT(unknown42, G_UNKNOWN42),
+    GEN_IMPORT(unknown43, G_UNKNOWN43),
+    GEN_IMPORT(unknown44, G_UNKNOWN44),
+    GEN_IMPORT(unknown45, G_UNKNOWN45),
+    GEN_IMPORT(unknown46, G_UNKNOWN46),
+    GEN_IMPORT(unknown47, G_UNKNOWN47),
+    GEN_IMPORT(unknown48, G_UNKNOWN48),
+    GEN_IMPORT(unknown49, G_UNKNOWN49),
+    GEN_IMPORT(unknown50, G_UNKNOWN50),
+    GEN_IMPORT(Trace, G_TRACE),
+    GEN_IMPORT(unknown52, G_UNKNOWN52),
+    GEN_IMPORT(unknown53, G_UNKNOWN53),
+    GEN_IMPORT(LocateGameData, G_LOCATE_GAME_DATA),
+    GEN_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND),
+    GEN_IMPORT(unknown56, G_UNKNOWN56),
+    GEN_IMPORT(unknown57, G_UNKNOWN57),
+    GEN_IMPORT(unknown58, G_UNKNOWN58),
+    GEN_IMPORT(unknown59, G_UNKNOWN59),
+    GEN_IMPORT(unknown60, G_UNKNOWN60),
+    GEN_IMPORT(unknown61, G_UNKNOWN61),
+    GEN_IMPORT(unknown62, G_UNKNOWN62),
+    GEN_IMPORT(unknown63, G_UNKNOWN63),
+    GEN_IMPORT(unknown64, G_UNKNOWN64),
+    GEN_IMPORT(unknown65, G_UNKNOWN65),
+    GEN_IMPORT(unknown66, G_UNKNOWN66),
+    0, // unknown67
+    0, // unknown68
+    GEN_IMPORT(unknown69, G_UNKNOWN69),
+    GEN_IMPORT(unknown70, G_UNKNOWN70),
+    GEN_IMPORT(PointContents, G_POINT_CONTENTS),
+    GEN_IMPORT(unknown72, G_UNKNOWN72),
+    GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
+    GEN_IMPORT(SetActiveSubBSP, G_SET_ACTIVE_SUBBSP),
+    GEN_IMPORT(unknown75, G_UNKNOWN75),
+    GEN_IMPORT(unknown76, G_UNKNOWN76),
+    GEN_IMPORT(SetConfigstring, G_SET_CONFIGSTRING),
+    GEN_IMPORT(GetConfigstring, G_GET_CONFIGSTRING),
+    GEN_IMPORT(GetServerInfo, G_GET_SERVERINFO),
+    GEN_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE),
+    GEN_IMPORT(unknown81, G_UNKNOWN81),
+    GEN_IMPORT(unknown82, G_UNKNOWN82),
+    GEN_IMPORT(unknown83, G_UNKNOWN83),
+    GEN_IMPORT(unknown84, G_UNKNOWN84),
+    GEN_IMPORT(TIKI_RegisterModel, G_TIKI_REGISTERMODEL),
+    GEN_IMPORT(unknown86, G_UNKNOWN86),
+    GEN_IMPORT(unknown87, G_UNKNOWN87),
+    GEN_IMPORT(unknown88, G_UNKNOWN88),
+    GEN_IMPORT(unknown89, G_UNKNOWN89),
+    GEN_IMPORT(unknown90, G_UNKNOWN90),
+    GEN_IMPORT(unknown91, G_UNKNOWN91),
+    GEN_IMPORT(unknown92, G_UNKNOWN92),
+    GEN_IMPORT(unknown93, G_UNKNOWN93),
+    GEN_IMPORT(unknown94, G_UNKNOWN94),
+    GEN_IMPORT(unknown95, G_UNKNOWN95),
+    GEN_IMPORT(GetEntityToken, G_GET_ENTITY_TOKEN),
+    GEN_IMPORT(unknown97, G_UNKNOWN97),
+    GEN_IMPORT(unknown98, G_UNKNOWN98),
+    GEN_IMPORT(unknown99, G_UNKNOWN99),
+    GEN_IMPORT(unknown100, G_UNKNOWN100),
+    GEN_IMPORT(unknown101, G_UNKNOWN101),
+    GEN_IMPORT(unknown102, G_UNKNOWN102),
+    GEN_IMPORT(unknown103, G_UNKNOWN103),
+    GEN_IMPORT(unknown104, G_UNKNOWN104),
+    GEN_IMPORT(unknown105, G_UNKNOWN105),
+    GEN_IMPORT(unknown106, G_UNKNOWN106),
+    GEN_IMPORT(unknown107, G_UNKNOWN107),
+    GEN_IMPORT(unknown108, G_UNKNOWN108),
+    GEN_IMPORT(unknown109, G_UNKNOWN109),
+    GEN_IMPORT(unknown110, G_UNKNOWN110),
+    GEN_IMPORT(CM_TM_Upload, G_CM_TM_UPLOAD),
+    GEN_IMPORT(SaveTerrainImageToDisk, G_SAVETERRAINIMAGETODISK),
+};
+
+
+game_export_t SOF2SP_GameSupport::qmm_export = {
+    GEN_EXPORT(Init, GAME_INIT),
+    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
+    GEN_EXPORT(ClientConnect, GAME_CLIENT_CONNECT),
+    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
+    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
+    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
+    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
+    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
+    GEN_EXPORT(IsClientActive, GAME_IS_CLIENT_ACTIVE),
+    GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
+    0, // unknown10
+    GEN_EXPORT(SpawnRMGEntity, GAME_SPAWN_RMG_ENTITY),
+    GEN_EXPORT(arioche, GAME_ARIOCHE),
+    GEN_EXPORT(EntityList, GAME_ENTITY_LIST),
+    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
+    0, // unknown15
+    GEN_EXPORT(unknown16, GAME_UNKNOWN16),
+    GEN_EXPORT(Save, GAME_SAVE),
+    GEN_EXPORT(GameAllowedToSaveHere, GAME_GAMEALLOWEDTOSAVEHERE),
+    GEN_EXPORT(CanPlayCinematic, GAME_CAN_PLAY_CINEMATIC),
+    GEN_EXPORT(unknown20, GAME_UNKNOWN20),
+    GEN_EXPORT(unknown21, GAME_UNKNOWN21),
+    GEN_EXPORT(unknown22, GAME_UNKNOWN22),
+    GEN_EXPORT(unknown23, GAME_UNKNOWN23),
+    GEN_EXPORT(unknown24, GAME_UNKNOWN24),
+    GEN_EXPORT(unknown25, GAME_UNKNOWN25),
+};
+
+#endif // QMM_ARCH_32

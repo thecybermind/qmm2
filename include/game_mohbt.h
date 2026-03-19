@@ -12,6 +12,10 @@ Created By:
 #ifndef QMM2_GAME_MOHBT_H
 #define QMM2_GAME_MOHBT_H
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 // import ("syscall") cmds
 enum {
 	G_PRINTF,
@@ -255,5 +259,7 @@ enum {
 
 // we need to store FILE* in fileHandle_t so change the underlying type
 #define fileHandle_t intptr_t
+
+#endif // QMM_ARCH_32
 
 #endif // QMM2_GAME_MOHBT_H

@@ -21,17 +21,47 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_GAME_QMM_MSGS(RTCWMP);
+struct RTCWMP_GameSupport : public GameSupport {
+    virtual const char* EngMsgName(intptr_t msg);
+    virtual const char* ModMsgName(intptr_t msg);
+    virtual bool AutoDetect(APIType engine_api);
+    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual bool ModLoad(void* entry, APIType mod_api);
+    virtual void ModUnload();
+    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
+    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-GEN_GAME_FUNCS_QVM(RTCWMP);
+    virtual intptr_t syscall(intptr_t, ...);
+    virtual intptr_t vmMain(intptr_t, ...);
+
+    virtual const char* DefaultDLLName() { return "qagame" MP_DLL X64_DLL; }
+    virtual const char* DefaultQVMName() { return "vm/qagame.mp.qvm"; }
+    virtual const char* DefaultModDir() { return "Main"; }
+    virtual const char* GameName() { return "Return to Castle Wolfenstein (MP)"; }
+    virtual const char* GameCode() { return "RTCWMP"; }
+
+    virtual int QVMSyscall(uint8_t* membase, int cmd, int* args);
+
+private:
+    // a copy of the original syscall from the engine
+    eng_syscall orig_syscall = nullptr;
+
+    // a copy of the vmMain function from the mod
+    mod_vmMain orig_vmMain = nullptr;
+
+    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
+};
+
+GEN_GAME_OBJ(RTCWMP);
 
 
 // auto-detection logic for RTCWMP
-static bool RTCWMP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+bool RTCWMP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "wolfmp") && !str_stristr(g_gameinfo.exe_file, "wolfded"))
@@ -41,20 +71,14 @@ static bool RTCWMP_AutoDetect(api_supportedgame* game, APIType engineapi) {
 }
 
 
-// original syscall pointer that comes from the game engine
-static eng_syscall orig_syscall = nullptr;
-
-// pointer to vmMain that comes from the mod
-static mod_vmMain orig_vmMain = nullptr;
-
 // wrapper syscall function that calls actual engine func in orig_syscall
 // this is how QMM and plugins will call into the engine
-static intptr_t RTCWMP_syscall(intptr_t cmd, ...) {
+intptr_t RTCWMP_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_syscall({} {}) called\n", RTCWMP_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -87,7 +111,7 @@ static intptr_t RTCWMP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_syscall({} {}) returning {}\n", RTCWMP_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -96,11 +120,11 @@ static intptr_t RTCWMP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func in orig_vmMain
 // this is how QMM and plugins will call into the mod
-static intptr_t RTCWMP_vmMain(intptr_t cmd, ...) {
+intptr_t RTCWMP_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_vmMain({} {}) called\n", RTCWMP_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -113,32 +137,26 @@ static intptr_t RTCWMP_vmMain(intptr_t cmd, ...) {
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_vmMain({} {}) returning {}\n", RTCWMP_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* RTCWMP_Entry(void* syscall, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_Entry({}) called\n", syscall);
+void* RTCWMP_GameSupport::Entry(void* syscall, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_GameSupport::Entry({}) called\n", syscall);
 
     // store original syscall from engine
     orig_syscall = (eng_syscall)syscall;
 
-    // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
-    g_gameinfo.pfnvmMain = RTCWMP_vmMain;
-
-    // pointer to wrapper syscall function that calls actual engine syscall func
-    g_gameinfo.pfnsyscall = RTCWMP_syscall;
-
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_Entry({}) returning\n", syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_GameSupport::Entry({}) returning\n", syscall);
 
     return nullptr;
 }
 
 
-static bool RTCWMP_ModLoad(void* entry, APIType modapi) {
+bool RTCWMP_GameSupport::ModLoad(void* entry, APIType modapi) {
     if (modapi != QMM_API_DLLENTRY && modapi != QMM_API_QVM)
         return false;
 
@@ -148,12 +166,12 @@ static bool RTCWMP_ModLoad(void* entry, APIType modapi) {
 }
 
 
-static void RTCWMP_ModUnload() {
+void RTCWMP_GameSupport::ModUnload() {
     orig_vmMain = nullptr;
 }
 
 
-static const char* RTCWMP_EngMsgNames(intptr_t cmd) {
+const char* RTCWMP_GameSupport::EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
@@ -373,7 +391,7 @@ static const char* RTCWMP_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* RTCWMP_ModMsgNames(intptr_t cmd) {
+const char* RTCWMP_GameSupport::ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
@@ -402,9 +420,9 @@ static const char* RTCWMP_ModMsgNames(intptr_t cmd) {
 */
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
-static int RTCWMP_QVMSyscall(uint8_t* membase, int cmd, int* args) {
+int RTCWMP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("RTCWMP_QVMSyscall({} {}) called\n", RTCWMP_EngMsgNames(cmd), cmd);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("RTCWMP_GameSupport::QVMSyscall({} {}) called\n", EngMsgName(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -701,7 +719,7 @@ static int RTCWMP_QVMSyscall(uint8_t* membase, int cmd, int* args) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("RTCWMP_QVMSyscall({} {}) returning {}\n", RTCWMP_EngMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("RTCWMP_GameSupport::QVMSyscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;

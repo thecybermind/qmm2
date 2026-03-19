@@ -99,9 +99,9 @@ C_DLLEXPORT void dllEntry(void* syscall) {
         return;
     }
 
-    // store the given syscall pointer as a backup (should get overwritten in game-specific entry handler)
-    // also if we don't detect a game, we can call syscall(G_ERROR) to shutdown in vmMain
-    g_gameinfo.pfnsyscall = (eng_syscall)syscall;
+    // store the given syscall pointer as a backup.
+    // this is used in case we couldn't detect a game and have to call syscall(G_ERROR) to shutdown in vmMain
+    g_gameinfo.syscall = (eng_syscall)syscall;
 
     main_handle_entry(syscall, nullptr, QMM_API_DLLENTRY);
     return;
@@ -260,14 +260,18 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     if (!g_gameinfo.game) {
         if (!g_gameinfo.is_shutdown) {
             g_gameinfo.is_shutdown = true;
-            // if the syscall passed to dllEntry was null, this will crash, but this shouldn't happen
-            ENG_SYSCALL(QMM_FAIL_G_ERROR, "\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
+            // if syscall passed to dllEntry was null, revert to std::exit because *shrug*
+            if (!g_gameinfo.syscall) {
+                printf("\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
+                std::exit(-1);
+            }
+            g_gameinfo.syscall(QMM_FAIL_G_ERROR, "\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
         }
         return 0;
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) called\n", g_gameinfo.game->funcs->pfnModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) called\n", g_gameinfo.game->ModMsgName(cmd), cmd);
 #endif
 
     if (cmd == msg_GAME_INIT) {
@@ -283,14 +287,14 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         // get mod dir from engine
         char moddir[256];
-        ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_VARIABLE_STRING_BUFFER], "fs_game", moddir, sizeof(moddir));
+        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), "fs_game", moddir, sizeof(moddir));
         moddir[sizeof(moddir) - 1] = '\0';
         g_gameinfo.mod_dir = moddir;
         // the default mod (including all singleplayer games) returns "" for the fs_game, so grab the default mod dir from game info instead
         if (g_gameinfo.mod_dir.empty())
-            g_gameinfo.mod_dir = g_gameinfo.game->moddir;
+            g_gameinfo.mod_dir = g_gameinfo.game->DefaultModDir();
 
-        LOG(QMM_LOG_INFO, "QMM") << fmt::format("Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, g_gameinfo.is_auto_detected ? "Auto-detected" : "Config file");
+        LOG(QMM_LOG_INFO, "QMM") << fmt::format("Game: {}/\"{}\" (Source: {})\n", g_gameinfo.game->GameCode(), g_gameinfo.game->GameName(), g_gameinfo.is_auto_detected ? "Auto-detected" : "Config file");
         LOG(QMM_LOG_INFO, "QMM") << fmt::format("ModDir: {}\n", g_gameinfo.mod_dir);
         LOG(QMM_LOG_INFO, "QMM") << fmt::format("Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.is_discarded() ? "(error)" : "");
 
@@ -298,7 +302,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         LOG(QMM_LOG_INFO, "QMM") << "URL: " QMM_URL "\n";
 
         // create qmm_version cvar
-        ENG_SYSCALL(QMM_ENG_MSG[QMM_G_CVAR_REGISTER], nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG[QMM_CVAR_ROM] | QMM_ENG_MSG[QMM_CVAR_SERVERINFO]);
+        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
 
         // load mod
         std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
@@ -306,7 +310,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         cfg_mod = util_get_cmdline_arg("--qmm_mod", cfg_mod);
         if (!main_load_mod(cfg_mod)) {
             g_gameinfo.is_shutdown = true;
-            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("vmMain({}): Unable to load mod using \"{}\"\n", g_gameinfo.game->funcs->pfnModMsgNames(cmd), cfg_mod);
+            LOG(QMM_LOG_FATAL, "QMM") << fmt::format("vmMain({}): Unable to load mod using \"{}\"\n", g_gameinfo.game->ModMsgName(cmd), cfg_mod);
             ENG_SYSCALL(QMM_FAIL_G_ERROR, "\nFatal QMM Error:\nQMM was unable to load the mod file.\nPlease set the \"mod\" option in qmm2.json.\nRefer to the documentation for more information.\n");
             return 0;
         }
@@ -341,7 +345,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         std::string cfg_execcfg = cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
         if (!cfg_execcfg.empty()) {
             LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Executing config file \"{}\"\n", cfg_execcfg);
-            ENG_SYSCALL(QMM_ENG_MSG[QMM_G_SEND_CONSOLE_COMMAND], QMM_ENG_MSG[QMM_EXEC_APPEND], fmt::format("exec {}\n", cfg_execcfg).c_str());
+            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_SEND_CONSOLE_COMMAND), QMM_ENG_MSG(QMM_EXEC_APPEND), fmt::format("exec {}\n", cfg_execcfg).c_str());
         }
 
         // we're done!
@@ -398,7 +402,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     }
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) returning {}\n", g_gameinfo.game->funcs->pfnModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) returning {}\n", g_gameinfo.game->ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -414,14 +418,14 @@ intptr_t qmm_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({} {}) called\n", g_gameinfo.game->funcs->pfnEngMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({} {}) called\n", g_gameinfo.game->EngMsgName(cmd), cmd);
 #endif
 
     // route call to plugins and mod
     intptr_t ret = main_route(true, cmd, args); // true = is_syscall
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({} {}) returning {}\n", g_gameinfo.game->funcs->pfnEngMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({} {}) returning {}\n", g_gameinfo.game->EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -475,34 +479,15 @@ static void* main_handle_entry(void* import, void* extra, APIType engine) {
         return nullptr;
     }
 
-    // make sure game support has all required arrays and functions
-    if (!g_gameinfo.game->funcs->pfnEntry
-        || !g_gameinfo.game->funcs->qmm_eng_msgs
-        || !g_gameinfo.game->funcs->qmm_mod_msgs
-        || !g_gameinfo.game->funcs->pfnEngMsgNames
-        || !g_gameinfo.game->funcs->pfnModMsgNames
-        || !g_gameinfo.game->funcs->pfnModLoad
-        || !g_gameinfo.game->funcs->pfnModUnload)
-    {
-        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Missing required function(s) for game \"{}\"\n", APIType_Function(engine), g_gameinfo.game->gamename_short);
-        return nullptr;
-    }
-
     // now that the game is detected, cache some dynamic message values that get evaluated a lot
-    msg_G_PRINT = QMM_ENG_MSG[QMM_G_PRINT];
-    msg_GAME_INIT = QMM_MOD_MSG[QMM_GAME_INIT];
-    msg_GAME_CONSOLE_COMMAND = QMM_MOD_MSG[QMM_GAME_CONSOLE_COMMAND];
-    msg_GAME_SHUTDOWN = QMM_MOD_MSG[QMM_GAME_SHUTDOWN];
+    msg_G_PRINT = QMM_ENG_MSG(QMM_G_PRINT);
+    msg_GAME_INIT = QMM_MOD_MSG(QMM_GAME_INIT);
+    msg_GAME_CONSOLE_COMMAND = QMM_MOD_MSG(QMM_GAME_CONSOLE_COMMAND);
+    msg_GAME_SHUTDOWN = QMM_MOD_MSG(QMM_GAME_SHUTDOWN);
 
-    // call the game-specific entry handler (e.g. Q3A_Entry) which will set up the internals to interact
+    // call the game-specific entry handler (e.g. Q3A_GameSupport::Entry) which will set up the internals to interact
     // the engine and the mod
-    void* ret = g_gameinfo.game->funcs->pfnEntry(import, extra, engine);
-
-    // make sure that g_gameinfo.pfnsyscall and g_gameinfo.pfnvmMain were set by the entry handler
-    if (!g_gameinfo.pfnsyscall || !g_gameinfo.pfnvmMain) {
-        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Game \"{}\" did not set up syscall or vmMain handlers\n", APIType_Function(engine), g_gameinfo.game->gamename_short);
-        return nullptr;
-    }
+    void* ret = g_gameinfo.game->Entry(import, extra, engine);
 
     return ret;
 }
@@ -574,25 +559,22 @@ static void main_detect_game(std::string cfg_game, APIType engine) {
     if (cfg_game.empty())
         cfg_game = "auto";
 
-    for (api_supportedgame& game : api_supportedgames) {
+    // for (api_supportedgame& game : api_supportedgames) {
+    for (GameSupport* game : api_supportedgames) {
         // if short name matches config option, we found it!
-        if (str_striequal(cfg_game, game.gamename_short)) {
+        if (str_striequal(cfg_game, game->GameCode())) {
             LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);
-            g_gameinfo.game = &game;
+            g_gameinfo.game = game;
             g_gameinfo.is_auto_detected = false;
-            // call the game's auto-detect function if it exists, since it may do some logic
-            if (game.funcs->pfnAutoDetect)
-                (void)game.funcs->pfnAutoDetect(&game, engine);
+            // call the game's auto-detect function, since it may do some logic
+            (void)game->AutoDetect(engine);
             return;
         }
 
-        // otherwise, if auto, call the game's auto-detect function if available
-        if (str_striequal(cfg_game, "auto")
-            && game.funcs->pfnAutoDetect
-            && game.funcs->pfnAutoDetect(&game, engine))
-        {
-            LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match with auto-detection - \"{}\"\n", game.gamename_short);
-            g_gameinfo.game = &game;
+        // otherwise, if auto, call the game's auto-detect function
+        if (str_striequal(cfg_game, "auto") && game->AutoDetect(engine)) {
+            LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match with auto-detection - \"{}\"\n", game->GameCode());
+            g_gameinfo.game = game;
             g_gameinfo.is_auto_detected = true;
             return;
         }
@@ -625,12 +607,14 @@ static bool main_load_mod(std::string cfg_mod) {
         // if "mod" config setting was "auto"
         if (str_striequal(cfg_mod, "auto")) {
             // treat as if "mod" config setting was "qmm_" plus the default dll name for this engine
-            cfg_mod = fmt::format("qmm_{}", g_gameinfo.game->dllname);
+            cfg_mod = fmt::format("qmm_{}", g_gameinfo.game->DefaultDLLName());
             // add QVM filename to search list if this game supports it
-            if (g_gameinfo.game->qvmname)
-                try_paths.push_back(g_gameinfo.game->qvmname);
+            if (g_gameinfo.game->DefaultQVMName())
+                try_paths.push_back(g_gameinfo.game->DefaultQVMName());
         }
-        // if "mod" config setting was a relative path, do nothing special
+        // if "mod" config setting was a relative path, do nothing special unless QVM
+        if (str_striequal(path_baseext(cfg_mod), EXT_QVM) && g_gameinfo.game->DefaultQVMName())
+            try_paths.push_back(cfg_mod);
         try_paths.push_back(fmt::format("{}/{}", g_gameinfo.qmm_dir, cfg_mod));
         try_paths.push_back(fmt::format("{}/{}/{}", g_gameinfo.exe_dir, g_gameinfo.mod_dir, cfg_mod));
         for (std::string& try_path : try_paths) {
@@ -688,14 +672,14 @@ static bool main_load_plugin(std::string plugin_path) {
 static void main_handle_command_qmm(intptr_t arg_start) {
     char arg1[10] = "", arg2[10] = "";
 
-    int argc = (int)ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGC]);
+    int argc = (int)ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ARGC));
     qmm_argv(arg_start + 1, arg1, sizeof(arg1));
     if (argc > arg_start + 2)
         qmm_argv(arg_start + 2, arg2, sizeof(arg2));
 
     if (str_striequal("status", arg1) || str_striequal("info", arg1)) {
         CONSOLE_PRINT("(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ")\n");
-        CONSOLE_PRINTF("(QMM) Game: {}/\"{}\" ({}) (Source: {})\n", g_gameinfo.game->gamename_short, g_gameinfo.game->gamename_long, APIType_Function(g_gameinfo.api), g_gameinfo.is_auto_detected ? "Auto-detected" : "Config file");
+        CONSOLE_PRINTF("(QMM) Game: {}/\"{}\" ({}) (Source: {})\n", g_gameinfo.game->GameCode(), g_gameinfo.game->GameName(), APIType_Function(g_gameinfo.api), g_gameinfo.is_auto_detected ? "Auto-detected" : "Config file");
         CONSOLE_PRINTF("(QMM) ModDir: {}\n", g_gameinfo.mod_dir);
         CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", g_gameinfo.cfg_path, g_cfg.empty() ? "(error)" : "");
         CONSOLE_PRINT("(QMM) Built: " QMM_COMPILE " by " QMM_BUILDER "\n");
@@ -773,21 +757,17 @@ static void main_handle_command_qmm(intptr_t arg_start) {
 
 // route syscall or vmMain call to plugins and mod
 static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
-    const char* (*msg_names)(intptr_t) = nullptr;
-    const char* func_name = nullptr;
+    const char* msg_name;
+    const char* func_name;
 
     if (is_syscall) {
-        msg_names = g_gameinfo.game->funcs->pfnEngMsgNames;
+        msg_name = g_gameinfo.game->EngMsgName(cmd);
         func_name = "syscall";
     }
     else {
-        msg_names = g_gameinfo.game->funcs->pfnModMsgNames;
+        msg_name = g_gameinfo.game->ModMsgName(cmd);
         func_name = "vmMain";
     }
-
-#ifdef _DEBUG
-    const char* msg_name = msg_names(cmd);
-#endif
 
     // store max result
     plugin_res max_result = QMM_UNUSED;
@@ -824,9 +804,9 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
         g_plugin_globals.high_result = max_result;
         // invalid/error result values
         if (g_plugin_globals.plugin_result == QMM_UNUSED)
-            LOG(QMM_LOG_WARNING, "QMM") << fmt::format("{}({}): Plugin \"{}\" did not set result flag\n", func_name, msg_names(cmd), p.plugininfo->name);
+            LOG(QMM_LOG_WARNING, "QMM") << fmt::format("{}({}): Plugin \"{}\" did not set result flag\n", func_name, msg_name, p.plugininfo->name);
         else if (g_plugin_globals.plugin_result == QMM_ERROR)
-            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("{}({}): Plugin \"{}\" set result flag QMM_ERROR\n", func_name, msg_names(cmd), p.plugininfo->name);
+            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("{}({}): Plugin \"{}\" set result flag QMM_ERROR\n", func_name, msg_name, p.plugininfo->name);
 
         // if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
         else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
@@ -838,10 +818,10 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
 #ifdef _DEBUG
         LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) called\n", func_name, msg_name, cmd);
 #endif
-        if (is_syscall && g_gameinfo.pfnsyscall)
-            real_ret = g_gameinfo.pfnsyscall(cmd, QMM_PUT_SYSCALL_ARGS());
-        else if (!is_syscall && g_gameinfo.pfnvmMain)
-            real_ret = g_gameinfo.pfnvmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+        if (is_syscall)
+            real_ret = g_gameinfo.game->syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+        else
+            real_ret = g_gameinfo.game->vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
         LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) returning {}\n", func_name, msg_name, cmd, real_ret);
@@ -882,7 +862,7 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
 
         // ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR
         if (g_plugin_globals.plugin_result == QMM_ERROR)
-            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", msg_names(cmd), p.plugininfo->name);
+            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", msg_name, p.plugininfo->name);
 
         // if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
         else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
@@ -901,7 +881,7 @@ void qmm_argv(intptr_t argn, char* buf, intptr_t buflen) {
     // void trap_Argv(int argn, char* buffer, int bufferSize);
     // some games don't return pointers because of QVM interaction, so if this returns anything but null
     // (or true?), we probably are in an api game, and need to get the arg from the return value instead
-    intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG[QMM_G_ARGV], argn, buf, buflen);
+    intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ARGV), argn, buf, buflen);
     if (ret > 1)
         strncpyz(buf, (const char*)ret, (size_t)buflen);
 }
@@ -929,8 +909,10 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
     // is loaded, so just get the return value from the mod's GetCGameAPI() function directly
     if (g_gameinfo.game) {
         // ??
-        if (!g_mod.dll)
+        if (!g_mod.dll) {
+            LOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Mod DLL not loaded?\n";
             return nullptr;
+        }
         LOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Passing on call to mod DLL.\n";
         mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)dll_symbol(g_mod.dll, "GetCGameAPI");
         return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;

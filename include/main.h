@@ -27,9 +27,8 @@ struct gameinfo {
     std::string qmm_file;					// filename of qmm dll
     std::string mod_dir;					// active mod dir
     std::string cfg_path;					// qmm config file path
-    eng_syscall pfnsyscall = nullptr;		// game-specific wrapper for syscall. given to plugins and called by QMM
-    mod_vmMain pfnvmMain = nullptr;			// game-specific wrapper for vmMain. given to plugins and called by QMM
-    api_supportedgame* game = nullptr;		// loaded engine from supported games table from game_api.cpp
+    GameSupport* game = nullptr;			// loaded engine from supported games table from game_api.cpp
+    eng_syscall syscall = nullptr;			// syscall from dllEntry (if applicable) to call G_ERROR if needed
     void* qmm_module_ptr = nullptr;			// qmm module pointer
     bool is_auto_detected = false;			// was this engine auto-detected?
     bool is_shutdown = false;				// is game shutting down due to G_ERROR? avoids calling G_ERROR again from GAME_SHUTDOWN
@@ -37,12 +36,12 @@ struct gameinfo {
 };
 extern gameinfo g_gameinfo;
 
-#define QMM_ENG_MSG	(g_gameinfo.game->funcs->qmm_eng_msgs)
-#define QMM_MOD_MSG	(g_gameinfo.game->funcs->qmm_mod_msgs)
+#define QMM_ENG_MSG					g_gameinfo.game->QMMEngMsg
+#define QMM_MOD_MSG					g_gameinfo.game->QMMModMsg
 
-#define ENG_SYSCALL	(g_gameinfo.pfnsyscall)
-#define CONSOLE_PRINT(str)           ENG_SYSCALL(msg_G_PRINT, str)
-#define CONSOLE_PRINTF(str, ...)     ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
+#define ENG_SYSCALL					g_gameinfo.game->syscall
+#define CONSOLE_PRINT(str)			ENG_SYSCALL(msg_G_PRINT, str)
+#define CONSOLE_PRINTF(str, ...)	ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
 
 // this is used if we couldn't determine a game engine and we have to fail.
 // G_ERROR appears to be 1 in all supported dllEntry games. they are different in some GetGameAPI games,

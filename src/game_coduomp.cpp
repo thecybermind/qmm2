@@ -9,6 +9,10 @@ Created By:
 
 */
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 #include <coduomp/game/g_public.h>
 
 #include "game_api.h"
@@ -20,27 +24,46 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-// GAME_GET_APIVERSION gets called first, which is when QMM has to perform mod/plugin loading, but we
-// don't want to make plugins have to use separate code to handle the actual GAME_INIT message, so we
-// manually fill out the msg arrays
-static int CODUOMP_qmm_eng_msgs[] = {
-    G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING,
-    G_CVAR_REGISTER, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM,
-    G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ,
-};
-static int CODUOMP_qmm_mod_msgs[] = {
-    GAME_GET_APIVERSION, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND,
+struct CODUOMP_GameSupport : public GameSupport {
+    virtual const char* EngMsgName(intptr_t msg);
+    virtual const char* ModMsgName(intptr_t msg);
+    virtual bool AutoDetect(APIType engine_api);
+    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual bool ModLoad(void* entry, APIType mod_api);
+    virtual void ModUnload();
+    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
+    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
+
+    virtual intptr_t syscall(intptr_t, ...);
+    virtual intptr_t vmMain(intptr_t, ...);
+
+    virtual const char* DefaultDLLName() { return "" UO_DLL MOD_DLL; }
+    virtual const char* DefaultModDir() { return "uo"; }
+    virtual const char* GameName() { return "Call of Duty: United Offensive (MP)"; }
+    virtual const char* GameCode() { return "CODMP"; }
+
+private:
+    // a copy of the original syscall from the engine
+    eng_syscall orig_syscall = nullptr;
+
+    // a copy of the vmMain function from the mod
+    mod_vmMain orig_vmMain = nullptr;
+
+    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    // GAME_GET_APIVERSION gets called first, which is when QMM has to perform mod/plugin loading, but we
+    // don't want to make plugins have to use separate code to handle the actual GAME_INIT message
+    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = { GAME_GET_APIVERSION, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, };
 };
 
-GEN_GAME_FUNCS(CODUOMP);
+GEN_GAME_OBJ(CODUOMP);
 
 
 // auto-detection logic for CODUOMP
-static bool CODUOMP_AutoDetect(api_supportedgame* game, APIType engineapi) {
+bool CODUOMP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "coduomp") && !str_stristr(g_gameinfo.exe_file, "coduo_lnxded"))
@@ -50,20 +73,14 @@ static bool CODUOMP_AutoDetect(api_supportedgame* game, APIType engineapi) {
 }
 
 
-// original syscall pointer that comes from the game engine
-static eng_syscall orig_syscall = nullptr;
-
-// pointer to vmMain that comes from the mod
-static mod_vmMain orig_vmMain = nullptr;
-
 // wrapper syscall function that calls actual engine func in orig_syscall
 // this is how QMM and plugins will call into the engine
-static intptr_t CODUOMP_syscall(intptr_t cmd, ...) {
+intptr_t CODUOMP_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_syscall({} {}) called\n", CODUOMP_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
 #endif
 
     intptr_t ret = 0;
@@ -96,7 +113,7 @@ static intptr_t CODUOMP_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_syscall({} {}) returning {}\n", CODUOMP_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -105,11 +122,11 @@ static intptr_t CODUOMP_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func in orig_vmMain
 // this is how QMM and plugins will call into the mod
-static intptr_t CODUOMP_vmMain(intptr_t cmd, ...) {
+intptr_t CODUOMP_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_vmMain({} {}) called\n", CODUOMP_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_vmMain)
@@ -122,32 +139,26 @@ static intptr_t CODUOMP_vmMain(intptr_t cmd, ...) {
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_vmMain({} {}) returning {}\n", CODUOMP_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* CODUOMP_Entry(void* syscall, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_Entry({}) called\n", syscall);
+void* CODUOMP_GameSupport::Entry(void* syscall, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_GameSupport::Entry({}) called\n", syscall);
 
     // store original syscall from engine
     orig_syscall = (eng_syscall)syscall;
 
-    // pointer to wrapper vmMain function that calls actual mod vmMain func orig_vmMain
-    g_gameinfo.pfnvmMain = CODUOMP_vmMain;
-
-    // pointer to wrapper syscall function that calls actual engine syscall func
-    g_gameinfo.pfnsyscall = CODUOMP_syscall;
-
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_Entry({}) returning\n", syscall);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("CODUOMP_GameSupport::Entry({}) returning\n", syscall);
 
     return nullptr;
 }
 
 
-static bool CODUOMP_ModLoad(void* entry, APIType modapi) {
+bool CODUOMP_GameSupport::ModLoad(void* entry, APIType modapi) {
     if (modapi != QMM_API_DLLENTRY)
         return false;
 
@@ -157,12 +168,12 @@ static bool CODUOMP_ModLoad(void* entry, APIType modapi) {
 }
 
 
-static void CODUOMP_ModUnload() {
+void CODUOMP_GameSupport::ModUnload() {
     orig_vmMain = nullptr;
 }
 
 
-static const char* CODUOMP_EngMsgNames(intptr_t cmd) {
+const char* CODUOMP_GameSupport::EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_ERROR);
@@ -314,7 +325,7 @@ static const char* CODUOMP_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* CODUOMP_ModMsgNames(intptr_t cmd) {
+const char* CODUOMP_GameSupport::ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAME_DEFAULT_0);
         GEN_CASE(GAME_GET_APIVERSION);
@@ -345,3 +356,5 @@ static const char* CODUOMP_ModMsgNames(intptr_t cmd) {
         return "unknown";
     }
 }
+
+#endif // QMM_ARCH_32

@@ -25,17 +25,67 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_GAME_QMM_MSGS(QUAKE2);
+struct QUAKE2_GameSupport : public GameSupport {
+    virtual const char* EngMsgName(intptr_t msg);
+    virtual const char* ModMsgName(intptr_t msg);
+    virtual bool AutoDetect(APIType engine_api);
+    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual bool ModLoad(void* entry, APIType mod_api);
+    virtual void ModUnload();
+    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
+    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-GEN_GAME_FUNCS(QUAKE2);
+    virtual intptr_t syscall(intptr_t, ...);
+    virtual intptr_t vmMain(intptr_t, ...);
+
+    virtual const char* DefaultDLLName() { return "game" MOD_DLL; }
+    virtual const char* DefaultModDir() { return "baseq2"; }
+    virtual const char* GameName() { return "Quake 2"; }
+    virtual const char* GameCode() { return "QUAKE2"; }
+
+private:
+    // update the export variables from orig_export
+    static void update_exports();
+
+    // track configstrings for our G_GET_CONFIGSTRING syscall
+    static std::map<int, std::string> configstrings;
+    static void configstring(int num, char* configstring);
+
+    // track userinfo for our G_GET_USERINFO syscall
+    static std::map<intptr_t, std::string> userinfos;
+    static qboolean ClientConnect(edict_t* ent, char* userinfo);
+    static void ClientUserinfoChanged(edict_t* ent, char* userinfo);
+
+    // track entstrings for our G_GET_ENTITY_TOKEN syscall
+    static std::vector<std::string> entity_tokens;
+    static size_t token_counter;
+    static void SpawnEntities(char* mapname, char* entstring, char* spawnpoint);
+
+    // a copy of the original import struct that comes from the game engine
+    static game_import_t orig_import;
+
+    // a copy of the original export struct pointer that comes from the mod
+    static game_export_t* orig_export;
+
+    // struct with lambdas that call QMM's syscall function. this is given to the mod
+    static game_import_t qmm_import;
+
+    // struct with lambdas that call QMM's vmMain function. this is given to the game engine
+    static game_export_t qmm_export;
+
+    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
+};
+
+GEN_GAME_OBJ(QUAKE2);
 
 
 // auto-detection logic for QUAKE2
-static bool QUAKE2_AutoDetect(api_supportedgame* game, APIType engineapi) {
+bool QUAKE2_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "quake2") && !str_stristr(g_gameinfo.exe_file, "q2ded"))
@@ -45,192 +95,18 @@ static bool QUAKE2_AutoDetect(api_supportedgame* game, APIType engineapi) {
 }
 
 
-// a copy of the original import struct that comes from the game engine
-static game_import_t orig_import;
-
-// a copy of the original export struct pointer that comes from the mod
-static game_export_t* orig_export = nullptr;
-
-// these are "pre" hooks for storing some data for polyfills.
-// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_import table
-
-// track configstrings for our G_GET_CONFIGSTRING syscall
-static std::map<int, std::string> s_configstrings;
-static void QUAKE2_configstring(int num, char* configstring) {
-    // if configstring is null, remove entry in map. otherwise store in map
-    if (!configstring)
-        s_configstrings.erase(num);
-    else
-        s_configstrings[num] = configstring;
-    qmm_syscall(G_CONFIGSTRING, num, configstring);
-}
-
-
-// struct with lambdas that call QMM's syscall function. this is given to the mod
-static game_import_t qmm_import = {
-    GEN_IMPORT(bprintf, G_BPRINTF),
-    GEN_IMPORT(dprintf, G_DPRINTF),
-    GEN_IMPORT(cprintf, G_CPRINTF),
-    GEN_IMPORT(centerprintf, G_CENTERPRINTF),
-    GEN_IMPORT_6(sound, G_SOUND, void, edict_t*, int, int, float, float, float),
-    GEN_IMPORT_7(positioned_sound, G_POSITIONED_SOUND, void, vec3_t, edict_t*, int, int, float, float, float),
-    QUAKE2_configstring,
-    GEN_IMPORT(error, G_ERROR),
-    GEN_IMPORT(modelindex, G_MODELINDEX),
-    GEN_IMPORT(soundindex, G_SOUNDINDEX),
-    GEN_IMPORT(imageindex, G_IMAGEINDEX),
-    GEN_IMPORT(setmodel, G_SETMODEL),
-    GEN_IMPORT(trace, G_TRACE),
-    GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
-    GEN_IMPORT(inPVS, G_IN_PVS),
-    GEN_IMPORT(inPHS, G_IN_PHS),
-    GEN_IMPORT(SetAreaPortalState, G_SETAREAPORTALSTATE),
-    GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
-    GEN_IMPORT(linkentity, G_LINKENTITY),
-    GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
-    GEN_IMPORT(BoxEdicts, G_BOXEDICTS),
-    GEN_IMPORT(Pmove, G_PMOVE),
-    GEN_IMPORT(multicast, G_MULTICAST),
-    GEN_IMPORT(unicast, G_UNICAST),
-    GEN_IMPORT(WriteChar, G_MSG_WRITECHAR),
-    GEN_IMPORT(WriteByte, G_MSG_WRITEBYTE),
-    GEN_IMPORT(WriteShort, G_MSG_WRITESHORT),
-    GEN_IMPORT(WriteLong, G_MSG_WRITELONG),
-    GEN_IMPORT_1(WriteFloat, G_MSG_WRITEFLOAT, void, float),
-    GEN_IMPORT(WriteString, G_MSG_WRITESTRING),
-    GEN_IMPORT(WritePosition, G_MSG_WRITEPOSITION),
-    GEN_IMPORT(WriteDir, G_MSG_WRITEDIR),
-    GEN_IMPORT_1(WriteAngle, G_MSG_WRITEANGLE, void, float),
-    GEN_IMPORT(TagMalloc, G_TAGMALLOC),
-    GEN_IMPORT(TagFree, G_TAGFREE),
-    GEN_IMPORT(FreeTags, G_FREETAGS),
-    GEN_IMPORT(cvar, G_CVAR),
-    GEN_IMPORT(cvar_set, G_CVAR_SET),
-    GEN_IMPORT(cvar_forceset, G_CVAR_FORCESET),
-    GEN_IMPORT(argc, G_ARGC),
-    GEN_IMPORT(argv, G_ARGV),
-    GEN_IMPORT(args, G_ARGS),
-    GEN_IMPORT(AddCommandString, G_ADDCOMMANDSTRING),
-    GEN_IMPORT_2(DebugGraph, G_DEBUGGRAPH, void, float, int),
-};
-
-
-// these are "pre" hooks for storing some data for polyfills.
-// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
-
-// track userinfo for our G_GET_USERINFO syscall
-static std::map<intptr_t, std::string> s_userinfo;
-static qboolean QUAKE2_ClientConnect(edict_t* ent, char* userinfo) {
-    // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
-    if (orig_export && orig_export->edicts && orig_export->edict_size) {
-        intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
-        intptr_t clientnum = entnum - 1;
-        // if userinfo is null, remove entry in map. otherwise store in map
-        if (!userinfo)
-            s_userinfo.erase(clientnum);
-        else
-            s_userinfo[clientnum] = userinfo;
-    }
-    cgame.is_from_QMM = true;
-    return vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
-}
-
-
-static void QUAKE2_ClientUserinfoChanged(edict_t* ent, char* userinfo) {
-    // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
-    if (orig_export && orig_export->edicts && orig_export->edict_size) {
-        intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
-        intptr_t clientnum = entnum - 1;
-        // if userinfo is null, remove entry in map. otherwise store in map
-        if (!userinfo)
-            s_userinfo.erase(clientnum);
-        else
-            s_userinfo[clientnum] = userinfo;
-    }
-    cgame.is_from_QMM = true;
-    vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
-}
-
-
-// track entstrings for our G_GET_ENTITY_TOKEN syscall
-static std::vector<std::string> s_entity_tokens;
-static size_t s_tokencount = 0;
-static void QUAKE2_SpawnEntities(char* mapname, char* entstring, char* spawnpoint) {
-    if (entstring) {
-        s_entity_tokens = util_parse_entstring(entstring);
-        s_tokencount = 0;
-    }
-    cgame.is_from_QMM = true;
-    vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
-}
-
-
-// struct with lambdas that call QMM's vmMain function. this is given to the game engine
-static game_export_t qmm_export = {
-    GAME_API_VERSION,	// apiversion
-    GEN_EXPORT(Init, GAME_INIT),
-    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
-    QUAKE2_SpawnEntities,
-    GEN_EXPORT(WriteGame, GAME_WRITE_GAME),
-    GEN_EXPORT(ReadGame, GAME_READ_GAME),
-    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
-    GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
-    QUAKE2_ClientConnect,
-    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
-    QUAKE2_ClientUserinfoChanged,
-    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
-    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
-    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
-    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
-    GEN_EXPORT(ServerCommand, GAME_SERVER_COMMAND),
-    // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
-    nullptr,	// edicts
-    0,			// edict_size
-    0,			// num_edicts
-    0,			// max_edicts
-};
-
-
-// update the export variables from orig_export
-static void s_update_export() {
-    if (!orig_export)
-        return;
-
-    bool changed = false;
-
-    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
-    if (qmm_export.edicts != orig_export->edicts
-        || qmm_export.edict_size != orig_export->edict_size
-        || qmm_export.num_edicts != orig_export->num_edicts
-        ) {
-        changed = true;
-    }
-
-    qmm_export.edicts = orig_export->edicts;
-    qmm_export.edict_size = orig_export->edict_size;
-    qmm_export.num_edicts = orig_export->num_edicts;
-    qmm_export.max_edicts = orig_export->max_edicts;
-
-    if (changed) {
-        // this will trigger this message to be fired to plugins, and then it will be handled
-        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
-        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, nullptr, 0);
-    }
-}
-
-
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-static intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
+intptr_t QUAKE2_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_syscall({} {}) called\n", QUAKE2_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
-    s_update_export();
+    update_exports();
 
     intptr_t ret = 0;
 
@@ -416,13 +292,13 @@ static intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[1];
         intptr_t bufferSize = args[2];
         *buffer = '\0';
-        if (s_userinfo.count(num))
-            strncpyz(buffer, s_userinfo[num].c_str(), (size_t)bufferSize);
+        if (userinfos.count(num))
+            strncpyz(buffer, userinfos[num].c_str(), (size_t)bufferSize);
         break;
     }
     case G_GET_ENTITY_TOKEN: {
         // bool trap_GetEntityToken(char *buffer, int bufferSize);
-        if (s_tokencount >= s_entity_tokens.size()) {
+        if (token_counter >= entity_tokens.size()) {
             ret = false;
             break;
         }
@@ -430,7 +306,7 @@ static intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), (size_t)bufferSize);
+        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = true;
         break;
     }
@@ -438,8 +314,8 @@ static intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
         // const char* (*get_configstring)(int num);
         intptr_t num = args[0];
 
-        if (s_configstrings.count(num))
-            ret = (intptr_t)s_configstrings[num].c_str();
+        if (configstrings.count(num))
+            ret = (intptr_t)configstrings[num].c_str();
 
         break;
     }
@@ -455,7 +331,7 @@ static intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_syscall({} {}) returning {}\n", QUAKE2_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -464,11 +340,11 @@ static intptr_t QUAKE2_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-static intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
+intptr_t QUAKE2_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) called\n", QUAKE2_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -506,18 +382,18 @@ static intptr_t QUAKE2_vmMain(intptr_t cmd, ...) {
     };
 
     // update export vars after returning from the mod
-    s_update_export();
+    update_exports();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_vmMain({} {}) returning {}\n", QUAKE2_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* QUAKE2_Entry(void* import, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_Entry({}) called\n", import);
+void* QUAKE2_GameSupport::Entry(void* import, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_GameSupport::Entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -527,13 +403,7 @@ static void* QUAKE2_Entry(void* import, void*, APIType) {
     // fill in variables of our hooked import struct to pass to the mod
     // qmm_import.x = orig_import.x;
 
-    // pointer to wrapper vmMain function that calls actual mod func from orig_export
-    g_gameinfo.pfnvmMain = QUAKE2_vmMain;
-
-    // pointer to wrapper syscall function that calls actual engine func from orig_import
-    g_gameinfo.pfnsyscall = QUAKE2_syscall;
-
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_Entry({}) returning {}\n", import, fmt::ptr(&qmm_export));
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("QUAKE2_GameSupport::Entry({}) returning {}\n", import, fmt::ptr(&qmm_export));
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -542,7 +412,7 @@ static void* QUAKE2_Entry(void* import, void*, APIType) {
 }
 
 
-static bool QUAKE2_ModLoad(void* entry, APIType modapi) {
+bool QUAKE2_GameSupport::ModLoad(void* entry, APIType modapi) {
     if (modapi != QMM_API_GETGAMEAPI)
         return false;
 
@@ -553,12 +423,12 @@ static bool QUAKE2_ModLoad(void* entry, APIType modapi) {
 }
 
 
-static void QUAKE2_ModUnload() {
+void QUAKE2_GameSupport::ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* QUAKE2_EngMsgNames(intptr_t cmd) {
+const char* QUAKE2_GameSupport::EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_BPRINTF);
         GEN_CASE(G_DPRINTF);
@@ -629,7 +499,7 @@ static const char* QUAKE2_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* QUAKE2_ModMsgNames(intptr_t cmd) {
+const char* QUAKE2_GameSupport::ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);
@@ -656,3 +526,166 @@ static const char* QUAKE2_ModMsgNames(intptr_t cmd) {
         return "unknown";
     }
 }
+
+
+void QUAKE2_GameSupport::update_exports() {
+    if (!orig_export)
+        return;
+
+    bool changed = false;
+
+    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
+    if (qmm_export.edicts != orig_export->edicts
+        || qmm_export.edict_size != orig_export->edict_size
+        || qmm_export.num_edicts != orig_export->num_edicts
+        ) {
+        changed = true;
+    }
+
+    qmm_export.edicts = orig_export->edicts;
+    qmm_export.edict_size = orig_export->edict_size;
+    qmm_export.num_edicts = orig_export->num_edicts;
+    qmm_export.max_edicts = orig_export->max_edicts;
+
+    if (changed) {
+        // this will trigger this message to be fired to plugins, and then it will be handled
+        // by the empty "case G_LOCATE_GAME_DATA" in syscall
+        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, nullptr, 0);
+    }
+}
+
+
+game_import_t QUAKE2_GameSupport::orig_import = {};
+
+// a copy of the original export struct pointer that comes from the mod
+game_export_t* QUAKE2_GameSupport::orig_export = nullptr;
+
+
+std::map<int, std::string> QUAKE2_GameSupport::configstrings;
+void QUAKE2_GameSupport::configstring(int num, char* configstring) {
+    // if configstring is null, remove entry in map. otherwise store in map
+    if (!configstring)
+        configstrings.erase(num);
+    else
+        configstrings[num] = configstring;
+    qmm_syscall(G_CONFIGSTRING, num, configstring);
+}
+
+
+game_import_t QUAKE2_GameSupport::qmm_import = {
+    GEN_IMPORT(bprintf, G_BPRINTF),
+    GEN_IMPORT(dprintf, G_DPRINTF),
+    GEN_IMPORT(cprintf, G_CPRINTF),
+    GEN_IMPORT(centerprintf, G_CENTERPRINTF),
+    GEN_IMPORT_6(sound, G_SOUND, void, edict_t*, int, int, float, float, float),
+    GEN_IMPORT_7(positioned_sound, G_POSITIONED_SOUND, void, vec3_t, edict_t*, int, int, float, float, float),
+    QUAKE2_GameSupport::configstring,
+    GEN_IMPORT(error, G_ERROR),
+    GEN_IMPORT(modelindex, G_MODELINDEX),
+    GEN_IMPORT(soundindex, G_SOUNDINDEX),
+    GEN_IMPORT(imageindex, G_IMAGEINDEX),
+    GEN_IMPORT(setmodel, G_SETMODEL),
+    GEN_IMPORT(trace, G_TRACE),
+    GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
+    GEN_IMPORT(inPVS, G_IN_PVS),
+    GEN_IMPORT(inPHS, G_IN_PHS),
+    GEN_IMPORT(SetAreaPortalState, G_SETAREAPORTALSTATE),
+    GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
+    GEN_IMPORT(linkentity, G_LINKENTITY),
+    GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
+    GEN_IMPORT(BoxEdicts, G_BOXEDICTS),
+    GEN_IMPORT(Pmove, G_PMOVE),
+    GEN_IMPORT(multicast, G_MULTICAST),
+    GEN_IMPORT(unicast, G_UNICAST),
+    GEN_IMPORT(WriteChar, G_MSG_WRITECHAR),
+    GEN_IMPORT(WriteByte, G_MSG_WRITEBYTE),
+    GEN_IMPORT(WriteShort, G_MSG_WRITESHORT),
+    GEN_IMPORT(WriteLong, G_MSG_WRITELONG),
+    GEN_IMPORT_1(WriteFloat, G_MSG_WRITEFLOAT, void, float),
+    GEN_IMPORT(WriteString, G_MSG_WRITESTRING),
+    GEN_IMPORT(WritePosition, G_MSG_WRITEPOSITION),
+    GEN_IMPORT(WriteDir, G_MSG_WRITEDIR),
+    GEN_IMPORT_1(WriteAngle, G_MSG_WRITEANGLE, void, float),
+    GEN_IMPORT(TagMalloc, G_TAGMALLOC),
+    GEN_IMPORT(TagFree, G_TAGFREE),
+    GEN_IMPORT(FreeTags, G_FREETAGS),
+    GEN_IMPORT(cvar, G_CVAR),
+    GEN_IMPORT(cvar_set, G_CVAR_SET),
+    GEN_IMPORT(cvar_forceset, G_CVAR_FORCESET),
+    GEN_IMPORT(argc, G_ARGC),
+    GEN_IMPORT(argv, G_ARGV),
+    GEN_IMPORT(args, G_ARGS),
+    GEN_IMPORT(AddCommandString, G_ADDCOMMANDSTRING),
+    GEN_IMPORT_2(DebugGraph, G_DEBUGGRAPH, void, float, int),
+};
+
+
+std::map<intptr_t, std::string> QUAKE2_GameSupport::userinfos;
+qboolean QUAKE2_GameSupport::ClientConnect(edict_t* ent, char* userinfo) {
+    // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
+    if (orig_export && orig_export->edicts && orig_export->edict_size) {
+        intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
+        intptr_t clientnum = entnum - 1;
+        // if userinfo is null, remove entry in map. otherwise store in map
+        if (!userinfo)
+            userinfos.erase(clientnum);
+        else
+            userinfos[clientnum] = userinfo;
+    }
+    cgame.is_from_QMM = true;
+    return ::vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
+}
+
+
+void QUAKE2_GameSupport::ClientUserinfoChanged(edict_t* ent, char* userinfo) {
+    // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
+    if (orig_export && orig_export->edicts && orig_export->edict_size) {
+        intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
+        intptr_t clientnum = entnum - 1;
+        // if userinfo is null, remove entry in map. otherwise store in map
+        if (!userinfo)
+            userinfos.erase(clientnum);
+        else
+            userinfos[clientnum] = userinfo;
+    }
+    cgame.is_from_QMM = true;
+    (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
+}
+
+
+// track entstrings for our G_GET_ENTITY_TOKEN syscall
+std::vector<std::string> QUAKE2_GameSupport::entity_tokens;
+size_t QUAKE2_GameSupport::token_counter = 0;
+void QUAKE2_GameSupport::SpawnEntities(char* mapname, char* entstring, char* spawnpoint) {
+    if (entstring) {
+        entity_tokens = util_parse_entstring(entstring);
+        token_counter = 0;
+    }
+    cgame.is_from_QMM = true;
+    (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
+}
+
+
+game_export_t QUAKE2_GameSupport::qmm_export = {
+    GAME_API_VERSION,	// apiversion
+    GEN_EXPORT(Init, GAME_INIT),
+    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
+    QUAKE2_GameSupport::SpawnEntities,
+    GEN_EXPORT(WriteGame, GAME_WRITE_GAME),
+    GEN_EXPORT(ReadGame, GAME_READ_GAME),
+    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
+    GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
+    QUAKE2_GameSupport::ClientConnect,
+    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
+    QUAKE2_GameSupport::ClientUserinfoChanged,
+    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
+    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
+    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
+    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
+    GEN_EXPORT(ServerCommand, GAME_SERVER_COMMAND),
+    // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
+    nullptr,	// edicts
+    0,			// edict_size
+    0,			// num_edicts
+    0,			// max_edicts
+};

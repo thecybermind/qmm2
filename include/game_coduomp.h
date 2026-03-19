@@ -12,9 +12,15 @@ Created By:
 #ifndef QMM2_GAME_CODUOMP_H
 #define QMM2_GAME_CODUOMP_H
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 // these import messages do not have an exact analogue in CODUOMP
 enum {
 	G_ARGS = -100,					// char* (void)
 };
+
+#endif // QMM_ARCH_32
 
 #endif // QMM2_GAME_CODUOMP_H

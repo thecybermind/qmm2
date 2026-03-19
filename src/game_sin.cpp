@@ -25,17 +25,67 @@ Created By:
 #include "main.h"
 #include "util.h"
 
-GEN_GAME_QMM_MSGS(SIN);
+struct SIN_GameSupport : public GameSupport {
+    virtual const char* EngMsgName(intptr_t msg);
+    virtual const char* ModMsgName(intptr_t msg);
+    virtual bool AutoDetect(APIType engine_api);
+    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual bool ModLoad(void* entry, APIType mod_api);
+    virtual void ModUnload();
+    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
+    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-GEN_GAME_FUNCS(SIN);
+    virtual intptr_t syscall(intptr_t, ...);
+    virtual intptr_t vmMain(intptr_t, ...);
+
+    virtual const char* DefaultDLLName() { return "game" MOD_DLL; }
+    virtual const char* DefaultModDir() { return "base"; }
+    virtual const char* GameName() { return "SiN"; }
+    virtual const char* GameCode() { return "SIN"; }
+
+private:
+    // update the export variables from orig_export
+    static void update_exports();
+
+    // track configstrings for our G_GET_CONFIGSTRING syscall
+    static std::map<int, std::string> configstrings;
+    static void configstring(int num, const char* configstring);
+
+    // track userinfo for our G_GET_USERINFO syscall
+    static std::map<intptr_t, std::string> userinfos;
+    static qboolean ClientConnect(edict_t* ent, const char* userinfo);
+    static void ClientUserinfoChanged(edict_t* ent, const char* userinfo);
+
+    // track entstrings for our G_GET_ENTITY_TOKEN syscall
+    static std::vector<std::string> entity_tokens;
+    static size_t token_counter;
+    static void SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint);
+
+    // a copy of the original import struct that comes from the game engine
+    static game_import_t orig_import;
+
+    // a copy of the original export struct pointer that comes from the mod
+    static game_export_t* orig_export;
+
+    // struct with lambdas that call QMM's syscall function. this is given to the mod
+    static game_import_t qmm_import;
+
+    // struct with lambdas that call QMM's vmMain function. this is given to the game engine
+    static game_export_t qmm_export;
+
+    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
+};
+
+GEN_GAME_OBJ(SIN);
 
 
 // auto-detection logic for SIN
-static bool SIN_AutoDetect(api_supportedgame* game, APIType engineapi) {
+bool SIN_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, game->dllname))
+    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
     if (!str_stristr(g_gameinfo.exe_file, "sin"))
@@ -45,259 +95,18 @@ static bool SIN_AutoDetect(api_supportedgame* game, APIType engineapi) {
 }
 
 
-// a copy of the original import struct that comes from the game engine
-static game_import_t orig_import;
-
-// a copy of the original export struct pointer that comes from the mod
-static game_export_t* orig_export = nullptr;
-
-// these are "pre" hooks for storing some data for polyfills.
-// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_import table
-
-// track configstrings for our G_GET_CONFIGSTRING syscall
-static std::map<int, std::string> s_configstrings;
-static void SIN_configstring(int num, const char* configstring) {
-    // if configstring is null, remove entry in map. otherwise store in map
-    if (!configstring)
-        s_configstrings.erase(num);
-    else
-        s_configstrings[num] = configstring;
-    qmm_syscall(G_CONFIGSTRING, num, configstring);
-}
-
-
-// struct with lambdas that call QMM's syscall function. this is given to the mod
-static game_import_t qmm_import = {
-    GEN_IMPORT(bprintf, G_BPRINTF),
-    GEN_IMPORT(dprintf, G_DPRINTF),
-    GEN_IMPORT(printf, G_PRINTF),
-    GEN_IMPORT(cprintf, G_CPRINTF),
-    GEN_IMPORT(centerprintf, G_CENTERPRINTF),
-    GEN_IMPORT_9(sound, G_SOUND, void, edict_t*, int, int, float, float, float, float, float, int),
-    GEN_IMPORT_10(positioned_sound, G_POSITIONED_SOUND, void, vec3_t, edict_t*, int, int, float, float, float, float, float, int),
-    SIN_configstring,
-    GEN_IMPORT(error, G_ERROR),
-    GEN_IMPORT(modelindex, G_MODELINDEX),
-    GEN_IMPORT(soundindex, G_SOUNDINDEX),
-    GEN_IMPORT(imageindex, G_IMAGEINDEX),
-    GEN_IMPORT(itemindex, G_ITEMINDEX),
-    GEN_IMPORT(setmodel, G_SETMODEL),
-    GEN_IMPORT(trace, G_TRACE),
-    GEN_IMPORT(fulltrace, G_FULLTRACE),	// todo: change types to actually match float, but also need to return an intptr_t instead of trace_t
-    GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
-    GEN_IMPORT(inPVS, G_IN_PVS),
-    GEN_IMPORT(inPHS, G_IN_PHS),
-    GEN_IMPORT(SetAreaPortalState, G_SETAREAPORTALSTATE),
-    GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
-    GEN_IMPORT(linkentity, G_LINKENTITY),
-    GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
-    GEN_IMPORT(BoxEdicts, G_BOXEDICTS),
-    GEN_IMPORT(Pmove, G_PMOVE),
-    GEN_IMPORT(multicast, G_MULTICAST),
-    GEN_IMPORT(unicast, G_UNICAST),
-    GEN_IMPORT(WriteChar, G_MSG_WRITECHAR),
-    GEN_IMPORT(WriteByte, G_MSG_WRITEBYTE),
-    GEN_IMPORT(WriteShort, G_MSG_WRITESHORT),
-    GEN_IMPORT(WriteLong, G_MSG_WRITELONG),
-    GEN_IMPORT_1(WriteFloat, G_MSG_WRITEFLOAT, void, float),
-    GEN_IMPORT(WriteString, G_MSG_WRITESTRING),
-    GEN_IMPORT(WritePosition, G_MSG_WRITEPOSITION),
-    GEN_IMPORT(WriteDir, G_MSG_WRITEDIR),
-    GEN_IMPORT_1(WriteAngle, G_MSG_WRITEANGLE, void, float),
-    GEN_IMPORT(TagMalloc, G_TAGMALLOC),
-    GEN_IMPORT(TagFree, G_TAGFREE),
-    GEN_IMPORT(FreeTags, G_FREETAGS),
-    GEN_IMPORT(cvar, G_CVAR),
-    GEN_IMPORT(cvar_set, G_CVAR_SET),
-    GEN_IMPORT(cvar_forceset, G_CVAR_FORCESET),
-    GEN_IMPORT(argc, G_ARGC),
-    GEN_IMPORT(argv, G_ARGV),
-    GEN_IMPORT(args, G_ARGS),
-    GEN_IMPORT(AddCommandString, G_ADDCOMMANDSTRING),
-    GEN_IMPORT_2(DebugGraph, G_DEBUGGRAPH, void, float, int),
-    GEN_IMPORT(LoadFile, G_LOADFILE),
-    GEN_IMPORT(GameDir, G_GAMEDIR),
-    GEN_IMPORT(PlayerDir, G_PLAYERDIR),
-    GEN_IMPORT(CreatePath, G_CREATEPATH),
-    GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
-    GEN_IMPORT(IsModel, G_ISMODEL),
-    GEN_IMPORT(NumAnims, G_NUMANIMS),
-    GEN_IMPORT(NumSkins, G_NUMSKINS),
-    GEN_IMPORT(NumGroups, G_NUMGROUPS),
-    GEN_IMPORT(InitCommands, G_INITCOMMANDS),
-    GEN_IMPORT_4(CalculateBounds, G_CALCULATEBOUNDS, void, int, float, vec3_t, vec3_t),
-    GEN_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM),
-    GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
-    GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
-    GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
-    GEN_IMPORT(Anim_Time, G_ANIM_TIME),
-    GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
-    GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
-    GEN_IMPORT(Frame_Delta, G_FRAME_DELTA),
-    GEN_IMPORT(Frame_Time, G_FRAME_TIME),
-    GEN_IMPORT(Skin_NameForNum, G_SKIN_NAMEFORNUM),
-    GEN_IMPORT(Skin_NumForName, G_SKIN_NUMFORNAME),
-    GEN_IMPORT(Group_NameToNum, G_GROUP_NAMETONUM),
-    GEN_IMPORT(Group_NumToName, G_GROUP_NUMTONAME),
-    GEN_IMPORT(Group_DamageMultiplier, G_GROUP_DAMAGEMULTIPLIER),
-    GEN_IMPORT(Group_Flags, G_GROUP_FLAGS),
-    GEN_IMPORT(GetBoneInfo, G_GETBONEINFO),
-    GEN_IMPORT(GetBoneGroupName, G_GETBONEGROUPNAME),
-    GEN_IMPORT(GetBoneTransform, G_GETBONETRANSFORM),
-    GEN_IMPORT_4(Alias_Add, G_ALIAS_ADD, qboolean, int, const char*, const char*, float),
-    GEN_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM),
-    GEN_IMPORT(Alias_Dump, G_ALIAS_DUMP),
-    GEN_IMPORT(Alias_Clear, G_ALIAS_CLEAR),
-    GEN_IMPORT_3(GlobalAlias_Add, G_GLOBALALIAS_ADD, qboolean, const char*, const char*, float),
-    GEN_IMPORT(GlobalAlias_FindRandom, G_GLOBALALIAS_FINDRANDOM),
-    GEN_IMPORT(GlobalAlias_Dump, G_GLOBALALIAS_DUMP),
-    GEN_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR),
-    GEN_IMPORT(CalcCRC , G_CALCCRC),
-    GEN_IMPORT(Surf_NumSurfaces, G_SURF_NUMSURFACES),
-    GEN_IMPORT(Surf_Surfaces, G_SURF_SURFACES),
-    GEN_IMPORT(IncrementStatusCount, G_INCREMENTSTATUSCOUNT),
-    nullptr,	// DebugLines
-    nullptr,	// numDebugLines
-};
-
-
-// these are "pre" hooks for storing some data for polyfills.
-// we need these to be called BEFORE plugins' prehooks get called so they have to be done in the qmm_export table
-
-// track userinfo for our G_GET_USERINFO syscall
-static std::map<intptr_t, std::string> s_userinfo;
-static qboolean SIN_ClientConnect(edict_t* ent, const char* userinfo) {
-    // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
-    if (orig_export && orig_export->edicts && orig_export->edict_size) {
-        intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
-        intptr_t clientnum = entnum - 1;
-        // if userinfo is null, remove entry in map. otherwise store in map
-        if (!userinfo)
-            s_userinfo.erase(clientnum);
-        else
-            s_userinfo[clientnum] = userinfo;
-    }
-    cgame.is_from_QMM = true;
-    return vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
-}
-
-
-static void SIN_ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
-    // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
-    if (orig_export && orig_export->edicts && orig_export->edict_size) {
-        intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
-        intptr_t clientnum = entnum - 1;
-        // if userinfo is null, remove entry in map. otherwise store in map
-        if (!userinfo)
-            s_userinfo.erase(clientnum);
-        else
-            s_userinfo[clientnum] = userinfo;
-    }
-    cgame.is_from_QMM = true;
-    vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
-}
-
-
-// track entstrings for our G_GET_ENTITY_TOKEN syscall
-static std::vector<std::string> s_entity_tokens;
-static size_t s_tokencount = 0;
-static void SIN_SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
-    if (entstring) {
-        s_entity_tokens = util_parse_entstring(entstring);
-        s_tokencount = 0;
-    }
-    cgame.is_from_QMM = true;
-    vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
-}
-
-
-// struct with lambdas that call QMM's vmMain function. this is given to the game engine
-static game_export_t qmm_export = {
-    GAME_API_VERSION,	// apiversion
-    GEN_EXPORT(Init, GAME_INIT),
-    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
-    SIN_SpawnEntities,
-    GEN_EXPORT(WriteGame, GAME_WRITE_GAME),
-    GEN_EXPORT(ReadGame, GAME_READ_GAME),
-    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
-    GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
-    SIN_ClientConnect,
-    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
-    SIN_ClientUserinfoChanged,
-    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
-    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
-    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
-    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
-    GEN_EXPORT(ServerCommand, GAME_SERVER_COMMAND),
-    GEN_EXPORT(CreateSurfaces, GAME_CREATESURFACES),
-    // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
-    nullptr,	// edicts
-    0,			// edict_size
-    0,			// num_edicts
-    0,			// max_edicts
-    nullptr,	// consoles
-    0,			// console_size
-    0,			// num_consoles
-    0,			// max_consoles
-    nullptr,	// conbuffers
-    0,			// conbuffer_size
-    nullptr,	// surfaces
-    0,			// surface_size
-    0,			// max_surfaces
-    0,			// num_surfaces
-};
-
-
-// update the export variables from orig_export
-static void s_update_export() {
-    if (!orig_export)
-        return;
-
-    bool changed = false;
-
-    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
-    if (qmm_export.edicts != orig_export->edicts
-        || qmm_export.edict_size != orig_export->edict_size
-        || qmm_export.num_edicts != orig_export->num_edicts
-        ) {
-        changed = true;
-    }
-
-    qmm_export.edicts = orig_export->edicts;
-    qmm_export.edict_size = orig_export->edict_size;
-    qmm_export.num_edicts = orig_export->num_edicts;
-    qmm_export.max_edicts = orig_export->max_edicts;
-    qmm_export.consoles = orig_export->consoles;
-    qmm_export.console_size = orig_export->console_size;
-    qmm_export.num_consoles = orig_export->num_consoles;
-    qmm_export.max_consoles = orig_export->max_consoles;
-    qmm_export.conbuffers = orig_export->conbuffers;
-    qmm_export.conbuffer_size = orig_export->conbuffer_size;
-    qmm_export.surfaces = orig_export->surfaces;
-    qmm_export.surface_size = orig_export->surface_size;
-    qmm_export.max_surfaces = orig_export->max_surfaces;
-    qmm_export.num_surfaces = orig_export->num_surfaces;
-
-    if (changed) {
-        // this will trigger this message to be fired to plugins, and then it will be handled
-        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
-        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, nullptr, 0);
-    }
-}
-
-
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-static intptr_t SIN_syscall(intptr_t cmd, ...) {
+intptr_t SIN_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) called\n", SIN_EngMsgNames(cmd), cmd);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
 #endif
 
     // update export vars before calling into the engine
-    s_update_export();
+    update_exports();
 
     intptr_t ret = 0;
 
@@ -522,13 +331,13 @@ static intptr_t SIN_syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[1];
         intptr_t bufferSize = args[2];
         *buffer = '\0';
-        if (s_userinfo.count(num))
-            strncpyz(buffer, s_userinfo[num].c_str(), (size_t)bufferSize);
+        if (userinfos.count(num))
+            strncpyz(buffer, userinfos[num].c_str(), (size_t)bufferSize);
         break;
     }
     case G_GET_ENTITY_TOKEN: {
         // bool trap_GetEntityToken(char *buffer, int bufferSize);
-        if (s_tokencount >= s_entity_tokens.size()) {
+        if (token_counter >= entity_tokens.size()) {
             ret = false;
             break;
         }
@@ -536,7 +345,7 @@ static intptr_t SIN_syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, s_entity_tokens[s_tokencount++].c_str(), (size_t)bufferSize);
+        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = true;
         break;
     }
@@ -544,8 +353,8 @@ static intptr_t SIN_syscall(intptr_t cmd, ...) {
         // const char* (*get_configstring)(int num);
         intptr_t num = args[0];
 
-        if (s_configstrings.count(num))
-            ret = (intptr_t)s_configstrings[num].c_str();
+        if (configstrings.count(num))
+            ret = (intptr_t)configstrings[num].c_str();
 
         break;
     }
@@ -561,7 +370,7 @@ static intptr_t SIN_syscall(intptr_t cmd, ...) {
 
 #ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_syscall({} {}) returning {}\n", SIN_EngMsgNames(cmd), cmd, ret);
+        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
@@ -570,11 +379,11 @@ static intptr_t SIN_syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-static intptr_t SIN_vmMain(intptr_t cmd, ...) {
+intptr_t SIN_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) called\n", SIN_ModMsgNames(cmd), cmd);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
 #endif
 
     if (!orig_export)
@@ -622,18 +431,18 @@ static intptr_t SIN_vmMain(intptr_t cmd, ...) {
     };
 
     // update export vars after returning from the mod
-    s_update_export();
+    update_exports();
 
 #ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_vmMain({} {}) returning {}\n", SIN_ModMsgNames(cmd), cmd, ret);
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
 #endif
 
     return ret;
 }
 
 
-static void* SIN_Entry(void* import, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_Entry({}) called\n", import);
+void* SIN_GameSupport::Entry(void* import, void*, APIType) {
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_GameSupport::Entry({}) called\n", import);
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -644,13 +453,7 @@ static void* SIN_Entry(void* import, void*, APIType) {
     qmm_import.DebugLines = orig_import.DebugLines;
     qmm_import.numDebugLines = orig_import.numDebugLines;
 
-    // pointer to wrapper vmMain function that calls actual mod func from orig_export
-    g_gameinfo.pfnvmMain = SIN_vmMain;
-
-    // pointer to wrapper syscall function that calls actual engine func from orig_import
-    g_gameinfo.pfnsyscall = SIN_syscall;
-
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_Entry({}) returning {}\n", import, fmt::ptr(&qmm_export));
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SIN_GameSupport::Entry({}) returning {}\n", import, fmt::ptr(&qmm_export));
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -659,7 +462,7 @@ static void* SIN_Entry(void* import, void*, APIType) {
 }
 
 
-static bool SIN_ModLoad(void* entry, APIType modapi) {
+bool SIN_GameSupport::ModLoad(void* entry, APIType modapi) {
     if (modapi != QMM_API_GETGAMEAPI)
         return false;
 
@@ -670,12 +473,12 @@ static bool SIN_ModLoad(void* entry, APIType modapi) {
 }
 
 
-static void SIN_ModUnload() {
+void SIN_GameSupport::ModUnload() {
     orig_export = nullptr;
 }
 
 
-static const char* SIN_EngMsgNames(intptr_t cmd) {
+const char* SIN_GameSupport::EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(G_BPRINTF);
         GEN_CASE(G_DPRINTF);
@@ -791,7 +594,7 @@ static const char* SIN_EngMsgNames(intptr_t cmd) {
 }
 
 
-static const char* SIN_ModMsgNames(intptr_t cmd) {
+const char* SIN_GameSupport::ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);
@@ -828,3 +631,234 @@ static const char* SIN_ModMsgNames(intptr_t cmd) {
         return "unknown";
     }
 }
+
+
+void SIN_GameSupport::update_exports() {
+    if (!orig_export)
+        return;
+
+    bool changed = false;
+
+    // if entity data changed, we need to send a G_LOCATE_GAME_DATA so plugins can hook it
+    if (qmm_export.edicts != orig_export->edicts
+        || qmm_export.edict_size != orig_export->edict_size
+        || qmm_export.num_edicts != orig_export->num_edicts
+        ) {
+        changed = true;
+    }
+
+    qmm_export.edicts = orig_export->edicts;
+    qmm_export.edict_size = orig_export->edict_size;
+    qmm_export.num_edicts = orig_export->num_edicts;
+    qmm_export.max_edicts = orig_export->max_edicts;
+    qmm_export.consoles = orig_export->consoles;
+    qmm_export.console_size = orig_export->console_size;
+    qmm_export.num_consoles = orig_export->num_consoles;
+    qmm_export.max_consoles = orig_export->max_consoles;
+    qmm_export.conbuffers = orig_export->conbuffers;
+    qmm_export.conbuffer_size = orig_export->conbuffer_size;
+    qmm_export.surfaces = orig_export->surfaces;
+    qmm_export.surface_size = orig_export->surface_size;
+    qmm_export.max_surfaces = orig_export->max_surfaces;
+    qmm_export.num_surfaces = orig_export->num_surfaces;
+
+    if (changed) {
+        // this will trigger this message to be fired to plugins, and then it will be handled
+        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
+        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, nullptr, 0);
+    }
+}
+
+
+game_import_t SIN_GameSupport::orig_import;
+
+game_export_t* SIN_GameSupport::orig_export = nullptr;
+
+
+std::map<int, std::string> SIN_GameSupport::configstrings;
+void SIN_GameSupport::configstring(int num, const char* configstring) {
+    // if configstring is null, remove entry in map. otherwise store in map
+    if (!configstring)
+        configstrings.erase(num);
+    else
+        configstrings[num] = configstring;
+    qmm_syscall(G_CONFIGSTRING, num, configstring);
+}
+
+
+game_import_t SIN_GameSupport::qmm_import = {
+    GEN_IMPORT(bprintf, G_BPRINTF),
+    GEN_IMPORT(dprintf, G_DPRINTF),
+    GEN_IMPORT(printf, G_PRINTF),
+    GEN_IMPORT(cprintf, G_CPRINTF),
+    GEN_IMPORT(centerprintf, G_CENTERPRINTF),
+    GEN_IMPORT_9(sound, G_SOUND, void, edict_t*, int, int, float, float, float, float, float, int),
+    GEN_IMPORT_10(positioned_sound, G_POSITIONED_SOUND, void, vec3_t, edict_t*, int, int, float, float, float, float, float, int),
+    SIN_GameSupport::configstring,
+    GEN_IMPORT(error, G_ERROR),
+    GEN_IMPORT(modelindex, G_MODELINDEX),
+    GEN_IMPORT(soundindex, G_SOUNDINDEX),
+    GEN_IMPORT(imageindex, G_IMAGEINDEX),
+    GEN_IMPORT(itemindex, G_ITEMINDEX),
+    GEN_IMPORT(setmodel, G_SETMODEL),
+    GEN_IMPORT(trace, G_TRACE),
+    GEN_IMPORT(fulltrace, G_FULLTRACE),	// todo: change types to actually match float, but also need to return an intptr_t instead of trace_t
+    GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
+    GEN_IMPORT(inPVS, G_IN_PVS),
+    GEN_IMPORT(inPHS, G_IN_PHS),
+    GEN_IMPORT(SetAreaPortalState, G_SETAREAPORTALSTATE),
+    GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
+    GEN_IMPORT(linkentity, G_LINKENTITY),
+    GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
+    GEN_IMPORT(BoxEdicts, G_BOXEDICTS),
+    GEN_IMPORT(Pmove, G_PMOVE),
+    GEN_IMPORT(multicast, G_MULTICAST),
+    GEN_IMPORT(unicast, G_UNICAST),
+    GEN_IMPORT(WriteChar, G_MSG_WRITECHAR),
+    GEN_IMPORT(WriteByte, G_MSG_WRITEBYTE),
+    GEN_IMPORT(WriteShort, G_MSG_WRITESHORT),
+    GEN_IMPORT(WriteLong, G_MSG_WRITELONG),
+    GEN_IMPORT_1(WriteFloat, G_MSG_WRITEFLOAT, void, float),
+    GEN_IMPORT(WriteString, G_MSG_WRITESTRING),
+    GEN_IMPORT(WritePosition, G_MSG_WRITEPOSITION),
+    GEN_IMPORT(WriteDir, G_MSG_WRITEDIR),
+    GEN_IMPORT_1(WriteAngle, G_MSG_WRITEANGLE, void, float),
+    GEN_IMPORT(TagMalloc, G_TAGMALLOC),
+    GEN_IMPORT(TagFree, G_TAGFREE),
+    GEN_IMPORT(FreeTags, G_FREETAGS),
+    GEN_IMPORT(cvar, G_CVAR),
+    GEN_IMPORT(cvar_set, G_CVAR_SET),
+    GEN_IMPORT(cvar_forceset, G_CVAR_FORCESET),
+    GEN_IMPORT(argc, G_ARGC),
+    GEN_IMPORT(argv, G_ARGV),
+    GEN_IMPORT(args, G_ARGS),
+    GEN_IMPORT(AddCommandString, G_ADDCOMMANDSTRING),
+    GEN_IMPORT_2(DebugGraph, G_DEBUGGRAPH, void, float, int),
+    GEN_IMPORT(LoadFile, G_LOADFILE),
+    GEN_IMPORT(GameDir, G_GAMEDIR),
+    GEN_IMPORT(PlayerDir, G_PLAYERDIR),
+    GEN_IMPORT(CreatePath, G_CREATEPATH),
+    GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
+    GEN_IMPORT(IsModel, G_ISMODEL),
+    GEN_IMPORT(NumAnims, G_NUMANIMS),
+    GEN_IMPORT(NumSkins, G_NUMSKINS),
+    GEN_IMPORT(NumGroups, G_NUMGROUPS),
+    GEN_IMPORT(InitCommands, G_INITCOMMANDS),
+    GEN_IMPORT_4(CalculateBounds, G_CALCULATEBOUNDS, void, int, float, vec3_t, vec3_t),
+    GEN_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM),
+    GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
+    GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
+    GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
+    GEN_IMPORT(Anim_Time, G_ANIM_TIME),
+    GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
+    GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
+    GEN_IMPORT(Frame_Delta, G_FRAME_DELTA),
+    GEN_IMPORT(Frame_Time, G_FRAME_TIME),
+    GEN_IMPORT(Skin_NameForNum, G_SKIN_NAMEFORNUM),
+    GEN_IMPORT(Skin_NumForName, G_SKIN_NUMFORNAME),
+    GEN_IMPORT(Group_NameToNum, G_GROUP_NAMETONUM),
+    GEN_IMPORT(Group_NumToName, G_GROUP_NUMTONAME),
+    GEN_IMPORT(Group_DamageMultiplier, G_GROUP_DAMAGEMULTIPLIER),
+    GEN_IMPORT(Group_Flags, G_GROUP_FLAGS),
+    GEN_IMPORT(GetBoneInfo, G_GETBONEINFO),
+    GEN_IMPORT(GetBoneGroupName, G_GETBONEGROUPNAME),
+    GEN_IMPORT(GetBoneTransform, G_GETBONETRANSFORM),
+    GEN_IMPORT_4(Alias_Add, G_ALIAS_ADD, qboolean, int, const char*, const char*, float),
+    GEN_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM),
+    GEN_IMPORT(Alias_Dump, G_ALIAS_DUMP),
+    GEN_IMPORT(Alias_Clear, G_ALIAS_CLEAR),
+    GEN_IMPORT_3(GlobalAlias_Add, G_GLOBALALIAS_ADD, qboolean, const char*, const char*, float),
+    GEN_IMPORT(GlobalAlias_FindRandom, G_GLOBALALIAS_FINDRANDOM),
+    GEN_IMPORT(GlobalAlias_Dump, G_GLOBALALIAS_DUMP),
+    GEN_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR),
+    GEN_IMPORT(CalcCRC , G_CALCCRC),
+    GEN_IMPORT(Surf_NumSurfaces, G_SURF_NUMSURFACES),
+    GEN_IMPORT(Surf_Surfaces, G_SURF_SURFACES),
+    GEN_IMPORT(IncrementStatusCount, G_INCREMENTSTATUSCOUNT),
+    nullptr,	// DebugLines
+    nullptr,	// numDebugLines
+};
+
+
+// track userinfo for our G_GET_USERINFO syscall
+std::map<intptr_t, std::string> SIN_GameSupport::userinfos;
+qboolean SIN_GameSupport::ClientConnect(edict_t* ent, const char* userinfo) {
+    // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
+    if (orig_export && orig_export->edicts && orig_export->edict_size) {
+        intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
+        intptr_t clientnum = entnum - 1;
+        // if userinfo is null, remove entry in map. otherwise store in map
+        if (!userinfo)
+            userinfos.erase(clientnum);
+        else
+            userinfos[clientnum] = userinfo;
+    }
+    cgame.is_from_QMM = true;
+    return ::vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
+}
+
+
+void SIN_GameSupport::ClientUserinfoChanged(edict_t* ent, const char* userinfo) {
+    // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
+    if (orig_export && orig_export->edicts && orig_export->edict_size) {
+        intptr_t entnum = ((intptr_t)ent - (intptr_t)orig_export->edicts) / orig_export->edict_size;
+        intptr_t clientnum = entnum - 1;
+        // if userinfo is null, remove entry in map. otherwise store in map
+        if (!userinfo)
+            userinfos.erase(clientnum);
+        else
+            userinfos[clientnum] = userinfo;
+    }
+    cgame.is_from_QMM = true;
+    (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
+}
+
+
+// track entstrings for our G_GET_ENTITY_TOKEN syscall
+std::vector<std::string> SIN_GameSupport::entity_tokens;
+size_t SIN_GameSupport::token_counter = 0;
+void SIN_GameSupport::SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
+    if (entstring) {
+        entity_tokens = util_parse_entstring(entstring);
+        token_counter = 0;
+    }
+    cgame.is_from_QMM = true;
+    (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
+}
+
+
+// struct with lambdas that call QMM's vmMain function. this is given to the game engine
+game_export_t SIN_GameSupport::qmm_export = {
+    GAME_API_VERSION,	// apiversion
+    GEN_EXPORT(Init, GAME_INIT),
+    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
+    SIN_GameSupport::SpawnEntities,
+    GEN_EXPORT(WriteGame, GAME_WRITE_GAME),
+    GEN_EXPORT(ReadGame, GAME_READ_GAME),
+    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
+    GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
+    SIN_GameSupport::ClientConnect,
+    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
+    SIN_GameSupport::ClientUserinfoChanged,
+    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
+    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
+    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
+    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
+    GEN_EXPORT(ServerCommand, GAME_SERVER_COMMAND),
+    GEN_EXPORT(CreateSurfaces, GAME_CREATESURFACES),
+    // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
+    nullptr,	// edicts
+    0,			// edict_size
+    0,			// num_edicts
+    0,			// max_edicts
+    nullptr,	// consoles
+    0,			// console_size
+    0,			// num_consoles
+    0,			// max_consoles
+    nullptr,	// conbuffers
+    0,			// conbuffer_size
+    nullptr,	// surfaces
+    0,			// surface_size
+    0,			// max_surfaces
+    0,			// num_surfaces
+};
