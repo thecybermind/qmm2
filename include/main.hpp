@@ -18,7 +18,7 @@ Created By:
 #include "game_api.hpp"
 
 // store all currently-loaded game & game engine info
-struct gameinfo {
+struct GameInfo {
     std::string exe_path;					// full path of running server binary
     std::string exe_dir;					// directory of running server binary
     std::string exe_file;					// filename of running server binary
@@ -34,7 +34,7 @@ struct gameinfo {
     bool is_shutdown = false;				// is game shutting down due to G_ERROR? avoids calling G_ERROR again from GAME_SHUTDOWN
     APIType api = QMM_API_ERROR;			// engine api that QMM was loaded with
 };
-extern gameinfo g_gameinfo;
+extern GameInfo g_gameinfo;
 
 #define QMM_ENG_MSG					g_gameinfo.game->QMMEngMsg
 #define QMM_MOD_MSG					g_gameinfo.game->QMMModMsg
@@ -49,7 +49,7 @@ extern gameinfo g_gameinfo;
 constexpr int QMM_FAIL_G_ERROR = 1;
 
 // store cgame passthrough stuff
-struct cgameinfo {
+struct CGameInfo {
     // store syscall pointer if we need to pass it through to the mod's dllEntry function for games with
     // combined game+cgame (singleplayer)
     eng_syscall syscall;
@@ -62,7 +62,7 @@ struct cgameinfo {
     // GAME_SHUTDOWN has been called, but mod DLL was kept loaded so cgame shutdown can run
     bool is_shutdown;
 };
-extern cgameinfo cgame;
+extern CGameInfo cgame;
 
 // engine->mod entry point
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);

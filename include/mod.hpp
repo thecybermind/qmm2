@@ -17,7 +17,7 @@ Created By:
 #include "game_api.hpp"
 #include "qvm.h"
 
-struct qmm_mod {
+struct Mod {
     std::string path;				// mod file path
     qvm vm = {};					// QVM object
     void* dll = nullptr;			// OS DLL handle
@@ -25,12 +25,12 @@ struct qmm_mod {
     APIType api = QMM_API_ERROR;	// engine api the mod DLL was loaded with
 };
 
-extern qmm_mod g_mod;               // the mod file that QMM has loaded
+extern Mod g_mod;               // the mod file that QMM has loaded
 
 // load the given file into the mod object
-bool mod_load(qmm_mod& mod, std::string file);
+bool mod_load(Mod& mod, std::string file);
 // unload the given mod object
-void mod_unload(qmm_mod& mod);
+void mod_unload(Mod& mod);
 
 #endif // QMM2_MOD_H
 

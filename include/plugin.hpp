@@ -30,7 +30,7 @@ using plugin_pluginmessage = void (*)(plugin_id from_plid, const char* message, 
 // QMM_QVMHandler
 using plugin_qvmhandler = int (*)(int cmd, int* args);
 
-struct qmm_plugin {
+struct Plugin {
     void* dll = nullptr;
     std::string path;
     plugin_query QMM_Query = nullptr;
@@ -54,18 +54,18 @@ struct plugin_globals {
 
 extern plugin_globals g_plugin_globals;
 
-extern std::vector<qmm_plugin> g_plugins;
+extern std::vector<Plugin> g_plugins;
 
 // this ID is like the various syscall values. they go through the following function y=-x-1 when used as QVM function pointers
 // once the handler function is called, this is already undone with another y=-x-1 to get a positive number again
 #define QMM_QVM_FUNC_STARTING_ID 10000
-extern std::map<int, qmm_plugin*> g_registered_qvm_funcs;
+extern std::map<int, Plugin*> g_registered_qvm_funcs;
 
 const char* plugin_result_to_str(plugin_res res);
 
 // returns: -1 if failed to load and don't continue, 0 if failed to load and continue, 1 if loaded
-int plugin_load(qmm_plugin& p, std::string file);
+int plugin_load(Plugin& p, std::string file);
 
-void plugin_unload(qmm_plugin& p);
+void plugin_unload(Plugin& p);
 
 #endif // QMM2_PLUGIN_H

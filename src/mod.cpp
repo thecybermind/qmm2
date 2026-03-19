@@ -23,15 +23,15 @@ Created By:
 #include "plugin.hpp"
 #include "util.hpp"
 
-qmm_mod g_mod;
+Mod g_mod;
 
 static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...);
 static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args);
-static bool s_mod_load_qvm(qmm_mod& mod);
-static bool s_mod_load_dll(qmm_mod& mod, APIType api);
+static bool s_mod_load_qvm(Mod& mod);
+static bool s_mod_load_dll(Mod& mod, APIType api);
 
 
-bool mod_load(qmm_mod& mod, std::string file) {
+bool mod_load(Mod& mod, std::string file) {
     // if this mod somehow already has a dll or qvm pointer, wipe it first
     if (mod.dll || mod.vm.memory)
         mod_unload(mod);
@@ -81,13 +81,13 @@ fail:
 }
 
 
-void mod_unload(qmm_mod& mod) {
+void mod_unload(Mod& mod) {
     // call the game-specific mod unload callback
     g_gameinfo.game->ModUnload();
     qvm_unload(&mod.vm);
     if (mod.dll)
         dll_close(mod.dll);
-    mod = qmm_mod();
+    mod = Mod();
 }
 
 
@@ -120,7 +120,7 @@ static intptr_t s_mod_qvm_vmmain(intptr_t cmd, ...) {
 static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
     // check for plugin qvm function registration
     if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
-        qmm_plugin* p = g_registered_qvm_funcs[cmd];
+        Plugin* p = g_registered_qvm_funcs[cmd];
 
         // make sure plugin has the handler function (shouldn't have been registered, but check anyway)
         if (!p->QMM_QVMHandler)
@@ -135,8 +135,8 @@ static int s_mod_qvm_syscall(uint8_t* membase, int cmd, int* args) {
 }
 
 
-// load a QVM mod into the given qmm_mod object
-static bool s_mod_load_qvm(qmm_mod& mod) {
+// load a QVM mod into the given Mod object
+static bool s_mod_load_qvm(Mod& mod) {
     int fpk3 = 0;
     intptr_t filelen;
     std::vector<uint8_t> filemem;
@@ -185,8 +185,8 @@ fail:
 }
 
 
-// attempt to load a DLL mod with the given api type into the given qmm_mod object
-static bool s_mod_load_dll(qmm_mod& mod, APIType api) {
+// attempt to load a DLL mod with the given api type into the given Mod object
+static bool s_mod_load_dll(Mod& mod, APIType api) {
     switch (api) {
     case QMM_API_GETGAMEAPI:
     case QMM_API_GETMODULEAPI: {

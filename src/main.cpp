@@ -26,7 +26,7 @@ Created By:
 #include "qvm.h"        // QVM_MAGIC
 #include "util.hpp"
 
-gameinfo g_gameinfo;    // information about the engine and environment
+GameInfo g_gameinfo;    // information about the engine and environment
 
 // shared code for all API entry points
 static void* main_handle_entry(void* import, void* extra, APIType engine);
@@ -201,7 +201,7 @@ C_DLLEXPORT void* GetModuleAPI(void* import, void* extra) {
 */
 
 // basic information about the cgame for games where the DLL has both game and cgame
-cgameinfo cgame = {
+CGameInfo cgame = {
     nullptr,    // syscall
     nullptr,    // vmMain
     false,      // is_from_QMM
@@ -393,7 +393,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         // unload each plugin (call QMM_Detach, and then dlclose)
         LOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
-        for (qmm_plugin& p : g_plugins) {
+        for (Plugin& p : g_plugins) {
             plugin_unload(p);
         }
         g_plugins.clear();
@@ -633,7 +633,7 @@ static bool main_load_mod(std::string cfg_mod) {
 
 // general code to find a plugin file to load
 static bool main_load_plugin(std::string plugin_path) {
-    qmm_plugin p;
+    Plugin p;
     // absolute path, just attempt to load it directly
     if (path_is_absolute(plugin_path)) {
         // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
@@ -703,7 +703,7 @@ static void main_handle_command_qmm(intptr_t arg_start) {
         CONSOLE_PRINT("(QMM) id - plugin [version]\n");
         CONSOLE_PRINT("(QMM) ---------------------\n");
         int num = 1;
-        for (qmm_plugin& p : g_plugins) {
+        for (Plugin& p : g_plugins) {
             CONSOLE_PRINTF("(QMM) {:>2} - {} [{}]\n", num, p.plugininfo->name, p.plugininfo->version);
             num++;
         }
@@ -715,7 +715,7 @@ static void main_handle_command_qmm(intptr_t arg_start) {
         }
         size_t pid = (size_t)atoi(arg2);
         if (pid > 0 && pid <= g_plugins.size()) {
-            qmm_plugin& p = g_plugins[pid - 1];
+            Plugin& p = g_plugins[pid - 1];
             CONSOLE_PRINTF("(QMM) Plugin info for #{}:\n", arg2);
             CONSOLE_PRINTF("(QMM) Name: {}\n", p.plugininfo->name);
             CONSOLE_PRINTF("(QMM) Version: {}\n", p.plugininfo->version);
@@ -779,7 +779,7 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
     intptr_t final_ret = 0;
 
     // begin passing calls to plugins' pre-hook functions
-    for (qmm_plugin& p : g_plugins) {
+    for (Plugin& p : g_plugins) {
         g_plugin_globals.plugin_result = QMM_UNUSED;
         // allow plugins to see the current final_ret value
         g_plugin_globals.final_return = final_ret;
@@ -841,7 +841,7 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
         final_ret = real_ret;
 
     // pass calls to plugins' post-hook functions (QMM_OVERRIDE or QMM_SUPERCEDE can still change final_ret)
-    for (qmm_plugin& p : g_plugins) {
+    for (Plugin& p : g_plugins) {
         g_plugin_globals.plugin_result = QMM_UNUSED;
         // allow plugins to see the current final_ret value
         g_plugin_globals.final_return = final_ret;
