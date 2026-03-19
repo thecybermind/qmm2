@@ -22,13 +22,13 @@ Created By:
 #include <cstring>
 #include <cstdio>
 #include <q2r/rerelease/game.h>
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 // QMM-specific Q2R header
 #include "game_q2r.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct Q2R_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

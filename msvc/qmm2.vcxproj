@@ -225,9 +225,9 @@
     <ClCompile Include="..\src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\config.h" />
-    <ClInclude Include="..\include\format.h" />
-    <ClInclude Include="..\include\game_api.h" />
+    <ClInclude Include="..\include\config.hpp" />
+    <ClInclude Include="..\include\format.hpp" />
+    <ClInclude Include="..\include\game_api.hpp" />
     <ClInclude Include="..\include\game_cod11mp.h" />
     <ClInclude Include="..\include\game_codmp.h" />
     <ClInclude Include="..\include\game_coduomp.h" />
@@ -250,13 +250,13 @@
     <ClInclude Include="..\include\game_stvoyhm.h" />
     <ClInclude Include="..\include\game_stvoysp.h" />
     <ClInclude Include="..\include\game_wet.h" />
-    <ClInclude Include="..\include\log.h" />
-    <ClInclude Include="..\include\main.h" />
-    <ClInclude Include="..\include\mod.h" />
-    <ClInclude Include="..\include\plugin.h" />
+    <ClInclude Include="..\include\log.hpp" />
+    <ClInclude Include="..\include\main.hpp" />
+    <ClInclude Include="..\include\mod.hpp" />
+    <ClInclude Include="..\include\plugin.hpp" />
     <ClInclude Include="..\include\qmmapi.h" />
     <ClInclude Include="..\include\qvm.h" />
-    <ClInclude Include="..\include\util.h" />
+    <ClInclude Include="..\include\util.hpp" />
     <ClInclude Include="..\include\version.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

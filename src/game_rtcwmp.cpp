@@ -12,14 +12,14 @@ Created By:
 #include <rtcwmp/game/q_shared.h>
 #include <rtcwmp/game/g_public.h>
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <string>
 // QMM-specific RTCWMP header
 #include "game_rtcwmp.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct RTCWMP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

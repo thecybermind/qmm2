@@ -17,13 +17,13 @@ Created By:
 #include <string>
 #include <quake2/game/q_shared.h>
 #include <quake2/game/game.h>
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 // QMM-specific QUAKE2 header
 #include "game_quake2.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct QUAKE2_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

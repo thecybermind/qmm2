@@ -16,15 +16,15 @@ Created By:
 #include <stvoyhm/game/q_shared.h>
 #include <stvoyhm/game/g_public.h>
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <string>
 // QMM-specific STVOYHM header
 #include "game_stvoyhm.h"
-#include "main.h"
-#include "mod.h"
-#include "util.h"
+#include "main.hpp"
+#include "mod.hpp"      // g_mod
+#include "util.hpp"
 
 struct STVOYHM_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

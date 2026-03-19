@@ -16,7 +16,6 @@ Created By:
 
 #include <aixlog/aixlog.hpp>
 #include <string>
-#include "format.h"
 
 #ifdef _DEBUG
 #define QMM2_LOG_DEFAULT_SEVERITY AixLog::Severity::debug

@@ -18,15 +18,15 @@ Created By:
 #include <stef2/game/g_public.h>
 #undef GAME_DLL
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <vector>
 #include <string>
 // QMM-specific STEF2 header
 #include "game_stef2.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct STEF2_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

@@ -20,15 +20,15 @@ Created By:
 #define GAME_DLL
 #include <mohsh/fgame/g_public.h>
 #undef GAME_DLL
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <vector>
 #include <string>
 // QMM-specific MOHSH header
 #include "game_mohsh.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct MOHSH_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

@@ -21,15 +21,15 @@ Created By:
 #define GAME_DLL
 #include <mohaa/fgame/g_public.h>
 #undef GAME_DLL
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <vector>
 #include <string>
 // QMM-specific MOHAA header
 #include "game_mohaa.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct MOHAA_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

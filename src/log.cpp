@@ -11,8 +11,8 @@ Created By:
 
 #include <string>
 #include <cstdarg>
-#include "log.h"
-#include "format.h"
+#include "log.hpp"
+#include "format.hpp"
 
 static AixLog::log_sink_ptr s_log_sink_file = nullptr;
 

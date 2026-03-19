@@ -14,7 +14,7 @@ Created By:
 
 #include <string>
 // #include "qmmapi.h"
-#include "game_api.h"
+#include "game_api.hpp"
 #include "qvm.h"
 
 struct qmm_mod {

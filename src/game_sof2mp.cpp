@@ -17,15 +17,15 @@ Created By:
 #include <sof2mp/game/g_public.h>
 #include <sof2mp/gametype/gt_public.h>
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <string>
 // QMM-specific SOF2MP header
 #include "game_sof2mp.h"
-#include "main.h"
-#include "mod.h"
-#include "util.h"
+#include "main.hpp"
+#include "mod.hpp"      // g_mod
+#include "util.hpp"
 
 struct SOF2MP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

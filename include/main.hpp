@@ -15,7 +15,7 @@ Created By:
 #include <string>
 #include <cstdint>
 #include "qmmapi.h"
-#include "game_api.h"
+#include "game_api.hpp"
 
 // store all currently-loaded game & game engine info
 struct gameinfo {

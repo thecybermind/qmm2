@@ -12,14 +12,14 @@ Created By:
 #include <jamp/game/q_shared.h>
 #include <jamp/game/g_public.h>
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <string>
 // QMM-specific JAMP header
 #include "game_jamp.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct JAMP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

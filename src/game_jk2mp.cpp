@@ -12,15 +12,15 @@ Created By:
 #include <jk2mp/game/q_shared.h>
 #include <jk2mp/game/g_public.h>
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <string>
 // QMM-specific JK2MP header
 #include "game_jk2mp.h"
-#include "main.h"
-#include "mod.h"
-#include "util.h"
+#include "main.hpp"
+#include "mod.hpp"      // g_mod
+#include "util.hpp"
 
 
 struct JK2MP_GameSupport : public GameSupport {

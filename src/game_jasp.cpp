@@ -12,16 +12,16 @@ Created By:
 #include <jasp/game/q_shared.h>
 #include <jasp/game/g_public.h>
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <map>
 #include <vector>
 #include <string>
 // QMM-specific JASP header
 #include "game_jasp.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct JASP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

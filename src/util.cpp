@@ -17,8 +17,8 @@ Created By:
 #include <vector>
 #include <string>
 #include <filesystem>
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 
 #if defined(QMM_OS_WINDOWS)

@@ -12,7 +12,7 @@ Created By:
 #include <string>
 #include <vector>
 #include <fstream>
-#include "config.h"
+#include "config.hpp"
 
 nlohmann::json g_cfg;
 

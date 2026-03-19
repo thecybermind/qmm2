@@ -11,7 +11,7 @@ Created By:
 
 #include "version.h"
 #include <vector>
-#include "game_api.h"
+#include "game_api.hpp"
 
 // cache some dynamic message values that get evaluated a lot
 intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_SHUTDOWN;

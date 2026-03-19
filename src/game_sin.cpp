@@ -17,13 +17,13 @@ Created By:
 #include <sin/game/q_shared.h>
 #include <sin/game/game.h>
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 // QMM-specific SIN header
 #include "game_sin.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct SIN_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

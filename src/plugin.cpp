@@ -15,15 +15,15 @@ Created By:
 #include <string>
 #include <filesystem>
 #include "qmmapi.h"
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
-#include "config.h"
-#include "main.h"
-#include "mod.h"
-#include "plugin.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
+#include "config.hpp"
+#include "main.hpp"
+#include "mod.hpp"
+#include "plugin.hpp"
 #include "qvm.h"
-#include "util.h"
+#include "util.hpp"
 
 constexpr int NUM_PLUGIN_STR_BUFFERS = 16;  // must be power of 2
 constexpr int NUM_PLUGIN_STR_BUFFER_MASK = NUM_PLUGIN_STR_BUFFERS - 1;

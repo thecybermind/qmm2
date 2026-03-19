@@ -12,15 +12,15 @@ Created By:
 #include <rtcwsp/game/q_shared.h>
 #include <rtcwsp/game/g_public.h>
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <vector>
 #include <string>
 // QMM-specific RTCWSP header
 #include "game_rtcwsp.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct RTCWSP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

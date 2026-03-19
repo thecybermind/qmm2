@@ -15,16 +15,16 @@ Created By:
 #include <cstdlib>      // atoi
 #include <vector>
 #include <string>
-#include "log.h"
-#include "format.h"
-#include "config.h"
-#include "main.h"
-#include "game_api.h"
+#include "log.hpp"
+#include "format.hpp"
+#include "config.hpp"
+#include "main.hpp"
+#include "game_api.hpp"
 #include "qmmapi.h"
-#include "plugin.h"
-#include "mod.h"        // g_mod
+#include "plugin.hpp"
+#include "mod.hpp"      // g_mod
 #include "qvm.h"        // QVM_MAGIC
-#include "util.h"
+#include "util.hpp"
 
 gameinfo g_gameinfo;    // information about the engine and environment
 

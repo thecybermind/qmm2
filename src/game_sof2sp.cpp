@@ -15,13 +15,13 @@ Created By:
 
 #include <sof2sp/g_public.h>
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 // QMM-specific SOF2SP header
 #include "game_sof2sp.h"
-#include "main.h"
-#include "util.h"
+#include "main.hpp"
+#include "util.hpp"
 
 struct SOF2SP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);

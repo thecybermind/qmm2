@@ -12,15 +12,15 @@ Created By:
 #include <q3a/game/q_shared.h>
 #include <q3a/game/g_public.h>
 
-#include "game_api.h"
-#include "log.h"
-#include "format.h"
+#include "game_api.hpp"
+#include "log.hpp"
+#include "format.hpp"
 #include <string>
 // QMM-specific Q3A header
 #include "game_q3a.h"
-#include "main.h"
-#include "mod.h"
-#include "util.h"
+#include "main.hpp"
+#include "mod.hpp"      // g_mod
+#include "util.hpp"
 
 
 struct Q3A_GameSupport : public GameSupport {

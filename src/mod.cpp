@@ -12,16 +12,16 @@ Created By:
 #include <cstdint>
 #include <vector>
 #include <string>
-#include "log.h"
-#include "format.h"
+#include "log.hpp"
+#include "format.hpp"
 #include "qmmapi.h"
-#include "game_api.h"
-#include "main.h"
-#include "config.h"
-#include "mod.h"
+#include "game_api.hpp"
+#include "main.hpp"
+#include "config.hpp"
+#include "mod.hpp"
 #include "qvm.h"
-#include "plugin.h"
-#include "util.h"
+#include "plugin.hpp"
+#include "util.hpp"
 
 qmm_mod g_mod;
 
