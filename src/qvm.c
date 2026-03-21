@@ -12,7 +12,7 @@ Created By:
 #define QMM_LOGGING
 
 #include <stdint.h> // intptr_t and uint8_t
-#include <stdlib.h> // malloc and free
+#include <malloc.h>
 #include <string.h> // memcpy and memset
 #include "qvm.h"
 

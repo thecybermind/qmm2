@@ -25,8 +25,9 @@ Created By:
 #include "qvm.h"
 #include "util.hpp"
 
-constexpr int NUM_PLUGIN_STR_BUFFERS = 16;  // must be power of 2
-constexpr int NUM_PLUGIN_STR_BUFFER_MASK = NUM_PLUGIN_STR_BUFFERS - 1;
+constexpr int ROTATING_BUFFER_NUM = 16;  // must be power of 2
+constexpr int ROTATING_BUFFER_MASK = ROTATING_BUFFER_NUM - 1;
+constexpr int ROTATING_BUFFER_SIZE = 1024;
 
 static void s_plugin_helper_WriteQMMLog(plugin_id plid, const char* text, int severity);
 static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* format, ...);
@@ -266,11 +267,11 @@ static void s_plugin_helper_WriteQMMLog(plugin_id plid, const char* text, int se
 
 static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* format, ...) {
     va_list	argptr;
-    static char str[NUM_PLUGIN_STR_BUFFERS][1024];
+    static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
 
     // cycle rotating buffer and store string
-    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
+    index = (index + 1) & ROTATING_BUFFER_MASK;
 
     va_start(argptr, format);
     vsnprintf(str[index], sizeof(str[index]), format, argptr);
@@ -331,16 +332,15 @@ static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], cons
 }
 
 
-constexpr int MAX_CVAR_LEN = 1024; // most common cvar buffer size in SDK when calling G_CVAR_VARIABLE_STRING_BUFFER
 static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], const char* cvar) {
-    static char str[NUM_PLUGIN_STR_BUFFERS][MAX_CVAR_LEN];
+    static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
 
     const char* ret = "";
 
     if (cvar && *cvar) {
         // cycle rotating buffer and store string
-        index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
+        index = (index + 1) & ROTATING_BUFFER_MASK;
         ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), cvar, str[index], (intptr_t)sizeof(str[index]));
         ret = str[index];
     }
@@ -377,7 +377,7 @@ static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn,
 
 // same as the SDK's Info_ValueForKey function
 static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused]], const char* userinfo, const char* key) {
-    static std::string value[NUM_PLUGIN_STR_BUFFERS];
+    static std::string value[ROTATING_BUFFER_NUM];
     static int index = 0;
 
     const char* ret = "";
@@ -400,7 +400,7 @@ static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused
             std::string fval = s.substr(valpos, valend - valpos);
 
             // cycle rotating buffer and store string
-            index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
+            index = (index + 1) & ROTATING_BUFFER_MASK;
             value[index] = fval;
             ret = value[index].c_str();
         }
@@ -429,13 +429,13 @@ static nlohmann::json s_plugin_cfg_get_node(std::string key) {
 }
 
 static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]], const char* key) {
-    static std::string value[NUM_PLUGIN_STR_BUFFERS];
+    static std::string value[ROTATING_BUFFER_NUM];
     static int index = 0;
 
     nlohmann::json node = s_plugin_cfg_get_node(key);
 
     // cycle rotating buffer and store string
-    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
+    index = (index + 1) & ROTATING_BUFFER_MASK;
     value[index] = cfg_get_string(node, path_basename(key));
     const char* ret = value[index].c_str();
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnConfigGetStr(\"{}\", \"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, key, ret);
@@ -460,15 +460,15 @@ static int s_plugin_helper_ConfigGetBool(plugin_id plid [[maybe_unused]], const 
 
 
 static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unused]], const char* key) {
-    static std::vector<std::string> value[NUM_PLUGIN_STR_BUFFERS];
+    static std::vector<std::string> value[ROTATING_BUFFER_NUM];
     // plugin API needs to be C-compatible, so this vector stores the .c_str() of each string in the value vector
-    static std::vector<const char*> valuep[NUM_PLUGIN_STR_BUFFERS];
+    static std::vector<const char*> valuep[ROTATING_BUFFER_NUM];
     static int index = 0;
 
     nlohmann::json node = s_plugin_cfg_get_node(key);
 
     // cycle rotating buffer and store array
-    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
+    index = (index + 1) & ROTATING_BUFFER_MASK;
     value[index] = cfg_get_array_str(node, path_basename(key));
     // fill valuep with const char*s from value
     valuep[index].clear();
@@ -482,13 +482,13 @@ static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unu
 
 
 static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], const char* key) {
-    static std::vector<int> value[NUM_PLUGIN_STR_BUFFERS];
+    static std::vector<int> value[ROTATING_BUFFER_NUM];
     static int index = 0;
 
     nlohmann::json node = s_plugin_cfg_get_node(key);
 
     // cycle rotating buffer and store array
-    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
+    index = (index + 1) & ROTATING_BUFFER_MASK;
     value[index] = cfg_get_array_int(node, path_basename(key));
     // insert length of the array as the first element
     value[index].insert(value[index].begin(), (int)value[index].size());
@@ -607,11 +607,11 @@ static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int inst
 
 
 static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr_t argn) {
-    static char str[NUM_PLUGIN_STR_BUFFERS][1024];
+    static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
 
     // cycle rotating buffer and store string
-    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
+    index = (index + 1) & ROTATING_BUFFER_MASK;
 
     qmm_argv(argn, str[index], sizeof(str[index]));
 
@@ -624,11 +624,11 @@ static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr
 
 
 static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unused]], intptr_t configindex) {
-    static char str[NUM_PLUGIN_STR_BUFFERS][1024];
+    static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
 
     // cycle rotating buffer and store string
-    index = (index + 1) & NUM_PLUGIN_STR_BUFFER_MASK;
+    index = (index + 1) & ROTATING_BUFFER_MASK;
 
     // char* (*getConfigstring)(int index);
     // void trap_GetConfigstring(int num, char* buffer, int bufferSize);

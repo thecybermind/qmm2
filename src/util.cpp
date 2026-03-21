@@ -14,12 +14,12 @@ Created By:
 #include <cctype>
 #include <cstring>
 #include <cstdint>
+#include <cstddef>      // size_t
 #include <vector>
 #include <string>
 #include <filesystem>
 #include "main.hpp"
 #include "util.hpp"
-
 
 #if defined(QMM_OS_WINDOWS)
 
@@ -257,7 +257,7 @@ void* dll_load(const char* filename) {
 
 void* dll_symbol(void* dll, const char* symbol) {
 #if defined(QMM_OS_WINDOWS)
-    return GetProcAddress((HMODULE)dll, symbol);
+    return (void*)GetProcAddress((HMODULE)dll, symbol);
 #elif defined(QMM_OS_LINUX)
     return dlsym(dll, symbol);
 #endif
