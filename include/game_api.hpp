@@ -188,18 +188,44 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 #define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((eng_syscall)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break
 #define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_import. field); break
 
+#define ROUTE_IMPORT_0_V(field, cmd) case cmd: orig_import. field(); break
+#define ROUTE_IMPORT_1_V(field, cmd, type0) case cmd: orig_import. field((type0)args[0]); break
+#define ROUTE_IMPORT_2_V(field, cmd, type0, type1) case cmd: orig_import. field((type0)args[0], (type1)args[1]); break
+#define ROUTE_IMPORT_3_V(field, cmd, type0, type1, type2) case cmd: orig_import. field((type0)args[0], (type1)args[1], (type2)args[2]); break
+#define ROUTE_IMPORT_4_V(field, cmd, type0, type1, type2, type3) case cmd: orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3]); break
+#define ROUTE_IMPORT_5_V(field, cmd, type0, type1, type2, type3, type4) case cmd: orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3], (type4)args[4]); break
+#define ROUTE_IMPORT_6_V(field, cmd, type0, type1, type2, type3, type4, type5) case cmd: orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3], (type4)args[4], (type5)args[5]); break
+#define ROUTE_IMPORT_7_V(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3], (type4)args[4], (type5)args[5], (type6)args[6]); break
+#define ROUTE_IMPORT_0(field, cmd) case cmd: ret = (intptr_t)orig_import. field(); break
+#define ROUTE_IMPORT_1(field, cmd, type0) case cmd: ret = (intptr_t)orig_import. field((type0)args[0]); break
+#define ROUTE_IMPORT_2(field, cmd, type0, type1) case cmd: ret = (intptr_t)orig_import. field((type0)args[0], (type1)args[1]); break
+#define ROUTE_IMPORT_3(field, cmd, type0, type1, type2) case cmd: ret = (intptr_t)orig_import. field((type0)args[0], (type1)args[1], (type2)args[2]); break
+#define ROUTE_IMPORT_4(field, cmd, type0, type1, type2, type3) case cmd: ret = (intptr_t)orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3]); break
+#define ROUTE_IMPORT_5(field, cmd, type0, type1, type2, type3, type4) case cmd: ret = (intptr_t)orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3], (type4)args[4]); break
+#define ROUTE_IMPORT_6(field, cmd, type0, type1, type2, type3, type4, type5) case cmd: ret = (intptr_t)orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3], (type4)args[4], (type5)args[5]); break
+#define ROUTE_IMPORT_7(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: ret = (intptr_t)orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3], (type4)args[4], (type5)args[5], (type6)args[6]); break
+
 // handle calls from QMM and plugins into the mod
 #define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((mod_vmMain)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_export-> field); break
 
+#define ROUTE_EXPORT_0_V(field, cmd) case cmd: orig_export-> field(); break
+#define ROUTE_EXPORT_1_V(field, cmd, type0) case cmd: orig_export-> field((type0)args[0]); break
+#define ROUTE_EXPORT_2_V(field, cmd, type0, type1) case cmd: orig_export-> field((type0)args[0], (type1)args[1]); break
+#define ROUTE_EXPORT_3_V(field, cmd, type0, type1, type2) case cmd: orig_export-> field((type0)args[0], (type1)args[1], (type2)args[2]); break
+#define ROUTE_EXPORT_0(field, cmd) case cmd: ret = (intptr_t)orig_export-> field(); break
+#define ROUTE_EXPORT_1(field, cmd, type0) case cmd: ret = (intptr_t)orig_export-> field((type0)args[0]); break
+#define ROUTE_EXPORT_2(field, cmd, type0, type1) case cmd: ret = (intptr_t)orig_export-> field((type0)args[0], (type1)args[1]); break
+#define ROUTE_EXPORT_3(field, cmd, type0, type1, type2) case cmd: ret = (intptr_t)orig_export-> field((type0)args[0], (type1)args[1], (type2)args[2]); break
+
 // handle calls from engine or mod into QMM
 #define GEN_IMPORT(field, cmd)	(decltype(qmm_import. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8, intptr_t arg9, intptr_t arg10, intptr_t arg11, intptr_t arg12, intptr_t arg13, intptr_t arg14, intptr_t arg15, intptr_t arg16) { return ::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
 #define GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { cgame.is_from_QMM = true; return ::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
+
 // if the syscall lambda types matter (float args in 64-bit games like Q2R), use these
 // macros to easily generate a lambda with full return and argument type information:
 // e.g. GEN_IMPORT_2(G_DEBUGGRAPH, void, float, int)
 // e.g. GEN_IMPORT_2(G_ANIM_TIME, float, dtiki_t*, int)
-#if defined(QMM_ARCH_64)
 #define  GEN_IMPORT_0(field, cmd, typeret) +[]() -> typeret { return (typeret)::qmm_syscall(cmd); }
 #define  GEN_IMPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { return (typeret)::qmm_syscall(cmd, arg0); }
 #define  GEN_IMPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1); }
@@ -218,26 +244,11 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 #define GEN_IMPORT_15(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14); }
 #define GEN_IMPORT_16(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15); }
 #define GEN_IMPORT_17(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15, type16 arg16) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
-#elif defined(QMM_ARCH_32)
-#define  GEN_IMPORT_0(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define  GEN_IMPORT_1(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define  GEN_IMPORT_2(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define  GEN_IMPORT_3(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define  GEN_IMPORT_4(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define  GEN_IMPORT_5(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define  GEN_IMPORT_6(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define  GEN_IMPORT_7(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define  GEN_IMPORT_8(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define  GEN_IMPORT_9(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define GEN_IMPORT_10(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define GEN_IMPORT_11(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define GEN_IMPORT_12(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define GEN_IMPORT_13(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define GEN_IMPORT_14(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define GEN_IMPORT_15(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define GEN_IMPORT_16(field, cmd, ...) GEN_IMPORT(field, cmd)
-#define GEN_IMPORT_17(field, cmd, ...) GEN_IMPORT(field, cmd)
-#endif
+
+#define  GEN_EXPORT_0(field, cmd, typeret) +[]() -> typeret { return (typeret)::vmMain(cmd); }
+#define  GEN_EXPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { return (typeret)::vmMain(cmd, arg0); }
+#define  GEN_EXPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { return (typeret)::vmMain(cmd, arg0, arg1); }
+#define  GEN_EXPORT_3(field, cmd, typeret, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> typeret { return (typeret)::vmMain(cmd, arg0, arg1, arg2); }
 
 // ---------------------
 // ----- QVM stuff -----

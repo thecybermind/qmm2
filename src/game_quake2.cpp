@@ -108,21 +108,21 @@ intptr_t QUAKE2_GameSupport::syscall(intptr_t cmd, ...) {
     // update export vars before calling into the engine
     update_exports();
 
-    intptr_t ret = 0;
+    intptr_t ret = 0; 
 
     switch (cmd) {
         ROUTE_IMPORT(bprintf, G_BPRINTF);
         ROUTE_IMPORT(dprintf, G_DPRINTF);
         ROUTE_IMPORT(cprintf, G_CPRINTF);
         ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
-        ROUTE_IMPORT(sound, G_SOUND);
-        ROUTE_IMPORT(positioned_sound, G_POSITIONED_SOUND);
-        ROUTE_IMPORT(configstring, G_CONFIGSTRING);
+        ROUTE_IMPORT_6_V(sound, G_SOUND, edict_t*, int, int, float, float, float);
+        ROUTE_IMPORT_7_V(positioned_sound, G_POSITIONED_SOUND, float*, edict_t*, int, int, float, float, float);
+        ROUTE_IMPORT_2_V(configstring, G_CONFIGSTRING, int, char*);
         ROUTE_IMPORT(error, G_ERROR);
-        ROUTE_IMPORT(modelindex, G_MODELINDEX);
-        ROUTE_IMPORT(soundindex, G_SOUNDINDEX);
-        ROUTE_IMPORT(imageindex, G_IMAGEINDEX);
-        ROUTE_IMPORT(setmodel, G_SETMODEL);
+        ROUTE_IMPORT_1(modelindex, G_MODELINDEX, char*);
+        ROUTE_IMPORT_1(soundindex, G_SOUNDINDEX, char*);
+        ROUTE_IMPORT_1(imageindex, G_IMAGEINDEX, char*);
+        ROUTE_IMPORT_2_V(setmodel, G_SETMODEL, edict_t*, char*);
         ROUTE_IMPORT(trace, G_TRACE);
         ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
         ROUTE_IMPORT(inPVS, G_IN_PVS);
@@ -354,21 +354,21 @@ intptr_t QUAKE2_GameSupport::vmMain(intptr_t cmd, ...) {
     intptr_t ret = 0;
 
     switch (cmd) {
-        ROUTE_EXPORT(Init, GAME_INIT);
-        ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
-        ROUTE_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES);
-        ROUTE_EXPORT(WriteGame, GAME_WRITE_GAME);
-        ROUTE_EXPORT(ReadGame, GAME_READ_GAME);
-        ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
-        ROUTE_EXPORT(ReadLevel, GAME_READ_LEVEL);
-        ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
-        ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
-        ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED);
-        ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
-        ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
-        ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
-        ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
-        ROUTE_EXPORT(ServerCommand, GAME_SERVER_COMMAND);
+        ROUTE_EXPORT_0_V(Init, GAME_INIT);
+        ROUTE_EXPORT_0_V(Shutdown, GAME_SHUTDOWN);
+        ROUTE_EXPORT_3_V(SpawnEntities, GAME_SPAWN_ENTITIES, char*, char*, char*);
+        ROUTE_EXPORT_2_V(WriteGame, GAME_WRITE_GAME, char*, qboolean);
+        ROUTE_EXPORT_1_V(ReadGame, GAME_READ_GAME, char*);
+        ROUTE_EXPORT_1_V(WriteLevel, GAME_WRITE_LEVEL, char*);
+        ROUTE_EXPORT_1_V(ReadLevel, GAME_READ_LEVEL, char*);
+        ROUTE_EXPORT_2(ClientConnect, GAME_CLIENT_CONNECT, edict_t*, char*);
+        ROUTE_EXPORT_1_V(ClientBegin, GAME_CLIENT_BEGIN, edict_t*);
+        ROUTE_EXPORT_2_V(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED, edict_t*, char*);
+        ROUTE_EXPORT_1_V(ClientDisconnect, GAME_CLIENT_DISCONNECT, edict_t*);
+        ROUTE_EXPORT_1_V(ClientCommand, GAME_CLIENT_COMMAND, edict_t*);
+        ROUTE_EXPORT_2_V(ClientThink, GAME_CLIENT_THINK, edict_t*, usercmd_t*);
+        ROUTE_EXPORT_0_V(RunFrame, GAME_RUN_FRAME);
+        ROUTE_EXPORT_0_V(ServerCommand, GAME_SERVER_COMMAND);
 
         // handle cmds for variables, this is how a plugin would get these values if needed
         ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
@@ -581,41 +581,44 @@ game_import_t QUAKE2_GameSupport::qmm_import = {
     GEN_IMPORT_7(positioned_sound, G_POSITIONED_SOUND, void, vec3_t, edict_t*, int, int, float, float, float),
     QUAKE2_GameSupport::configstring,
     GEN_IMPORT(error, G_ERROR),
-    GEN_IMPORT(modelindex, G_MODELINDEX),
-    GEN_IMPORT(soundindex, G_SOUNDINDEX),
-    GEN_IMPORT(imageindex, G_IMAGEINDEX),
-    GEN_IMPORT(setmodel, G_SETMODEL),
-    GEN_IMPORT(trace, G_TRACE),
-    GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
-    GEN_IMPORT(inPVS, G_IN_PVS),
-    GEN_IMPORT(inPHS, G_IN_PHS),
-    GEN_IMPORT(SetAreaPortalState, G_SETAREAPORTALSTATE),
-    GEN_IMPORT(AreasConnected, G_AREAS_CONNECTED),
-    GEN_IMPORT(linkentity, G_LINKENTITY),
-    GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
-    GEN_IMPORT(BoxEdicts, G_BOXEDICTS),
-    GEN_IMPORT(Pmove, G_PMOVE),
-    GEN_IMPORT(multicast, G_MULTICAST),
-    GEN_IMPORT(unicast, G_UNICAST),
-    GEN_IMPORT(WriteChar, G_MSG_WRITECHAR),
-    GEN_IMPORT(WriteByte, G_MSG_WRITEBYTE),
-    GEN_IMPORT(WriteShort, G_MSG_WRITESHORT),
-    GEN_IMPORT(WriteLong, G_MSG_WRITELONG),
+    GEN_IMPORT_1(modelindex, G_MODELINDEX, int, char*),
+    GEN_IMPORT_1(soundindex, G_SOUNDINDEX, int, char*),
+    GEN_IMPORT_1(imageindex, G_IMAGEINDEX, int, char*),
+    GEN_IMPORT_2(setmodel, G_SETMODEL, void, edict_t*, char*),
+    +[](vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, edict_t* passent, int contentmask) -> trace_t {
+        return ((trace_t(*)(intptr_t, ...))&qmm_syscall)(G_TRACE, start, mins, maxs, end, passent, contentmask);
+    },
+    // GEN_IMPORT(trace, G_TRACE),
+    GEN_IMPORT_1(pointcontents, G_POINT_CONTENTS, int, vec3_t),
+    GEN_IMPORT_2(inPVS, G_IN_PVS, qboolean, vec3_t, vec3_t),
+    GEN_IMPORT_2(inPHS, G_IN_PHS, qboolean, vec3_t, vec3_t),
+    GEN_IMPORT_2(SetAreaPortalState, G_SETAREAPORTALSTATE, void, int, qboolean),
+    GEN_IMPORT_2(AreasConnected, G_AREAS_CONNECTED, qboolean, int, int),
+    GEN_IMPORT_1(linkentity, G_LINKENTITY, void, edict_t*),
+    GEN_IMPORT_1(unlinkentity, G_UNLINKENTITY, void, edict_t*),
+    GEN_IMPORT_5(BoxEdicts, G_BOXEDICTS, int, vec3_t, vec3_t, edict_t**, int, int),
+    GEN_IMPORT_1(Pmove, G_PMOVE, void, pmove_t*),
+    GEN_IMPORT_2(multicast, G_MULTICAST, void, vec3_t, multicast_t),
+    GEN_IMPORT_2(unicast, G_UNICAST, void, edict_t*, qboolean),
+    GEN_IMPORT_1(WriteChar, G_MSG_WRITECHAR, void, int),
+    GEN_IMPORT_1(WriteByte, G_MSG_WRITEBYTE, void, int),
+    GEN_IMPORT_1(WriteShort, G_MSG_WRITESHORT, void, int),
+    GEN_IMPORT_1(WriteLong, G_MSG_WRITELONG, void, int),
     GEN_IMPORT_1(WriteFloat, G_MSG_WRITEFLOAT, void, float),
-    GEN_IMPORT(WriteString, G_MSG_WRITESTRING),
-    GEN_IMPORT(WritePosition, G_MSG_WRITEPOSITION),
-    GEN_IMPORT(WriteDir, G_MSG_WRITEDIR),
+    GEN_IMPORT_1(WriteString, G_MSG_WRITESTRING, void, char*),
+    GEN_IMPORT_1(WritePosition, G_MSG_WRITEPOSITION, void, vec3_t),
+    GEN_IMPORT_1(WriteDir, G_MSG_WRITEDIR, void, vec3_t),
     GEN_IMPORT_1(WriteAngle, G_MSG_WRITEANGLE, void, float),
-    GEN_IMPORT(TagMalloc, G_TAGMALLOC),
-    GEN_IMPORT(TagFree, G_TAGFREE),
-    GEN_IMPORT(FreeTags, G_FREETAGS),
-    GEN_IMPORT(cvar, G_CVAR),
-    GEN_IMPORT(cvar_set, G_CVAR_SET),
-    GEN_IMPORT(cvar_forceset, G_CVAR_FORCESET),
-    GEN_IMPORT(argc, G_ARGC),
-    GEN_IMPORT(argv, G_ARGV),
-    GEN_IMPORT(args, G_ARGS),
-    GEN_IMPORT(AddCommandString, G_ADDCOMMANDSTRING),
+    GEN_IMPORT_2(TagMalloc, G_TAGMALLOC, void*, int, int),
+    GEN_IMPORT_1(TagFree, G_TAGFREE, void, void*),
+    GEN_IMPORT_1(FreeTags, G_FREETAGS, void, int),
+    GEN_IMPORT_3(cvar, G_CVAR, cvar_t*, char*, char*, int),
+    GEN_IMPORT_2(cvar_set, G_CVAR_SET, cvar_t*, char*, char*),
+    GEN_IMPORT_2(cvar_forceset, G_CVAR_FORCESET, cvar_t*, char*, char*),
+    GEN_IMPORT_0(argc, G_ARGC, int),
+    GEN_IMPORT_1(argv, G_ARGV, char*, int),
+    GEN_IMPORT_0(args, G_ARGS, char*),
+    GEN_IMPORT_1(AddCommandString, G_ADDCOMMANDSTRING, void, char*),
     GEN_IMPORT_2(DebugGraph, G_DEBUGGRAPH, void, float, int),
 };
 
@@ -668,21 +671,21 @@ void QUAKE2_GameSupport::SpawnEntities(char* mapname, char* entstring, char* spa
 
 game_export_t QUAKE2_GameSupport::qmm_export = {
     GAME_API_VERSION,	// apiversion
-    GEN_EXPORT(Init, GAME_INIT),
-    GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
+    GEN_EXPORT_0(Init, GAME_INIT, void),
+    GEN_EXPORT_0(Shutdown, GAME_SHUTDOWN, void),
     QUAKE2_GameSupport::SpawnEntities,
-    GEN_EXPORT(WriteGame, GAME_WRITE_GAME),
-    GEN_EXPORT(ReadGame, GAME_READ_GAME),
-    GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
-    GEN_EXPORT(ReadLevel, GAME_READ_LEVEL),
+    GEN_EXPORT_2(WriteGame, GAME_WRITE_GAME, void, char*, qboolean),
+    GEN_EXPORT_1(ReadGame, GAME_READ_GAME, void, char*),
+    GEN_EXPORT_1(WriteLevel, GAME_WRITE_LEVEL, void, char*),
+    GEN_EXPORT_1(ReadLevel, GAME_READ_LEVEL, void, char*),
     QUAKE2_GameSupport::ClientConnect,
-    GEN_EXPORT(ClientBegin, GAME_CLIENT_BEGIN),
+    GEN_EXPORT_1(ClientBegin, GAME_CLIENT_BEGIN, void, edict_t*),
     QUAKE2_GameSupport::ClientUserinfoChanged,
-    GEN_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT),
-    GEN_EXPORT(ClientCommand, GAME_CLIENT_COMMAND),
-    GEN_EXPORT(ClientThink, GAME_CLIENT_THINK),
-    GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
-    GEN_EXPORT(ServerCommand, GAME_SERVER_COMMAND),
+    GEN_EXPORT_1(ClientDisconnect, GAME_CLIENT_DISCONNECT, void, edict_t*),
+    GEN_EXPORT_1(ClientCommand, GAME_CLIENT_COMMAND, void, edict_t*),
+    GEN_EXPORT_2(ClientThink, GAME_CLIENT_THINK, void, edict_t*, usercmd_t*),
+    GEN_EXPORT_0(RunFrame, GAME_RUN_FRAME, void),
+    GEN_EXPORT_0(ServerCommand, GAME_SERVER_COMMAND, void),
     // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
     nullptr,	// edicts
     0,			// edict_size
