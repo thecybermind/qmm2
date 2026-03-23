@@ -40,6 +40,7 @@ struct QUAKE2_GameSupport : public GameSupport {
 
     virtual const char* DefaultDLLName() { return "game" MOD_DLL; }
     virtual const char* DefaultModDir() { return "baseq2"; }
+    virtual const char* ModCvar() { return "game"; }
     virtual const char* GameName() { return "Quake 2"; }
     virtual const char* GameCode() { return "QUAKE2"; }
 

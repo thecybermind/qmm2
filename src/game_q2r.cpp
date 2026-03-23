@@ -45,6 +45,7 @@ struct Q2R_GameSupport : public GameSupport {
 
     virtual const char* DefaultDLLName() { return "game_" X64_DLL; }
     virtual const char* DefaultModDir() { return "baseq2"; }
+    virtual const char* ModCvar() { return "game"; }
     virtual const char* GameName() { return "Quake 2 Remastered"; }
     virtual const char* GameCode() { return "Q2R"; }
 

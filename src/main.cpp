@@ -287,7 +287,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         // get mod dir from engine
         char moddir[256];
-        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), "fs_game", moddir, sizeof(moddir));
+        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), g_gameinfo.game->ModCvar(), moddir, sizeof(moddir));
         moddir[sizeof(moddir) - 1] = '\0';
         g_gameinfo.mod_dir = moddir;
         // the default mod (including all singleplayer games) returns "" for the fs_game, so grab the default mod dir from game info instead

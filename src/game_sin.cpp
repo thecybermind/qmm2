@@ -40,6 +40,7 @@ struct SIN_GameSupport : public GameSupport {
 
     virtual const char* DefaultDLLName() { return "game" MOD_DLL; }
     virtual const char* DefaultModDir() { return "base"; }
+    virtual const char* ModCvar() { return "game"; }
     virtual const char* GameName() { return "SiN"; }
     virtual const char* GameCode() { return "SIN"; }
 

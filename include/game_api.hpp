@@ -112,6 +112,7 @@ enum {
 // pure virtual base class for game support
 // need to implement all functions except:
 // * DefaultQVMName - only need if the game supports QVMs. default will return nullptr (this is how QMM determines support)
+// * ModCvar - only need if the engine's cvar for determining mod is different from "fs_game"
 // * QVMSyscall - only need if the game supports QVMs. default returns 0
 // need to implement qmm_eng_msgs and qmm_mod_msgs (use GEN_GAME_QMM_ENG_MSGS() and GEN_GAME_QMM_MOD_MSGS() macros)
 struct GameSupport {
@@ -143,6 +144,8 @@ struct GameSupport {
     virtual const char* DefaultQVMName() { return nullptr; }
     // returns the default mod directory for the game
     virtual const char* DefaultModDir() = 0;
+    // returns the cvar for loaded mod dir
+    virtual const char* ModCvar() { return "fs_game"; }
     // returns the full name of the game
     virtual const char* GameName() = 0;
     // returns the QMM short code for the game

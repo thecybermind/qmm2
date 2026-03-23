@@ -31,12 +31,12 @@ constexpr int ROTATING_BUFFER_SIZE = 1024;
 
 static void s_plugin_helper_WriteQMMLog(plugin_id plid, const char* text, int severity);
 static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* format, ...);
-static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]] );
+static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]]);
 static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], intptr_t msg);
 static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], intptr_t msg);
 static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], const char* cvar);
 static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], const char* cvar);
-static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]] );
+static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]]);
 static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn, char* buf, intptr_t buflen);
 static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused]], const char* userinfo, const char* key);
 static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]], const char* key);
@@ -51,6 +51,7 @@ static int s_plugin_helper_QVMRegisterFunc(plugin_id plid);
 static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int funcid, int argc, int* argv);
 static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr_t argn);
 static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unused]], intptr_t index);
+static const char* s_plugin_helper_ModDir(plugin_id plid [[maybe_unused]]);
 
 static plugin_funcs s_pluginfuncs = {
     s_plugin_helper_WriteQMMLog,
@@ -75,6 +76,7 @@ static plugin_funcs s_pluginfuncs = {
     s_plugin_helper_QVMExecFunc,
     s_plugin_helper_Argv2,
     s_plugin_helper_GetConfigString2,
+    s_plugin_helper_ModDir,
 };
 
 // struct to store all the globals available to plugins
@@ -644,4 +646,15 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
 #endif
 
     return str[index];
+}
+
+
+static const char* s_plugin_helper_ModDir(plugin_id plid [[maybe_unused]]) {
+    const char* ret = g_gameinfo.mod_dir.c_str();
+
+#ifdef _DEBUG
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnModDir(\"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, ret);
+#endif
+
+    return ret;
 }

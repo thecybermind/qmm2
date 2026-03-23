@@ -70,6 +70,7 @@ typedef void* (*mod_GetGameAPI)(void*, void*);
 // - pluginfunc macros now hide PLID arg
 // 4:3
 // - changed type names away from those ending with "_t" - added typedefs for old names marked deprecated. define QMM_USE_DEPRECATED_TYPES to use old types without warning
+// - added QMM_MODDIR
 
 // holds plugin info to pass back to QMM
 typedef struct {
@@ -141,6 +142,7 @@ typedef struct {
     int (*pfnQVMExecFunc)(plugin_id plid, int funcid, int argc, int* argv);                                   // exec a given QVM function function ID
     const char* (*pfnArgv2)(plugin_id plid, intptr_t argn);                                                   // same as pfnArgv except returns value
     const char* (*pfnGetConfigString2)(plugin_id plid, intptr_t index);                                       // same as pfnGetConfigString except returns value
+    const char* (*pfnModDir)(plugin_id plid);                                                                 // return loaded mod directory
 } plugin_funcs;
 
 // macros for QMM plugin util funcs
@@ -166,6 +168,7 @@ typedef struct {
 #define QMM_QVM_EXEC_FUNC(funcid, argc, argv)   (g_pluginfuncs->pfnQVMExecFunc)(PLID, funcid, argc, argv)       // exec a given QVM function function ID
 #define QMM_ARGV2(argn)                         (g_pluginfuncs->pfnArgv2)(PLID, argn)                           // same as QMM_ARGV except returns value
 #define QMM_GETCONFIGSTRING2(index)             (g_pluginfuncs->pfnGetConfigString2)(PLID, index)               // same as QMM_GETCONFIGSTRING except returns value
+#define QMM_MODDIR(index)                       (g_pluginfuncs->pfnModDir)(PLID)                                // return loaded mod directory
 
 // struct of vars for QMM plugin utils
 typedef struct {
