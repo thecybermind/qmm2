@@ -260,6 +260,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     if (!g_gameinfo.game) {
         if (!g_gameinfo.is_shutdown) {
             g_gameinfo.is_shutdown = true;
+            LOG(QMM_LOG_FATAL, "QMM") << "QMM was unable to determine the game engine. Please set the \"game\" option in qmm2.json. Refer to the documentation for more information.";
             // if syscall passed to dllEntry was null, revert to std::exit because *shrug*
             if (!g_gameinfo.syscall) {
                 printf("\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
