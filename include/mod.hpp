@@ -13,7 +13,6 @@ Created By:
 #define QMM2_MOD_H
 
 #include <string>
-// #include "qmmapi.h"
 #include "game_api.hpp"
 #include "qvm.h"
 
