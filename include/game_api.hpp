@@ -115,24 +115,40 @@ enum {
 // * QVMSyscall - only need if the game supports QVMs. default returns 0
 // need to implement qmm_eng_msgs and qmm_mod_msgs (use GEN_GAME_QMM_ENG_MSGS() and GEN_GAME_QMM_MOD_MSGS() macros)
 struct GameSupport {
+    // return string containing name of engine message (G_x)
     virtual const char* EngMsgName(intptr_t) = 0;
+    // return string containing name of mod message (GAME_x)
     virtual const char* ModMsgName(intptr_t) = 0;
+    // allows game support code to check if the qmm/engine info matches the game
     virtual bool AutoDetect(APIType) = 0;
+    // allows game support code to handle the entrypoint once game was detected
     virtual void* Entry(void*, void*, APIType) = 0;
+    // allows game support code to handle the mod's entrypoint once DLL is loaded
     virtual bool ModLoad(void*, APIType) = 0;
+    // allows game support code to handle when the mod DLL is unloaded
     virtual void ModUnload() = 0;
+    // returns game-specific engine message value (G_x) for a specific message that QMM uses
     virtual int QMMEngMsg(int msg) = 0;
+    // returns game-specific mod message value (GAME_x) for a specific message that QMM uses
     virtual int QMMModMsg(int msg) = 0;
 
+    // tells game support code to call into the engine
     virtual intptr_t syscall(intptr_t, ...) = 0;
+    // tells game support code to call into the mod
     virtual intptr_t vmMain(intptr_t, ...) = 0;
 
+    // returns the mod DLL name used by the game
     virtual const char* DefaultDLLName() = 0;
+    // returns the QVM name used by the game
     virtual const char* DefaultQVMName() { return nullptr; }
+    // returns the default mod directory for the game
     virtual const char* DefaultModDir() = 0;
+    // returns the full name of the game
     virtual const char* GameName() = 0;
+    // returns the QMM short code for the game
     virtual const char* GameCode() = 0;
 
+    // called by the QVM interpreter for syscalls. allows the game support code to convert pointer args
     virtual int QVMSyscall(uint8_t*, int, int*) { return 0; }
 };
 
@@ -185,7 +201,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 // ----------------------------
 
 // handle calls from QMM and plugins into the engine
-#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((eng_syscall)(orig_import. field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16]); break
+#define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((eng_syscall)(orig_import. field))(QMM_PUT_SYSCALL_ARGS()); break
 #define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_import. field); break
 
 #define ROUTE_IMPORT_0_V(field, cmd) case cmd: orig_import. field(); break
@@ -206,7 +222,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 #define ROUTE_IMPORT_7(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: ret = (intptr_t)orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3], (type4)args[4], (type5)args[5], (type6)args[6]); break
 
 // handle calls from QMM and plugins into the mod
-#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((mod_vmMain)(orig_export-> field))(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); break
+#define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((mod_vmMain)(orig_export-> field))(QMM_PUT_VMMAIN_ARGS()); break
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_export-> field); break
 
 #define ROUTE_EXPORT_0_V(field, cmd) case cmd: orig_export-> field(); break
@@ -245,10 +261,10 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 #define GEN_IMPORT_16(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15); }
 #define GEN_IMPORT_17(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15, type16 arg16) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
 
-#define  GEN_EXPORT_0(field, cmd, typeret) +[]() -> typeret { return (typeret)::vmMain(cmd); }
-#define  GEN_EXPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { return (typeret)::vmMain(cmd, arg0); }
-#define  GEN_EXPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { return (typeret)::vmMain(cmd, arg0, arg1); }
-#define  GEN_EXPORT_3(field, cmd, typeret, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> typeret { return (typeret)::vmMain(cmd, arg0, arg1, arg2); }
+#define  GEN_EXPORT_0(field, cmd, typeret) +[]() -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd); }
+#define  GEN_EXPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0); }
+#define  GEN_EXPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1); }
+#define  GEN_EXPORT_3(field, cmd, typeret, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2); }
 
 // ---------------------
 // ----- QVM stuff -----
