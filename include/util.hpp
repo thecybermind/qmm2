@@ -34,8 +34,8 @@ void path_mkdir(std::string path);
 // e.g. if the command line was: "quake3 --qmm_cfg test.json +set dedicated 1 +map q3dm1"
 // then util_get_cmdline_arg("--qmm_cfg") returns "test.json"
 std::string util_get_cmdline_arg(std::string arg, std::string def = "");
-std::string util_get_proc_path();	// return path of process executable
-std::string util_get_qmm_path();	// return path of QMM DLL
+const char* util_get_proc_path();	// return path of process executable
+const char* util_get_qmm_path();	// return path of QMM DLL
 void* util_get_qmm_handle();		// return QMM DLL handle
 
 // get milliseconds since GAME_INIT

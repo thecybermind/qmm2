@@ -139,12 +139,14 @@ void path_mkdir(std::string path) {
 
 
 static std::vector<std::string> util_get_proc_cmdline() {
-    std::vector<std::string> ret;
+    static std::vector<std::string> ret;
+    if (ret.size())
+        return ret;
 #if defined(QMM_OS_WINDOWS)
     // CommandLineToArgvA doesn't exist, so we have to do this with wide strings and convert them to utf8 std::strings
     int argc = 0;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-    char buf[MAX_PATH];
+    char buf[1024];
     for (int i = 0; i < argc; i++) {
         WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, buf, sizeof(buf), NULL, NULL);
         buf[sizeof(buf) - 1] = '\0';
@@ -165,7 +167,8 @@ static std::vector<std::string> util_get_proc_cmdline() {
 std::string util_get_cmdline_arg(std::string arg, std::string def) {
     std::vector<std::string> argv = util_get_proc_cmdline();
     // 1 to skip binary name
-    for (size_t i = 1; i < argv.size() - 1; i++) { // don't read last arg because it can't have a "next" arg
+    // don't read last arg because it can't have a "next" arg
+    for (size_t i = 1; i < argv.size() - 1; i++) {
         if (str_striequal(argv[i], arg)) {
             return argv[i + 1];
         }
@@ -174,7 +177,7 @@ std::string util_get_cmdline_arg(std::string arg, std::string def) {
 }
 
 
-std::string util_get_proc_path() {
+const char* util_get_proc_path() {
     static char path[PATH_MAX];
     if (path[0])
         return path;
@@ -194,7 +197,7 @@ std::string util_get_proc_path() {
 }
 
 
-std::string util_get_qmm_path() {
+const char* util_get_qmm_path() {
     static char path[PATH_MAX];
     if (path[0])
         return path;
