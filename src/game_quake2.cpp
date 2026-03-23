@@ -111,19 +111,19 @@ intptr_t QUAKE2_GameSupport::syscall(intptr_t cmd, ...) {
     intptr_t ret = 0; 
 
     switch (cmd) {
-        ROUTE_IMPORT(bprintf, G_BPRINTF);   // fmt + varargs
-        ROUTE_IMPORT(dprintf, G_DPRINTF);   // fmt + varargs
-        ROUTE_IMPORT(cprintf, G_CPRINTF);   // fmt + varargs
+        ROUTE_IMPORT(bprintf, G_BPRINTF);   // varargs
+        ROUTE_IMPORT(dprintf, G_DPRINTF);   // varargs
+        ROUTE_IMPORT(cprintf, G_CPRINTF);   // varargs
         ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
         ROUTE_IMPORT_6_V(sound, G_SOUND, edict_t*, int, int, float, float, float);
         ROUTE_IMPORT_7_V(positioned_sound, G_POSITIONED_SOUND, float*, edict_t*, int, int, float, float, float);
         ROUTE_IMPORT_2_V(configstring, G_CONFIGSTRING, int, char*);
-        ROUTE_IMPORT(error, G_ERROR);   // fmt + varargs
+        ROUTE_IMPORT(error, G_ERROR);   // varargs
         ROUTE_IMPORT_1(modelindex, G_MODELINDEX, char*);
         ROUTE_IMPORT_1(soundindex, G_SOUNDINDEX, char*);
         ROUTE_IMPORT_1(imageindex, G_IMAGEINDEX, char*);
         ROUTE_IMPORT_2_V(setmodel, G_SETMODEL, edict_t*, char*);
-        ROUTE_IMPORT(trace, G_TRACE);   // trace_t return type
+        ROUTE_IMPORT(trace, G_TRACE);   // returns trace_t
         ROUTE_IMPORT_1(pointcontents, G_POINT_CONTENTS, float*);
         ROUTE_IMPORT_2(inPVS, G_IN_PVS, float*, float*);
         ROUTE_IMPORT_2(inPHS, G_IN_PHS, float*, float*);
@@ -573,14 +573,14 @@ void QUAKE2_GameSupport::configstring(int num, char* configstring) {
 
 
 game_import_t QUAKE2_GameSupport::qmm_import = {
-    GEN_IMPORT(bprintf, G_BPRINTF),   // fmt + varargs
-    GEN_IMPORT(dprintf, G_DPRINTF),   // fmt + varargs
-    GEN_IMPORT(cprintf, G_CPRINTF),   // fmt + varargs
-    GEN_IMPORT(centerprintf, G_CENTERPRINTF),   // fmt + varargs
+    GEN_IMPORT(bprintf, G_BPRINTF),   // varargs
+    GEN_IMPORT(dprintf, G_DPRINTF),   // varargs
+    GEN_IMPORT(cprintf, G_CPRINTF),   // varargs
+    GEN_IMPORT(centerprintf, G_CENTERPRINTF),   // varargs
     GEN_IMPORT_6(sound, G_SOUND, void, edict_t*, int, int, float, float, float),
     GEN_IMPORT_7(positioned_sound, G_POSITIONED_SOUND, void, vec3_t, edict_t*, int, int, float, float, float),
     QUAKE2_GameSupport::configstring,
-    GEN_IMPORT(error, G_ERROR),   // fmt + varargs
+    GEN_IMPORT(error, G_ERROR),   // varargs
     GEN_IMPORT_1(modelindex, G_MODELINDEX, int, char*),
     GEN_IMPORT_1(soundindex, G_SOUNDINDEX, int, char*),
     GEN_IMPORT_1(imageindex, G_IMAGEINDEX, int, char*),
