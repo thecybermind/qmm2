@@ -35,7 +35,7 @@ static void main_detect_env();
 // load config file
 static void main_load_config(std::string config_filename);
 // find what game engine loaded us
-static void main_detect_game(std::string cfg_game, APIType engine);
+static bool main_detect_game(std::string cfg_game, APIType engine);
 // find a mod file to load
 static bool main_load_mod(std::string cfg_mod);
 // find a plugin file to load
@@ -472,10 +472,8 @@ static void* main_handle_entry(void* import, void* extra, APIType engine) {
     std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
     // check command line arguments for a game code
     cfg_game = util_get_cmdline_arg("--qmm_game", cfg_game);
-    main_detect_game(cfg_game, engine);
-
     // failed to get engine information
-    if (!g_gameinfo.game) {
+    if (!main_detect_game(cfg_game, engine) || !g_gameinfo.game) {
         LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Unable to determine game engine using \"{}\"\n", APIType_Function(engine), cfg_game);
         return nullptr;
     }
@@ -529,7 +527,7 @@ static void main_detect_env() {
 }
 
 
-// general code to load config file. called from dllEntry() and GetGameAPI()
+// general code to load config file
 static void main_load_config(std::string config_filename) {
     // load config file, try the following locations in order:
     // "<qmmdir>/qmm2.json"
@@ -556,30 +554,33 @@ static void main_load_config(std::string config_filename) {
 
 
 // general code to auto-detect what game engine loaded us
-static void main_detect_game(std::string cfg_game, APIType engine) {
+static bool main_detect_game(std::string cfg_game, APIType engine) {
     if (cfg_game.empty())
         cfg_game = "auto";
+
+    bool is_auto = str_striequal(cfg_game, "auto");
 
     // for (api_supportedgame& game : api_supportedgames) {
     for (GameSupport* game : api_supportedgames) {
         // if short name matches config option, we found it!
-        if (str_striequal(cfg_game, game->GameCode())) {
+        if (!is_auto && str_striequal(cfg_game, game->GameCode())) {
             LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);
             g_gameinfo.game = game;
             g_gameinfo.is_auto_detected = false;
             // call the game's auto-detect function, since it may do some logic
             (void)game->AutoDetect(engine);
-            return;
+            return true;
         }
-
         // otherwise, if auto, call the game's auto-detect function
-        if (str_striequal(cfg_game, "auto") && game->AutoDetect(engine)) {
+        else if (is_auto && game->AutoDetect(engine)) {
             LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match with auto-detection - \"{}\"\n", game->GameCode());
             g_gameinfo.game = game;
             g_gameinfo.is_auto_detected = true;
-            return;
+            return true;
         }
     }
+
+    return false;
 }
 
 
