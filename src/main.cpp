@@ -778,6 +778,9 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
     // return value to pass back to the caller (either real_ret, or a plugin_ret from QMM_OVERRIDE/QMM_SUPERCEDE result)
     intptr_t final_ret = 0;
 
+    // store previous globals (in case of re-entrancy)
+    plugin_globals old_globals = g_plugin_globals;
+
     // begin passing calls to plugins' pre-hook functions
     for (Plugin& p : g_plugins) {
         g_plugin_globals.plugin_result = QMM_UNUSED;
@@ -868,6 +871,10 @@ static intptr_t main_route(bool is_syscall, intptr_t cmd, intptr_t* args) {
         else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
             final_ret = plugin_ret;
     }
+
+    // restore previous globals (stored in case of re-entrancy)
+    g_plugin_globals = old_globals;
+
     return final_ret;
 }
 
