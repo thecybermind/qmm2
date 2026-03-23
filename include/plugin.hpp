@@ -17,20 +17,20 @@ Created By:
 #include <string>
 #include "qmmapi.h"
 
-// QMM_Query
-using plugin_query = void (*)(plugin_info** pinfo);
-// QMM_Attach
-using plugin_attach = int (*)(eng_syscall engfunc, mod_vmMain modfunc, plugin_res* presult, plugin_funcs* pluginfuncs, plugin_vars* pluginvars);
-// QMM_Detach
-using plugin_detach = void (*)();
-// QMM_vmMain(_Post) + QMM_syscall(_Post)
-using plugin_callback = intptr_t(*)(intptr_t cmd, intptr_t* args);
-// QMM_PluginMessage
-using plugin_pluginmessage = void (*)(plugin_id from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
-// QMM_QVMHandler
-using plugin_qvmhandler = int (*)(int cmd, int* args);
-
 struct Plugin {
+    // QMM_Query
+    using plugin_query = void (*)(plugin_info** pinfo);
+    // QMM_Attach
+    using plugin_attach = int (*)(eng_syscall engfunc, mod_vmMain modfunc, plugin_res* presult, plugin_funcs* pluginfuncs, plugin_vars* pluginvars);
+    // QMM_Detach
+    using plugin_detach = void (*)();
+    // QMM_vmMain(_Post) + QMM_syscall(_Post)
+    using plugin_callback = intptr_t(*)(intptr_t cmd, intptr_t* args);
+    // QMM_PluginMessage
+    using plugin_pluginmessage = void (*)(plugin_id from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
+    // QMM_QVMHandler
+    using plugin_qvmhandler = int (*)(int cmd, int* args);
+
     void* dll = nullptr;
     std::string path;
     plugin_query QMM_Query = nullptr;
@@ -58,7 +58,7 @@ extern std::vector<Plugin> g_plugins;
 
 // this ID is like the various syscall values. they go through the following function y=-x-1 when used as QVM function pointers
 // once the handler function is called, this is already undone with another y=-x-1 to get a positive number again
-#define QMM_QVM_FUNC_STARTING_ID 10000
+constexpr int QMM_QVM_FUNC_STARTING_ID = 10000;
 extern std::map<int, Plugin*> g_registered_qvm_funcs;
 
 const char* plugin_result_to_str(plugin_res res);

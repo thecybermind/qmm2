@@ -158,7 +158,7 @@ int plugin_load(Plugin& p, std::string file) {
         }
     }
 
-    if (!(p.QMM_Query = (plugin_query)dll_symbol(p.dll, "QMM_Query"))) {
+    if (!(p.QMM_Query = (Plugin::plugin_query)dll_symbol(p.dll, "QMM_Query"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Query\" function\n", file);
         goto fail;
     }
@@ -190,36 +190,36 @@ int plugin_load(Plugin& p, std::string file) {
     // at this point, major versions match and the plugin's minor version is less than or equal to QMM's
 
     // find remaining QMM api functions or fail
-    if (!(p.QMM_Attach = (plugin_attach)dll_symbol(p.dll, "QMM_Attach"))) {
+    if (!(p.QMM_Attach = (Plugin::plugin_attach)dll_symbol(p.dll, "QMM_Attach"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Attach\" function\n", file);
         goto fail;
     }
-    if (!(p.QMM_Detach = (plugin_detach)dll_symbol(p.dll, "QMM_Detach"))) {
+    if (!(p.QMM_Detach = (Plugin::plugin_detach)dll_symbol(p.dll, "QMM_Detach"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Detach\" function\n", file);
         goto fail;
     }
 
     // find hook callback functions
-    if (!(p.QMM_vmMain = (plugin_callback)dll_symbol(p.dll, "QMM_vmMain"))) {
+    if (!(p.QMM_vmMain = (Plugin::plugin_callback)dll_symbol(p.dll, "QMM_vmMain"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain\" function\n", file);
         goto fail;
     }
-    if (!(p.QMM_syscall = (plugin_callback)dll_symbol(p.dll, "QMM_syscall"))) {
+    if (!(p.QMM_syscall = (Plugin::plugin_callback)dll_symbol(p.dll, "QMM_syscall"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_syscall\" function\n", file);
         goto fail;
     }
-    if (!(p.QMM_vmMain_Post = (plugin_callback)dll_symbol(p.dll, "QMM_vmMain_Post"))) {
+    if (!(p.QMM_vmMain_Post = (Plugin::plugin_callback)dll_symbol(p.dll, "QMM_vmMain_Post"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain_Post\" function\n", file);
         goto fail;
     }
-    if (!(p.QMM_syscall_Post = (plugin_callback)dll_symbol(p.dll, "QMM_syscall_Post"))) {
+    if (!(p.QMM_syscall_Post = (Plugin::plugin_callback)dll_symbol(p.dll, "QMM_syscall_Post"))) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_syscall_Post\" function\n", file);
         goto fail;
     }
 
     // find optional plugin functions
-    p.QMM_PluginMessage = (plugin_pluginmessage)dll_symbol(p.dll, "QMM_PluginMessage");
-    p.QMM_QVMHandler = (plugin_qvmhandler)dll_symbol(p.dll, "QMM_QVMHandler");
+    p.QMM_PluginMessage = (Plugin::plugin_pluginmessage)dll_symbol(p.dll, "QMM_PluginMessage");
+    p.QMM_QVMHandler = (Plugin::plugin_qvmhandler)dll_symbol(p.dll, "QMM_QVMHandler");
 
     // set some pluginvars only available at run-time (this will get repeated for every plugin, but that's ok)
     s_pluginvars.vmbase = g_mod.vmbase;
