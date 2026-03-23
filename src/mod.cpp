@@ -197,8 +197,9 @@ static bool s_mod_load_dll(Mod& mod, APIType api) {
         if (!pfnGGA)
             return false;
 
-        // if mod load handler says good to go, we do too
+        // pass GGA/GMA function to game-specific mod load handler
         if (g_gameinfo.game->ModLoad((void*)pfnGGA, api)) {
+            // if mod load handler says good to go, we do too
             mod.api = api;
             return true;
         }
@@ -213,7 +214,7 @@ static bool s_mod_load_dll(Mod& mod, APIType api) {
 
         // pass vmMain to game-specific mod load handler
         if (g_gameinfo.game->ModLoad((void*)pfnvmMain, api)) {
-            // pass qmm_syscall to mod's dllEntry function
+            // if mod load handler says good to go, we also need to pass qmm_syscall to mod's dllEntry function
             pfndllEntry(qmm_syscall);
             mod.api = api;
             return true;

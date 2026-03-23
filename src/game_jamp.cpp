@@ -49,7 +49,7 @@ private:
     const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
     const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
 
-    // these variables are all for the GGA implementation for OpenJK
+    // these variables are all for the GMA implementation for OpenJK
 
     // a copy of the apiversion int that comes from the game engine
     static intptr_t orig_apiversion;
@@ -84,7 +84,7 @@ bool JAMP_GameSupport::AutoDetect(APIType engineapi) {
     }
 
     if (!str_stristr(g_gameinfo.exe_file, "jamp")
-        && !str_stristr(g_gameinfo.exe_file, "openjk.")
+        && !str_stristr(g_gameinfo.exe_file, "openjk.") // do not match openjk_sp
         && !str_stristr(g_gameinfo.exe_file, "openjkded"))
     {
         return false;
