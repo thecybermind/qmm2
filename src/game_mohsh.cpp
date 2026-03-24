@@ -57,8 +57,6 @@ private:
     static size_t token_counter;
     static void SpawnEntities(char* entstring, int levelTime);
 
-    static void DebugCircle(float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6);
-
     // a copy of the original import struct that comes from the game engine
     static game_import_t orig_import;
 
@@ -151,7 +149,7 @@ intptr_t MOHSH_GameSupport::syscall(intptr_t cmd, ...) {
         // handled below since we do special handling to deal with the "when" argument
         //ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
         //ROUTE_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND);
-        ROUTE_IMPORT(DebugGraph, G_DEBUGGRAPH);
+        ROUTE_IMPORT_1_V(DebugGraph, G_DEBUGGRAPH, float);
         ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
         ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
         ROUTE_IMPORT(MSG_WriteBits, G_MSG_WRITEBITS);
@@ -160,11 +158,11 @@ intptr_t MOHSH_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(MSG_WriteSVC, G_MSG_WRITESVC);
         ROUTE_IMPORT(MSG_WriteShort, G_MSG_WRITESHORT);
         ROUTE_IMPORT(MSG_WriteLong, G_MSG_WRITELONG);
-        ROUTE_IMPORT(MSG_WriteFloat, G_MSG_WRITEFLOAT);
+        ROUTE_IMPORT_1_V(MSG_WriteFloat, G_MSG_WRITEFLOAT, float);
         ROUTE_IMPORT(MSG_WriteString, G_MSG_WRITESTRING);
-        ROUTE_IMPORT(MSG_WriteAngle8, G_MSG_WRITEANGLE8);
-        ROUTE_IMPORT(MSG_WriteAngle16, G_MSG_WRITEANGLE16);
-        ROUTE_IMPORT(MSG_WriteCoord, G_MSG_WRITECOORD);
+        ROUTE_IMPORT_1_V(MSG_WriteAngle8, G_MSG_WRITEANGLE8, float);
+        ROUTE_IMPORT_1_V(MSG_WriteAngle16, G_MSG_WRITEANGLE16, float);
+        ROUTE_IMPORT_1_V(MSG_WriteCoord, G_MSG_WRITECOORD, float);
         ROUTE_IMPORT(MSG_WriteDir, G_MSG_WRITEDIR);
         ROUTE_IMPORT(MSG_StartCGM, G_MSG_STARTCGM);
         ROUTE_IMPORT(MSG_EndCGM, G_MSG_ENDCGM);
@@ -207,7 +205,7 @@ intptr_t MOHSH_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(TIKI_NumAnims, G_TIKI_NUMANIMS);
         ROUTE_IMPORT(TIKI_NumSurfaces, G_TIKI_NUMSURFACES);
         ROUTE_IMPORT(TIKI_NumTags, G_TIKI_NUMTAGS);
-        ROUTE_IMPORT(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS);
+        ROUTE_IMPORT_4_V(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS, dtiki_t*, float, float*, float*);
         ROUTE_IMPORT(TIKI_GetSkeletor, G_TIKI_GETSKELETOR);
         ROUTE_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM);
         ROUTE_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME);
@@ -219,8 +217,8 @@ intptr_t MOHSH_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
         ROUTE_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA);
         ROUTE_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA);
-        ROUTE_IMPORT(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME);
-        ROUTE_IMPORT(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME);
+        ROUTE_IMPORT_5_V(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME, dtiki_t*, int, float, float, float*);
+        ROUTE_IMPORT_5_V(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME, dtiki_t*, int, float, float, float*);
         ROUTE_IMPORT(Anim_Flags, G_ANIM_FLAGS);
         ROUTE_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL);
         ROUTE_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS);
@@ -235,8 +233,8 @@ intptr_t MOHSH_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM);
         ROUTE_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL);
         ROUTE_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL);
-        ROUTE_IMPORT(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL);
-        ROUTE_IMPORT(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL);
+        ROUTE_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, dtiki_t*, int, int, float);
+        ROUTE_IMPORT_6_V(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, float);
         ROUTE_IMPORT(CM_GetHitLocationInfo, G_CM_GETHITLOCATIONINFO);
         ROUTE_IMPORT(CM_GetHitLocationInfoSecondary, G_CM_GETHITLOCATIONINFOSECONDARY);
         ROUTE_IMPORT(Alias_Add, G_ALIAS_ADD);
@@ -251,7 +249,7 @@ intptr_t MOHSH_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR);
         ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
         ROUTE_IMPORT(locationprintf, G_LOCATIONPRINTF);
-        ROUTE_IMPORT(Sound, G_SOUND);
+        ROUTE_IMPORT_9_V(Sound, G_SOUND, vec3_t*, int, int, const char*, float, float, float, float, int);
         ROUTE_IMPORT(StopSound, G_STOPSOUND);
         ROUTE_IMPORT_2_F(SoundLength, G_SOUNDLENGTH, int, const char*);
         ROUTE_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES);
@@ -279,7 +277,7 @@ intptr_t MOHSH_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(HudDrawRect, G_HUDDRAWRECT);
         ROUTE_IMPORT(HudDrawVirtualSize, G_HUDDRAWVIRTUALSIZE);
         ROUTE_IMPORT(HudDrawColor, G_HUDDRAWCOLOR);
-        ROUTE_IMPORT(HudDrawAlpha, G_HUDDRAWALPHA);
+        ROUTE_IMPORT_2_V(HudDrawAlpha, G_HUDDRAWALPHA, int, float);
         ROUTE_IMPORT(HudDrawString, G_HUDDRAWSTRING);
         ROUTE_IMPORT(HudDrawFont, G_HUDDRAWFONT);
         ROUTE_IMPORT(SanitizeName, G_SANITIZENAME);
@@ -924,7 +922,7 @@ game_import_t MOHSH_GameSupport::qmm_import = {
     GEN_IMPORT(SightTraceEntity, G_SIGHTTRACEENTITY),
     GEN_IMPORT(SightTrace, G_SIGHTTRACE),
     GEN_IMPORT(trace, G_TRACE),
-    GEN_IMPORT_2(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION, float, const vec3_t, const vec3_t),
+    GEN_IMPORT_2_F(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION, const vec3_t, const vec3_t),
     GEN_IMPORT(GetShader, G_GETSHADER),
     GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
     GEN_IMPORT(PointBrushnum, G_POINTBRUSHNUM),
@@ -956,9 +954,9 @@ game_import_t MOHSH_GameSupport::qmm_import = {
     GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
     GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
     GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
-    GEN_IMPORT_2(Anim_Time, G_ANIM_TIME, float, dtiki_t*, int),
-    GEN_IMPORT_2(Anim_Frametime, G_ANIM_FRAMETIME, float, dtiki_t*, int),
-    GEN_IMPORT_2(Anim_CrossTime, G_ANIM_CROSSTIME, float, dtiki_t*, int),
+    GEN_IMPORT_2_F(Anim_Time, G_ANIM_TIME, dtiki_t*, int),
+    GEN_IMPORT_2_F(Anim_Frametime, G_ANIM_FRAMETIME, dtiki_t*, int),
+    GEN_IMPORT_2_F(Anim_CrossTime, G_ANIM_CROSSTIME, dtiki_t*, int),
     GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
     GEN_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA),
     GEN_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA),
@@ -996,7 +994,7 @@ game_import_t MOHSH_GameSupport::qmm_import = {
     GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
     GEN_IMPORT_9(Sound, G_SOUND, void, vec3_t*, int, int, const char*, float, float, float, float, int),
     GEN_IMPORT(StopSound, G_STOPSOUND),
-    GEN_IMPORT_2(SoundLength, G_SOUNDLENGTH, float, int, const char*),
+    GEN_IMPORT_2_F(SoundLength, G_SOUNDLENGTH, int, const char*),
     GEN_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES),
     GEN_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING),
     GEN_IMPORT(CalcCRC, G_CALCCRC),

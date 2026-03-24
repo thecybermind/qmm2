@@ -58,8 +58,6 @@ private:
     static size_t token_counter;
     static void SpawnEntities(char* entstring, int levelTime);
 
-    static void DebugCircle(float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6);
-
     // a copy of the original import struct that comes from the game engine
     static game_import_t orig_import;
 
@@ -149,7 +147,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME);
         // handled below since we do special handling to deal with the "when" argument
         // ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
-        ROUTE_IMPORT(DebugGraph, G_DEBUGGRAPH);
+        ROUTE_IMPORT_1_V(DebugGraph, G_DEBUGGRAPH, float);
         ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
         ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
         ROUTE_IMPORT(MSG_WriteBits, G_MSG_WRITEBITS);
@@ -158,11 +156,11 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(MSG_WriteSVC, G_MSG_WRITESVC);
         ROUTE_IMPORT(MSG_WriteShort, G_MSG_WRITESHORT);
         ROUTE_IMPORT(MSG_WriteLong, G_MSG_WRITELONG);
-        ROUTE_IMPORT(MSG_WriteFloat, G_MSG_WRITEFLOAT);
+        ROUTE_IMPORT_1_V(MSG_WriteFloat, G_MSG_WRITEFLOAT, float);
         ROUTE_IMPORT(MSG_WriteString, G_MSG_WRITESTRING);
-        ROUTE_IMPORT(MSG_WriteAngle8, G_MSG_WRITEANGLE8);
-        ROUTE_IMPORT(MSG_WriteAngle16, G_MSG_WRITEANGLE16);
-        ROUTE_IMPORT(MSG_WriteCoord, G_MSG_WRITECOORD);
+        ROUTE_IMPORT_1_V(MSG_WriteAngle8, G_MSG_WRITEANGLE8, float);
+        ROUTE_IMPORT_1_V(MSG_WriteAngle16, G_MSG_WRITEANGLE16, float);
+        ROUTE_IMPORT_1_V(MSG_WriteCoord, G_MSG_WRITECOORD, float);
         ROUTE_IMPORT(MSG_WriteDir, G_MSG_WRITEDIR);
         ROUTE_IMPORT(MSG_StartCGM, G_MSG_STARTCGM);
         ROUTE_IMPORT(MSG_EndCGM, G_MSG_ENDCGM);
@@ -203,7 +201,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(TIKI_NumAnims, G_TIKI_NUMANIMS);
         ROUTE_IMPORT(TIKI_NumSurfaces, G_TIKI_NUMSURFACES);
         ROUTE_IMPORT(TIKI_NumTags, G_TIKI_NUMTAGS);
-        ROUTE_IMPORT(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS);
+        ROUTE_IMPORT_4_V(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS, dtiki_t*, float, float*, float*);
         ROUTE_IMPORT(TIKI_GetSkeletor, G_TIKI_GETSKELETOR);
         ROUTE_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM);
         ROUTE_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME);
@@ -214,7 +212,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT_2_F(Anim_CrossTime, G_ANIM_CROSSTIME, dtiki_t*, int);
         ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
         ROUTE_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA);
-        ROUTE_IMPORT(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME);
+        ROUTE_IMPORT_5_V(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME, dtiki_t*, int, float, float, float*);
         ROUTE_IMPORT(Anim_Flags, G_ANIM_FLAGS);
         ROUTE_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL);
         ROUTE_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS);
@@ -229,8 +227,8 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM);
         ROUTE_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL);
         ROUTE_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL);
-        ROUTE_IMPORT(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL);
-        ROUTE_IMPORT(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL);
+        ROUTE_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, dtiki_t*, int, int, float);
+        ROUTE_IMPORT_6_V(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, float);
         ROUTE_IMPORT(CM_GetHitLocationInfo, G_CM_GETHITLOCATIONINFO);
         ROUTE_IMPORT(CM_GetHitLocationInfoSecondary, G_CM_GETHITLOCATIONINFOSECONDARY);
         ROUTE_IMPORT(Alias_Add, G_ALIAS_ADD);
@@ -245,7 +243,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR);
         ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
         ROUTE_IMPORT(locationprintf, G_LOCATIONPRINTF);
-        ROUTE_IMPORT(Sound, G_SOUND);
+        ROUTE_IMPORT_9_V(Sound, G_SOUND, vec3_t*, int, int, const char*, float, float, float, float, int);
         ROUTE_IMPORT(StopSound, G_STOPSOUND);
         ROUTE_IMPORT_2_F(SoundLength, G_SOUNDLENGTH, int, const char*);
         ROUTE_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES);
@@ -1035,7 +1033,7 @@ game_export_t MOHAA_GameSupport::qmm_export = {
     GEN_EXPORT(ArchiveFloat, GAME_ARCHIVE_FLOAT),
     GEN_EXPORT(ArchiveString, GAME_ARCHIVE_STRING),
     GEN_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME),
-    GEN_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION), // todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
+    GEN_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION),
     GEN_EXPORT_7(DebugCircle, GAME_DEBUG_CIRCLE, void, float*, float, float, float, float, float, qboolean),
     GEN_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER),
     GEN_EXPORT(SoundCallback, GAME_SOUND_CALLBACK),

@@ -151,8 +151,8 @@ intptr_t JK2SP_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(G2API_SetSurfaceOnOff, G_G2API_SETSURFACEONOFF);
         ROUTE_IMPORT(G2API_SetRootSurface, G_G2API_SETROOTSURFACE);
         ROUTE_IMPORT(G2API_RemoveSurface, G_G2API_REMOVESURFACE);
-        ROUTE_IMPORT(G2API_AddSurface, G_G2API_ADDSURFACE);
-        ROUTE_IMPORT(G2API_SetBoneAnim, G_G2API_SETBONEANIM);
+        ROUTE_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, CGhoul2Info*, int, int, float, float, int);
+        ROUTE_IMPORT_9(G2API_SetBoneAnim, G_G2API_SETBONEANIM, CGhoul2Info*, const char*, const int, const int, const int, const float, const int, const float, const int);
         ROUTE_IMPORT(G2API_GetBoneAnim, G_G2API_GETBONEANIM);
         ROUTE_IMPORT(G2API_GetBoneAnimIndex, G_G2API_GETBONEANIMINDEX);
         ROUTE_IMPORT(G2API_GetAnimRange, G_G2API_GETANIMRANGE);
@@ -194,7 +194,7 @@ intptr_t JK2SP_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(G2API_StopBoneAnimIndex, G_G2API_STOPBONEANIMINDEX);
         ROUTE_IMPORT(G2API_SetBoneAnglesIndex, G_G2API_SETBONEANGLESINDEX);
         ROUTE_IMPORT(G2API_SetBoneAnglesMatrixIndex, G_G2API_SETBONEANGLESMATRIXINDEX);
-        ROUTE_IMPORT(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX);
+        ROUTE_IMPORT_9(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, CGhoul2Info*, const int, const int, const int, const int, const float, const int, const float, const int);
         ROUTE_IMPORT(G2API_SaveGhoul2Models, G_G2API_SAVEGHOUL2MODELS);
         ROUTE_IMPORT(G2API_LoadGhoul2Models, G_G2API_LOADGHOUL2MODELS);
         ROUTE_IMPORT(G2API_LoadSaveCodeDestructGhoul2Info, G_G2API_LOADSAVECODEDESTRUCTGHOUL2INFO);
@@ -310,7 +310,7 @@ intptr_t JK2SP_GameSupport::vmMain(intptr_t cmd, ...) {
         ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
         ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
         ROUTE_EXPORT(PrintEntClassname, GAME_PRINTENTCLASSNAME);
-        ROUTE_EXPORT(ValidateAnimRange, GAME_VALIDATEANIMRANGE);
+        ROUTE_EXPORT_3(ValidateAnimRange, GAME_VALIDATEANIMRANGE, int, int, float);
 
         // handle cmds for variables, this is how a plugin would get these values if needed
         ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
@@ -599,7 +599,7 @@ game_import_t JK2SP_GameSupport::qmm_import = {
     GEN_IMPORT(G2API_SetRootSurface, G_G2API_SETROOTSURFACE),
     GEN_IMPORT(G2API_RemoveSurface, G_G2API_REMOVESURFACE),
     GEN_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, int, CGhoul2Info*, int, int, float, float, int),
-    GEN_IMPORT(G2API_SetBoneAnim, G_G2API_SETBONEANIM),
+    GEN_IMPORT_9(G2API_SetBoneAnim, G_G2API_SETBONEANIM, qboolean, CGhoul2Info*, const char*, const int, const int, const int, const float, const int, const float, const int),
     GEN_IMPORT(G2API_GetBoneAnim, G_G2API_GETBONEANIM),
     GEN_IMPORT(G2API_GetBoneAnimIndex, G_G2API_GETBONEANIMINDEX),
     GEN_IMPORT(G2API_GetAnimRange, G_G2API_GETANIMRANGE),
@@ -641,7 +641,7 @@ game_import_t JK2SP_GameSupport::qmm_import = {
     GEN_IMPORT(G2API_StopBoneAnimIndex, G_G2API_STOPBONEANIMINDEX),
     GEN_IMPORT(G2API_SetBoneAnglesIndex, G_G2API_SETBONEANGLESINDEX),
     GEN_IMPORT(G2API_SetBoneAnglesMatrixIndex, G_G2API_SETBONEANGLESMATRIXINDEX),
-    GEN_IMPORT(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX),
+    GEN_IMPORT_9(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, qboolean, CGhoul2Info*, const int, const int, const int, const int, const float, const int, const float, const int),
     GEN_IMPORT(G2API_SaveGhoul2Models, G_G2API_SAVEGHOUL2MODELS),
     GEN_IMPORT(G2API_LoadGhoul2Models, G_G2API_LOADGHOUL2MODELS),
     GEN_IMPORT(G2API_LoadSaveCodeDestructGhoul2Info, G_G2API_LOADSAVECODEDESTRUCTGHOUL2INFO),
@@ -682,7 +682,7 @@ game_export_t JK2SP_GameSupport::qmm_export = {
     GEN_EXPORT(RunFrame, GAME_RUN_FRAME),
     GEN_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND),
     GEN_EXPORT(PrintEntClassname, GAME_PRINTENTCLASSNAME),
-    GEN_EXPORT(ValidateAnimRange, GAME_VALIDATEANIMRANGE),
+    GEN_EXPORT_3(ValidateAnimRange, GAME_VALIDATEANIMRANGE, int, int, int, float),
 
     // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
     nullptr,	// gentities
