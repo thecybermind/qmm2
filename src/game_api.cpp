@@ -64,7 +64,6 @@ std::vector<GameSupport*> api_supportedgames = {
 	GET_GAME_OBJ(JK2SP),
 	GET_GAME_OBJ(JASP),
 	GET_GAME_OBJ(QUAKE2),
-	GET_GAME_OBJ(SIN),
 
 // OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
 // the rest of the games don't appear to have an official 64-bit version or source port
@@ -75,6 +74,7 @@ std::vector<GameSupport*> api_supportedgames = {
 	GET_GAME_OBJ(STEF2),
 	GET_GAME_OBJ(SOF2SP),
 	GET_GAME_OBJ(STVOYSP),
+	GET_GAME_OBJ(SIN),
 #endif
 
 // Q2R only exists for 64-bit Windows

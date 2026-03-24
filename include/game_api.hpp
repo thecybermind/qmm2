@@ -223,6 +223,9 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 #define ROUTE_IMPORT_5(field, cmd, type0, type1, type2, type3, type4) case cmd: ret = (intptr_t)orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3], (type4)args[4]); break
 #define ROUTE_IMPORT_6(field, cmd, type0, type1, type2, type3, type4, type5) case cmd: ret = (intptr_t)orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3], (type4)args[4], (type5)args[5]); break
 #define ROUTE_IMPORT_7(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: ret = (intptr_t)orig_import. field((type0)args[0], (type1)args[1], (type2)args[2], (type3)args[3], (type4)args[4], (type5)args[5], (type6)args[6]); break
+#define ROUTE_IMPORT_1_F(field, cmd, type0) case cmd: fret = orig_import. field((type0)args[0]); ret = *(intptr_t*)&fret; break
+#define ROUTE_IMPORT_2_F(field, cmd, type0, type1) case cmd: fret = orig_import. field((type0)args[0], (type1)args[1]); ret = *(intptr_t*)&fret; break
+#define ROUTE_IMPORT_3_F(field, cmd, type0, type1, type2) case cmd: fret = orig_import. field((type0)args[0], (type1)args[1], (type2)args[2]); ret = *(intptr_t*)&fret; break
 
 // handle calls from QMM and plugins into the mod
 #define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((mod_vmMain)(orig_export-> field))(QMM_PUT_VMMAIN_ARGS()); break
@@ -268,6 +271,10 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 17;
 #define  GEN_EXPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0); }
 #define  GEN_EXPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1); }
 #define  GEN_EXPORT_3(field, cmd, typeret, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2); }
+#define  GEN_EXPORT_4(field, cmd, typeret, type0, type1, type2, type3) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3); }
+#define  GEN_EXPORT_5(field, cmd, typeret, type0, type1, type2, type3, type4) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4); }
+#define  GEN_EXPORT_6(field, cmd, typeret, type0, type1, type2, type3, type4, type5) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5); }
+#define  GEN_EXPORT_7(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }
 
 // ---------------------
 // ----- QVM stuff -----

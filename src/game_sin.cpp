@@ -115,6 +115,8 @@ intptr_t SIN_GameSupport::syscall(intptr_t cmd, ...) {
 
     intptr_t ret = 0;
 
+    float fret; // used to get float return values
+
     switch (cmd) {
         ROUTE_IMPORT(bprintf, G_BPRINTF);
         ROUTE_IMPORT(dprintf, G_DPRINTF);
@@ -167,7 +169,7 @@ intptr_t SIN_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(GameDir, G_GAMEDIR);
         ROUTE_IMPORT(PlayerDir, G_PLAYERDIR);
         ROUTE_IMPORT(CreatePath, G_CREATEPATH);
-        ROUTE_IMPORT(SoundLength, G_SOUNDLENGTH);
+        ROUTE_IMPORT_1_F(SoundLength, G_SOUNDLENGTH, const char*);
         ROUTE_IMPORT(IsModel, G_ISMODEL);
         ROUTE_IMPORT(NumAnims, G_NUMANIMS);
         ROUTE_IMPORT(NumSkins, G_NUMSKINS);
@@ -178,16 +180,16 @@ intptr_t SIN_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME);
         ROUTE_IMPORT(Anim_Random, G_ANIM_RANDOM);
         ROUTE_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES);
-        ROUTE_IMPORT(Anim_Time, G_ANIM_TIME);
+        ROUTE_IMPORT_2_F(Anim_Time, G_ANIM_TIME, int, int);
         ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
         ROUTE_IMPORT(Frame_Commands, G_FRAME_COMMANDS);
         ROUTE_IMPORT(Frame_Delta, G_FRAME_DELTA);
-        ROUTE_IMPORT(Frame_Time, G_FRAME_TIME);
+        ROUTE_IMPORT_3_F(Frame_Time, G_FRAME_TIME, int, int, int);
         ROUTE_IMPORT(Skin_NameForNum, G_SKIN_NAMEFORNUM);
         ROUTE_IMPORT(Skin_NumForName, G_SKIN_NUMFORNAME);
         ROUTE_IMPORT(Group_NameToNum, G_GROUP_NAMETONUM);
         ROUTE_IMPORT(Group_NumToName, G_GROUP_NUMTONAME);
-        ROUTE_IMPORT(Group_DamageMultiplier, G_GROUP_DAMAGEMULTIPLIER);
+        ROUTE_IMPORT_2_F(Group_DamageMultiplier, G_GROUP_DAMAGEMULTIPLIER, int, int);
         ROUTE_IMPORT(Group_Flags, G_GROUP_FLAGS);
         ROUTE_IMPORT(GetBoneInfo, G_GETBONEINFO);
         ROUTE_IMPORT(GetBoneGroupName, G_GETBONEGROUPNAME);
@@ -743,7 +745,7 @@ game_import_t SIN_GameSupport::qmm_import = {
     GEN_IMPORT(GameDir, G_GAMEDIR),
     GEN_IMPORT(PlayerDir, G_PLAYERDIR),
     GEN_IMPORT(CreatePath, G_CREATEPATH),
-    GEN_IMPORT_1(SoundLength, G_SOUNDLENGTH, float, const char*),
+    +[](const char* arg0) -> float { intptr_t ret = ::qmm_syscall(G_SOUNDLENGTH, arg0); return *(float*)&ret; },
     GEN_IMPORT(IsModel, G_ISMODEL),
     GEN_IMPORT(NumAnims, G_NUMANIMS),
     GEN_IMPORT(NumSkins, G_NUMSKINS),
@@ -754,16 +756,16 @@ game_import_t SIN_GameSupport::qmm_import = {
     GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
     GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
     GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
-    GEN_IMPORT_2(Anim_Time, G_ANIM_TIME, float, int, int),
+    +[](int arg0, int arg1) -> float { intptr_t ret = ::qmm_syscall(G_ANIM_TIME, arg0, arg1); return *(float*)&ret; },
     GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
     GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
     GEN_IMPORT(Frame_Delta, G_FRAME_DELTA),
-    GEN_IMPORT_3(Frame_Time, G_FRAME_TIME, float, int, int, int),
+    +[](int arg0, int arg1, int arg2) -> float { intptr_t ret = ::qmm_syscall(G_FRAME_TIME, arg0, arg1, arg2); return *(float*)&ret; },
     GEN_IMPORT(Skin_NameForNum, G_SKIN_NAMEFORNUM),
     GEN_IMPORT(Skin_NumForName, G_SKIN_NUMFORNAME),
     GEN_IMPORT(Group_NameToNum, G_GROUP_NAMETONUM),
     GEN_IMPORT(Group_NumToName, G_GROUP_NUMTONAME),
-    GEN_IMPORT_2(Group_DamageMultiplier, G_GROUP_DAMAGEMULTIPLIER, float, int, int),
+    +[](int arg0, int arg1) -> float { intptr_t ret = ::qmm_syscall(G_GROUP_DAMAGEMULTIPLIER, arg0, arg1); return *(float*)&ret; },
     GEN_IMPORT(Group_Flags, G_GROUP_FLAGS),
     GEN_IMPORT(GetBoneInfo, G_GETBONEINFO),
     GEN_IMPORT(GetBoneGroupName, G_GETBONEGROUPNAME),
