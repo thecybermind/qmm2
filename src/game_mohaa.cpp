@@ -109,6 +109,8 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
 
     intptr_t ret = 0;
 
+    float fret; // used to get float return values
+
     switch (cmd) {
         ROUTE_IMPORT(Printf, G_PRINTF);
         ROUTE_IMPORT(DPrintf, G_DPRINTF);
@@ -207,9 +209,9 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME);
         ROUTE_IMPORT(Anim_Random, G_ANIM_RANDOM);
         ROUTE_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES);
-        ROUTE_IMPORT(Anim_Time, G_ANIM_TIME);
-        ROUTE_IMPORT(Anim_Frametime, G_ANIM_FRAMETIME);
-        ROUTE_IMPORT(Anim_CrossTime, G_ANIM_CROSSTIME);
+        ROUTE_IMPORT_2_F(Anim_Time, G_ANIM_TIME, dtiki_t*, int);
+        ROUTE_IMPORT_2_F(Anim_Frametime, G_ANIM_FRAMETIME, dtiki_t*, int);
+        ROUTE_IMPORT_2_F(Anim_CrossTime, G_ANIM_CROSSTIME, dtiki_t*, int);
         ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
         ROUTE_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA);
         ROUTE_IMPORT(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME);
@@ -245,7 +247,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(locationprintf, G_LOCATIONPRINTF);
         ROUTE_IMPORT(Sound, G_SOUND);
         ROUTE_IMPORT(StopSound, G_STOPSOUND);
-        ROUTE_IMPORT(SoundLength, G_SOUNDLENGTH);
+        ROUTE_IMPORT_2_F(SoundLength, G_SOUNDLENGTH, int, const char*);
         ROUTE_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES);
         ROUTE_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING);
         ROUTE_IMPORT(CalcCRC, G_CALCCRC);
@@ -482,7 +484,7 @@ intptr_t MOHAA_GameSupport::vmMain(intptr_t cmd, ...) {
         ROUTE_EXPORT(ArchiveString, GAME_ARCHIVE_STRING);
         ROUTE_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME);
         ROUTE_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION);
-        ROUTE_EXPORT(DebugCircle, GAME_DEBUG_CIRCLE);
+        ROUTE_EXPORT_7_V(DebugCircle, GAME_DEBUG_CIRCLE, float*, float, float, float, float, float, qboolean);
         ROUTE_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER);
         ROUTE_EXPORT(SoundCallback, GAME_SOUND_CALLBACK);
 
@@ -912,9 +914,9 @@ game_import_t MOHAA_GameSupport::qmm_import = {
     GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
     GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
     GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
-    GEN_IMPORT(Anim_Time, G_ANIM_TIME),
-    GEN_IMPORT(Anim_Frametime, G_ANIM_FRAMETIME),
-    GEN_IMPORT(Anim_CrossTime, G_ANIM_CROSSTIME),
+    GEN_IMPORT_2_F(Anim_Time, G_ANIM_TIME, dtiki_t*, int),
+    GEN_IMPORT_2_F(Anim_Frametime, G_ANIM_FRAMETIME, dtiki_t*, int),
+    GEN_IMPORT_2_F(Anim_CrossTime, G_ANIM_CROSSTIME, dtiki_t*, int),
     GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
     GEN_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA),
     GEN_IMPORT_5(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME, void, dtiki_t*, int, float, float, float*),
@@ -930,7 +932,7 @@ game_import_t MOHAA_GameSupport::qmm_import = {
     GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
     GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
     GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
-    GEN_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL), // todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
+    GEN_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL), // this has a float arg, but also returns a large struct type. since this game is only available in 32-bit, we don't need to worry about it for now
     GEN_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL),
     GEN_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, qboolean, dtiki_t*, int, int, float),
     GEN_IMPORT_6(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, void, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, float),
@@ -950,7 +952,7 @@ game_import_t MOHAA_GameSupport::qmm_import = {
     GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
     GEN_IMPORT_9(Sound, G_SOUND, void, vec3_t*, int, int, const char*, float, float, float, float, int),
     GEN_IMPORT(StopSound, G_STOPSOUND),
-    GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
+    GEN_IMPORT_2_F(SoundLength, G_SOUNDLENGTH, int, const char*),
     GEN_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES),
     GEN_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING),
     GEN_IMPORT(CalcCRC, G_CALCCRC),
@@ -1000,13 +1002,6 @@ void MOHAA_GameSupport::SpawnEntities(char* entstring, int levelTime) {
 }
 
 
-// at least one of first four args is a float (see big comment regarding sound in game_q2r.cpp), so use specific types
-void MOHAA_GameSupport::DebugCircle(float* arg0, float arg1, float arg2, float arg3, float arg4, float arg5, qboolean arg6) {
-    cgame.is_from_QMM = true;
-    (void)::vmMain(GAME_DEBUG_CIRCLE, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
-}
-
-
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 game_export_t MOHAA_GameSupport::qmm_export = {
     GAME_API_VERSION,	// apiversion
@@ -1041,7 +1036,7 @@ game_export_t MOHAA_GameSupport::qmm_export = {
     GEN_EXPORT(ArchiveString, GAME_ARCHIVE_STRING),
     GEN_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME),
     GEN_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION), // todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
-    MOHAA_GameSupport::DebugCircle,
+    GEN_EXPORT_7(DebugCircle, GAME_DEBUG_CIRCLE, void, float*, float, float, float, float, float, qboolean),
     GEN_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER),
     GEN_EXPORT(SoundCallback, GAME_SOUND_CALLBACK),
 
