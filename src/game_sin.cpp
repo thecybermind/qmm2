@@ -9,6 +9,10 @@ Created By:
 
 */
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <cstdio>
 #include <map>
@@ -703,7 +707,7 @@ game_import_t SIN_GameSupport::qmm_import = {
     GEN_IMPORT(itemindex, G_ITEMINDEX),
     GEN_IMPORT(setmodel, G_SETMODEL),
     GEN_IMPORT(trace, G_TRACE),
-    GEN_IMPORT(fulltrace, G_FULLTRACE),	// todo: change types to actually match float, but also need to return an intptr_t instead of trace_t
+    GEN_IMPORT(fulltrace, G_FULLTRACE),
     GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
     GEN_IMPORT(inPVS, G_IN_PVS),
     GEN_IMPORT(inPHS, G_IN_PHS),
@@ -739,7 +743,7 @@ game_import_t SIN_GameSupport::qmm_import = {
     GEN_IMPORT(GameDir, G_GAMEDIR),
     GEN_IMPORT(PlayerDir, G_PLAYERDIR),
     GEN_IMPORT(CreatePath, G_CREATEPATH),
-    GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
+    GEN_IMPORT_1(SoundLength, G_SOUNDLENGTH, float, const char*),
     GEN_IMPORT(IsModel, G_ISMODEL),
     GEN_IMPORT(NumAnims, G_NUMANIMS),
     GEN_IMPORT(NumSkins, G_NUMSKINS),
@@ -750,16 +754,16 @@ game_import_t SIN_GameSupport::qmm_import = {
     GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
     GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
     GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
-    GEN_IMPORT(Anim_Time, G_ANIM_TIME),
+    GEN_IMPORT_2(Anim_Time, G_ANIM_TIME, float, int, int),
     GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
     GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
     GEN_IMPORT(Frame_Delta, G_FRAME_DELTA),
-    GEN_IMPORT(Frame_Time, G_FRAME_TIME),
+    GEN_IMPORT_3(Frame_Time, G_FRAME_TIME, float, int, int, int),
     GEN_IMPORT(Skin_NameForNum, G_SKIN_NAMEFORNUM),
     GEN_IMPORT(Skin_NumForName, G_SKIN_NUMFORNAME),
     GEN_IMPORT(Group_NameToNum, G_GROUP_NAMETONUM),
     GEN_IMPORT(Group_NumToName, G_GROUP_NUMTONAME),
-    GEN_IMPORT(Group_DamageMultiplier, G_GROUP_DAMAGEMULTIPLIER),
+    GEN_IMPORT_2(Group_DamageMultiplier, G_GROUP_DAMAGEMULTIPLIER, float, int, int),
     GEN_IMPORT(Group_Flags, G_GROUP_FLAGS),
     GEN_IMPORT(GetBoneInfo, G_GETBONEINFO),
     GEN_IMPORT(GetBoneGroupName, G_GETBONEGROUPNAME),
@@ -863,3 +867,5 @@ game_export_t SIN_GameSupport::qmm_export = {
     0,			// max_surfaces
     0,			// num_surfaces
 };
+
+#endif // QMM_ARCH_32

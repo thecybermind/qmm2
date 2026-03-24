@@ -12,6 +12,10 @@ Created By:
 #ifndef QMM2_GAME_SIN_H
 #define QMM2_GAME_SIN_H
 
+#include "version.h"
+
+#if defined(QMM_ARCH_32)
+
 // import ("syscall") cmds
 enum {
 	G_BPRINTF,
@@ -185,5 +189,7 @@ enum {
 	// used by qmm_version cvar
 	CVAR_ROM = CVAR_NOSET,
 };
+
+#endif // QMM_ARCH_32
 
 #endif // QMM2_GAME_SIN_H
