@@ -127,7 +127,7 @@ intptr_t SOF2SP_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(Cvar_Update, G_CVAR_UPDATE);
         ROUTE_IMPORT(Cvar_Set, G_CVAR_SET);
         ROUTE_IMPORT(Cvar_Get, G_CVAR_GET);
-        ROUTE_IMPORT(Cvar_SetValue, G_CVAR_SETVALUE);
+        ROUTE_IMPORT_3_V(Cvar_SetValue, G_CVAR_SETVALUE, const char*, float, int);
         ROUTE_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE);
         ROUTE_IMPORT(Cvar_VariableFloatValue, G_CVAR_VARIABLE_FLOAT_VALUE);
         ROUTE_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER);
@@ -562,7 +562,7 @@ game_import_t SOF2SP_GameSupport::qmm_import = {
     GEN_IMPORT(Cvar_Update, G_CVAR_UPDATE),
     GEN_IMPORT(Cvar_Set, G_CVAR_SET),
     GEN_IMPORT(Cvar_Get, G_CVAR_GET),
-    GEN_IMPORT(Cvar_SetValue, G_CVAR_SETVALUE),
+    GEN_IMPORT_3(Cvar_SetValue, G_CVAR_SETVALUE, void, const char*, float, int),
     GEN_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE),
     GEN_IMPORT(Cvar_VariableFloatValue, G_CVAR_VARIABLE_FLOAT_VALUE),
     GEN_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER),
