@@ -112,50 +112,50 @@ intptr_t QUAKE2_GameSupport::syscall(intptr_t cmd, ...) {
     intptr_t ret = 0; 
 
     switch (cmd) {
-        ROUTE_IMPORT(bprintf, G_BPRINTF);   // varargs
-        ROUTE_IMPORT(dprintf, G_DPRINTF);   // varargs
-        ROUTE_IMPORT(cprintf, G_CPRINTF);   // varargs
+        ROUTE_IMPORT(bprintf, G_BPRINTF);
+        ROUTE_IMPORT(dprintf, G_DPRINTF);
+        ROUTE_IMPORT(cprintf, G_CPRINTF);
         ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
-        ROUTE_IMPORT_6_V(sound, G_SOUND, edict_t*, int, int, float, float, float);
-        ROUTE_IMPORT_7_V(positioned_sound, G_POSITIONED_SOUND, float*, edict_t*, int, int, float, float, float);
-        ROUTE_IMPORT_2_V(configstring, G_CONFIGSTRING, int, char*);
-        ROUTE_IMPORT(error, G_ERROR);   // varargs
-        ROUTE_IMPORT_1(modelindex, G_MODELINDEX, char*);
-        ROUTE_IMPORT_1(soundindex, G_SOUNDINDEX, char*);
-        ROUTE_IMPORT_1(imageindex, G_IMAGEINDEX, char*);
-        ROUTE_IMPORT_2_V(setmodel, G_SETMODEL, edict_t*, char*);
-        ROUTE_IMPORT(trace, G_TRACE);   // returns trace_t
-        ROUTE_IMPORT_1(pointcontents, G_POINT_CONTENTS, float*);
-        ROUTE_IMPORT_2(inPVS, G_IN_PVS, float*, float*);
-        ROUTE_IMPORT_2(inPHS, G_IN_PHS, float*, float*);
-        ROUTE_IMPORT_2_V(SetAreaPortalState, G_SETAREAPORTALSTATE, int, qboolean);
-        ROUTE_IMPORT_2(AreasConnected, G_AREAS_CONNECTED, int, int);
-        ROUTE_IMPORT_1_V(linkentity, G_LINKENTITY, edict_t*);
-        ROUTE_IMPORT_1_V(unlinkentity, G_UNLINKENTITY, edict_t*);
-        ROUTE_IMPORT_5(BoxEdicts, G_BOXEDICTS, float*, float*, edict_t**, int, int);
-        ROUTE_IMPORT_1_V(Pmove, G_PMOVE, pmove_t*);
-        ROUTE_IMPORT_2_V(multicast, G_MULTICAST, float*, multicast_t);
-        ROUTE_IMPORT_2_V(unicast, G_UNICAST, edict_t*, qboolean);
-        ROUTE_IMPORT_1_V(WriteChar, G_MSG_WRITECHAR, int);
-        ROUTE_IMPORT_1_V(WriteByte, G_MSG_WRITEBYTE, int);
-        ROUTE_IMPORT_1_V(WriteShort, G_MSG_WRITESHORT, int);
-        ROUTE_IMPORT_1_V(WriteLong, G_MSG_WRITELONG, int);
-        ROUTE_IMPORT_1_V(WriteFloat, G_MSG_WRITEFLOAT, float);
-        ROUTE_IMPORT_1_V(WriteString, G_MSG_WRITESTRING, char*);
-        ROUTE_IMPORT_1_V(WritePosition, G_MSG_WRITEPOSITION, float*);
-        ROUTE_IMPORT_1_V(WriteDir, G_MSG_WRITEDIR, float*);
-        ROUTE_IMPORT_1_V(WriteAngle, G_MSG_WRITEANGLE, float);
-        ROUTE_IMPORT_2(TagMalloc, G_TAGMALLOC, int, int);
-        ROUTE_IMPORT_1_V(TagFree, G_TAGFREE, void*);
-        ROUTE_IMPORT_1_V(FreeTags, G_FREETAGS, int);
-        ROUTE_IMPORT_3(cvar, G_CVAR, char*, char*, int);
-        ROUTE_IMPORT_2(cvar_set, G_CVAR_SET, char*, char*);
-        ROUTE_IMPORT_2(cvar_forceset, G_CVAR_FORCESET, char*, char*);
-        ROUTE_IMPORT_0(argc, G_ARGC);
-        ROUTE_IMPORT_1(argv, G_ARGV, int);
-        ROUTE_IMPORT_0(args, G_ARGS);
-        ROUTE_IMPORT_1_V(AddCommandString, G_ADDCOMMANDSTRING, char*);
-        ROUTE_IMPORT_2_V(DebugGraph, G_DEBUGGRAPH, float, int);
+        ROUTE_IMPORT_6_V(sound, G_SOUND, (edict_t*), (int), (int), *(float*)&, *(float*)&, *(float*)&);
+        ROUTE_IMPORT_7_V(positioned_sound, G_POSITIONED_SOUND, (float*), (edict_t*), (int), (int), *(float*)&, *(float*)&, *(float*)&);
+        ROUTE_IMPORT(configstring, G_CONFIGSTRING);
+        ROUTE_IMPORT(error, G_ERROR);
+        ROUTE_IMPORT(modelindex, G_MODELINDEX);
+        ROUTE_IMPORT(soundindex, G_SOUNDINDEX);
+        ROUTE_IMPORT(imageindex, G_IMAGEINDEX);
+        ROUTE_IMPORT(setmodel, G_SETMODEL);
+        ROUTE_IMPORT(trace, G_TRACE);
+        ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
+        ROUTE_IMPORT(inPVS, G_IN_PVS);
+        ROUTE_IMPORT(inPHS, G_IN_PHS);
+        ROUTE_IMPORT(SetAreaPortalState, G_SETAREAPORTALSTATE);
+        ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
+        ROUTE_IMPORT(linkentity, G_LINKENTITY);
+        ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
+        ROUTE_IMPORT(BoxEdicts, G_BOXEDICTS);
+        ROUTE_IMPORT(Pmove, G_PMOVE);
+        ROUTE_IMPORT(multicast, G_MULTICAST);
+        ROUTE_IMPORT(unicast, G_UNICAST);
+        ROUTE_IMPORT(WriteChar, G_MSG_WRITECHAR);
+        ROUTE_IMPORT(WriteByte, G_MSG_WRITEBYTE);
+        ROUTE_IMPORT(WriteShort, G_MSG_WRITESHORT);
+        ROUTE_IMPORT(WriteLong, G_MSG_WRITELONG);
+        ROUTE_IMPORT_1_V(WriteFloat, G_MSG_WRITEFLOAT, *(float*)&);
+        ROUTE_IMPORT(WriteString, G_MSG_WRITESTRING);
+        ROUTE_IMPORT(WritePosition, G_MSG_WRITEPOSITION);
+        ROUTE_IMPORT(WriteDir, G_MSG_WRITEDIR);
+        ROUTE_IMPORT_1_V(WriteAngle, G_MSG_WRITEANGLE, *(float*)&);
+        ROUTE_IMPORT(TagMalloc, G_TAGMALLOC);
+        ROUTE_IMPORT(TagFree, G_TAGFREE);
+        ROUTE_IMPORT(FreeTags, G_FREETAGS);
+        ROUTE_IMPORT(cvar, G_CVAR);
+        ROUTE_IMPORT(cvar_set, G_CVAR_SET);
+        ROUTE_IMPORT(cvar_forceset, G_CVAR_FORCESET);
+        ROUTE_IMPORT(argc, G_ARGC);
+        ROUTE_IMPORT(argv, G_ARGV);
+        ROUTE_IMPORT(args, G_ARGS);
+        ROUTE_IMPORT(AddCommandString, G_ADDCOMMANDSTRING);
+        ROUTE_IMPORT_2_V(DebugGraph, G_DEBUGGRAPH, *(float*)&, (int));
 
         // handle cmds for variables, this is how a plugin would get these values if needed
 
@@ -355,21 +355,21 @@ intptr_t QUAKE2_GameSupport::vmMain(intptr_t cmd, ...) {
     intptr_t ret = 0;
 
     switch (cmd) {
-        ROUTE_EXPORT_0_V(Init, GAME_INIT);
-        ROUTE_EXPORT_0_V(Shutdown, GAME_SHUTDOWN);
-        ROUTE_EXPORT_3_V(SpawnEntities, GAME_SPAWN_ENTITIES, char*, char*, char*);
-        ROUTE_EXPORT_2_V(WriteGame, GAME_WRITE_GAME, char*, qboolean);
-        ROUTE_EXPORT_1_V(ReadGame, GAME_READ_GAME, char*);
-        ROUTE_EXPORT_1_V(WriteLevel, GAME_WRITE_LEVEL, char*);
-        ROUTE_EXPORT_1_V(ReadLevel, GAME_READ_LEVEL, char*);
-        ROUTE_EXPORT_2(ClientConnect, GAME_CLIENT_CONNECT, edict_t*, char*);
-        ROUTE_EXPORT_1_V(ClientBegin, GAME_CLIENT_BEGIN, edict_t*);
-        ROUTE_EXPORT_2_V(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED, edict_t*, char*);
-        ROUTE_EXPORT_1_V(ClientDisconnect, GAME_CLIENT_DISCONNECT, edict_t*);
-        ROUTE_EXPORT_1_V(ClientCommand, GAME_CLIENT_COMMAND, edict_t*);
-        ROUTE_EXPORT_2_V(ClientThink, GAME_CLIENT_THINK, edict_t*, usercmd_t*);
-        ROUTE_EXPORT_0_V(RunFrame, GAME_RUN_FRAME);
-        ROUTE_EXPORT_0_V(ServerCommand, GAME_SERVER_COMMAND);
+        ROUTE_EXPORT(Init, GAME_INIT);
+        ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
+        ROUTE_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES);
+        ROUTE_EXPORT(WriteGame, GAME_WRITE_GAME);
+        ROUTE_EXPORT(ReadGame, GAME_READ_GAME);
+        ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
+        ROUTE_EXPORT(ReadLevel, GAME_READ_LEVEL);
+        ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
+        ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
+        ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED);
+        ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
+        ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
+        ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
+        ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
+        ROUTE_EXPORT(ServerCommand, GAME_SERVER_COMMAND);
 
         // handle cmds for variables, this is how a plugin would get these values if needed
         ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);

@@ -151,8 +151,8 @@ intptr_t JK2SP_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(G2API_SetSurfaceOnOff, G_G2API_SETSURFACEONOFF);
         ROUTE_IMPORT(G2API_SetRootSurface, G_G2API_SETROOTSURFACE);
         ROUTE_IMPORT(G2API_RemoveSurface, G_G2API_REMOVESURFACE);
-        ROUTE_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, CGhoul2Info*, int, int, float, float, int);
-        ROUTE_IMPORT_9(G2API_SetBoneAnim, G_G2API_SETBONEANIM, CGhoul2Info*, const char*, const int, const int, const int, const float, const int, const float, const int);
+        ROUTE_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, (CGhoul2Info*), (int), (int), *(float*)&, *(float*)&, (int));
+        ROUTE_IMPORT_9(G2API_SetBoneAnim, G_G2API_SETBONEANIM, (CGhoul2Info*), (const char*), (int), (int), (int), *(float*)&, (int), *(float*)&, (int));
         ROUTE_IMPORT(G2API_GetBoneAnim, G_G2API_GETBONEANIM);
         ROUTE_IMPORT(G2API_GetBoneAnimIndex, G_G2API_GETBONEANIMINDEX);
         ROUTE_IMPORT(G2API_GetAnimRange, G_G2API_GETANIMRANGE);
@@ -194,7 +194,7 @@ intptr_t JK2SP_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(G2API_StopBoneAnimIndex, G_G2API_STOPBONEANIMINDEX);
         ROUTE_IMPORT(G2API_SetBoneAnglesIndex, G_G2API_SETBONEANGLESINDEX);
         ROUTE_IMPORT(G2API_SetBoneAnglesMatrixIndex, G_G2API_SETBONEANGLESMATRIXINDEX);
-        ROUTE_IMPORT_9(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, CGhoul2Info*, const int, const int, const int, const int, const float, const int, const float, const int);
+        ROUTE_IMPORT_9(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, (CGhoul2Info*), (int), (int), (int), (int), (float), (int), (float), (int));
         ROUTE_IMPORT(G2API_SaveGhoul2Models, G_G2API_SAVEGHOUL2MODELS);
         ROUTE_IMPORT(G2API_LoadGhoul2Models, G_G2API_LOADGHOUL2MODELS);
         ROUTE_IMPORT(G2API_LoadSaveCodeDestructGhoul2Info, G_G2API_LOADSAVECODEDESTRUCTGHOUL2INFO);
@@ -310,7 +310,7 @@ intptr_t JK2SP_GameSupport::vmMain(intptr_t cmd, ...) {
         ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
         ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
         ROUTE_EXPORT(PrintEntClassname, GAME_PRINTENTCLASSNAME);
-        ROUTE_EXPORT_3(ValidateAnimRange, GAME_VALIDATEANIMRANGE, int, int, float);
+        ROUTE_EXPORT_3(ValidateAnimRange, GAME_VALIDATEANIMRANGE, (int), (int), *(float*)&);
 
         // handle cmds for variables, this is how a plugin would get these values if needed
         ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);

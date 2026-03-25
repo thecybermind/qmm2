@@ -104,6 +104,8 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
 
     intptr_t ret = 0;
 
+    float fret; // used to get float return values
+
     switch (cmd) {
         ROUTE_IMPORT(Printf, G_PRINTF);
         ROUTE_IMPORT(DPrintf, G_DPRINTF);
@@ -120,7 +122,7 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(cvar_set, G_CVAR_SET);
         ROUTE_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER);
         ROUTE_IMPORT(Cvar_Register, G_CVAR_REGISTER);
-        ROUTE_IMPORT(Cvar_VariableValue, G_CVAR_VARIABLEVALUE);
+        ROUTE_IMPORT_1_F(Cvar_VariableValue, G_CVAR_VARIABLEVALUE, (const char*));
         ROUTE_IMPORT(Cvar_Update, G_CVAR_UPDATE);
         ROUTE_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE);
         ROUTE_IMPORT(argc, G_ARGC);
@@ -146,7 +148,7 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME);
         // handled below since we do special handling to deal with the "when" argument
         // ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
-        ROUTE_IMPORT(DebugGraph, G_DEBUGGRAPH);
+        ROUTE_IMPORT_2_V(DebugGraph, G_DEBUGGRAPH, *(float*)&, (int));
         ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
         ROUTE_IMPORT(GetNumFreeReliableServerCommands, G_GETNUMFREERELIABLESERVERCOMMANDS);
         ROUTE_IMPORT(setConfigstring, G_SET_CONFIGSTRING);
@@ -163,12 +165,12 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE);
         ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
         ROUTE_IMPORT(GetLightingGroup, G_GETLIGHTINGGROUP);
-        ROUTE_IMPORT(SetDynamicLight, G_SETDYNAMICLIGHT);
-        ROUTE_IMPORT(SetDynamicLightDefault, G_SETDYNAMICLIGHTDEFAULT);
+        ROUTE_IMPORT_2_V(SetDynamicLight, G_SETDYNAMICLIGHT, (int), *(float*)&);
+        ROUTE_IMPORT_2_V(SetDynamicLightDefault, G_SETDYNAMICLIGHTDEFAULT, (int), *(float*)&);
         ROUTE_IMPORT(SetWindDirection, G_SETWINDDIRECTION);
-        ROUTE_IMPORT(SetWindIntensity, G_SETWINDINTENSITY);
+        ROUTE_IMPORT_1_V(SetWindIntensity, G_SETWINDINTENSITY, *(float*)&);
         ROUTE_IMPORT(SetWeatherInfo, G_SETWEATHERINFO);
-        ROUTE_IMPORT(SetTimeScale, G_SETTIMESCALE);
+        ROUTE_IMPORT_1_V(SetTimeScale, G_SETTIMESCALE, *(float*)&);
         ROUTE_IMPORT(linkentity, G_LINKENTITY);
         ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
         ROUTE_IMPORT(AreaEntities, G_AREAENTITIES);
@@ -191,21 +193,21 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(NumTags, G_NUMTAGS);
         ROUTE_IMPORT(NumMorphs, G_NUMMORPHS);
         ROUTE_IMPORT(InitCommands, G_INITCOMMANDS);
-        ROUTE_IMPORT(CalculateBounds, G_CALCULATEBOUNDS);
+        ROUTE_IMPORT_4_V(CalculateBounds, G_CALCULATEBOUNDS, (int), *(float*)&, (float*), (float*));
         ROUTE_IMPORT(TIKI_CacheAnim, G_TIKI_CACHEANIM);
         ROUTE_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM);
         ROUTE_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME);
         ROUTE_IMPORT(Anim_Random, G_ANIM_RANDOM);
         ROUTE_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES);
-        ROUTE_IMPORT(Anim_Time, G_ANIM_TIME);
+        ROUTE_IMPORT_2_F(Anim_Time, G_ANIM_TIME, (int), (int));
         ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
         ROUTE_IMPORT(Anim_AbsoluteDelta, G_ANIM_ABSOLUTEDELTA);
         ROUTE_IMPORT(Anim_Flags, G_ANIM_FLAGS);
         ROUTE_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS);
         ROUTE_IMPORT(Frame_Commands, G_FRAME_COMMANDS);
         ROUTE_IMPORT(Frame_Delta, G_FRAME_DELTA);
-        ROUTE_IMPORT(Frame_Time, G_FRAME_TIME);
-        ROUTE_IMPORT(Frame_Bounds, G_FRAME_BOUNDS);
+        ROUTE_IMPORT_3_F(Frame_Time, G_FRAME_TIME, (int), (int), (int));
+        ROUTE_IMPORT_6_V(Frame_Bounds, G_FRAME_BOUNDS, (int), (int), (int), *(float*)&, (float*), (float*));
         ROUTE_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM);
         ROUTE_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME);
         ROUTE_IMPORT(Surface_Flags, G_SURFACE_FLAGS);
@@ -238,9 +240,9 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(isClientActive, G_ISCLIENTACTIVE);
         ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
         ROUTE_IMPORT(locationprintf, G_LOCATIONPRINTF);
-        ROUTE_IMPORT(Sound, G_SOUND);
+        ROUTE_IMPORT_8_V(Sound, G_SOUND, (vec3_t*), (int), (int), (const char*), *(float*)&, *(float*)&, *(float*)&, (qboolean));
         ROUTE_IMPORT(StopSound, G_STOPSOUND);
-        ROUTE_IMPORT(SoundLength, G_SOUNDLENGTH);
+        ROUTE_IMPORT_1_F(SoundLength, G_SOUNDLENGTH, (const char*));
         ROUTE_IMPORT(GetNextMorphTarget, G_GETNEXTMORPHTARGET);
         ROUTE_IMPORT(CalcCRC, G_CALCCRC);
         ROUTE_IMPORT(LocateGameData, G_LOCATE_GAME_DATA);
@@ -294,7 +296,7 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(AAS_EntityInfo, G_AAS_ENTITYINFO);
         ROUTE_IMPORT(AAS_Initialized, G_AAS_INITIALIZED);
         ROUTE_IMPORT(AAS_PresenceTypeBoundingBox, G_AAS_PRESENCETYPEBOUNDINGBOX);
-        ROUTE_IMPORT(AAS_Time, G_AAS_TIME);
+        ROUTE_IMPORT_0_F(AAS_Time, G_AAS_TIME);
         ROUTE_IMPORT(AAS_PointAreaNum, G_AAS_POINTAREANUM);
         ROUTE_IMPORT(AAS_PointReachabilityAreaIndex, G_AAS_POINTREACHABILITYAREAINDEX);
         ROUTE_IMPORT(AAS_TraceAreas, G_AAS_TRACEAREAS);
@@ -333,15 +335,15 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(EA_SelectWeapon, G_EA_SELECTWEAPON);
         ROUTE_IMPORT(EA_Jump, G_EA_JUMP);
         ROUTE_IMPORT(EA_DelayedJump, G_EA_DELAYEDJUMP);
-        ROUTE_IMPORT(EA_Move, G_EA_MOVE);
+        ROUTE_IMPORT_3_V(EA_Move, G_EA_MOVE, (int), (float*), *(float*)&);
         ROUTE_IMPORT(EA_View, G_EA_VIEW);
-        ROUTE_IMPORT(EA_EndRegular, G_EA_ENDREGULAR);
-        ROUTE_IMPORT(EA_GetInput, G_EA_GETINPUT);
+        ROUTE_IMPORT_2_V(EA_EndRegular, G_EA_ENDREGULAR, (int), *(float*)&);
+        ROUTE_IMPORT_3_V(EA_GetInput, G_EA_GETINPUT, (int), *(float*)&, (bot_input_t*));
         ROUTE_IMPORT(EA_ResetInput, G_EA_RESETINPUT);
-        ROUTE_IMPORT(BotLoadCharacter, G_BOTLOADCHARACTER);
+        ROUTE_IMPORT_2(BotLoadCharacter, G_BOTLOADCHARACTER, (char*), *(float*)&);
         ROUTE_IMPORT(BotFreeCharacter, G_BOTFREECHARACTER);
         ROUTE_IMPORT(Characteristic_Float, G_CHARACTERISTIC_FLOAT);
-        ROUTE_IMPORT(Characteristic_BFloat, G_CHARACTERISTIC_BFLOAT);
+        ROUTE_IMPORT_4_F(Characteristic_BFloat, G_CHARACTERISTIC_BFLOAT, (int), (int), *(float*)&, *(float*)&);
         ROUTE_IMPORT(Characteristic_Integer, G_CHARACTERISTIC_INTEGER);
         ROUTE_IMPORT(Characteristic_BInteger, G_CHARACTERISTIC_BINTEGER);
         ROUTE_IMPORT(Characteristic_String, G_CHARACTERISTIC_STRING);
@@ -377,35 +379,35 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(BotGetTopGoal, G_BOTGETTOPGOAL);
         ROUTE_IMPORT(BotGetSecondGoal, G_BOTGETSECONDGOAL);
         ROUTE_IMPORT(BotChooseLTGItem, G_BOTCHOOSELTGITEM);
-        ROUTE_IMPORT(BotChooseNBGItem, G_BOTCHOOSENBGITEM);
+        ROUTE_IMPORT_6(BotChooseNBGItem, G_BOTCHOOSENBGITEM, (int), (float*), (int*), (int), (struct bot_goal_s*), *(float*)&);
         ROUTE_IMPORT(BotTouchingGoal, G_BOTTOUCHINGGOAL);
         ROUTE_IMPORT(BotItemGoalInVisButNotVisible, G_BOTITEMGOALINVISBUTNOTVISIBLE);
         ROUTE_IMPORT(BotGetLevelItemGoal, G_BOTGETLEVELITEMGOAL);
         ROUTE_IMPORT(BotGetNextCampSpotGoal, G_BOTGETNEXTCAMPSPOTGOAL);
         ROUTE_IMPORT(BotGetMapLocationGoal, G_BOTGETMAPLOCATIONGOAL);
-        ROUTE_IMPORT(BotAvoidGoalTime, G_BOTAVOIDGOALTIME);
-        ROUTE_IMPORT(BotSetAvoidGoalTime, G_BOTSETAVOIDGOALTIME);
+        ROUTE_IMPORT_2_F(BotAvoidGoalTime, G_BOTAVOIDGOALTIME, (int), (int));
+        ROUTE_IMPORT_3_V(BotSetAvoidGoalTime, G_BOTSETAVOIDGOALTIME, (int), (int), *(float*)&);
         ROUTE_IMPORT(BotInitLevelItems, G_BOTINITLEVELITEMS);
         ROUTE_IMPORT(BotUpdateEntityItems, G_BOTUPDATEENTITYITEMS);
         ROUTE_IMPORT(BotLoadItemWeights, G_BOTLOADITEMWEIGHTS);
         ROUTE_IMPORT(BotFreeItemWeights, G_BOTFREEITEMWEIGHTS);
         ROUTE_IMPORT(BotInterbreedGoalFuzzyLogic, G_BOTINTERBREEDGOALFUZZYLOGIC);
         ROUTE_IMPORT(BotSaveGoalFuzzyLogic, G_BOTSAVEGOALFUZZYLOGIC);
-        ROUTE_IMPORT(BotMutateGoalFuzzyLogic, G_BOTMUTATEGOALFUZZYLOGIC);
+        ROUTE_IMPORT_2_V(BotMutateGoalFuzzyLogic, G_BOTMUTATEGOALFUZZYLOGIC, (int), *(float*)&);
         ROUTE_IMPORT(BotAllocGoalState, G_BOTALLOCGOALSTATE);
         ROUTE_IMPORT(BotFreeGoalState, G_BOTFREEGOALSTATE);
         ROUTE_IMPORT(BotResetMoveState, G_BOTRESETMOVESTATE);
         ROUTE_IMPORT(BotMoveToGoal, G_BOTMOVETOGOAL);
-        ROUTE_IMPORT(BotMoveInDirection, G_BOTMOVEINDIRECTION);
+        ROUTE_IMPORT_4(BotMoveInDirection, G_BOTMOVEINDIRECTION, (int), (float*), *(float*)&, (int));
         ROUTE_IMPORT(BotResetAvoidReach, G_BOTRESETAVOIDREACH);
         ROUTE_IMPORT(BotResetLastAvoidReach, G_BOTRESETLASTAVOIDREACH);
         ROUTE_IMPORT(BotReachabilityArea, G_BOTREACHABILITYAREA);
-        ROUTE_IMPORT(BotMovementViewTarget, G_BOTMOVEMENTVIEWTARGET);
+        ROUTE_IMPORT_5(BotMovementViewTarget, G_BOTMOVEMENTVIEWTARGET, (int), (struct bot_goal_s*), (int), *(float*)&, (float*));
         ROUTE_IMPORT(BotPredictVisiblePosition, G_BOTPREDICTVISIBLEPOSITION);
         ROUTE_IMPORT(BotAllocMoveState, G_BOTALLOCMOVESTATE);
         ROUTE_IMPORT(BotFreeMoveState, G_BOTFREEMOVESTATE);
         ROUTE_IMPORT(BotInitMoveState, G_BOTINITMOVESTATE);
-        ROUTE_IMPORT(BotAddAvoidSpot, G_BOTADDAVOIDSPOT);
+        ROUTE_IMPORT_4_V(BotAddAvoidSpot, G_BOTADDAVOIDSPOT, (int), (float*), *(float*)&, (int));
         ROUTE_IMPORT(BotChooseBestFightWeapon, G_BOTCHOOSEBESTFIGHTWEAPON);
         ROUTE_IMPORT(BotGetWeaponInfo, G_BOTGETWEAPONINFO);
         ROUTE_IMPORT(BotLoadWeaponWeights, G_BOTLOADWEAPONWEIGHTS);
@@ -440,7 +442,7 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(PC_LoadSourceHandle, G_PC_LOADSOURCEHANDLE);
         ROUTE_IMPORT(PC_FreeSourceHandle, G_PC_FREESOURCEHANDLE);
         ROUTE_IMPORT(PC_SourceFileAndLine, G_PC_SOURCEFILEANDLINE);
-        ROUTE_IMPORT(BotLibStartFrame, G_BOTLIBSTARTFRAME);
+        ROUTE_IMPORT_1(BotLibStartFrame, G_BOTLIBSTARTFRAME, *(float*)&);
         ROUTE_IMPORT(BotLibLoadMap, G_BOTLIBLOADMAP);
         ROUTE_IMPORT(BotLibUpdateEntity, G_BOTLIBUPDATEENTITY);
         ROUTE_IMPORT(Test, G_TEST);
@@ -1049,7 +1051,7 @@ game_import_t STEF2_GameSupport::qmm_import = {
     GEN_IMPORT(cvar_set, G_CVAR_SET),
     GEN_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER),
     GEN_IMPORT(Cvar_Register, G_CVAR_REGISTER),
-    GEN_IMPORT(Cvar_VariableValue, G_CVAR_VARIABLEVALUE),
+    GEN_IMPORT_1_F(Cvar_VariableValue, G_CVAR_VARIABLEVALUE, const char*),
     GEN_IMPORT(Cvar_Update, G_CVAR_UPDATE),
     GEN_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE),
     GEN_IMPORT(argc, G_ARGC),
@@ -1125,14 +1127,14 @@ game_import_t STEF2_GameSupport::qmm_import = {
     GEN_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME),
     GEN_IMPORT(Anim_Random, G_ANIM_RANDOM),
     GEN_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES),
-    GEN_IMPORT(Anim_Time, G_ANIM_TIME),
+    GEN_IMPORT_2_F(Anim_Time, G_ANIM_TIME, int, int),
     GEN_IMPORT(Anim_Delta, G_ANIM_DELTA),
     GEN_IMPORT(Anim_AbsoluteDelta, G_ANIM_ABSOLUTEDELTA),
     GEN_IMPORT(Anim_Flags, G_ANIM_FLAGS),
     GEN_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS),
     GEN_IMPORT(Frame_Commands, G_FRAME_COMMANDS),
     GEN_IMPORT(Frame_Delta, G_FRAME_DELTA),
-    GEN_IMPORT(Frame_Time, G_FRAME_TIME),
+    GEN_IMPORT_3_F(Frame_Time, G_FRAME_TIME, int, int, int),
     GEN_IMPORT_6(Frame_Bounds, G_FRAME_BOUNDS, void, int, int, int, float, vec3_t, vec3_t),
     GEN_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM),
     GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
@@ -1166,9 +1168,9 @@ game_import_t STEF2_GameSupport::qmm_import = {
     GEN_IMPORT(isClientActive, G_ISCLIENTACTIVE),
     GEN_IMPORT(centerprintf, G_CENTERPRINTF),
     GEN_IMPORT(locationprintf, G_LOCATIONPRINTF),
-    GEN_IMPORT(Sound, G_SOUND),
+    GEN_IMPORT_8(Sound, G_SOUND, void, vec3_t*, int, int, const char*, float, float, float, qboolean),
     GEN_IMPORT(StopSound, G_STOPSOUND),
-    GEN_IMPORT(SoundLength, G_SOUNDLENGTH),
+    GEN_IMPORT_1_F(SoundLength, G_SOUNDLENGTH, const char*),
     GEN_IMPORT(GetNextMorphTarget, G_GETNEXTMORPHTARGET),
     GEN_IMPORT(CalcCRC, G_CALCCRC),
     nullptr,	// DebugLines
@@ -1224,7 +1226,7 @@ game_import_t STEF2_GameSupport::qmm_import = {
     GEN_IMPORT(AAS_EntityInfo, G_AAS_ENTITYINFO),
     GEN_IMPORT(AAS_Initialized, G_AAS_INITIALIZED),
     GEN_IMPORT(AAS_PresenceTypeBoundingBox, G_AAS_PRESENCETYPEBOUNDINGBOX),
-    GEN_IMPORT(AAS_Time, G_AAS_TIME),
+    GEN_IMPORT_0_F(AAS_Time, G_AAS_TIME),
     GEN_IMPORT(AAS_PointAreaNum, G_AAS_POINTAREANUM),
     GEN_IMPORT(AAS_PointReachabilityAreaIndex, G_AAS_POINTREACHABILITYAREAINDEX),
     GEN_IMPORT(AAS_TraceAreas, G_AAS_TRACEAREAS),
@@ -1242,7 +1244,7 @@ game_import_t STEF2_GameSupport::qmm_import = {
     GEN_IMPORT(AAS_PredictRoute, G_AAS_PREDICTROUTE),
     GEN_IMPORT(AAS_AlternativeRouteGoals, G_AAS_ALTERNATIVEROUTEGOALS),
     GEN_IMPORT(AAS_Swimming, G_AAS_SWIMMING),
-    GEN_IMPORT_13(AAS_PredictClientMovement, G_AAS_PREDICTCLIENTMOVEMENT, int, struct aas_clientmove_s*, int, vec3_t, int, int, vec3_t, vec3_t, int, int, float, int, int, int),
+    GEN_IMPORT(AAS_PredictClientMovement, G_AAS_PREDICTCLIENTMOVEMENT),
     GEN_IMPORT(EA_Command, G_EA_COMMAND),
     GEN_IMPORT(EA_Say, G_EA_SAY),
     GEN_IMPORT(EA_SayTeam, G_EA_SAYTEAM),
@@ -1271,7 +1273,7 @@ game_import_t STEF2_GameSupport::qmm_import = {
     GEN_IMPORT_2(BotLoadCharacter, G_BOTLOADCHARACTER, int, char*, float),
     GEN_IMPORT(BotFreeCharacter, G_BOTFREECHARACTER),
     GEN_IMPORT(Characteristic_Float, G_CHARACTERISTIC_FLOAT),
-    GEN_IMPORT(Characteristic_BFloat, G_CHARACTERISTIC_BFLOAT),
+    GEN_IMPORT_4_F(Characteristic_BFloat, G_CHARACTERISTIC_BFLOAT, int, int, float, float),
     GEN_IMPORT(Characteristic_Integer, G_CHARACTERISTIC_INTEGER),
     GEN_IMPORT(Characteristic_BInteger, G_CHARACTERISTIC_BINTEGER),
     GEN_IMPORT(Characteristic_String, G_CHARACTERISTIC_STRING),
@@ -1313,7 +1315,7 @@ game_import_t STEF2_GameSupport::qmm_import = {
     GEN_IMPORT(BotGetLevelItemGoal, G_BOTGETLEVELITEMGOAL),
     GEN_IMPORT(BotGetNextCampSpotGoal, G_BOTGETNEXTCAMPSPOTGOAL),
     GEN_IMPORT(BotGetMapLocationGoal, G_BOTGETMAPLOCATIONGOAL),
-    GEN_IMPORT(BotAvoidGoalTime, G_BOTAVOIDGOALTIME),
+    GEN_IMPORT_2_F(BotAvoidGoalTime, G_BOTAVOIDGOALTIME, int, int),
     GEN_IMPORT_3(BotSetAvoidGoalTime, G_BOTSETAVOIDGOALTIME, void, int, int, float),
     GEN_IMPORT(BotInitLevelItems, G_BOTINITLEVELITEMS),
     GEN_IMPORT(BotUpdateEntityItems, G_BOTUPDATEENTITYITEMS),
