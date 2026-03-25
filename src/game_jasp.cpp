@@ -659,7 +659,7 @@ game_import_t JASP_GameSupport::qmm_import = {
         GEN_IMPORT(SetUserinfo, G_SET_USERINFO),
         GEN_IMPORT(GetServerinfo, G_GET_SERVERINFO),
         GEN_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL),
-        GEN_IMPORT_9(trace, G_TRACE, void, trace_t*, const vec3_t, const vec3_t, const vec3_t, const vec3_t, const int, const int, const EG2_Collision, const int),
+        GEN_IMPORT(trace, G_TRACE),
         GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
         GEN_IMPORT(totalMapContents, G_TOTALMAPCONTENTS),
         GEN_IMPORT(inPVS, G_IN_PVS),

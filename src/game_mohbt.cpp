@@ -277,7 +277,7 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(HudDrawRect, G_HUDDRAWRECT);
         ROUTE_IMPORT(HudDrawVirtualSize, G_HUDDRAWVIRTUALSIZE);
         ROUTE_IMPORT(HudDrawColor, G_HUDDRAWCOLOR);
-        ROUTE_IMPORT(HudDrawAlpha, G_HUDDRAWALPHA);
+        ROUTE_IMPORT_2_V(HudDrawAlpha, G_HUDDRAWALPHA, (int), *(float*)&);
         ROUTE_IMPORT(HudDrawString, G_HUDDRAWSTRING);
         ROUTE_IMPORT(HudDrawFont, G_HUDDRAWFONT);
         ROUTE_IMPORT(SanitizeName, G_SANITIZENAME);
