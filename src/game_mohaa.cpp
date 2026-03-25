@@ -225,7 +225,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME);
         ROUTE_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME);
         ROUTE_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM);
-        ROUTE_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL);
+        ROUTE_IMPORT_5(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL, (orientation_t*), (dtiki_t*), (int), (int), *(float*)&);
         ROUTE_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL);
         ROUTE_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, (dtiki_t*), (int), (int), *(float*)&);
         ROUTE_IMPORT_6_V(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, (dtiki_t*), (int), (const frameInfo_t*), (int*), (vec4_t*), *(float*)&);
@@ -930,7 +930,7 @@ game_import_t MOHAA_GameSupport::qmm_import = {
     GEN_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME),
     GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
     GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
-    GEN_IMPORT(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL), // this has a float arg, but also returns a large struct type. since this game is only available in 32-bit, we don't need to worry about it for now
+    GEN_IMPORT_5(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL, orientation_t*, orientation_t*, dtiki_t*, int, int, float),
     GEN_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL),
     GEN_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, qboolean, dtiki_t*, int, int, float),
     GEN_IMPORT_6(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, void, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, float),

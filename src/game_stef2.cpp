@@ -217,8 +217,8 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(GetExpression, G_GETEXPRESSION);
         ROUTE_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME);
         ROUTE_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM);
-        ROUTE_IMPORT(Tag_Orientation, G_TAG_ORIENTATION);
-        ROUTE_IMPORT(Tag_OrientationEx, G_TAG_ORIENTATIONEX);
+        ROUTE_IMPORT_8(Tag_Orientation, G_TAG_ORIENTATION, (orientation_t*), (int), (int), (int), (int), *(float*)&, (int*), (vec4_t*));
+        ROUTE_IMPORT_18(Tag_OrientationEx, G_TAG_ORIENTATIONEX, (orientation_t*), (int), (int), (int), (int), *(float*)&, (int*), (vec4_t*), (int), (int), *(float*)&, (qboolean), (qboolean), (int), (int), (int), (int), *(float*)&);
         ROUTE_IMPORT(Bone_GetParentNum, G_BONE_GETPARENTNUM);
         ROUTE_IMPORT(Alias_Add, G_ALIAS_ADD);
         ROUTE_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM);
@@ -1145,8 +1145,8 @@ game_import_t STEF2_GameSupport::qmm_import = {
     GEN_IMPORT(GetExpression, G_GETEXPRESSION),
     GEN_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME),
     GEN_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM),
-    GEN_IMPORT(Tag_Orientation, G_TAG_ORIENTATION),
-    GEN_IMPORT(Tag_OrientationEx, G_TAG_ORIENTATIONEX),	// todo: change types to actually match float, but also need to return an intptr_t instead of orientation_t
+    GEN_IMPORT_8(Tag_Orientation, G_TAG_ORIENTATION, orientation_t*, orientation_t*, int, int, int, int, float, int*, vec4_t*),
+    GEN_IMPORT_18(Tag_OrientationEx, G_TAG_ORIENTATIONEX, orientation_t*, orientation_t*, int, int, int, int, float, int*, vec4_t*, int, int, float, qboolean, qboolean, int, int, int, int, float),
     GEN_IMPORT(Bone_GetParentNum, G_BONE_GETPARENTNUM),
     GEN_IMPORT(Alias_Add, G_ALIAS_ADD),
     GEN_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM),

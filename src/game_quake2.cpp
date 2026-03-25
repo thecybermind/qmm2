@@ -574,19 +574,19 @@ void QUAKE2_GameSupport::configstring(int num, char* configstring) {
 
 
 game_import_t QUAKE2_GameSupport::qmm_import = {
-    GEN_IMPORT(bprintf, G_BPRINTF),   // varargs
-    GEN_IMPORT(dprintf, G_DPRINTF),   // varargs
-    GEN_IMPORT(cprintf, G_CPRINTF),   // varargs
-    GEN_IMPORT(centerprintf, G_CENTERPRINTF),   // varargs
+    GEN_IMPORT(bprintf, G_BPRINTF),
+    GEN_IMPORT(dprintf, G_DPRINTF),
+    GEN_IMPORT(cprintf, G_CPRINTF),
+    GEN_IMPORT(centerprintf, G_CENTERPRINTF),
     GEN_IMPORT_6(sound, G_SOUND, void, edict_t*, int, int, float, float, float),
     GEN_IMPORT_7(positioned_sound, G_POSITIONED_SOUND, void, vec3_t, edict_t*, int, int, float, float, float),
     QUAKE2_GameSupport::configstring,
-    GEN_IMPORT(error, G_ERROR),   // varargs
+    GEN_IMPORT(error, G_ERROR),
     GEN_IMPORT_1(modelindex, G_MODELINDEX, int, char*),
     GEN_IMPORT_1(soundindex, G_SOUNDINDEX, int, char*),
     GEN_IMPORT_1(imageindex, G_IMAGEINDEX, int, char*),
     GEN_IMPORT_2(setmodel, G_SETMODEL, void, edict_t*, char*),
-    GEN_IMPORT(trace, G_TRACE),   // returns trace_t
+    GEN_IMPORT(trace, G_TRACE),
     GEN_IMPORT_1(pointcontents, G_POINT_CONTENTS, int, vec3_t),
     GEN_IMPORT_2(inPVS, G_IN_PVS, qboolean, vec3_t, vec3_t),
     GEN_IMPORT_2(inPHS, G_IN_PHS, qboolean, vec3_t, vec3_t),

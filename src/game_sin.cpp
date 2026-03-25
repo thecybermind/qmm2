@@ -123,8 +123,8 @@ intptr_t SIN_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(printf, G_PRINTF);
         ROUTE_IMPORT(cprintf, G_CPRINTF);
         ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
-        ROUTE_IMPORT(sound, G_SOUND);
-        ROUTE_IMPORT(positioned_sound, G_POSITIONED_SOUND);
+        ROUTE_IMPORT_9_V(sound, G_SOUND, (edict_t*), (int), (int), *(float*)&, *(float*)&, *(float*)&, *(float*)&, *(float*)&, (int));
+        ROUTE_IMPORT_10_V(positioned_sound, G_POSITIONED_SOUND, (float*), (edict_t*), (int), (int), *(float*)&, *(float*)&, *(float*)&, *(float*)&, *(float*)&, (int));
         ROUTE_IMPORT(configstring, G_CONFIGSTRING);
         ROUTE_IMPORT(error, G_ERROR);
         ROUTE_IMPORT(modelindex, G_MODELINDEX);
@@ -133,7 +133,7 @@ intptr_t SIN_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(itemindex, G_ITEMINDEX);
         ROUTE_IMPORT(setmodel, G_SETMODEL);
         ROUTE_IMPORT(trace, G_TRACE);
-        ROUTE_IMPORT(fulltrace, G_FULLTRACE);
+        ROUTE_IMPORT_8(fulltrace, G_FULLTRACE, (trace_t*), (float*), (float*), (float*), (float*), *(float*)&, (edict_t*), (int));
         ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
         ROUTE_IMPORT(inPVS, G_IN_PVS);
         ROUTE_IMPORT(inPHS, G_IN_PHS);
@@ -149,11 +149,11 @@ intptr_t SIN_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(WriteByte, G_MSG_WRITEBYTE);
         ROUTE_IMPORT(WriteShort, G_MSG_WRITESHORT);
         ROUTE_IMPORT(WriteLong, G_MSG_WRITELONG);
-        ROUTE_IMPORT(WriteFloat, G_MSG_WRITEFLOAT);
+        ROUTE_IMPORT_1_V(WriteFloat, G_MSG_WRITEFLOAT, *(float*)&);
         ROUTE_IMPORT(WriteString, G_MSG_WRITESTRING);
         ROUTE_IMPORT(WritePosition, G_MSG_WRITEPOSITION);
         ROUTE_IMPORT(WriteDir, G_MSG_WRITEDIR);
-        ROUTE_IMPORT(WriteAngle, G_MSG_WRITEANGLE);
+        ROUTE_IMPORT_1_V(WriteAngle, G_MSG_WRITEANGLE, *(float*)&);
         ROUTE_IMPORT(TagMalloc, G_TAGMALLOC);
         ROUTE_IMPORT(TagFree, G_TAGFREE);
         ROUTE_IMPORT(FreeTags, G_FREETAGS);
@@ -709,7 +709,7 @@ game_import_t SIN_GameSupport::qmm_import = {
     GEN_IMPORT(itemindex, G_ITEMINDEX),
     GEN_IMPORT(setmodel, G_SETMODEL),
     GEN_IMPORT(trace, G_TRACE),
-    GEN_IMPORT(fulltrace, G_FULLTRACE), // this has a float arg, but also returns a large struct type. since this game is only available in 32-bit, we don't need to worry about it for now
+    GEN_IMPORT_8(fulltrace, G_FULLTRACE, trace_t*, trace_t*, vec3_t, vec3_t, vec3_t, vec3_t, float, edict_t*, int),
     GEN_IMPORT(pointcontents, G_POINT_CONTENTS),
     GEN_IMPORT(inPVS, G_IN_PVS),
     GEN_IMPORT(inPHS, G_IN_PHS),
