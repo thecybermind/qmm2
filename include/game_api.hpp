@@ -232,11 +232,11 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 #define ROUTE_IMPORT_10(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8], type9 args[9]); break
 #define ROUTE_IMPORT_18(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16, type17) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8], type9 args[9], type10 args[10], type11 args[11], type12 args[12], type13 args[13], type14 args[14], type15 args[15], type16 args[16], type17 args[17]); break
 // handle specific arg types (for passing float args in the right registers), float return type
-#define ROUTE_IMPORT_0_F(field, cmd) case cmd: fret = orig_import. field(); ret = *(intptr_t*)&fret; break
-#define ROUTE_IMPORT_1_F(field, cmd, type0) case cmd: fret = orig_import. field(type0 args[0]); ret = *(intptr_t*)&fret; break
-#define ROUTE_IMPORT_2_F(field, cmd, type0, type1) case cmd: fret = orig_import. field(type0 args[0], type1 args[1]); ret = *(intptr_t*)&fret; break
-#define ROUTE_IMPORT_3_F(field, cmd, type0, type1, type2) case cmd: fret = orig_import. field(type0 args[0], type1 args[1], type2 args[2]); ret = *(intptr_t*)&fret; break
-#define ROUTE_IMPORT_4_F(field, cmd, type0, type1, type2, type3) case cmd: fret = orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3]); ret = *(intptr_t*)&fret; break
+#define ROUTE_IMPORT_0_F(field, cmd) case cmd: fret = orig_import. field(); ret = *(int*)&fret; break
+#define ROUTE_IMPORT_1_F(field, cmd, type0) case cmd: fret = orig_import. field(type0 args[0]); ret = *(int*)&fret; break
+#define ROUTE_IMPORT_2_F(field, cmd, type0, type1) case cmd: fret = orig_import. field(type0 args[0], type1 args[1]); ret = *(int*)&fret; break
+#define ROUTE_IMPORT_3_F(field, cmd, type0, type1, type2) case cmd: fret = orig_import. field(type0 args[0], type1 args[1], type2 args[2]); ret = *(int*)&fret; break
+#define ROUTE_IMPORT_4_F(field, cmd, type0, type1, type2, type3) case cmd: fret = orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3]); ret = *(int*)&fret; break
 
 // handle calls from QMM and plugins into the mod
 #define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((mod_vmMain)(orig_export-> field))(QMM_PUT_VMMAIN_ARGS()); break
