@@ -19,13 +19,15 @@ Created By:
 
 // magic number is stored in file as 44 14 72 12
 #define QVM_MAGIC                       0x12721444
-// ioQuake3/ioRTCW added a new version of QVM with jumptables
+// ioQuake3/ioRTCW added a new version of QVM with jumptables for JIT. no difference if interpreted
 // magic number is stored in file as 45 14 72 12
 #define QVM_MAGIC_VER2                  0x12721445
 // amount of operands the opstack can hold (same amount used by Q3 engine)
 #define QVM_OPSTACK_SIZE                1024
 // max size of program stack (this is set by q3asm for ALL QVM-compatible games)
 #define QVM_PROGRAMSTACK_SIZE           0x10000     // 64KiB
+// max size of temporary hunk segment (ioRTCW allocates in megabytes, with a default of 2)
+#define QVM_HUNK_SIZE                   0x10000     // 64KiB
 
 // round number up to next power of 2: https://stackoverflow.com/a/1322548/809900
 #define QVM_NEXT_POW_2(var) var--; var |= var >> 1; var |= var >> 2; var |= var >> 4; var |= var >> 8; var |= var >> 16; var++
@@ -178,14 +180,20 @@ typedef struct {
 
     // segment sizes
     size_t instructioncount;        // number of instructions, from qvm header
-    size_t codeseglen;              // size of code segment
-    size_t dataseglen;              // size of data segment
+    size_t codeseglen;              // size of code segment in memory
+    size_t dataseglen;              // size of entire data segment in memory
+
     size_t stacksize;               // size of program stack in bss segment
     int* stacklow;                  // pointer to lowest address of program stack
     int* stackhigh;                 // pointer to highest address of program stack
 
+    size_t hunksize;                // size of the hunk
+    int hunklow;                    // offset of lowest address of hunk
+    int hunkhigh;                   // offset of highest address of hunk
+
     // registers
     int* stackptr;                  // pointer to current location in program stack
+    int hunkptr;                    // offset of current location in hunk
 
     // extra
     size_t filesize;                // .qvm file size
@@ -200,7 +208,7 @@ extern "C" {
 /**
 * Create and initialize a new VM from a QVM file
 * 
-* @param [qvm*] qvm - Pointer to qvm_t object to store VM information
+* @param [qvm*] qvm - Pointer to qvm object to store VM information
 * @param [const uint8_t*] filemem - Buffer with QVM file contents
 * @param [size_t] filesize - Size of the filemem buffer
 * @param [qvm_syscall] qvmsyscall - Function to be called for engine traps
@@ -213,7 +221,7 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
 /**
 * Begin execution in a VM
 *
-* @param [qvm*] qvm - Pointer to qvm_t object to execute
+* @param [qvm*] vm - Pointer to qvm object to execute
 * @param [int] argc - Number of arguments to pass to VM entry point
 * @param [int*] argv - Array of arguments to pass to VM entry point
 * @returns [int] - Return value from VM entry point
@@ -223,7 +231,7 @@ int qvm_exec(qvm* vm, int argc, int* argv);
 /**
 * Begin execution in a VM at a given instruction
 *
-* @param [qvm_t*] qvm - Pointer to qvm_t object to execute
+* @param [qvm*] vm - Pointer to qvm object to execute
 * @param [size_t] instruction - Instruction to begin execution at
 * @param [int] argc - Number of arguments to pass to VM entry point
 * @param [int*] argv - Array of arguments to pass to VM entry point
@@ -234,9 +242,29 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv);
 /**
 * Unload a VM
 *
-* @param [qvm_t*] qvm - Pointer to qvm_t object to unload
+* @param [qvm*] qvm - Pointer to qvm object to unload
 */
 void qvm_unload(qvm* vm);
+
+/**
+* Allocate memory in the hunk
+* 
+* @param [qvm*] vm - Pointer to qvm object to allocate memory in
+* @param [size_t] size - Size of block to allocate
+* @param [void*] init - Initial data to copy into allocation
+* @returns [int] - VM-based pointer to allocated block
+*/
+int qvm_hunk_alloc(qvm* vm, size_t size, const void* init);
+
+/**
+* Allocate memory in the hunk
+* 
+* @param [qvm*] vm - Pointer to qvm object to allocate memory in
+* @param [int] ptr - VM-based pointer to allocated block
+* @param [size_t] size - Size of block that was allocated
+* @param [void*] out - Data to copy out of the allocation
+*/
+void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out);
 
 #ifdef __cplusplus
 }

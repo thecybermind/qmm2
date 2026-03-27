@@ -92,7 +92,9 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     vm->codeseglen = codeseglen;
     
     // data segment is the total size of the individual data segments
-    size_t dataseglen = header.datalen + header.litlen + header.bsslen;
+    // bsslen includes QVM_PROGRAMSTACK_SIZE 
+    // also add in the size of the hunk
+    size_t dataseglen = header.datalen + header.litlen + header.bsslen + QVM_HUNK_SIZE;
     if (!dataseglen) {
         log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: data segment length is 0\n");
         goto fail;
@@ -103,9 +105,10 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     QVM_NEXT_POW_2(dataseglen);
     vm->dataseglen = dataseglen;
 
-    // stack is allocated by q3asm as the final symbol in BSS segment
-    // we will also include all extra space from rounding up the data segment size
+    // the stack will also use all extra space from rounding up the data segment size
     vm->stacksize = QVM_PROGRAMSTACK_SIZE + (dataseglen - orig_dataseglen);
+
+    vm->hunksize = QVM_HUNK_SIZE;
 
     // allocate vm memory
     vm->memorysize = vm->codeseglen + vm->dataseglen;
@@ -119,13 +122,20 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     memset(vm->memory, 0, vm->memorysize);
 
     // set segment pointers
-    // | CODE | DATA | <- program stack starts here and grows down
+    // the stack is allocated by q3asm as the final symbol in BSS segment
+    // | CODE | DATA | LIT | BSS | extrastack from dataseg rounding | hunk |
+    //                 program stack starts here and grows down ----^
     // program stack is for arguments and local variables
     vm->codesegment = (qvm_op*)vm->memory;
     vm->datasegment = vm->memory + codeseglen;
-    vm->stackptr = (int*)(vm->datasegment + dataseglen);
-    
-    // set bounds of stack
+
+    // hunk is at the very end of the data segment
+    vm->hunkptr = (int)dataseglen;
+    vm->hunkhigh = vm->hunkptr;
+    vm->hunklow = vm->hunkhigh - (int)vm->hunksize;
+
+    // set bounds of stack (last chunk of bss and up to hunk)
+    vm->stackptr = (int*)(vm->datasegment + dataseglen - vm->hunksize);
     vm->stackhigh = vm->stackptr;
     vm->stacklow = (int*)((uint8_t*)vm->stackhigh - vm->stacksize);
 
@@ -790,6 +800,49 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
 fail:
     qvm_unload(vm);
     return 0;
+}
+
+
+int qvm_hunk_alloc(qvm* vm, size_t size, const void* init) {
+    if (!vm->memory)
+        return 0;
+
+    // not enough space left for size
+    if (vm->hunkptr - (int)size < vm->hunklow)
+        return 0;
+
+    vm->hunkptr -= (int)size;
+
+    if (init)
+        memcpy(vm->datasegment + vm->hunkptr, init, size);
+    else
+        memset(vm->datasegment + vm->hunkptr, 0, size);
+
+    return vm->hunkptr;
+}
+
+
+void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
+    if (!vm->memory)
+        return;
+
+    // "null" pointer
+    if (!ptr)
+        return;
+
+    // if this ptr was not the most recently-allocated block, fail
+    if (ptr != vm->hunkptr)
+        return;
+
+    // size too big
+    if (ptr + (int)size > vm->hunkhigh)
+        return;
+
+    // get memory back out
+    if (out)
+        memcpy(out, vm->datasegment + ptr, size);
+
+    vm->hunkptr += (int)size;
 }
 
 

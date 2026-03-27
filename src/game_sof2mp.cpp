@@ -148,35 +148,100 @@ intptr_t SOF2MP_GameSupport::vmMain(intptr_t cmd, ...) {
     // and G_VM_LOCALSTRINGALLOC syscalls
     if (cmd == GAME_GAMETYPE_COMMAND && g_mod.vmbase) {
         switch (args[0]) {
-        // only 1st arg is a pointer
+        // arg0 is a string
         case GTCMD_REGISTERSOUND:       // int  ( const char* soundFile );
         case GTCMD_REGISTEREFFECT:      // int	( const char* name );
         case GTCMD_REGISTERICON:        // int  ( const char* icon );
         case GTCMD_USETARGETS:          // void ( const char* targetname );
-            args[1] = (args[1] ? args[1] - g_mod.vmbase : 0);
-            break;
-        // 3rd arg is a pointer (all of these also have 2nd arg pointers, handled below with fallthrough)
-        case GTCMD_SPAWNITEM:           // void ( int itemid, vec3_t origin, vec3_t angles );
-        case GTCMD_PLAYEFFECT:          // void ( int effect, vec3_t origin, vec3_t angles );
-        case GTCMD_REGISTERITEM:        // int  ( int itemid, const char* name, gtItemDef_t* def );
-        case GTCMD_REGISTERTRIGGER:     // bool ( int triggerid, const char* message, gtTriggerDef_t* def );
-            args[3] = (args[3] ? args[3] - g_mod.vmbase : 0);
-            [[fallthrough]];
-        // 2nd arg is a pointer
-        case GTCMD_TEXTMESSAGE:         // void ( int clientid, const char* message );
-        case GTCMD_RADIOMESSAGE:        // void ( int clientid, const char* message );
-        case GTCMD_STARTSOUND:          // void ( int soundid, vec3_t origin );
-        case GTCMD_GETCLIENTNAME:       // void ( int clientid, char* buffer, int buffersize );
-        case GTCMD_GETTRIGGERTARGET:    // void ( int triggerid, char* bufferr, int buffersize );
-        case GTCMD_GETCLIENTORIGIN:     // void ( int clientid, vec3_t origin );
-        case GTCMD_GETCLIENTLIST:       // int  ( team_t team, int* clients, int clientcount );
-            args[2] = (args[2] ? args[2] - g_mod.vmbase : 0);
+        {
+            int arg0len = strlen((char*)args[0]) + 1;
+            int arg0 = qvm_hunk_alloc(&g_mod.vm, arg0len, (void*)args[0]);
+            ret = orig_vmMain(cmd, arg0);
+            qvm_hunk_free(&g_mod.vm, arg0, arg0len, (void*)args[0]);
             break;
         }
-    }
+        // arg1 and arg2 are vec3_ts
+        case GTCMD_SPAWNITEM:           // void ( int itemid, vec3_t origin, vec3_t angles );
+        case GTCMD_PLAYEFFECT:          // void ( int effect, vec3_t origin, vec3_t angles );
+        {
+            int arg1 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[1]);
+            int arg2 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[2]);
+            ret = orig_vmMain(cmd, args[0], arg1, arg2);
+            qvm_hunk_free(&g_mod.vm, arg2, sizeof(vec3_t), (void*)args[2]);
+            qvm_hunk_free(&g_mod.vm, arg1, sizeof(vec3_t), (void*)args[1]);
+            break;
+        }
+        // arg1 is a string and arg2 is an object (gtItemDef_t and gtTriggerDef_t are the same size)
+        case GTCMD_REGISTERITEM:        // int  ( int itemid, const char* name, gtItemDef_t* def );
+        case GTCMD_REGISTERTRIGGER:     // bool ( int triggerid, const char* message, gtTriggerDef_t* def );
+        {
+            int arg1len = strlen((char*)args[1]) + 1;
+            int arg1 = qvm_hunk_alloc(&g_mod.vm, arg1len, (void*)args[1]);
+            int arg2 = qvm_hunk_alloc(&g_mod.vm, sizeof(gtItemDef_t), (void*)args[2]);
+            ret = orig_vmMain(cmd, args[0], arg1, arg2);
+            qvm_hunk_free(&g_mod.vm, arg2, sizeof(gtItemDef_t), (void*)args[2]);
+            qvm_hunk_free(&g_mod.vm, arg1, arg1len, (void*)args[1]);
+            break;
+        }
+        // arg1 is a string
+        case GTCMD_TEXTMESSAGE:         // void ( int clientid, const char* message );
+        case GTCMD_RADIOMESSAGE:        // void ( int clientid, const char* message );
+        {
+            int arg1len = strlen((char*)args[1]) + 1;
+            int arg1 = qvm_hunk_alloc(&g_mod.vm, arg1len, (void*)args[1]);
+            ret = orig_vmMain(cmd, args[0], arg1);
+            qvm_hunk_free(&g_mod.vm, arg1, arg1len, (void*)args[1]);
+            break;
+        }
+        // arg1 is a vec3_t
+        case GTCMD_STARTSOUND:          // void ( int soundid, vec3_t origin );
+        case GTCMD_GETCLIENTORIGIN:     // void ( int clientid, vec3_t origin );
+        {
+            int arg1 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[1]);
+            ret = orig_vmMain(cmd, args[0], arg1);
+            qvm_hunk_free(&g_mod.vm, arg1, sizeof(vec3_t), (void*)args[1]);
+            break;
+        }
+        // arg1 is a char* buffer to write in, sized arg2
+        case GTCMD_GETCLIENTNAME:       // void ( int clientid, char* buffer, int buffersize );
+        case GTCMD_GETTRIGGERTARGET:    // void ( int triggerid, char* bufferr, int buffersize );
+        {
+            int arg1 = qvm_hunk_alloc(&g_mod.vm, args[2], (void*)args[1]);
+            ret = orig_vmMain(cmd, args[0], arg1, args[2]);
+            qvm_hunk_free(&g_mod.vm, arg1, args[2], (void*)args[1]);
+            break;
+        }
+        // arg1 is an int* buffer to write in, sized arg2
+        case GTCMD_GETCLIENTLIST:       // int  ( team_t team, int* clients, int clientcount );
+        {
+            int arg1 = qvm_hunk_alloc(&g_mod.vm, args[2] * sizeof(int), (void*)args[1]);
+            ret = orig_vmMain(cmd, args[0], arg1, args[2]);
+            qvm_hunk_free(&g_mod.vm, arg1, args[2] * sizeof(int), (void*)args[1]);
+            break;
+        }
+        default:
+            // all other cases, just call right into vmMain
+            ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+        }
 
-    // all normal mod functions go to vmMain
-    ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+        /* todo wrap the returns of all these in qvm_hunk_alloc
+            case G_VM_LOCALSTRINGALLOC:			// const char* trap_VM_LocalStringAlloc( const char *source )
+
+    case G_BOT_GET_MEMORY:				// void* trap_BotGetMemoryGame( int size )
+    case G_VM_LOCALALLOC:				// void* trap_VM_LocalAlloc( int size )
+    case G_VM_LOCALALLOCUNALIGNED:		// void* trap_VM_LocalAllocUnaligned( int size )
+    case G_VM_LOCALTEMPALLOC:			// void* trap_VM_LocalTempAlloc( int size )
+
+    case G_G2_GETGLANAME:			// char* trap_G2API_GetGLAName(void *ghoul2, int modelIndex)
+
+
+        
+        */
+    }
+    else {
+        // all other cases, just call right into vmMain
+        ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    }
 
     // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
     // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
@@ -574,7 +639,7 @@ int SOF2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
     case G_GP_DELETE:					// (TGenericParser2 *GP2)
         ret = qmm_syscall(cmd, VMPTR(0));
         break;
-    case G_VM_LOCALSTRINGALLOC:			// const char* LocalStringAlloc( const char *source )
+    case G_VM_LOCALSTRINGALLOC:			// const char* trap_VM_LocalStringAlloc( const char *source )
         ret = qmm_syscall(cmd, VMPTR(0));
         ret = VMRET(ret);
         break;
@@ -757,16 +822,20 @@ int SOF2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
     case G_MEMCPY:				// (void* dest, const void* src, size_t count)
     case G_STRNCPY:				// (char* strDest, const char* strSource, size_t count)
         qmm_syscall(cmd, VMPTR(0), VMPTR(1), VMARG(2));
+        // memcpy and strncpy should return the first arg. the engine does, but it will be the real dest pointer.
+        // instead of adjusting a return value, just manually return args[0]
         ret = args[0];
         break;
     case G_FS_READ:				// (void* buffer, int len, fileHandle_t f);
     case G_FS_WRITE:			// (const void* buffer, int len, fileHandle_t f);
-    case G_GP_PARSE:					// (char **dataPtr, qboolean cleanFirst, qboolean writeable)
-    case G_GP_PARSE_FILE:				// (char *fileName, qboolean cleanFirst, qboolean writeable)
+    case G_GP_PARSE:			// (char **dataPtr, qboolean cleanFirst, qboolean writeable)
+    case G_GP_PARSE_FILE:		// (char *fileName, qboolean cleanFirst, qboolean writeable)
         ret = qmm_syscall(cmd, VMPTR(0), VMARG(1), VMARG(2));
         break;
     case G_MEMSET:				// (void* dest, int c, size_t count)
         qmm_syscall(cmd, VMPTR(0), VMARG(1), VMARG(2));
+        // memset should return the first arg. the engine does, but it will be the real dest pointer.
+        // instead of adjusting a return value, just manually return args[0]
         ret = args[0];
         break;
     case G_ENTITY_CONTACT:			// (const vec3_t mins, const vec3_t maxs, const gentity_t* ent);

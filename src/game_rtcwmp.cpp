@@ -20,6 +20,7 @@ Created By:
 #include "game_rtcwmp.h"
 #include "gameinfo.hpp"
 #include "main.hpp"
+#include "mod.hpp"      // g_mod
 #include "util.hpp"
 
 struct RTCWMP_GameSupport : public GameSupport {
@@ -134,24 +135,40 @@ intptr_t RTCWMP_GameSupport::vmMain(intptr_t cmd, ...) {
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
-    /* todo: these functions have inbound pointer args
-       the float*s are vec3_ts that exist in the engine 
-    case AICAST_VISIBLEFROMPOS:
-        return AICast_VisibleFromPos( (float *)arg0, arg1, (float *)arg2, arg3, arg4 );
-    case AICAST_CHECKATTACKATPOS:
-        return AICast_CheckAttackAtPos( arg0, arg1, (float *)arg2, arg3, arg4 );
-        // done.
+    // some of the args passed to these mod functions are pointers existing in the engine,
+    // which was fine before ioRTCW added qvm support. we can do what ioRTCW did and alloc
+    // some space inside the hunk in the qvm data segment and copy the data there and back
+    if (cmd == AICAST_VISIBLEFROMPOS && g_mod.vmbase) {
+        // return AICast_VisibleFromPos((float*)arg0, arg1, (float*)arg2, arg3, arg4);
+        int arg0 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[0]);
+        int arg2 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[2]);
+        ret = orig_vmMain(cmd, arg0, args[1], arg2, args[3], args[4]);
+        qvm_hunk_free(&g_mod.vm, arg2, sizeof(vec3_t), (void*)args[2]);
+        qvm_hunk_free(&g_mod.vm, arg0, sizeof(vec3_t), (void*)args[0]);
+    }
+    else if (cmd == AICAST_CHECKATTACKATPOS && g_mod.vmbase) {
+        // return AICast_CheckAttackAtPos( arg0, arg1, (float *)arg2, arg3, arg4 );
+        int arg2 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[2]);
+        ret = orig_vmMain(cmd, args[0], args[1], arg2, args[3], args[4]);
+        qvm_hunk_free(&g_mod.vm, arg2, sizeof(vec3_t), (void*)args[2]);
+    }
+    else if (cmd == GAME_RETRIEVE_MOVESPEEDS_FROM_CLIENT && g_mod.vmbase && args[1]) {
+        // G_RetrieveMoveSpeedsFromClient( arg0, (char *)arg1 );
+        int arg1len = strlen((char*)args[1]) + 1;
+        int arg1 = qvm_hunk_alloc(&g_mod.vm, arg1len, (void*)args[1]);
+        ret = orig_vmMain(cmd, args[0], arg1);
+        qvm_hunk_free(&g_mod.vm, arg1, arg1len, (void*)args[1]);
+    }
+    else {
+        // all other cases, just call right into vmMain
+        ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    }
 
-       the char* is a string that exists in the engine (originally came from client but that doesn't matter)
-    case GAME_RETRIEVE_MOVESPEEDS_FROM_CLIENT:
-        G_RetrieveMoveSpeedsFromClient( arg0, (char *)arg1 );
-        return 0;
-
-       maybe work on a qvm_hunk_alloc to allocate externally-sourced data within the data segment
-    */
-
-    // all normal mod functions go to vmMain
-    ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
+    // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
+    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vmbase) {
+        ret += g_mod.vmbase;
+    }
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("RTCWMP_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
