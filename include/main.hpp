@@ -13,7 +13,7 @@ Created By:
 #define QMM2_MAIN_H
 
 #include <cstdint>  // intptr_t
-#include "qmmapi.h"
+#include "qmmapi.h" // C_DLLEXPORT
 
 C_DLLEXPORT void dllEntry(void* syscall);
 C_DLLEXPORT void* GetGameAPI(void* import, void* extra);

@@ -513,8 +513,8 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
         return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
     }
 
-    // client-side-only load. just get file info and slap "qmm_" in front of the qmm filename
-    main_detect_env();
+    // client-side-only load. just get QMM file info and slap "qmm_" in front of the qmm filename
+    gameinfo.DetectEnv();
 
     std::string modpath = fmt::format("{}/qmm_{}", gameinfo.qmm_dir, gameinfo.qmm_file);
     void* dll = dll_load(modpath.c_str());
