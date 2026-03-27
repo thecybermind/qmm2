@@ -134,6 +134,22 @@ intptr_t RTCWMP_GameSupport::vmMain(intptr_t cmd, ...) {
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
+    /* todo: these functions have inbound pointer args
+       the float*s are vec3_ts that exist in the engine 
+    case AICAST_VISIBLEFROMPOS:
+        return AICast_VisibleFromPos( (float *)arg0, arg1, (float *)arg2, arg3, arg4 );
+    case AICAST_CHECKATTACKATPOS:
+        return AICast_CheckAttackAtPos( arg0, arg1, (float *)arg2, arg3, arg4 );
+        // done.
+
+       the char* is a string that exists in the engine (originally came from client but that doesn't matter)
+    case GAME_RETRIEVE_MOVESPEEDS_FROM_CLIENT:
+        G_RetrieveMoveSpeedsFromClient( arg0, (char *)arg1 );
+        return 0;
+
+       maybe work on a qvm_hunk_alloc to allocate externally-sourced data within the data segment
+    */
+
     // all normal mod functions go to vmMain
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 

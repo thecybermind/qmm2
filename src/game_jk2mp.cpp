@@ -136,6 +136,21 @@ intptr_t JK2MP_GameSupport::vmMain(intptr_t cmd, ...) {
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
+    /* todo: this function has an inbound pointer arg
+     case GAME_ROFF_NOTETRACK_CALLBACK:
+		G_ROFF_NotetrackCallback( &g_entities[arg0], (const char *)arg1 );
+
+       arg1 is a string that exists in the engine. looking through the source, i don't think this can actually ever get called
+    
+       maybe work on a qvm_hunk_alloc to allocate externally-sourced data within the data segment
+    */
+
+    /* todo:
+    GAME_ROFF_NOTETRACK_CALLBACK (void(*)(int entnum, char *notetrack)) has an inbound pointer arg
+    // figure out some way to handle this, even though I don't this can even be called
+    // the char* is a string that exists in the engine(originally came from client but that doesn't matter)
+    */
+
     // all normal mod functions go to vmMain
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
