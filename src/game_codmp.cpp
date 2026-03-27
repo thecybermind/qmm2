@@ -21,7 +21,7 @@ Created By:
 #include <string>
 // QMM-specific CODMP header
 #include "game_codmp.h"
-#include "main.hpp"
+#include "gameinfo.hpp"
 #include "util.hpp"
 
 struct CODMP_GameSupport : public GameSupport {
@@ -63,10 +63,10 @@ bool CODMP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(g_gameinfo.exe_file, "codmp") && !str_stristr(g_gameinfo.exe_file, "cod_lnxded"))
+    if (!str_stristr(gameinfo.exe_file, "codmp") && !str_stristr(gameinfo.exe_file, "cod_lnxded"))
         return false;
 
     return true;

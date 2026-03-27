@@ -22,8 +22,9 @@ Created By:
 #include <string>
 // QMM-specific STVOYHM header
 #include "game_stvoyhm.h"
-#include "main.hpp"
+#include "gameinfo.hpp"
 #include "mod.hpp"      // g_mod
+#include "main.hpp"
 #include "util.hpp"
 
 struct STVOYHM_GameSupport : public GameSupport {
@@ -66,10 +67,10 @@ bool STVOYHM_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(g_gameinfo.exe_file, "stvoyhm"))
+    if (!str_stristr(gameinfo.exe_file, "stvoyhm"))
         return false;
 
     return true;

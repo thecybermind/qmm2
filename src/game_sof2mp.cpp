@@ -23,6 +23,7 @@ Created By:
 #include <string>
 // QMM-specific SOF2MP header
 #include "game_sof2mp.h"
+#include "gameinfo.hpp"
 #include "main.hpp"
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
@@ -67,10 +68,10 @@ bool SOF2MP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(g_gameinfo.exe_file, "sof2mp") && !str_stristr(g_gameinfo.exe_file, "sof2ded"))
+    if (!str_stristr(gameinfo.exe_file, "sof2mp") && !str_stristr(gameinfo.exe_file, "sof2ded"))
         return false;
 
     return true;
@@ -203,7 +204,6 @@ void* SOF2MP_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-// get mod's vmMain function pointer from mod.cpp::mod_load
 bool SOF2MP_GameSupport::ModLoad(void* entry, APIType modapi) {
     if (modapi != QMM_API_DLLENTRY && modapi != QMM_API_QVM)
         return false;

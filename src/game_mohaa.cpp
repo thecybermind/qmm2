@@ -28,6 +28,7 @@ Created By:
 #include <string>
 // QMM-specific MOHAA header
 #include "game_mohaa.h"
+#include "gameinfo.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -82,10 +83,10 @@ bool MOHAA_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(g_gameinfo.exe_file, "mohaa"))
+    if (!str_stristr(gameinfo.exe_file, "mohaa"))
         return false;
 
     return true;
@@ -340,7 +341,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         fileHandle_t* f = (fileHandle_t*)args[1];
         fsMode_t mode = (fsMode_t)args[2];
         if (mode == FS_READ) {
-            std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+            std::string path = fmt::format("{}/{}", gameinfo.qmm_dir, qpath);
             FILE* fp = fopen(path.c_str(), "rb");
             if (!fp || fseek(fp, 0, SEEK_END) != 0) {
                 ret = -1;
@@ -995,7 +996,7 @@ void MOHAA_GameSupport::SpawnEntities(char* entstring, int levelTime) {
         entity_tokens = util_parse_entstring(entstring);
         token_counter = 0;
     }
-    cgame.is_from_QMM = true;
+    cgameinfo.is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
 }
 

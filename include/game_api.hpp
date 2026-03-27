@@ -286,16 +286,16 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 #define  GEN_IMPORT_4_F(field, cmd, type0, type1, type2, type3) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1, arg2, arg3); return *(float*)&ret; }
 
 // handle calls from engine into QMM
-#define  GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { cgame.is_from_QMM = true; return ::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
+#define  GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { cgameinfo.is_from_QMM = true; return ::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
 // if arg types matter
-#define  GEN_EXPORT_0(field, cmd, typeret) +[]() -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd); }
-#define  GEN_EXPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0); }
-#define  GEN_EXPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1); }
-#define  GEN_EXPORT_3(field, cmd, typeret, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2); }
-#define  GEN_EXPORT_4(field, cmd, typeret, type0, type1, type2, type3) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3); }
-#define  GEN_EXPORT_5(field, cmd, typeret, type0, type1, type2, type3, type4) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4); }
-#define  GEN_EXPORT_6(field, cmd, typeret, type0, type1, type2, type3, type4, type5) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5); }
-#define  GEN_EXPORT_7(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6) -> typeret { cgame.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }
+#define  GEN_EXPORT_0(field, cmd, typeret) +[]() -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd); }
+#define  GEN_EXPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0); }
+#define  GEN_EXPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1); }
+#define  GEN_EXPORT_3(field, cmd, typeret, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2); }
+#define  GEN_EXPORT_4(field, cmd, typeret, type0, type1, type2, type3) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3); }
+#define  GEN_EXPORT_5(field, cmd, typeret, type0, type1, type2, type3, type4) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4); }
+#define  GEN_EXPORT_6(field, cmd, typeret, type0, type1, type2, type3, type4, type5) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5); }
+#define  GEN_EXPORT_7(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }
 
 // ---------------------
 // ----- QVM stuff -----

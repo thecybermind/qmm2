@@ -26,6 +26,7 @@ Created By:
 #include "format.hpp"
 // QMM-specific SIN header
 #include "game_sin.h"
+#include "gameinfo.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -90,10 +91,10 @@ bool SIN_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(g_gameinfo.exe_file, "sin"))
+    if (!str_stristr(gameinfo.exe_file, "sin"))
         return false;
 
     return true;
@@ -262,7 +263,7 @@ intptr_t SIN_GameSupport::syscall(intptr_t cmd, ...) {
             str_mode = "wb";
         else if (mode == FS_APPEND)
             str_mode = "ab";
-        std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+        std::string path = fmt::format("{}/{}", gameinfo.qmm_dir, qpath);
         if (mode != FS_READ)
             path_mkdir(path_dirname(path));
         FILE* fp = fopen(path.c_str(), str_mode);
@@ -800,7 +801,7 @@ qboolean SIN_GameSupport::ClientConnect(edict_t* ent, const char* userinfo) {
         else
             userinfos[clientnum] = userinfo;
     }
-    cgame.is_from_QMM = true;
+    cgameinfo.is_from_QMM = true;
     return ::vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
 }
 
@@ -816,7 +817,7 @@ void SIN_GameSupport::ClientUserinfoChanged(edict_t* ent, const char* userinfo) 
         else
             userinfos[clientnum] = userinfo;
     }
-    cgame.is_from_QMM = true;
+    cgameinfo.is_from_QMM = true;
     (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
@@ -829,7 +830,7 @@ void SIN_GameSupport::SpawnEntities(const char* mapname, const char* entstring, 
         entity_tokens = util_parse_entstring(entstring);
         token_counter = 0;
     }
-    cgame.is_from_QMM = true;
+    cgameinfo.is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 

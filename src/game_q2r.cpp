@@ -27,6 +27,7 @@ Created By:
 #include "format.hpp"
 // QMM-specific Q2R header
 #include "game_q2r.h"
+#include "gameinfo.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -93,10 +94,10 @@ bool Q2R_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(g_gameinfo.exe_file, "quake2ex"))
+    if (!str_stristr(gameinfo.exe_file, "quake2ex"))
         return false;
 
     return true;
@@ -246,7 +247,7 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
             str_mode = "wb";
         else if (mode == FS_APPEND)
             str_mode = "ab";
-        std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+        std::string path = fmt::format("{}/{}", gameinfo.qmm_dir, qpath);
         if (mode != FS_READ)
             path_mkdir(path_dirname(path));
         FILE* fp = fopen(path.c_str(), str_mode);
@@ -742,7 +743,7 @@ bool Q2R_GameSupport::ClientConnect(edict_t* ent, char* userinfo, const char* so
         else
             userinfos[clientnum] = userinfo;
     }
-    cgame.is_from_QMM = true;
+    cgameinfo.is_from_QMM = true;
     return (bool)::vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
 }
 
@@ -758,7 +759,7 @@ void Q2R_GameSupport::ClientUserinfoChanged(edict_t* ent, const char* userinfo) 
         else
             userinfos[clientnum] = userinfo;
     }
-    cgame.is_from_QMM = true;
+    cgameinfo.is_from_QMM = true;
     (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
@@ -770,7 +771,7 @@ void Q2R_GameSupport::SpawnEntities(const char* mapname, const char* entstring, 
         entity_tokens = util_parse_entstring(entstring);
         token_counter = 0;
     }
-    cgame.is_from_QMM = true;
+    cgameinfo.is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 

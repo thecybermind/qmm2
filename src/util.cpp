@@ -18,7 +18,7 @@ Created By:
 #include <vector>
 #include <string>
 #include <filesystem>
-#include "main.hpp"
+#include "gameinfo.hpp"
 #include "util.hpp"
 
 #if defined(QMM_OS_WINDOWS)
@@ -30,7 +30,7 @@ Created By:
 
 #define PATH_MAX				MAX_PATH
 #define mkdir(path, x)			_mkdir(path)
-#define s_get_ticks				GetTickCount64
+#define util_get_ticks			GetTickCount64
 
 
 // store module handle for util_get_qmm_path and util_get_qmm_handle
@@ -51,7 +51,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD, LPVOID) {
 #include <sys/time.h>
 
 
-static uint64_t s_get_ticks() {
+static uint64_t util_get_ticks() {
     struct timeval tp;
     struct timezone tzp;
 
@@ -78,8 +78,8 @@ bool path_is_allowed(std::string path) {
         return true;
 
     path = path_normalize(path);
-    auto rel_qmm = std::filesystem::relative(path, g_gameinfo.qmm_dir);
-    auto rel_exe = std::filesystem::relative(path, g_gameinfo.exe_dir);
+    auto rel_qmm = std::filesystem::relative(path, gameinfo.qmm_dir);
+    auto rel_exe = std::filesystem::relative(path, gameinfo.exe_dir);
     // if there is no relative path, the return is ""
     // if the relative path requires going back up, it starts with ".."
     // otherwise it should be the relative path from qmm_dir or exe_dir 
@@ -187,7 +187,7 @@ const char* util_get_proc_path() {
         return "";
 #elif defined(QMM_OS_LINUX)
     // readlink does NOT null terminate at all
-    // we pass sizeof-1 to guarantee the \0 from memset is still present at the end of the string
+    // we pass sizeof-1 to guarantee the \0 from init is still present at the end of the string
     // as a null terminator. also we write a \0 at the specific end of the written buffer.
     ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
     if (len != -1)
@@ -220,7 +220,7 @@ const char* util_get_qmm_path() {
 
 void* util_get_qmm_handle() {
 #if defined(QMM_OS_WINDOWS)
-    return s_dll;
+    return (void*)s_dll;
 #elif defined(QMM_OS_LINUX)
     static void* module;
     if (module)
@@ -243,9 +243,9 @@ intptr_t util_get_milliseconds() {
     static uint64_t startTime = 0;
     if (!initialized) {
         initialized = true;
-        startTime = s_get_ticks();
+        startTime = util_get_ticks();
     }
-    return (intptr_t)(s_get_ticks() - startTime);
+    return (intptr_t)(util_get_ticks() - startTime);
 }
 
 

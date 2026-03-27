@@ -20,6 +20,7 @@ Created By:
 #include "format.hpp"
 // QMM-specific SOF2SP header
 #include "game_sof2sp.h"
+#include "gameinfo.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -72,10 +73,10 @@ bool SOF2SP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(g_gameinfo.exe_file, "sof2"))
+    if (!str_stristr(gameinfo.exe_file, "sof2"))
         return false;
 
     return true;

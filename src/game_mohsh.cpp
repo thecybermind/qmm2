@@ -27,6 +27,7 @@ Created By:
 #include <string>
 // QMM-specific MOHSH header
 #include "game_mohsh.h"
+#include "gameinfo.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -81,10 +82,10 @@ bool MOHSH_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(g_gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(g_gameinfo.exe_file, "break"))
+    if (!str_stristr(gameinfo.exe_file, "break"))
         return false;
 
     return true;
@@ -354,7 +355,7 @@ intptr_t MOHSH_GameSupport::syscall(intptr_t cmd, ...) {
             str_mode = "wb";
         else if (mode == FS_APPEND)
             str_mode = "ab";
-        std::string path = fmt::format("{}/{}", g_gameinfo.qmm_dir, qpath);
+        std::string path = fmt::format("{}/{}", gameinfo.qmm_dir, qpath);
         if (mode != FS_READ)
             path_mkdir(path_dirname(path));
         FILE* fp = fopen(path.c_str(), str_mode);
@@ -1040,7 +1041,7 @@ void MOHSH_GameSupport::SpawnEntities(char* entstring, int levelTime) {
         entity_tokens = util_parse_entstring(entstring);
         token_counter = 0;
     }
-    cgame.is_from_QMM = true;
+    cgameinfo.is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
 }
 

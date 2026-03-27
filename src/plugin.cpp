@@ -19,7 +19,8 @@ Created By:
 #include "log.hpp"
 #include "format.hpp"
 #include "config.hpp"
-#include "main.hpp"
+#include "gameinfo.hpp"
+#include "main.hpp"     // ArgV
 #include "mod.hpp"
 #include "plugin.hpp"
 #include "qvm.h"
@@ -117,14 +118,14 @@ const char* plugin_result_to_str(plugin_res res) {
 // wrapper free function for GameSupport::syscall to pass to plugins
 static intptr_t s_plugin_game_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
-    return g_gameinfo.game->syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+    return gameinfo.game->syscall(cmd, QMM_PUT_SYSCALL_ARGS());
 }
 
 
 // wrapper free function for GameSupport::vmMain to pass to plugins
 static intptr_t s_plugin_game_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
-    return g_gameinfo.game->vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    return gameinfo.game->vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 }
 
 
@@ -143,7 +144,7 @@ int plugin_load(Plugin& p, std::string file) {
     }
 
     // if this DLL is the same as QMM, cancel
-    if ((void*)p.dll == g_gameinfo.qmm_module_ptr) {
+    if ((void*)p.dll == gameinfo.qmm_module_ptr) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL is actually QMM?\n", file);
         // treat this failure specially. this is a valid DLL, but it is QMM
         ret = -1;
@@ -300,7 +301,7 @@ static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]]) {
 
 
 static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
-    const char* ret = g_gameinfo.game->EngMsgName(msg);
+    const char* ret = gameinfo.game->EngMsgName(msg);
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnEngMsgName(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, msg, ret);
@@ -311,7 +312,7 @@ static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], i
 
 
 static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
-    const char* ret = g_gameinfo.game->ModMsgName(msg);
+    const char* ret = gameinfo.game->ModMsgName(msg);
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnModMsgName(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, msg, ret);
@@ -356,7 +357,7 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
 
 
 static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]]) {
-    const char* ret = g_gameinfo.game->GameCode();
+    const char* ret = gameinfo.game->GameCode();
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetGameEngine(\"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, ret);
@@ -368,7 +369,7 @@ static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]]
 
 static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn, char* buf, intptr_t buflen) {
     if (buf && buflen)
-        qmm_argv(argn, buf, buflen);
+        ArgV(argn, buf, buflen);
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnArgv(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, argn, buf);
@@ -615,7 +616,7 @@ static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr
     // cycle rotating buffer and store string
     index = (index + 1) & ROTATING_BUFFER_MASK;
 
-    qmm_argv(argn, str[index], sizeof(str[index]));
+    ArgV(argn, str[index], sizeof(str[index]));
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnArgv2(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, argn, str[index]);
@@ -650,7 +651,7 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
 
 
 static const char* s_plugin_helper_ModDir(plugin_id plid [[maybe_unused]]) {
-    const char* ret = g_gameinfo.mod_dir.c_str();
+    const char* ret = gameinfo.mod_dir.c_str();
 
 #ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnModDir(\"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, ret);

@@ -19,6 +19,7 @@ Created By:
 #include <string>
 // QMM-specific RTCWSP header
 #include "game_rtcwsp.h"
+#include "gameinfo.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -75,14 +76,14 @@ bool RTCWSP_GameSupport::AutoDetect(APIType engineapi) {
         return false;
 
     // check for either dll name
-    if (!str_striequal(g_gameinfo.qmm_file, iortcw_dllname) && !str_striequal(g_gameinfo.qmm_file, official_dllname))
+    if (!str_striequal(gameinfo.qmm_file, iortcw_dllname) && !str_striequal(gameinfo.qmm_file, official_dllname))
         return false;
 
-    if (!str_stristr(g_gameinfo.exe_file, "wolfsp"))
+    if (!str_stristr(gameinfo.exe_file, "wolfsp"))
         return false;
 
     // loaded in iortcw?
-    if (str_striequal(g_gameinfo.qmm_file, iortcw_dllname))
+    if (str_striequal(gameinfo.qmm_file, iortcw_dllname))
         is_iortcw = true;
 
     return true;
