@@ -19,7 +19,7 @@ C_DLLEXPORT void dllEntry(void* syscall);
 C_DLLEXPORT void* GetGameAPI(void* import, void* extra);
 C_DLLEXPORT void* GetModuleAPI(void* import, void* extra);
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
-C_DLLEXPORT void* GetCGameAPI(void* import)
+C_DLLEXPORT void* GetCGameAPI(void* import);
 #endif // QMM_OS_WINDOWS && QMM_ARCH_64
 
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
