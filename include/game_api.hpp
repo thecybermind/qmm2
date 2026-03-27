@@ -19,7 +19,9 @@ Created By:
 #include "qmmapi.h"
 
 
-// mod suffixes and extensions
+// ------------------------------------
+// ----- Mod suffix and extension -----
+// ------------------------------------
 
 // SUF_DLL: standard suffixes for mod DLLs per OS/arch ("x86", "i386", "x86_64", "x86_64")
 // X64_SUF_DLL: ioRTCW and ET:Legacy use "x64" suffix for 64-bit windows instead of "x86_64"
@@ -62,6 +64,10 @@ Created By:
 #define EXT_QVM ".qvm"
 #define MOD_DLL SUF_DLL EXT_DLL
 #define X64_DLL X64_SUF_DLL EXT_DLL
+
+// ------------------------------
+// ----- Game support stuff -----
+// ------------------------------
 
 // engine/mod API type
 enum APIType {
@@ -181,22 +187,28 @@ extern intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_S
 // max amount of vmMain args for games that support QVM
 constexpr int QVM_MAX_VMMAIN_ARGS = 6;
 
+// max amount of vmMain args in any game
 constexpr int QMM_MAX_VMMAIN_ARGS = 9;
+// pull vmMain args from varargs
 #define QMM_GET_VMMAIN_ARGS()   intptr_t args[QMM_MAX_VMMAIN_ARGS] = {}; \
                                 va_list arglist; \
                                 va_start(arglist, cmd); \
                                 for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; ++i) \
                                     args[i] = va_arg(arglist, intptr_t); \
                                 va_end(arglist)
+// generate list of all vmMain args
 #define QMM_PUT_VMMAIN_ARGS()	args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]
 
+// max amount of syscall args in any game
 constexpr int QMM_MAX_SYSCALL_ARGS = 18;
+// pull syscall args from varargs
 #define QMM_GET_SYSCALL_ARGS()  intptr_t args[QMM_MAX_SYSCALL_ARGS] = {}; \
                                 va_list arglist; \
                                 va_start(arglist, cmd); \
                                 for (int i = 0; i < QMM_MAX_SYSCALL_ARGS; ++i) \
                                     args[i] = va_arg(arglist, intptr_t); \
                                 va_end(arglist)
+// generate list of all syscall args
 #define QMM_PUT_SYSCALL_ARGS()	args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17]
 
 // ----------------------------
@@ -255,11 +267,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 
 // handle calls from mod into QMM
 #define GEN_IMPORT(field, cmd)	(decltype(qmm_import. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8, intptr_t arg9, intptr_t arg10, intptr_t arg11, intptr_t arg12, intptr_t arg13, intptr_t arg14, intptr_t arg15, intptr_t arg16, intptr_t arg17) { return ::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17); }
-// if the syscall lambda types matter (float args in 64-bit games like Q2R), use these
-// macros to easily generate a lambda with full return and argument type information:
-// e.g. GEN_IMPORT_2(G_DEBUGGRAPH, void, float, int)
-// e.g. GEN_IMPORT_2(G_ANIM_TIME, float, dtiki_t*, int)
-#define  GEN_IMPORT_0(field, cmd, typeret) +[]() -> typeret { return (typeret)::qmm_syscall(cmd); }
+// handle specific arg types (for passing float args in the right registers)
 #define  GEN_IMPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { return (typeret)::qmm_syscall(cmd, arg0); }
 #define  GEN_IMPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1); }
 #define  GEN_IMPORT_3(field, cmd, typeret, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2); }
@@ -278,7 +286,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 #define GEN_IMPORT_16(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15); }
 #define GEN_IMPORT_17(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15, type16 arg16) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
 #define GEN_IMPORT_18(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16, type17) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15, type16 arg16, type17 arg17) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17); }
-// handle float return type
+// handle specific arg types (for passing float args in the right registers), float return type
 #define  GEN_IMPORT_0_F(field, cmd) +[]() -> float { intptr_t ret = ::qmm_syscall(cmd); return *(float*)&ret; }
 #define  GEN_IMPORT_1_F(field, cmd, type0) +[](type0 arg0) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0); return *(float*)&ret; }
 #define  GEN_IMPORT_2_F(field, cmd, type0, type1) +[](type0 arg0, type1 arg1) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1); return *(float*)&ret; }
@@ -287,7 +295,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 
 // handle calls from engine into QMM
 #define  GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { cgameinfo.is_from_QMM = true; return ::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
-// if arg types matter
+// handle specific arg types (for passing float args in the right registers)
 #define  GEN_EXPORT_0(field, cmd, typeret) +[]() -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd); }
 #define  GEN_EXPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0); }
 #define  GEN_EXPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1); }
@@ -296,6 +304,8 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 #define  GEN_EXPORT_5(field, cmd, typeret, type0, type1, type2, type3, type4) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4); }
 #define  GEN_EXPORT_6(field, cmd, typeret, type0, type1, type2, type3, type4, type5) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5); }
 #define  GEN_EXPORT_7(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }
+#define  GEN_EXPORT_8(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7); }
+#define  GEN_EXPORT_9(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
 
 // ---------------------
 // ----- QVM stuff -----
