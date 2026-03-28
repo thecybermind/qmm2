@@ -47,6 +47,9 @@ struct GameInfo {
     bool LoadPlugin(std::string plugin_path);
     // route syscall or vmMain call to plugins and mod
     intptr_t Route(bool is_syscall, intptr_t cmd, intptr_t* args);
+
+    // cache some dynamic message values that get evaluated a lot
+    static intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_SHUTDOWN;
 };
 extern GameInfo gameinfo;
 
@@ -54,8 +57,8 @@ extern GameInfo gameinfo;
 #define QMM_MOD_MSG					gameinfo.game->QMMModMsg
 
 #define ENG_SYSCALL					gameinfo.game->syscall
-#define CONSOLE_PRINT(str)			ENG_SYSCALL(msg_G_PRINT, str)
-#define CONSOLE_PRINTF(str, ...)	ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
+#define CONSOLE_PRINT(str)			ENG_SYSCALL(GameInfo::msg_G_PRINT, str)
+#define CONSOLE_PRINTF(str, ...)	ENG_SYSCALL(GameInfo::msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
 
 // this is used if we couldn't determine a game engine and we have to fail.
 // G_ERROR appears to be 1 in all supported dllEntry games. they are different in some GetGameAPI games,

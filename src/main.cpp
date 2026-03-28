@@ -219,14 +219,15 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) called\n", gameinfo.game->ModMsgName(cmd), cmd);
 
-    if (cmd == msg_GAME_INIT) {
+    if (cmd == GameInfo::msg_GAME_INIT) {
         // initialize our polyfill milliseconds tracker so that now is 0
         (void)util_get_milliseconds();
 
         // add engine G_PRINT logger (info level and above)
         log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
-            ENG_SYSCALL(msg_G_PRINT, log_format(metadata, message, false).c_str());
-            }, AixLog::Severity::info);
+                ENG_SYSCALL(GameInfo::msg_G_PRINT, log_format(metadata, message, false).c_str());
+            },
+            QMM2_LOG_CONSOLE_SEVERITY);
 
         LOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") initializing\n";
 
@@ -297,7 +298,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         LOG(QMM_LOG_NOTICE, "QMM") << "Startup successful!\n";
     }
 
-    else if (cmd == msg_GAME_CONSOLE_COMMAND) {
+    else if (cmd == GameInfo::msg_GAME_CONSOLE_COMMAND) {
         char arg_cmd[10];
         int argn = 0;
         // get command
@@ -321,7 +322,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     intptr_t ret = gameinfo.Route(false, cmd, args); // true = is_syscall
 
     // handle shut down (this is after the plugins and mod get called with GAME_SHUTDOWN)
-    if (cmd == msg_GAME_SHUTDOWN) {
+    if (cmd == GameInfo::msg_GAME_SHUTDOWN) {
         LOG(QMM_LOG_NOTICE, "QMM") << "Shutdown initiated!\n";
 
         // cgame passthrough hack:
@@ -441,7 +442,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
             CONSOLE_PRINT("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
             return;
         }
-        AixLog::Severity severity = log_severity_from_name(arg2);
+        int severity = log_severity_from_name(arg2);
         log_set_severity(severity);
         CONSOLE_PRINTF("(QMM) Log level set to {}\n", log_name_from_severity(severity));
     }

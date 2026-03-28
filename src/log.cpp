@@ -27,18 +27,18 @@ void log_init(std::string file, AixLog::Severity severity, bool append) {
 }
 
 
-AixLog::Severity log_severity_from_name(std::string severity) {
-    return AixLog::to_severity(severity, QMM2_LOG_DEFAULT_SEVERITY);
+int log_severity_from_name(std::string severity) {
+    return (int)AixLog::to_severity(severity, QMM2_LOG_DEFAULT_SEVERITY);
 }
 
 
-std::string log_name_from_severity(AixLog::Severity severity) {
-    return AixLog::to_string(severity);
+std::string log_name_from_severity(int severity) {
+    return AixLog::to_string((AixLog::Severity)severity);
 }
 
 
-void log_set_severity(AixLog::Severity severity) {
-    (*s_log_sink_file).filter.add_filter(severity);
+void log_set_severity(int severity) {
+    (*s_log_sink_file).filter.add_filter((AixLog::Severity)severity);
 }
 
 

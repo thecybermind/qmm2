@@ -177,9 +177,6 @@ extern std::vector<GameSupport*> api_supportedgames;
 // generate a case/string line for use in the *MsgNames functions
 #define GEN_CASE(x)		case x: return #x
 
-// cache some dynamic message values that get evaluated a lot
-extern intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_SHUTDOWN;
-
 // ----------------------------
 // ----- API vararg stuff -----
 // ----------------------------

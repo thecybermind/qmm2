@@ -13,9 +13,6 @@ Created By:
 #include <vector>
 #include "game_api.hpp"
 
-// cache some dynamic message values that get evaluated a lot
-intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_SHUTDOWN;
-
 // externs for each game's support objects
 GEN_GAME_EXTS(COD11MP);
 GEN_GAME_EXTS(CODMP);

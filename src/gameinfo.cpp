@@ -70,6 +70,8 @@ CGameInfo cgameinfo = {
 };
 
 
+// cache some dynamic message values that get evaluated a lot
+intptr_t GameInfo::msg_G_PRINT, GameInfo::msg_GAME_INIT, GameInfo::msg_GAME_CONSOLE_COMMAND, GameInfo::msg_GAME_SHUTDOWN;
 
 
 void* GameInfo::HandleEntry(void* import, void* extra, APIType engine) {
@@ -118,10 +120,10 @@ void* GameInfo::HandleEntry(void* import, void* extra, APIType engine) {
     }
 
     // now that the game is detected, cache some dynamic message values that get evaluated a lot
-    msg_G_PRINT = this->game->QMMEngMsg(QMM_G_PRINT);
-    msg_GAME_INIT = this->game->QMMModMsg(QMM_GAME_INIT);
-    msg_GAME_CONSOLE_COMMAND = this->game->QMMModMsg(QMM_GAME_CONSOLE_COMMAND);
-    msg_GAME_SHUTDOWN = this->game->QMMModMsg(QMM_GAME_SHUTDOWN);
+    GameInfo::msg_G_PRINT = this->game->QMMEngMsg(QMM_G_PRINT);
+    GameInfo::msg_GAME_INIT = this->game->QMMModMsg(QMM_GAME_INIT);
+    GameInfo::msg_GAME_CONSOLE_COMMAND = this->game->QMMModMsg(QMM_GAME_CONSOLE_COMMAND);
+    GameInfo::msg_GAME_SHUTDOWN = this->game->QMMModMsg(QMM_GAME_SHUTDOWN);
 
     // call the game-specific entry handler (e.g. Q3A_GameSupport::Entry) which will set up the internals to interact
     // the engine and the mod
