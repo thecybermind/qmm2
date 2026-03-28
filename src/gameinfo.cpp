@@ -182,7 +182,7 @@ void GameInfo::LoadConfig(std::string config_filename) {
         g_cfg = cfg_load(try_path);
         if (!g_cfg.empty()) {
             this->cfg_path = try_path;
-            LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("GameInfo::LoadConfig(): Config file found! Path: \"{}\"\n", this->cfg_path);
+            LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Config file found! Path: \"{}\"\n", this->cfg_path);
             return;
         }
     }

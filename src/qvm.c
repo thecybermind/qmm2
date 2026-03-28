@@ -346,14 +346,14 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
         // using > to allow starting at 1 past the end of block
         if (programstack <= stacklow || programstack > stackhigh) {
             ptrdiff_t stackusage = (uint8_t*)stackhigh - (uint8_t*)programstack;
-            log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: program stack overflow! Program stack size is currently %td, max is %zu.\n", instruction, opptr - codesegment, stackusage, vm->stacksize);
+            log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: program stack overflow! Program stack size is currently %td, max is %zu.\n", instruction, opptr - codesegment, stackusage, vm->stacksize);
             goto fail;
         }
         // verify opstack pointer is in op stack
         // using > to allow starting at 1 past the end of block
         if (opstack <= opstacklow || opstack > opstackhigh) {
             ptrdiff_t stackusage = (uint8_t*)opstackhigh - (uint8_t*)opstack;
-            log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: opstack overflow! Opstack size is currently %td, max is %d.\n", instruction, opptr - codesegment, stackusage, QVM_OPSTACK_SIZE);
+            log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: opstack overflow! Opstack size is currently %td, max is %d.\n", instruction, opptr - codesegment, stackusage, QVM_OPSTACK_SIZE);
             goto fail;
         }
 
@@ -804,12 +804,16 @@ fail:
 
 
 int qvm_hunk_alloc(qvm* vm, size_t size, const void* init) {
-    if (!vm->memory)
+    if (!vm->memory) {
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_alloc(): VM not loaded\n");
         return 0;
+    }
 
-    // not enough space left for size
-    if (vm->hunkptr - (int)size < vm->hunklow)
+    // size 0 or not enough space left for size
+    if (!size || (vm->hunkptr - (int)size < vm->hunklow)){
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_alloc(): Hunk allocation failed for size %zu\n", size);
         return 0;
+    }
 
     vm->hunkptr -= (int)size;
 
@@ -823,20 +827,28 @@ int qvm_hunk_alloc(qvm* vm, size_t size, const void* init) {
 
 
 void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
-    if (!vm->memory)
+    if (!vm->memory) {
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_free(): VM not loaded\n");
         return;
+    }
 
     // "null" pointer
-    if (!ptr)
+    if (!ptr) {
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free null pointer\n");
         return;
+    }
 
     // if this ptr was not the most recently-allocated block, fail
-    if (ptr != vm->hunkptr)
+    if (ptr != vm->hunkptr) {
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free out of order: got %d, expected %d\n", ptr, vm->hunkptr);
         return;
+    }
 
-    // size too big
-    if (ptr + (int)size > vm->hunkhigh)
+    // size too big or 0
+    if (!size || (ptr + (int)size > vm->hunkhigh)) {
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free invalid size %zu\n", size);
         return;
+    }
 
     // get memory back out
     if (out)
