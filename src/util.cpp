@@ -29,7 +29,6 @@ Created By:
 #include <shellapi.h>			// CommandLineToArgvW
 
 #define PATH_MAX				MAX_PATH
-#define mkdir(path, x)			_mkdir(path)
 #define util_get_ticks			GetTickCount64
 
 
@@ -127,14 +126,7 @@ void path_mkdir(std::string path) {
     if (path.empty())
         return;
 
-    std::filesystem::path fspath = path;
-
-    std::filesystem::path build;
-    // loop through each segment of path and call mkdir on it
-    for (auto& seg : fspath.lexically_normal().parent_path()) {
-        build /= seg;
-        (void)mkdir(build.u8string().c_str(), S_IRWXU);
-    }
+    std::filesystem::create_directories(path);
 }
 
 

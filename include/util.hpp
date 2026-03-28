@@ -26,9 +26,7 @@ std::string path_basename(std::string path);	// return filename component of pat
 std::string path_baseext(std::string path);		// return filename extension
 bool path_is_absolute(std::string path);		// is path absolute? (!path_is_relative)
 bool path_is_relative(std::string path);		// is path relative? (!path_is_absolute)
-
-// recursively make a directorty
-void path_mkdir(std::string path);
+void path_mkdir(std::string path);              // create directory if it does not exist
 
 // look for the given argument in the command line, and return the next argv
 // e.g. if the command line was: "quake3 --qmm_cfg test.json +set dedicated 1 +map q3dm1"
