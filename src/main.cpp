@@ -217,9 +217,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         return 0;
     }
 
-#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) called\n", gameinfo.game->ModMsgName(cmd), cmd);
-#endif
 
     if (cmd == msg_GAME_INIT) {
         // initialize our polyfill milliseconds tracker so that now is 0
@@ -348,9 +346,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         LOG(QMM_LOG_NOTICE, "QMM") << "Finished shutting down\n";
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("vmMain({} {}) returning {}\n", gameinfo.game->ModMsgName(cmd), cmd, ret);
-#endif
+    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("vmMain({} {}) returning {}\n", gameinfo.game->ModMsgName(cmd), cmd, ret);
 
     return ret;
 }
@@ -364,16 +360,12 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 intptr_t qmm_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({} {}) called\n", gameinfo.game->EngMsgName(cmd), cmd);
-#endif
 
     // route call to plugins and mod
     intptr_t ret = gameinfo.Route(true, cmd, args); // true = is_syscall
 
-#ifdef _DEBUG
     LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("syscall({} {}) returning {}\n", gameinfo.game->EngMsgName(cmd), cmd, ret);
-#endif
 
     return ret;
 }
@@ -408,6 +400,8 @@ static void HandleQMMCommand(intptr_t arg_start) {
             CONSOLE_PRINTF("(QMM) QVM codeseg size   : {}\n", g_mod.vm.codeseglen);
             CONSOLE_PRINTF("(QMM) QVM dataseg size   : {}\n", g_mod.vm.dataseglen);
             CONSOLE_PRINTF("(QMM) QVM stack size     : {}\n", g_mod.vm.stacksize);
+            CONSOLE_PRINTF("(QMM) QVM hunk size      : {}\n", g_mod.vm.hunksize);
+            CONSOLE_PRINTF("(QMM) QVM hunk usage     : {}\n", g_mod.vm.hunkhigh - g_mod.vm.hunkptr);
             CONSOLE_PRINTF("(QMM) QVM data validation: {}\n", g_mod.vm.verify_data ? "on" : "off");
         }
     }

@@ -25,7 +25,7 @@ enum { QMM_LOG_TRACE, QMM_LOG_DEBUG, QMM_LOG_INFO, QMM_LOG_NOTICE, QMM_LOG_WARNI
 #endif
 
 
-int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsyscall, int verify_data, qvm_alloc* allocator) {
+int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsyscall, int verify_data, size_t hunk_size, qvm_alloc* allocator) {
     if (!vm || vm->memory || !filemem || !filesize || !qvmsyscall)
         return 0;
 
@@ -39,6 +39,7 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     vm->verify_data = verify_data;
     // if null, use default allocator (uses malloc/free)
     vm->allocator = allocator ? allocator : &qvm_allocator_default;
+    vm->hunksize = hunk_size ? hunk_size : QVM_HUNK_SIZE;
 
     qvm_header header;
 
@@ -94,7 +95,7 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     // data segment is the total size of the individual data segments
     // bsslen includes QVM_PROGRAMSTACK_SIZE 
     // also add in the size of the hunk
-    size_t dataseglen = header.datalen + header.litlen + header.bsslen + QVM_HUNK_SIZE;
+    size_t dataseglen = header.datalen + header.litlen + header.bsslen + vm->hunksize;
     if (!dataseglen) {
         log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: data segment length is 0\n");
         goto fail;
@@ -107,8 +108,6 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
 
     // the stack will also use all extra space from rounding up the data segment size
     vm->stacksize = QVM_PROGRAMSTACK_SIZE + (dataseglen - orig_dataseglen);
-
-    vm->hunksize = QVM_HUNK_SIZE;
 
     // allocate vm memory
     vm->memorysize = vm->codeseglen + vm->dataseglen;

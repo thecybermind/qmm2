@@ -26,8 +26,8 @@ Created By:
 #define QVM_OPSTACK_SIZE                1024
 // max size of program stack (this is set by q3asm for ALL QVM-compatible games)
 #define QVM_PROGRAMSTACK_SIZE           0x10000     // 64KiB
-// max size of temporary hunk segment (ioRTCW allocates in megabytes, with a default of 2)
-#define QVM_HUNK_SIZE                   0x10000     // 64KiB
+// max size of temporary hunk segment (ioRTCW defaults to 2 MiB)
+#define QVM_HUNK_SIZE                   0x100000    // 1MiB
 
 // round number up to next power of 2: https://stackoverflow.com/a/1322548/809900
 #define QVM_NEXT_POW_2(var) var--; var |= var >> 1; var |= var >> 2; var |= var >> 4; var |= var >> 8; var |= var >> 16; var++
@@ -216,7 +216,7 @@ extern "C" {
 * @param [qvm_alloc*] allocator - Pointer to a qvm_alloc object which contains custom alloc/free function pointers (pass NULL for default)
 * @returns [int] - (Boolean) 1 if success, 0 if failure
 */
-int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsyscall, int verify_data, qvm_alloc* allocator);
+int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsyscall, int verify_data, size_t hunk_size, qvm_alloc* allocator);
 
 /**
 * Begin execution in a VM

@@ -353,7 +353,8 @@ intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) {
             plugin_ret = p.QMM_vmMain(cmd, args);
 
 #ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_{}({} {}) returning {} with result {}\n", p.plugininfo->name, func_name, msg_name, cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
+        if (g_plugin_globals.plugin_result != QMM_IGNORED)
+            LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_{}({} {}) returning {} with result {}\n", p.plugininfo->name, func_name, msg_name, cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
 #endif
 
         // set new max result
@@ -415,7 +416,8 @@ intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) {
             plugin_ret = p.QMM_vmMain_Post(cmd, args);
 
 #ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_{}_Post({} {}) returning {} with result {}\n", p.plugininfo->name, func_name, msg_name, cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
+        if (g_plugin_globals.plugin_result != QMM_IGNORED)
+            LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_{}_Post({} {}) returning {} with result {}\n", p.plugininfo->name, func_name, msg_name, cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
 #endif
 
         // ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR

@@ -134,6 +134,7 @@ bool Mod::LoadQVM() {
     intptr_t filelen;
     std::vector<uint8_t> filemem;
     bool verify_data;
+    size_t hunk_size = 0;
     bool loaded;
 
     // load file using engine functions to read into pk3s if necessary
@@ -151,9 +152,11 @@ bool Mod::LoadQVM() {
 
     // get data verification setting from config
     verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
+    // get hunk size setting from config
+    hunk_size = (size_t)cfg_get_int(g_cfg, "qvmhunksize", 0);
 
     // attempt to load mod
-    loaded = qvm_load(&this->vm, filemem.data(), filemem.size(), QVM_syscall, verify_data, nullptr);
+    loaded = qvm_load(&this->vm, filemem.data(), filemem.size(), QVM_syscall, verify_data, hunk_size, nullptr);
     if (!loaded) {
         LOG(QMM_LOG_ERROR, "QMM") << fmt::format("Mod::LoadQVM(\"{}\"): QVM load failed\n", this->path);
         goto fail;
@@ -164,11 +167,13 @@ bool Mod::LoadQVM() {
     // pass the qvm vmMain function pointer to the game-specific mod load handler
     if (!gameinfo.game->ModLoad((void*)QVM_vmMain, QMM_API_QVM))
     {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("Mod::LoadQVM(\"{}\"): Mod load failed?\n", this->path);
+        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("Mod::LoadQVM(\"{}\"): Mod load failed?\n", path_basename(this->path));
         goto fail;
     }
 
     this->api = QMM_API_QVM;
+
+    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Mod::LoadQVM(\"{}\"): QVM loaded successfully with verify_data {} and hunk size {}\n", path_basename(this->path), this->vm.verify_data ? "on" : "off", this->vm.hunksize);
 
     return true;
 
