@@ -16,6 +16,11 @@ Created By:
 
 static AixLog::log_sink_ptr s_log_sink_file = nullptr;
 
+static AixLog::Severity s_log_level = QMM2_LOG_DEFAULT_SEVERITY;
+
+bool log_level_match(int severity) {
+    return severity >= (int)QMM2_LOG_CONSOLE_SEVERITY || severity >= (int)s_log_level;
+}
 
 void log_init(std::string file, AixLog::Severity severity, bool append) {
     if (append)
@@ -38,6 +43,7 @@ std::string log_name_from_severity(int severity) {
 
 
 void log_set_severity(int severity) {
+    s_log_level = (AixLog::Severity)severity;
     (*s_log_sink_file).filter.add_filter((AixLog::Severity)severity);
 }
 
@@ -63,6 +69,10 @@ std::string log_format(const AixLog::Metadata& metadata, const std::string& mess
 
 // so qvm.c can log stuff
 extern "C" void log_c(int severity, const char* tag, const char* fmt, ...) {
+    // exit early if neither log level (game console and log file) is met
+    if (!log_level_match(severity))
+        return;
+
     va_list	argptr;
     static char buf[1024];
 
@@ -70,5 +80,5 @@ extern "C" void log_c(int severity, const char* tag, const char* fmt, ...) {
     vsnprintf(buf, sizeof(buf), fmt, argptr);
     va_end(argptr);
 
-    LOG(severity, tag) << buf;
+    QMMLOG(severity, tag) << buf;
 }

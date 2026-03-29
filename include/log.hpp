@@ -17,6 +17,8 @@ Created By:
 #include <aixlog/aixlog.hpp>
 #include <string>
 
+#define QMMLOG(severity, tag) if (log_level_match(severity)) LOG(severity, tag)
+
 #ifdef _DEBUG
 constexpr AixLog::Severity QMM2_LOG_DEFAULT_SEVERITY = AixLog::Severity::debug;
 #else
@@ -25,6 +27,7 @@ constexpr AixLog::Severity QMM2_LOG_DEFAULT_SEVERITY = AixLog::Severity::info;
 
 constexpr AixLog::Severity QMM2_LOG_CONSOLE_SEVERITY = AixLog::Severity::info;
 
+bool log_level_match(int severity);
 
 void log_init(std::string file, AixLog::Severity severity = QMM2_LOG_DEFAULT_SEVERITY, bool append = false);
 

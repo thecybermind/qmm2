@@ -17,7 +17,6 @@ Created By:
 #include "qmmapi.h"
 #include "game_api.hpp"
 #include "log.hpp"
-#include "format.hpp"
 #include "config.hpp"
 #include "gameinfo.hpp"
 #include "main.hpp"     // ArgV
@@ -139,13 +138,13 @@ int plugin_load(Plugin& p, std::string file) {
 
     // load DLL
     if (!(p.dll = dll_load(file.c_str()))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL load failed for plugin: {}\n", file, dll_error());
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << file << "\"): DLL load failed for plugin: " << dll_error() << "\n";
         goto fail;
     }
 
     // if this DLL is the same as QMM, cancel
     if ((void*)p.dll == gameinfo.qmm_module_ptr) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL is actually QMM?\n", file);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): DLL is actually QMM?\n";
         // treat this failure specially. this is a valid DLL, but it is QMM
         ret = -1;
         goto fail;
@@ -154,7 +153,7 @@ int plugin_load(Plugin& p, std::string file) {
     // if this DLL is the same as another loaded plugin, cancel
     for (Plugin& t : g_plugins) {
         if (p.dll == t.dll) {
-            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): DLL is already loaded as plugin\n", file);
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): DLL is already loaded as plugin\n";
             // treat this failure specially. this is a valid plugin, but it is already loaded
             ret = -1;
             goto fail;
@@ -162,14 +161,14 @@ int plugin_load(Plugin& p, std::string file) {
     }
 
     if (!(p.QMM_Query = (Plugin::plugin_query)dll_symbol(p.dll, "QMM_Query"))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Query\" function\n", file);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_Query\" function\n";
         goto fail;
     }
 
     // call initial plugin entry point, get interface version
     p.QMM_Query(&p.plugininfo);
     if (!p.plugininfo) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Query() returned NULL Plugininfo\n", file);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): QMM_Query() returned NULL Plugininfo\n";
         goto fail;
     }
 
@@ -182,41 +181,41 @@ int plugin_load(Plugin& p, std::string file) {
 
     // if the plugin's major interface version is lower, don't load and suggest to upgrade plugin
     if (p.plugininfo->pifv_major < QMM_PIFV_MAJOR) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is less than QMM's ({}:{}), suggest upgrading plugin.\n", file, p.plugininfo->pifv_major, p.plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Plugin's interface version (" << p.plugininfo->pifv_major << ":" << p.plugininfo->pifv_minor << ") is less than QMM's (" STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "), suggest upgrading plugin.\n";
         goto fail;
     }
     // if the plugin's interface version is higher, don't load and suggest to upgrade QMM
     else if (p.plugininfo->pifv_major > QMM_PIFV_MAJOR || p.plugininfo->pifv_minor > QMM_PIFV_MINOR) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Plugin's interface version ({}:{}) is greater than QMM's ({}:{}), suggest upgrading QMM.\n", file, p.plugininfo->pifv_major, p.plugininfo->pifv_minor, QMM_PIFV_MAJOR, QMM_PIFV_MINOR);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Plugin's interface version (" << p.plugininfo->pifv_major << ":" << p.plugininfo->pifv_minor << ") is greater than QMM's (" STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "), suggest upgrading QMM.\n";
         goto fail;
     }
     // at this point, major versions match and the plugin's minor version is less than or equal to QMM's
 
     // find remaining QMM api functions or fail
     if (!(p.QMM_Attach = (Plugin::plugin_attach)dll_symbol(p.dll, "QMM_Attach"))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Attach\" function\n", file);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_Attach\" function\n";
         goto fail;
     }
     if (!(p.QMM_Detach = (Plugin::plugin_detach)dll_symbol(p.dll, "QMM_Detach"))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_Detach\" function\n", file);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_Detach\" function\n";
         goto fail;
     }
 
     // find hook callback functions
     if (!(p.QMM_vmMain = (Plugin::plugin_callback)dll_symbol(p.dll, "QMM_vmMain"))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain\" function\n", file);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_vmMain\" function\n";
         goto fail;
     }
     if (!(p.QMM_syscall = (Plugin::plugin_callback)dll_symbol(p.dll, "QMM_syscall"))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_syscall\" function\n", file);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_syscall\" function\n";
         goto fail;
     }
     if (!(p.QMM_vmMain_Post = (Plugin::plugin_callback)dll_symbol(p.dll, "QMM_vmMain_Post"))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_vmMain_Post\" function\n", file);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_vmMain_Post\" function\n";
         goto fail;
     }
     if (!(p.QMM_syscall_Post = (Plugin::plugin_callback)dll_symbol(p.dll, "QMM_syscall_Post"))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): Unable to find \"QMM_syscall_Post\" function\n", file);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_syscall_Post\" function\n";
         goto fail;
     }
 
@@ -230,7 +229,7 @@ int plugin_load(Plugin& p, std::string file) {
     // call QMM_Attach. if it fails (returns 0), call QMM_Detach and unload DLL
     // QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
     if (!(p.QMM_Attach(s_plugin_game_syscall, s_plugin_game_vmMain, &g_plugin_globals.plugin_result, &s_pluginfuncs, &s_pluginvars))) {
-        LOG(QMM_LOG_ERROR, "QMM") << fmt::format("plugin_load(\"{}\"): QMM_Attach() returned 0\n", file);
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): QMM_Attach() returned 0\n";
         // treat this failure specially. this is a valid plugin, but it decided on its own that it shouldn't be loaded
         ret = -1;
         goto fail;
@@ -264,7 +263,7 @@ static void s_plugin_helper_WriteQMMLog(plugin_id plid, const char* text, int se
     const char* logtag = plinfo->logtag;
     if (!logtag || !*logtag)
         logtag = plinfo->name;
-    LOG(severity, str_toupper(logtag)) << text;
+    QMMLOG(severity, str_toupper(logtag)) << text;
 }
 
 
@@ -282,9 +281,7 @@ static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char
 
     char* ret = str[index];
 
-#ifdef _DEBUG
-    // LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnVarArgs(\"{}\", \"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, format, ret);
-#endif
+    // QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called VarArgs(\"" << format << "\") = \"" << ret << "\"\n";
     return ret;
 }
 
@@ -292,9 +289,7 @@ static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char
 static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]]) {
     int ret = g_mod.vmbase != 0;
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnIsQVM(\"{}\") = {}\n", ((plugin_info*)plid)->name, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called IsQVM() = " << ret << "\n";
 
     return ret;
 }
@@ -303,9 +298,7 @@ static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]]) {
 static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
     const char* ret = gameinfo.game->EngMsgName(msg);
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnEngMsgName(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, msg, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called EngMsgName(" << msg << ") = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -314,9 +307,7 @@ static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], i
 static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
     const char* ret = gameinfo.game->ModMsgName(msg);
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnModMsgName(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, msg, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ModMsgName(" << msg << ") = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -327,9 +318,7 @@ static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], cons
     if (cvar && *cvar)
         ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_INTEGER_VALUE), cvar);
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetIntCvar(\"{}\", \"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, cvar, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetIntCvar(\"" << cvar << "\") = " << ret << "\n";
 
     return ret;
 }
@@ -348,9 +337,7 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
         ret = str[index];
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetStrCvar(\"{}\", \"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, cvar, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetStrCvar(\"" << cvar << "\") = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -359,9 +346,7 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
 static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]]) {
     const char* ret = gameinfo.game->GameCode();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetGameEngine(\"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetGameEngine() = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -371,10 +356,7 @@ static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn,
     if (buf && buflen)
         ArgV(argn, buf, buflen);
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnArgv(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, argn, buf);
-#endif
-
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called Argv(" << argn << ") = \"" << buf << "\"\n";
 }
 
 
@@ -390,7 +372,7 @@ static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused
 
         // userinfo strings are "\key\value\key\value\"
         // so search for "\key\" and then get everything up to the next "\"
-        std::string fkey = fmt::format("\\{}\\", key);
+        std::string fkey = "\\" + std::string(key) + "\\";
         size_t keypos = s.find(fkey);
         if (keypos != std::string::npos) {	// key found
             // find next "\"
@@ -409,9 +391,7 @@ static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused
         }
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnInfoValueForKey(\"{}\", \"{}\", \"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, userinfo, key, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called InfoValueForKey(\"" << userinfo << "\", \"" << key << "\") = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -441,7 +421,9 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
     index = (index + 1) & ROTATING_BUFFER_MASK;
     value[index] = cfg_get_string(node, path_basename(key));
     const char* ret = value[index].c_str();
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnConfigGetStr(\"{}\", \"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, key, ret);
+
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetStr(\"" << key << "\") = \"" << ret << "\"\n";
+
     return ret;
 }
 
@@ -449,7 +431,9 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
 static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const char* key) {
     nlohmann::json node = s_plugin_cfg_get_node(key);
     int ret = cfg_get_int(node, path_basename(key));
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnConfigGetInt(\"{}\", \"{}\") = {}\n", ((plugin_info*)plid)->name, key, ret);
+
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetInt(\"" << key << "\") = " << ret << "\n";
+
     return ret;
 }
 
@@ -457,7 +441,9 @@ static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const c
 static int s_plugin_helper_ConfigGetBool(plugin_id plid [[maybe_unused]], const char* key) {
     nlohmann::json node = s_plugin_cfg_get_node(key);
     int ret = (int)cfg_get_bool(node, path_basename(key));
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnConfigGetBool(\"{}\", \"{}\") = {}\n", ((plugin_info*)plid)->name, key, ret);
+
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetBool(\"" << key << "\") = " << ret << "\n";
+
     return ret;
 }
 
@@ -479,7 +465,9 @@ static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unu
         valuep[index].push_back(s.c_str());
     }
     valuep[index].push_back(nullptr);	// null-terminate the array
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin ConfigGetArrayStr(\"{}\", \"{}\") = [{} items]\n", ((plugin_info*)plid)->name, key, value[index].size());
+
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetArrayStr(\"" << key << "\") = [" << value[index].size() << " items]\n";
+
     return valuep[index].data();
 }
 
@@ -495,7 +483,9 @@ static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], c
     value[index] = cfg_get_array_int(node, path_basename(key));
     // insert length of the array as the first element
     value[index].insert(value[index].begin(), (int)value[index].size());
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin ConfigGetArrayInt(\"{}\", \"{}\") = [{} items]\n", ((plugin_info*)plid)->name, key, value[index].size() - 1);
+
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetArrayInt(\"" << key << "\") = [" << value[index].size() - 1 << " items]\n";
+
     return value[index].data();
 }
 
@@ -513,10 +503,7 @@ static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], int
             strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, index, buf);
-#endif
-
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetConfigString(" << index << ") = \"" << buf << "\"\n";
 }
 
 
@@ -535,9 +522,7 @@ static int s_plugin_helper_PluginBroadcast(plugin_id plid, const char* message, 
         total++;
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnPluginBroadcast(\"{}\", \"{}\", {}, {}) = {} plugins called\n", ((plugin_info*)plid)->name, message, buf, buflen, total);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called PluginBroadcast(\"" << message << "\") = " << total << " plugins called\n";
 
     return total;
 }
@@ -557,9 +542,7 @@ static int s_plugin_helper_PluginSend(plugin_id plid, plugin_id to_plid, const c
                 return 0;
             p.QMM_PluginMessage(plid, message, buf, buflen, 0); // 0 = is_broadcast
 
-#ifdef _DEBUG
-            LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnPluginSend(\"{}\", \"{}\", \"{}\", {}, {}) called\n", ((plugin_info*)plid)->name, ((plugin_info*)to_plid)->name, message, buf, buflen);
-#endif
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called PluginSend(\"" << message << "\")\n";
 
             return 1;
         }
@@ -591,7 +574,7 @@ static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
         }
     }
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnRegisterQVMFunc(\"{}\") = {}\n", ((plugin_info*)plid)->name, ret);
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called RegisterQVMFunc() = " << ret << "\n";
 
     return ret;
 }
@@ -601,9 +584,7 @@ static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
 static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int instruction, int argc, int* argv) {
     int ret = qvm_exec_ex(&g_mod.vm, (size_t)instruction, argc, argv);
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnQVMExecFunc(\"{}\", {}, {}) = {}\n", ((plugin_info*)plid)->name, instruction, argc, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called QVMExecFunc(" << instruction << ", " << argc << ") = " << ret << "\n";
 
     return ret;
 }
@@ -618,9 +599,7 @@ static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr
 
     ArgV(argn, str[index], sizeof(str[index]));
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnArgv2(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, argn, str[index]);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called Argv2(" << argn << ") = \"" << str[index] << "\"\n";
 
     return str[index];
 }
@@ -642,9 +621,7 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
     if (ret > 1)
         strncpyz(str[index], (const char*)ret, sizeof(str[index]));
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnGetConfigString2(\"{}\", {}) = \"{}\"\n", ((plugin_info*)plid)->name, configindex, str[index]);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetConfigString2(" << configindex << ") = \"" << str[index] << "\"\n";
 
     return str[index];
 }
@@ -653,9 +630,7 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
 static const char* s_plugin_helper_ModDir(plugin_id plid [[maybe_unused]]) {
     const char* ret = gameinfo.mod_dir.c_str();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Plugin pfnModDir(\"{}\") = \"{}\"\n", ((plugin_info*)plid)->name, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ModDir() = \"" << ret << "\"\n";
 
     return ret;
 }
