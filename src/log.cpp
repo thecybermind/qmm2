@@ -80,5 +80,6 @@ extern "C" void log_c(int severity, const char* tag, const char* fmt, ...) {
     vsnprintf(buf, sizeof(buf), fmt, argptr);
     va_end(argptr);
 
-    QMMLOG(severity, tag) << buf;
+    // not QMMLOG since we already checked log_level_match()
+    LOG(severity, tag) << buf;
 }

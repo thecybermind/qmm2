@@ -71,6 +71,8 @@ typedef void* (*mod_GetGameAPI)(void*, void*);
 // 4:3
 // - changed type names away from those ending with "_t" - added typedefs for old names marked deprecated. define QMM_USE_DEPRECATED_TYPES to use old types without warning
 // - added QMM_MODDIR
+// 4:4
+// - swapped order of severity and text in QMM_WRITEQMMLOG and also made it vararg. string construction is ignored if log won't write
 
 // holds plugin info to pass back to QMM
 typedef struct {
@@ -120,8 +122,8 @@ typedef enum {
 
 // prototype struct for QMM plugin util funcs
 typedef struct {
-    void (*pfnWriteQMMLog)(plugin_id plid, const char* text, int severity);                                   // write to the QMM log
-    char* (*pfnVarArgs)(plugin_id plid, const char* format, ...);                                             // simple vsprintf helper with rotating buffer
+    void (*pfnWriteQMMLog)(plugin_id plid, int severity, const char* fmt, ...);                               // write to the QMM log
+    char* (*pfnVarArgs)(plugin_id plid, const char* fmt, ...);                                                // simple vsprintf helper with rotating buffer
     int (*pfnIsQVM)(plugin_id plid);                                                                          // returns 1 if the mod is QVM
     const char* (*pfnEngMsgName)(plugin_id plid, intptr_t msg);                                               // get the string name of a syscall code
     const char* (*pfnModMsgName)(plugin_id plid, intptr_t msg);                                               // get the string name of a vmMain code
@@ -146,8 +148,8 @@ typedef struct {
 } plugin_funcs;
 
 // macros for QMM plugin util funcs
-#define QMM_WRITEQMMLOG(text, severity)         (g_pluginfuncs->pfnWriteQMMLog)(PLID, text, severity)           // write to the QMM log
-#define QMM_VARARGS(format, ...)                (g_pluginfuncs->pfnVarArgs)(PLID, format, __VA_ARGS__)          // simple vsprintf helper
+#define QMM_WRITEQMMLOG(sev, fmt, ...)          (g_pluginfuncs->pfnWriteQMMLog)(PLID, sev, fmt, __VA_ARGS__)    // write to the QMM log
+#define QMM_VARARGS(fmt, ...)                   (g_pluginfuncs->pfnVarArgs)(PLID, fmt, __VA_ARGS__)             // simple vsprintf helper
 #define QMM_ISQVM()                             (g_pluginfuncs->pfnIsQVM)(PLID)                                 // returns 1 if the mod is QVM
 #define QMM_ENGMSGNAME(cmd)                     (g_pluginfuncs->pfnEngMsgName)(PLID, cmd)                       // get the string name of a syscall code
 #define QMM_MODMSGNAME(cmd)                     (g_pluginfuncs->pfnModMsgName)(PLID, cmd)                       // get the string name of a vmMain code

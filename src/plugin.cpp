@@ -29,8 +29,8 @@ constexpr int ROTATING_BUFFER_NUM = 16;  // must be power of 2
 constexpr int ROTATING_BUFFER_MASK = ROTATING_BUFFER_NUM - 1;
 constexpr int ROTATING_BUFFER_SIZE = 1024;
 
-static void s_plugin_helper_WriteQMMLog(plugin_id plid, const char* text, int severity);
-static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* format, ...);
+static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char* fmt, ...);
+static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* fmt, ...);
 static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]]);
 static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], intptr_t msg);
 static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], intptr_t msg);
@@ -256,18 +256,38 @@ void plugin_unload(Plugin& p) {
 }
 
 
-static void s_plugin_helper_WriteQMMLog(plugin_id plid, const char* text, int severity) {
+static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char* fmt, ...) {
+    if (!fmt) {
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called WriteQMMLog() with null fmt\n";
+        return;
+    }
+
     if (severity < QMM_LOG_TRACE || severity > QMM_LOG_FATAL)
         severity = QMM_LOG_INFO;
+
+    // if log severity is below thresholds, don't log
+    if (!log_level_match(severity))
+        return;
+
+    // get log tag from plugin
     plugin_info* plinfo = (plugin_info*)plid;
     const char* logtag = plinfo->logtag;
     if (!logtag || !*logtag)
         logtag = plinfo->name;
-    QMMLOG(severity, str_toupper(logtag)) << text;
+
+    va_list	argptr;
+    static char buf[1024];
+
+    va_start(argptr, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, argptr);
+    va_end(argptr);
+
+    // not QMMLOG since we already checked log_level_match()
+    LOG(severity, str_toupper(logtag)) << buf;
 }
 
 
-static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* format, ...) {
+static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* fmt, ...) {
     va_list	argptr;
     static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
@@ -275,8 +295,8 @@ static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char
     // cycle rotating buffer and store string
     index = (index + 1) & ROTATING_BUFFER_MASK;
 
-    va_start(argptr, format);
-    vsnprintf(str[index], sizeof(str[index]), format, argptr);
+    va_start(argptr, fmt);
+    vsnprintf(str[index], sizeof(str[index]), fmt, argptr);
     va_end(argptr);
 
     char* ret = str[index];

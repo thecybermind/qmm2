@@ -184,7 +184,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         QMMLOG(QMM_LOG_TRACE, "QMM") << "Passthrough vmMain(" << cmd << ") returning " << ret << "\n";
 
-        // next call into combined mod after GAME_SHUTDOWN should be CGAME_SHUTDOWN so unload mod now
+        // next call into combined mod DLL after GAME_SHUTDOWN should be CGAME_SHUTDOWN so unload mod now
         if (cgameinfo.is_shutdown) {
             // unload mod (dlclose)
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
@@ -309,7 +309,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         }
         // check for "qmm" command
         if (str_striequal("qmm", arg_cmd) || str_striequal("/qmm", arg_cmd)) {
-            // pass 0 or 1 which gets added to argn in the handler function
+            // because of "sv", pass 0 or 1 which gets added to argn in the handler function
             HandleQMMCommand(argn);
             return 1;
         }
