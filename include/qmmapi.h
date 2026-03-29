@@ -148,7 +148,7 @@ typedef struct {
 } plugin_funcs;
 
 // macros for QMM plugin util funcs
-#define QMM_WRITEQMMLOG(sev, fmt, ...)          (g_pluginfuncs->pfnWriteQMMLog)(PLID, sev, fmt, __VA_ARGS__)    // write to the QMM log
+#define QMM_WRITEQMMLOG(sev, fmt, ...)          (g_pluginfuncs->pfnWriteQMMLog)(PLID, sev, fmt, ## __VA_ARGS__) // write to the QMM log
 #define QMM_VARARGS(fmt, ...)                   (g_pluginfuncs->pfnVarArgs)(PLID, fmt, __VA_ARGS__)             // simple vsprintf helper
 #define QMM_ISQVM()                             (g_pluginfuncs->pfnIsQVM)(PLID)                                 // returns 1 if the mod is QVM
 #define QMM_ENGMSGNAME(cmd)                     (g_pluginfuncs->pfnEngMsgName)(PLID, cmd)                       // get the string name of a syscall code
