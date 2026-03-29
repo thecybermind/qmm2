@@ -594,7 +594,7 @@ static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
         }
     }
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called RegisterQVMFunc() = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called QVMRegisterFunc() = " << ret << "\n";
 
     return ret;
 }
