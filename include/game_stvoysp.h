@@ -12,10 +12,6 @@ Created By:
 #ifndef QMM2_GAME_STVOYSP_H
 #define QMM2_GAME_STVOYSP_H
 
-#include "version.h"
-
-#if defined(QMM_ARCH_32)
-
 // import ("syscall") cmds
 enum {
 	G_PRINTF,
@@ -97,7 +93,5 @@ enum {
 	G_GET_ENTITY_TOKEN,				// qboolean (char *buffer, int bufferSize)
 	G_ARGS,							// char* (void)
 };
-
-#endif // QMM_ARCH_32
 
 #endif // QMM2_GAME_STVOYSP_H

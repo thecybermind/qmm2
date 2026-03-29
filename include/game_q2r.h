@@ -12,12 +12,6 @@ Created By:
 #ifndef QMM2_GAME_Q2R_H
 #define QMM2_GAME_Q2R_H
 
-#include "version.h"
-
-// AFAIK Quake 2 Remastered is only available on 64-bit Windows, so skip the whole file otherwise.
-// The game entry in game_api is similarly conditionally compiled.
-#if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
-
 // import ("syscall") cmds
 enum {
 	GV_TICK_RATE,
@@ -177,7 +171,5 @@ enum {
 	// used by qmm_version cvar
 	CVAR_ROM = CVAR_NOSET // 8
 };
-
-#endif // QMM_OS_WINDOWS && QMM_ARCH_64
 
 #endif // QMM2_GAME_Q2R_H
