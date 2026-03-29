@@ -18,7 +18,6 @@ Created By:
 
 #include "game_api.hpp"
 #include "log.hpp"
-#include "format.hpp"
 #include <string>
 // QMM-specific STVOYHM header
 #include "game_stvoyhm.h"
@@ -82,10 +81,8 @@ bool STVOYHM_GameSupport::AutoDetect(APIType engineapi) {
 intptr_t STVOYHM_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "STVOYHM_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     intptr_t ret = 0;
 
@@ -115,10 +112,8 @@ intptr_t STVOYHM_GameSupport::syscall(intptr_t cmd, ...) {
 
     // do anything that needs to be done after function call here
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "STVOYHM_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
 
     return ret;
 }
@@ -129,9 +124,7 @@ intptr_t STVOYHM_GameSupport::syscall(intptr_t cmd, ...) {
 intptr_t STVOYHM_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "STVOYHM_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_vmMain)
         return 0;
@@ -148,21 +141,19 @@ intptr_t STVOYHM_GameSupport::vmMain(intptr_t cmd, ...) {
         ret += g_mod.vmbase;
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "STVOYHM_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
 
 
 void* STVOYHM_GameSupport::Entry(void* syscall, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_GameSupport::Entry({}) called\n", syscall);
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "STVOYHM_GameSupport::Entry(" << syscall << ") called\n";
 
     // store original syscall from engine
     orig_syscall = (eng_syscall)syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("STVOYHM_GameSupport::Entry({}) returning\n", syscall);
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "STVOYHM_GameSupport::Entry(" << syscall << ") returning\n";
 
     return nullptr;
 }
@@ -410,9 +401,8 @@ const char* STVOYHM_GameSupport::ModMsgName(intptr_t cmd) {
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
 int STVOYHM_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
-#ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYHM_GameSupport::QVMSyscall({} {}) called\n", EngMsgName(cmd), cmd);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "STVOYHM_GameSupport::QVMSyscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
+
 
     int ret = 0;
 
@@ -675,9 +665,7 @@ int STVOYHM_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
         ret = 0;
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("STVOYHM_GameSupport::QVMSyscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "STVOYHM_GameSupport::QVMSyscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }

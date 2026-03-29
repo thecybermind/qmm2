@@ -19,7 +19,6 @@ Created By:
 
 #include "game_api.hpp"
 #include "log.hpp"
-#include "format.hpp"
 #include <string>
 // QMM-specific SOF2MP header
 #include "game_sof2mp.h"
@@ -83,10 +82,8 @@ bool SOF2MP_GameSupport::AutoDetect(APIType engineapi) {
 intptr_t SOF2MP_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2MP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     intptr_t ret = 0;
 
@@ -117,10 +114,8 @@ intptr_t SOF2MP_GameSupport::syscall(intptr_t cmd, ...) {
 
     // do anything that needs to be done after function call here
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2MP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
 
     return ret;
 }
@@ -131,9 +126,7 @@ intptr_t SOF2MP_GameSupport::syscall(intptr_t cmd, ...) {
 intptr_t SOF2MP_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2MP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_vmMain)
         return 0;
@@ -246,21 +239,19 @@ intptr_t SOF2MP_GameSupport::vmMain(intptr_t cmd, ...) {
         ret += g_mod.vmbase;
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2MP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
 
 
 void* SOF2MP_GameSupport::Entry(void* syscall, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_GameSupport::Entry({}) called\n", syscall);
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "SOF2MP_GameSupport::Entry(" << syscall << ") called\n";
 
     // store original syscall from engine
     orig_syscall = (eng_syscall)syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2MP_GameSupport::Entry({}) returning\n", syscall);
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "SOF2MP_GameSupport::Entry(" << syscall << ") returning\n";
 
     return nullptr;
 }
@@ -587,9 +578,8 @@ const char* SOF2MP_GameSupport::ModMsgName(intptr_t cmd) {
 // TGPValue, TGPGroup, and TGenericParser2 are void*, but treat them as plain ints
 // for double pointers (gentity_t**, vec3_t*, void**), convert them once with vmptr()
 int SOF2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
-#ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_GameSupport::QVMSyscall({} {}) called\n", EngMsgName(cmd), cmd);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2MP_GameSupport::QVMSyscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
+
 
     int ret = 0;
 
@@ -972,9 +962,7 @@ int SOF2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
         ret = 0;
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("SOF2MP_GameSupport::QVMSyscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2MP_GameSupport::QVMSyscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }

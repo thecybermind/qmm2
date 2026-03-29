@@ -17,7 +17,6 @@ Created By:
 
 #include "game_api.hpp"
 #include "log.hpp"
-#include "format.hpp"
 // QMM-specific SOF2SP header
 #include "game_sof2sp.h"
 #include "gameinfo.hpp"
@@ -88,10 +87,8 @@ bool SOF2SP_GameSupport::AutoDetect(APIType engineapi) {
 intptr_t SOF2SP_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2SP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     // update export vars before calling into the engine
     update_exports();
@@ -250,10 +247,9 @@ intptr_t SOF2SP_GameSupport::syscall(intptr_t cmd, ...) {
 
     // do anything that needs to be done after function call here
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2SP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
+
 
     return ret;
 }
@@ -264,9 +260,8 @@ intptr_t SOF2SP_GameSupport::syscall(intptr_t cmd, ...) {
 intptr_t SOF2SP_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2SP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
+
 
     if (!orig_export)
         return 0;
@@ -310,9 +305,7 @@ intptr_t SOF2SP_GameSupport::vmMain(intptr_t cmd, ...) {
     // update export vars after returning from the mod
     update_exports();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2SP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
@@ -320,7 +313,7 @@ intptr_t SOF2SP_GameSupport::vmMain(intptr_t cmd, ...) {
 
 void* SOF2SP_GameSupport::Entry(void* apiversion, void* import, APIType) {
     orig_apiversion = (intptr_t)apiversion;
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_GameSupport::Entry({}, {}) called\n", orig_apiversion, import);
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "SOF2SP_GameSupport::Entry(" << orig_apiversion << ", " << import << ") called\n";
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -330,7 +323,7 @@ void* SOF2SP_GameSupport::Entry(void* apiversion, void* import, APIType) {
     // fill in variables of our hooked import struct to pass to the mod
     // qmm_import.unknown = orig_import.unknown;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("SOF2SP_Entry({}, {}) returning {}\n", orig_apiversion, import, fmt::ptr(&qmm_export));
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "SOF2SP_GameSupport::Entry(" << orig_apiversion << ", " << import << ") returning " << &qmm_export << "\n";
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.

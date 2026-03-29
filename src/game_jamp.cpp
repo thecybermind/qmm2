@@ -14,7 +14,6 @@ Created By:
 
 #include "game_api.hpp"
 #include "log.hpp"
-#include "format.hpp"
 #include <string>
 // QMM-specific JAMP header
 #include "game_jamp.h"
@@ -100,10 +99,9 @@ bool JAMP_GameSupport::AutoDetect(APIType engineapi) {
 intptr_t JAMP_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
+
 
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
@@ -472,10 +470,8 @@ intptr_t JAMP_GameSupport::syscall(intptr_t cmd, ...) {
 
     // do anything that needs to be done after function call here
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
 
     return ret;
 }
@@ -486,9 +482,7 @@ intptr_t JAMP_GameSupport::syscall(intptr_t cmd, ...) {
 intptr_t JAMP_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
@@ -547,16 +541,14 @@ intptr_t JAMP_GameSupport::vmMain(intptr_t cmd, ...) {
         };
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
 
 
 void* JAMP_GameSupport::Entry(void* arg0, void* arg1, APIType engine) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GameSupport::Entry({}, {}, {}) called\n", arg0, arg1, APIType_Name(engine));
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "JAMP_GameSupport::Entry(" << arg0 << ", " << arg1 << ", " << APIType_Name(engine) << ") called\n";
 
     if (engine == QMM_API_GETMODULEAPI) {
         orig_apiversion = (intptr_t)arg0;
@@ -568,7 +560,7 @@ void* JAMP_GameSupport::Entry(void* arg0, void* arg1, APIType engine) {
 
         // fill in variables of our hooked import struct to pass to the mod
 
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GameSupport::Entry({}, {}, {}) returning {}\n", arg0, arg1, APIType_Name(engine), fmt::ptr(&qmm_export));
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "JAMP_GameSupport::Entry(" << arg0 << ", " << arg1 << ", " << APIType_Name(engine) << ") returning " << &qmm_export << "\n";
 
         // struct full of export lambdas to QMM's vmMain
         // this gets returned to the game engine, but we haven't loaded the mod yet.
@@ -578,7 +570,7 @@ void* JAMP_GameSupport::Entry(void* arg0, void* arg1, APIType engine) {
         // store original syscall from engine
         orig_syscall = (eng_syscall)arg0;
 
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("JAMP_GameSupport::Entry({}, {}, {}) returning\n", arg0, arg1, APIType_Name(engine));
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "JAMP_GameSupport::Entry(" << arg0 << ", " << arg1 << ", " << APIType_Name(engine) << ") returning\n";
 
         return nullptr;
     }

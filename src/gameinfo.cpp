@@ -90,14 +90,14 @@ void* GameInfo::HandleEntry(void* import, void* extra, APIType engine) {
 
     log_init(fmt::format("{}/qmm2.log", this->qmm_dir));
 
-    LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") ({}) loaded!\n", APIType_Function(engine));
-    LOG(QMM_LOG_INFO, "QMM") << fmt::format("QMM path: \"{}\"\n", this->qmm_path);
-    LOG(QMM_LOG_INFO, "QMM") << fmt::format("Engine path: \"{}\"\n", this->exe_path);
-    LOG(QMM_LOG_INFO, "QMM") << fmt::format("Mod directory (?): \"{}\"\n", this->mod_dir);
+    QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") (" << APIType_Function(engine) << ") loaded!\n";
+    QMMLOG(QMM_LOG_INFO, "QMM") << "QMM path: \"" << this->qmm_path << "\"\n";
+    QMMLOG(QMM_LOG_INFO, "QMM") << "Engine path: \"" << this->exe_path << "\"\n";
+    QMMLOG(QMM_LOG_INFO, "QMM") << "Mod directory (?): \"" << this->mod_dir << "\"\n";
 
     // syscall, import, or apiversion are null/0
     if (!import) {
-        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): engine pointer is NULL!\n", APIType_Function(engine));
+        QMMLOG(QMM_LOG_FATAL, "QMM") << APIType_Function(engine) << "(): engine pointer is NULL!\n";
         return nullptr;
     }
 
@@ -115,7 +115,7 @@ void* GameInfo::HandleEntry(void* import, void* extra, APIType engine) {
     cfg_game = util_get_cmdline_arg("--qmm_game", cfg_game);
     // failed to get engine information
     if (!this->DetectGame(cfg_game, engine) || !this->game) {
-        LOG(QMM_LOG_FATAL, "QMM") << fmt::format("{}(): Unable to determine game engine using \"{}\"\n", APIType_Function(engine), cfg_game);
+        QMMLOG(QMM_LOG_FATAL, "QMM") << APIType_Function(engine) << "(): Unable to determine game engine using \"" << cfg_game << "\"\n";
         return nullptr;
     }
 
@@ -184,13 +184,13 @@ void GameInfo::LoadConfig(std::string config_filename) {
         g_cfg = cfg_load(try_path);
         if (!g_cfg.empty()) {
             this->cfg_path = try_path;
-            LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Config file found! Path: \"{}\"\n", this->cfg_path);
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Config file found! Path: \"" << this->cfg_path << "\"\n";
             return;
         }
     }
 
     // a default constructed json object is a blank {}, so in case of load failure, we can still try to read from it and assume defaults
-    LOG(QMM_LOG_WARNING, "QMM") << fmt::format("GameInfo::LoadConfig(): Unable to load config file \"{}\", all settings will use default values\n", config_filename);
+    QMMLOG(QMM_LOG_WARNING, "QMM") << "GameInfo::LoadConfig(): Unable to load config file \"" << config_filename << "\", all settings will use default values\n";
 }
 
 
@@ -205,7 +205,7 @@ bool GameInfo::DetectGame(std::string cfg_game, APIType engine) {
     for (GameSupport* gamesupport : api_supportedgames) {
         // if short name matches config option, we found it!
         if (!is_auto && str_striequal(cfg_game, gamesupport->GameCode())) {
-            LOG(QMM_LOG_NOTICE, "QMM") << fmt::format("Found game match for config option \"{}\"\n", cfg_game);
+            QMMLOG(QMM_LOG_INFO, "QMM") << "Found game match for config option \"" << cfg_game << "\"\n";
             this->game = gamesupport;
             this->is_auto_detected = false;
             // call the game's auto-detect function, since it may do some logic
@@ -214,7 +214,7 @@ bool GameInfo::DetectGame(std::string cfg_game, APIType engine) {
         }
         // otherwise, if auto, call the game's auto-detect function
         else if (is_auto && gamesupport->AutoDetect(engine)) {
-            LOG(QMM_LOG_INFO, "QMM") << fmt::format("Found game match with auto-detection - \"{}\"\n", gamesupport->GameCode());
+            QMMLOG(QMM_LOG_INFO, "QMM") << "Found game match with auto-detection - \"" << gamesupport->GameCode() << "\"\n";
             this->game = gamesupport;
             this->is_auto_detected = true;
             return true;
@@ -230,10 +230,10 @@ bool GameInfo::LoadMod(std::string cfg_mod) {
     if (cfg_mod.empty())
         cfg_mod = "auto";
 
-    LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to find mod using \"{}\"\n", cfg_mod);
+    QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to find mod using \"" << cfg_mod << "\"\n";
     // if "mod" config setting is an absolute path, just attempt to load it directly
     if (!str_striequal(cfg_mod, "auto") && path_is_absolute(cfg_mod)) {
-        LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", cfg_mod);
+        QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << cfg_mod << "\"\n";
         return g_mod.Load(cfg_mod);
     }
     // if "mod" config setting is "auto", try the following locations in order:
@@ -264,7 +264,7 @@ bool GameInfo::LoadMod(std::string cfg_mod) {
             try_path = path_normalize(try_path);
             if (try_path.empty() || !path_is_allowed(try_path))
                 continue;
-            LOG(QMM_LOG_INFO, "QMM") << fmt::format("Attempting to load mod \"{}\"\n", try_path);
+            QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << try_path << "\"\n";
             if (g_mod.Load(try_path))
                 return true;
         }
@@ -312,7 +312,7 @@ bool GameInfo::LoadPlugin(std::string plugin_path) {
 
 
 // route syscall or vmMain call to plugins and mod
-intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) {
+intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) const {
     const char* msg_name;
     const char* func_name;
     GameSupport* gamesupport = this->game;
@@ -344,9 +344,7 @@ intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) {
         // allow plugins to see the current final_ret value
         g_plugin_globals.final_return = final_ret;
 
-#ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_{}({} {}) called\n", p.plugininfo->name, func_name, msg_name, cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "( " << msg_name << "(" << cmd << ")) called\n";
 
         // call plugin's pre-hook and store return value
         if (is_syscall)
@@ -354,44 +352,38 @@ intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) {
         else
             plugin_ret = p.QMM_vmMain(cmd, args);
 
-#ifdef _DEBUG
-        if (g_plugin_globals.plugin_result != QMM_IGNORED)
-            LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_{}({} {}) returning {} with result {}\n", p.plugininfo->name, func_name, msg_name, cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "( " << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << plugin_result_to_str(g_plugin_globals.plugin_result) << "\n";
 
         // set new max result
         max_result = util_max(g_plugin_globals.plugin_result, max_result);
         // store current max result in global for plugins
         g_plugin_globals.high_result = max_result;
         // invalid/error result values
-        if (g_plugin_globals.plugin_result == QMM_UNUSED)
-            LOG(QMM_LOG_WARNING, "QMM") << fmt::format("{}({}): Plugin \"{}\" did not set result flag\n", func_name, msg_name, p.plugininfo->name);
-        else if (g_plugin_globals.plugin_result == QMM_ERROR)
-            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("{}({}): Plugin \"{}\" set result flag QMM_ERROR\n", func_name, msg_name, p.plugininfo->name);
-
+        if (g_plugin_globals.plugin_result == QMM_UNUSED) {
+            QMMLOG(QMM_LOG_WARNING, "QMM") << func_name << "(" << msg_name << "): Plugin \"" << p.plugininfo->name << "\" did not set result flag\n";
+        }
+        else if (g_plugin_globals.plugin_result == QMM_ERROR) {
+            QMMLOG(QMM_LOG_ERROR, "QMM") << func_name << "(" << msg_name << "): Plugin \"" << p.plugininfo->name << "\" set result flag QMM_ERROR\n";
+        }
         // if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
-        else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
+        else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE) {
             final_ret = plugin_ret;
+        }
     }
 
     // call real function (unless a plugin resulted in QMM_SUPERCEDE)
     if (max_result < QMM_SUPERCEDE) {
-#ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) called\n", func_name, msg_name, cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) called\n";
+
         if (is_syscall)
             real_ret = gamesupport->syscall(cmd, QMM_PUT_SYSCALL_ARGS());
         else
             real_ret = gamesupport->vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
-#ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) returning {}\n", func_name, msg_name, cmd, real_ret);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) returning " << real_ret << "\n";
     }
     else {
-#ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Real {}({} {}) superceded\n", func_name, msg_name, cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) superceded\n";
     }
 
     // store real_ret in global for plugins
@@ -407,9 +399,7 @@ intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) {
         // allow plugins to see the current final_ret value
         g_plugin_globals.final_return = final_ret;
 
-#ifdef _DEBUG
-        LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_{}_Post({} {}) called\n", p.plugininfo->name, func_name, msg_name, cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "_Post( " << msg_name << "(" << cmd << ")) called\n";
 
         // call plugin's post-hook and store return value
         if (is_syscall)
@@ -417,18 +407,16 @@ intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) {
         else
             plugin_ret = p.QMM_vmMain_Post(cmd, args);
 
-#ifdef _DEBUG
-        if (g_plugin_globals.plugin_result != QMM_IGNORED)
-            LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Plugin {} QMM_{}_Post({} {}) returning {} with result {}\n", p.plugininfo->name, func_name, msg_name, cmd, plugin_ret, plugin_result_to_str(g_plugin_globals.plugin_result));
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "_Post( " << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << plugin_result_to_str(g_plugin_globals.plugin_result) << "\n";
 
         // ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR
-        if (g_plugin_globals.plugin_result == QMM_ERROR)
-            LOG(QMM_LOG_ERROR, "QMM") << fmt::format("syscall({}): Plugin \"{}\" set result flag QMM_ERROR\n", msg_name, p.plugininfo->name);
-
+        if (g_plugin_globals.plugin_result == QMM_ERROR) {
+            QMMLOG(QMM_LOG_ERROR, "QMM") << func_name << "(" << msg_name << "): Plugin \"" << p.plugininfo->name << "\" set result flag QMM_ERROR\n";
+        }
         // if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
-        else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE)
+        else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE) {
             final_ret = plugin_ret;
+        }
     }
 
     // restore previous globals (stored in case of re-entrancy)

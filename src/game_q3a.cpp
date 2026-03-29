@@ -14,7 +14,6 @@ Created By:
 
 #include "game_api.hpp"
 #include "log.hpp"
-#include "format.hpp"
 #include <string>
 // QMM-specific Q3A header
 #include "game_q3a.h"
@@ -79,10 +78,8 @@ bool Q3A_GameSupport::AutoDetect(APIType engine_api) {
 intptr_t Q3A_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Q3A_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     intptr_t ret = 0;
 
@@ -111,10 +108,8 @@ intptr_t Q3A_GameSupport::syscall(intptr_t cmd, ...) {
 
     // do anything that needs to be done after function call here
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Q3A_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
 
     return ret;
 }
@@ -125,9 +120,7 @@ intptr_t Q3A_GameSupport::syscall(intptr_t cmd, ...) {
 intptr_t Q3A_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Q3A_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_vmMain)
         return 0;
@@ -144,21 +137,19 @@ intptr_t Q3A_GameSupport::vmMain(intptr_t cmd, ...) {
         ret += g_mod.vmbase;
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Q3A_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
 
 
 void* Q3A_GameSupport::Entry(void* syscall, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_GameSupport::Entry({}) called\n", syscall);
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q3A_GameSupport::Entry(" << syscall << ") called\n";
 
     // store original syscall from engine
     orig_syscall = (eng_syscall)syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("Q3A_GameSupport::Entry({}) returning\n", syscall);
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q3A_GameSupport::Entry(" << syscall << ") returning\n";
 
     return nullptr;
 }
@@ -415,9 +406,8 @@ const char* Q3A_GameSupport::ModMsgName(intptr_t cmd) {
 // vec3_t are arrays, so convert them as pointers
 // for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
 int Q3A_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
-#ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q3A_GameSupport::QVMSyscall({} {}) called\n", EngMsgName(cmd), cmd);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Q3A_GameSupport::QVMSyscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
+
 
     intptr_t ret = 0;
 
@@ -700,9 +690,8 @@ int Q3A_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
         ret = 0;
     }
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_TRACE, "QMM") << fmt::format("Q3A_GameSupport::QVMSyscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Q3A_GameSupport::QVMSyscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
+
 
     return ret;
 }

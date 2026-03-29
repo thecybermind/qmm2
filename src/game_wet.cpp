@@ -14,7 +14,6 @@ Created By:
 
 #include "game_api.hpp"
 #include "log.hpp"
-#include "format.hpp"
 #include <string>
 // QMM-specific WET header
 #include "game_wet.h"
@@ -74,10 +73,9 @@ bool WET_GameSupport::AutoDetect(APIType engineapi) {
 intptr_t WET_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "WET_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
+
 
     intptr_t ret = 0;
 
@@ -107,10 +105,8 @@ intptr_t WET_GameSupport::syscall(intptr_t cmd, ...) {
 
     // do anything that needs to be done after function call here
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "WET_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
 
     return ret;
 }
@@ -121,9 +117,7 @@ intptr_t WET_GameSupport::syscall(intptr_t cmd, ...) {
 intptr_t WET_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "WET_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_vmMain)
         return 0;
@@ -134,21 +128,19 @@ intptr_t WET_GameSupport::vmMain(intptr_t cmd, ...) {
     // all normal mod functions go to vmMain
     ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "WET_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
 
 
 void* WET_GameSupport::Entry(void* syscall, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_GameSupport::Entry({}) called\n", syscall);
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "WET_GameSupport::Entry(" << syscall << ") called\n";
 
     // store original syscall from engine
     orig_syscall = (eng_syscall)syscall;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("WET_GameSupport::Entry({}) returning\n", syscall);
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "WET_GameSupport::Entry(" << syscall << ") returning\n";
 
     return nullptr;
 }

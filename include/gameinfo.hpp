@@ -46,7 +46,7 @@ struct GameInfo {
     // find a plugin file to load
     bool LoadPlugin(std::string plugin_path);
     // route syscall or vmMain call to plugins and mod
-    intptr_t Route(bool is_syscall, intptr_t cmd, intptr_t* args);
+    intptr_t Route(bool is_syscall, intptr_t cmd, intptr_t* args) const;
 
     // cache some dynamic message values that get evaluated a lot
     static intptr_t msg_G_PRINT, msg_GAME_INIT, msg_GAME_CONSOLE_COMMAND, msg_GAME_SHUTDOWN;

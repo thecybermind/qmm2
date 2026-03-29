@@ -97,10 +97,8 @@ bool MOHBT_GameSupport::AutoDetect(APIType engineapi) {
 intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_GameSupport::syscall({} {}) called\n", EngMsgName(cmd), cmd);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "MOHBT_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     // update export vars before calling into the engine
     update_exports();
@@ -457,10 +455,8 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
 
     // do anything that needs to be done after function call here
 
-#ifdef _DEBUG
     if (cmd != G_PRINT)
-        LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_GameSupport::syscall({} {}) returning {}\n", EngMsgName(cmd), cmd, ret);
-#endif
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "MOHBT_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
 
     return ret;
 }
@@ -471,9 +467,7 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
 intptr_t MOHBT_GameSupport::vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_GameSupport::vmMain({} {}) called\n", ModMsgName(cmd), cmd);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "MOHBT_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_export)
         return 0;
@@ -533,16 +527,14 @@ intptr_t MOHBT_GameSupport::vmMain(intptr_t cmd, ...) {
     // update export vars after returning from the mod
     update_exports();
 
-#ifdef _DEBUG
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_GameSupport::vmMain({} {}) returning {}\n", ModMsgName(cmd), cmd, ret);
-#endif
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "MOHBT_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
 
 
 void* MOHBT_GameSupport::Entry(void* import, void*, APIType) {
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_GameSupport::Entry({}) called\n", import);
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "MOHBT_GameSupport::Entry(" << import << ") called\n";
 
     // original import struct from engine
     // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
@@ -556,7 +548,7 @@ void* MOHBT_GameSupport::Entry(void* import, void*, APIType) {
     qmm_import.numDebugStrings = orig_import.numDebugStrings;
     qmm_import.fsDebug = orig_import.fsDebug;
 
-    LOG(QMM_LOG_DEBUG, "QMM") << fmt::format("MOHBT_GameSupport::Entry({}) returning {}\n", import, fmt::ptr(&qmm_export));
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "MOHBT_GameSupport::Entry(" << import << ") returning " << &qmm_export << "\n";
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.
