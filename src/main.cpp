@@ -69,21 +69,21 @@ static void HandleQMMCommand(intptr_t arg_start);
    do is store the syscall, load the config file, and attempt to figure out what game engine we are in. This is either
    determined by the config file, or by getting the filename of the QMM DLL itself.
 */
-C_DLLEXPORT void dllEntry(void* syscall) {
+C_DLLEXPORT void dllEntry(eng_syscall syscall) {
     // cgame passthrough hack:
     // QMM is already loaded, so this is a cgame passthrough situation. since the mod DLL isn't loaded yet, we can
     // just store the syscall pointer and pass it to the mod once it's loaded in vmMain(GAME_INIT)
     if (gameinfo.game && gameinfo.api == QMM_API_GETGAMEAPI) {
-        cgameinfo.syscall = (eng_syscall)syscall;
+        cgameinfo.syscall = syscall;
         QMMLOG(QMM_LOG_DEBUG, "QMM") << "QMM passthrough_syscall = " << syscall << "\n";
         return;
     }
 
     // store the given syscall pointer as a backup.
     // this is used in case we couldn't detect a game and have to call syscall(G_ERROR) to shutdown in vmMain
-    gameinfo.syscall = (eng_syscall)syscall;
+    gameinfo.syscall = syscall;
 
-    gameinfo.HandleEntry(syscall, nullptr, QMM_API_DLLENTRY);
+    gameinfo.HandleEntry((void*)syscall, nullptr, QMM_API_DLLENTRY);
     return;
 }
 

@@ -15,7 +15,7 @@ Created By:
 #include <cstdint>  // intptr_t
 #include "qmmapi.h" // C_DLLEXPORT
 
-C_DLLEXPORT void dllEntry(void* syscall);
+C_DLLEXPORT void dllEntry(eng_syscall syscall);
 C_DLLEXPORT void* GetGameAPI(void* import, void* extra);
 C_DLLEXPORT void* GetModuleAPI(void* import, void* extra);
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
