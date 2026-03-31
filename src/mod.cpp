@@ -155,7 +155,7 @@ bool Mod::LoadQVM() {
     hunk_size = (size_t)cfg_get_int(g_cfg, "qvmhunksize", 0);
 
     // attempt to load mod
-    loaded = qvm_load(&this->vm, filemem.data(), filemem.size(), QVM_syscall, verify_data, hunk_size, nullptr);
+    loaded = qvm_load(&this->vm, filemem.data(), filemem.size(), Mod::QVM_syscall, verify_data, hunk_size, nullptr);
     if (!loaded) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << this->path << "\"): QVM load failed\n";
         goto fail;
@@ -164,7 +164,7 @@ bool Mod::LoadQVM() {
     this->vmbase = (intptr_t)this->vm.datasegment;
 
     // pass the qvm vmMain function pointer to the game-specific mod load handler
-    if (!gameinfo.game->ModLoad((void*)QVM_vmMain, QMM_API_QVM))
+    if (!gameinfo.game->ModLoad((void*)Mod::QVM_vmMain, QMM_API_QVM))
     {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << path_basename(this->path) << "\"): Mod load failed?\n";
         goto fail;
@@ -209,9 +209,14 @@ bool Mod::LoadDLL(APIType dll_api) {
     }
     case QMM_API_DLLENTRY: {
         mod_dllEntry pfndllEntry = (mod_dllEntry)dll_symbol(this->dll, "dllEntry");
+        if (!pfndllEntry) {
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadDLL(\"" << path_basename(this->path) << "\"): Could not locate mod entry point \"dllEntry\"\n";
+            return false;
+        }
+
         mod_vmMain pfnvmMain = (mod_vmMain)dll_symbol(this->dll, "vmMain");
-        if (!pfndllEntry || !pfnvmMain) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadDLL(\"" << path_basename(this->path) << "\"): Could not locate mod entry point \"dllEntry\" and/or \"vmMain\"\n";
+        if (!pfnvmMain) {
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadDLL(\"" << path_basename(this->path) << "\"): Could not locate mod entry point \"vmMain\"\n";
             return false;
         }
 
