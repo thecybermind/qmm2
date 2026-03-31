@@ -97,11 +97,11 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall) {
    4. open logfile
    5. detect game engine
    6. call game-specific GetGameAPI function to store game_import_t pointer and generate game_export_t pointer
-   7. return game_export_t pointer to engine
+   7. create a game-specific game_export_t struct ("qmm_export") with hooks, and return a pointer to engine
    8. engine stores qmm_export pointer, checks qmm_export->apiversion to match GAME_API_VERSION
 
    export (engine->mod) call flow
-   1. call is handled by lambda inside game_export_t struct that was returned to engine
+   1. call is handled by lambda inside qmm_export struct that was returned to engine
    2. call is passed to vmMain with function-specific enum
    3. call is passed to plugins' QMM_vmMain functions
    4. if at least one plugin sets the result to QMM_SUPERCEDE, skip to step 7
@@ -135,8 +135,8 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall) {
    A game_import_t is given to the mod which has lambdas for each pointer that calls QMM's syscall(enum, ...).
 
    The original import/export tables are stored. When QMM and plugins need to call the mod or engine,
-   gameinfo.pfnvmMain or gameinfo.pfnsyscall point to game-specific functions which will take the cmd, and route
-   to the proper function pointer in the struct.
+   gameinfo->game.vmMain or gameinfo->game.syscall point to game-specific functions which will take the cmd, and
+   route to the proper function pointer in the struct.
 
    SOF2SP engine passes an apiversion as the first arg, and import is the second arg
 */
@@ -145,7 +145,7 @@ C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
 }
 
 
-// this is the same as the 2-arg GetGameAPI but OpenJK renamed it
+// this is the same as the 2-arg GetGameAPI used by SOF2SP but OpenJK renamed it
 C_DLLEXPORT void* GetModuleAPI(void* import, void* extra) {
     return gameinfo.HandleEntry(import, extra, QMM_API_GETMODULEAPI);
 }
