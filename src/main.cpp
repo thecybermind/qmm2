@@ -381,14 +381,14 @@ static void HandleQMMCommand(intptr_t arg_start) {
 
     if (str_striequal("status", arg1) || str_striequal("info", arg1)) {
         CONSOLE_PRINT ("(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ")\n");
-        CONSOLE_PRINTF("(QMM) Game            : {}/\"{}\" ({}) (Source: {})\n", gameinfo.game->GameCode(), gameinfo.game->GameName(), APIType_Function(gameinfo.api), gameinfo.is_auto_detected ? "Auto-detected" : "Config file");
-        CONSOLE_PRINTF("(QMM) ModDir          : {}\n", gameinfo.mod_dir);
-        CONSOLE_PRINTF("(QMM) Config file     : \"{}\" {}\n", gameinfo.cfg_path, g_cfg.empty() ? "(error)" : "");
-        CONSOLE_PRINT ("(QMM) Built           : " QMM_COMPILE " by " QMM_BUILDER "\n");
-        CONSOLE_PRINT ("(QMM) URL             : " QMM_URL "\n");
-        CONSOLE_PRINT ("(QMM) Plugin interface: " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
-        CONSOLE_PRINTF("(QMM) Plugins loaded  : {}\n", g_plugins.size());
-        CONSOLE_PRINTF("(QMM) Loaded mod      : {} ({})\n", g_mod.path, APIType_Function(g_mod.api));
+        CONSOLE_PRINTF("(QMM) Game       : {}/\"{}\" ({}) (Source: {})\n", gameinfo.game->GameCode(), gameinfo.game->GameName(), APIType_Function(gameinfo.api), gameinfo.is_auto_detected ? "Auto-detected" : "Config file");
+        CONSOLE_PRINTF("(QMM) ModDir     : {}\n", gameinfo.mod_dir);
+        CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", gameinfo.cfg_path, g_cfg.empty() ? "(error)" : "");
+        CONSOLE_PRINT ("(QMM) Built      : " QMM_COMPILE " by " QMM_BUILDER "\n");
+        CONSOLE_PRINT ("(QMM) URL        : " QMM_URL "\n");
+        CONSOLE_PRINT ("(QMM) PIFV       : " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
+        CONSOLE_PRINTF("(QMM) Plugins    : {}\n", g_plugins.size());
+        CONSOLE_PRINTF("(QMM) Loaded mod : {} ({})\n", g_mod.path, APIType_Function(g_mod.api));
         if (g_mod.vmbase) {
             CONSOLE_PRINT ("(QMM)\n");
             CONSOLE_PRINT ("(QMM) QVM mod information\n");
