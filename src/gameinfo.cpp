@@ -311,7 +311,7 @@ bool GameInfo::LoadPlugin(std::string plugin_path) {
 }
 
 
-// route syscall or vmMain call to plugins and mod
+// route syscall or vmMain call to plugins and mod (combined to reduce code duplication)
 intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) const {
     const char* msg_name;
     const char* func_name;

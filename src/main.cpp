@@ -156,19 +156,19 @@ C_DLLEXPORT void* GetModuleAPI(void* import, void* extra) {
    game info is not stored. This means that the engine could not be determined, so we fail with G_ERROR and tell the
    user to set the game in the config file. If the engine was determined, it performs some internal tasks on a few
    events, and then routes the function call according to the "overall control flow" comment above.
+   For GetGameAPI games, the functions in the game_import_t struct passed to the engine call this function.
 
    The internal events we track:
    GAME_INIT (pre): load mod file, load plugins, and optionally execute a cfg file
    GAME_CONSOLE_COMMAND (pre): handle "qmm" server command
    GAME_SHUTDOWN (post): handle game shutting down
 */
-/* About syscall/mod constants (QMM_G_PRINT, QMM_GAME_INIT, etc):
+/* About QMM_ syscall/mod constants (QMM_G_PRINT, QMM_GAME_INIT, etc):
    Because some engine syscall and mod entry point constants might change between games, we store arrays of all the ones
    QMM uses internally in each game's support file (game_XYZ.cpp). When the game is determined (automatically or via config),
    that game-specific arrays are accessed with the QMM_ENG_MSG and QMM_MOD_MSG macros and they are indexed with a QMM_
    constant, like: QMM_G_PRINT, QMM_GAME_CONSOLE_COMMAND, etc. This allows the code at point-of-use to be game-agnostic.
 */
-// cache the dynamic msg values when we load the game so we aren't recalculating every vmMain call
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
@@ -353,6 +353,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 /* Entry point: mod->qmm
    This is the "syscall" function called by the mod as a way to pass info to or get info from the engine.
    It routes the function call according to the "overall control flow" comment above.
+   For GetGameAPI games, the functions in the game_export_t struct passed to the mod call this function.
    Named qmm_syscall to avoid conflict with POSIX syscall function
 */
 intptr_t qmm_syscall(intptr_t cmd, ...) {

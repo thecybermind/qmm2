@@ -41,11 +41,13 @@ struct GameInfo {
     void LoadConfig(std::string config_filename);
     // find what game engine loaded us
     bool DetectGame(std::string cfg_game, APIType engine);
+
     // find a mod file to load
     bool LoadMod(std::string cfg_mod);
     // find a plugin file to load
     bool LoadPlugin(std::string plugin_path);
-    // route syscall or vmMain call to plugins and mod
+
+    // route syscall or vmMain call to plugins and mod (combined to reduce code duplication)
     intptr_t Route(bool is_syscall, intptr_t cmd, intptr_t* args) const;
 
     // cache some dynamic message values that get evaluated a lot
@@ -53,6 +55,8 @@ struct GameInfo {
 };
 extern GameInfo gameinfo;
 
+
+// shorthand for accessing common functions of GameSupport*
 #define QMM_ENG_MSG					gameinfo.game->QMMEngMsg
 #define QMM_MOD_MSG					gameinfo.game->QMMModMsg
 
