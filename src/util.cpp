@@ -20,6 +20,7 @@ Created By:
 #include <filesystem>
 #include "gameinfo.hpp"
 #include "util.hpp"
+#include "format.hpp"
 
 #if defined(QMM_OS_WINDOWS)
 
@@ -259,11 +260,12 @@ void* dll_symbol(void* dll, const char* symbol) {
 }
 
 
-int dll_close(void* dll) {
+bool dll_close(void* dll) {
 #if defined(QMM_OS_WINDOWS)
-    return FreeLibrary((HMODULE)dll);
+    return (bool)FreeLibrary((HMODULE)dll);
 #elif defined(QMM_OS_LINUX)
-    return dlclose(dll);
+    // returns 0 on success, non-zero otherwise
+    return !dlclose(dll);
 #endif
 }
 
@@ -275,12 +277,15 @@ const char* dll_error() {
     char* buf = nullptr;
     str = "";
 
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&buf, 0, nullptr);
+    DWORD err = GetLastError();
 
-    str = buf;
+    DWORD ret = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&buf, 0, nullptr);
 
-    LocalFree(buf);
+    // GetLastError may return unhandled exception error numbers, which FormatMessageA may not know about  
+    str = (ret && buf) ? buf : fmt::format("Unknown error #{}", err);
+
+    LocalFree(buf); // no-op to pass NULL
 
     return str.c_str();
 #elif defined(QMM_OS_LINUX)
