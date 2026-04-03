@@ -22,6 +22,40 @@ Created By:
 #include "util.hpp"
 
 
+/* This file contains all the entry points for QMM.
+ * This is how the engine loads QMM, and how the mod will call into QMM (thinking it's the engine).
+ * 
+ * void dllEntry(eng_syscall syscall):
+ * Called by some engines to give the mod the engine's syscall pointer. the engine will then call vmMain for all mod
+ * entries
+ * 
+ * void* GetGameAPI(void* import, void* extra):
+ * Called by some engines to give the mod the engine's game_import_t struct pointer. sometimes there is an apiversion
+ * argument as well depending on the game engine. this function should return a game_export_t struct pointer back to
+ * the engine. the engine will then call one of the game_export_t functions for all further mod entries.
+ * 
+ * void* GetModuleAPI(void* import, void* extra):
+ * This is the same as GetGameAPI, and was added for the OpenJK engine.
+ * 
+ * 64-bit Windows only:
+ * void* GetCGameAPI(void* import):
+ * This is similar to GetGameAPI, but for the client side of the game. This is used only in Quake 2: Remastered
+ * which puts the server- and client-side mod components in the same DLL. QMM does not do any hooking of this, and
+ * attempts to simply pass the import pointer through to the actual mod DLL and return the mod's export pointer.
+ *
+ * intptr_t vmMain(intptr_t cmd, ...):
+ * Primary entry point for actual game-related functions from engine->mod. Whenever the engine wants the mod to do
+ * something or know something, this is called with a particular "cmd" value and associated arguments. For
+ * GetGameAPI games, QMM makes a game_export_t struct with lambdas that call this function with a different "cmd"
+ * for each function.
+ *
+ * intptr_t qmm_syscall(intptr_t cmd, ...):
+ * Primary entry point for actual game-related functions from mod->engine. Whenever the mod wants the engine to do
+ * something or know something, this is called with a particular "cmd" value and associated arguments. For
+ * GetGameAPI games, QMM makes a game_import_t struct with lambdas that call this function with a different "cmd"
+ * for each function.
+ */
+
 // handle "qmm" console command
 static void HandleQMMCommand(intptr_t arg_start);
 
