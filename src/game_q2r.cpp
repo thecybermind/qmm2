@@ -339,6 +339,9 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
         ret = true;
         break;
     }
+    case G_MILLISECONDS:
+        ret = util_get_milliseconds();
+        break;
 
     default:
         break;

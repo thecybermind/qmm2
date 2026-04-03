@@ -319,10 +319,10 @@ intptr_t QUAKE2_GameSupport::syscall(intptr_t cmd, ...) {
 
         break;
     }
-    case G_MILLISECONDS: {
+    case G_MILLISECONDS:
         ret = util_get_milliseconds();
         break;
-    }
+
     default:
         break;
     };

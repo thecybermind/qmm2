@@ -152,6 +152,8 @@ enum {
 	G_DROP_CLIENT,					// void (int clientNum)
 	G_GET_USERINFO,					// void (edict_t* ent, char* userinfo, int bufferSize)
 	G_GET_ENTITY_TOKEN,				// bool (char *buffer, int bufferSize)
+
+	G_MILLISECONDS,					// int ()
 };
 
 typedef intptr_t fileHandle_t;
