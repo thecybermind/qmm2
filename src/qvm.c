@@ -14,6 +14,7 @@ Created By:
 #include <stdint.h> // intptr_t and uint8_t
 #include <malloc.h>
 #include <string.h> // memcpy and memset
+#include <time.h>
 #include "qvm.h"
 
 #ifdef QMM_LOGGING
@@ -338,6 +339,11 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
     qvm_opcode op;
     // hardcoded param for op
     int param;
+
+#if defined(_DEBUG)
+    struct timespec time_start;
+    (void)timespec_get(&time_start, TIME_UTC);
+#endif
 
     // main instruction loop
     do {
@@ -781,9 +787,17 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
         } // switch (op)
     } while (opptr);
 
+#if defined(_DEBUG)
+    struct timespec time_end;
+    (void)timespec_get(&time_end, TIME_UTC);
+    int64_t timediff = (time_end.tv_sec - time_start.tv_sec) * 1000000000;
+    timediff += (time_end.tv_nsec - time_start.tv_nsec);
+    log_c(QMM_LOG_TRACE, QMM_LOGGING_TAG, "qvm_exec(%zu): Execution took %lld nanoseconds.\n", instruction, timediff);
+#endif
+
     // compare stored frame size like in QVM_OP_LEAVE
     if (programstack[1] != framesize) {
-        log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error after execution: stack frame size (%d) does not match entry stack frame size (%d)\n", opptr - codesegment, programstack[1], framesize);
+        log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error after execution: stack frame size (%d) does not match entry stack frame size (%d)\n", instruction, programstack[1], framesize);
         goto fail;
     }
 
