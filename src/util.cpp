@@ -17,6 +17,7 @@ Created By:
 #include <cstddef>      // size_t
 #include <vector>
 #include <string>
+#include <chrono>
 #include <filesystem>
 #include "gameinfo.hpp"
 #include "util.hpp"
@@ -30,7 +31,6 @@ Created By:
 #include <shellapi.h>			// CommandLineToArgvW
 
 #define PATH_MAX				MAX_PATH
-#define util_get_ticks			GetTickCount64
 
 
 // store module handle for util_get_qmm_path and util_get_qmm_handle
@@ -47,18 +47,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD, LPVOID) {
 #include <dlfcn.h>			// dlopen, dlclose, dlsym
 #include <unistd.h>			// readlink
 #include <limits.h>			// PATH_MAX
-#include <sys/stat.h>		// mkdir
-#include <sys/time.h>
-
-
-static uint64_t util_get_ticks() {
-    struct timeval tp;
-    struct timezone tzp;
-
-    gettimeofday(&tp, &tzp);
-
-    return tp.tv_sec * 1000 + tp.tv_usec / 1000;
-}
 
 #endif
 
@@ -233,12 +221,15 @@ void* util_get_qmm_handle() {
 
 intptr_t util_get_milliseconds() {
     static bool initialized = false;
-    static uint64_t startTime = 0;
+    static std::chrono::system_clock::duration startTime;
+
+    auto now = std::chrono::system_clock::now();
+
     if (!initialized) {
         initialized = true;
-        startTime = util_get_ticks();
+        startTime = now.time_since_epoch();;
     }
-    return (intptr_t)(util_get_ticks() - startTime);
+    return (intptr_t)std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch() - startTime).count();
 }
 
 
