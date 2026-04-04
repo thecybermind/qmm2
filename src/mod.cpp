@@ -14,7 +14,7 @@ Created By:
 #include <string>
 #include "log.hpp"
 #include "qmmapi.h"
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "gameinfo.hpp"
 #include "config.hpp"
 #include "main.hpp"         // qmm_syscall
@@ -106,7 +106,18 @@ intptr_t Mod::QVM_vmMain(intptr_t cmd, ...) {
     }
 
     // pass array and size to qvm
-    return qvm_exec(&g_mod.vm, sizeof(qvmargs) / sizeof(qvmargs[0]), qvmargs);
+    int ret = qvm_exec(&g_mod.vm, sizeof(qvmargs) / sizeof(qvmargs[0]), qvmargs);
+
+    // if qvm isn't loaded, we need to error
+    if (!g_mod.vm.memory) {
+        if (!gameinfo.is_shutdown) {
+            gameinfo.is_shutdown = true;
+            QMMLOG(QMM_LOG_FATAL, "QMM") << "Mod::QVM_vmMain(" << gameinfo.game->ModMsgName(cmd) << "(" << cmd << ")): QVM unloaded during execution due to a run-time error\n";
+            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ERROR), "\nFatal QMM Error:\nThe QVM was unloaded during execution due to a run-time error.\n");
+        }
+        return 0;
+    }
+    return ret;
 }
 
 
