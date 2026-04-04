@@ -96,6 +96,7 @@ struct GameInfo {
     static intptr_t msg_GAME_SHUTDOWN;          // Value of GAME_SHUTDOWN for the detected game
 };
 
+// Currently-loaded game & game engine info.
 extern GameInfo gameinfo;
 
 
@@ -130,6 +131,7 @@ struct CGameInfo {
     bool is_shutdown;
 };
 
+// Basic information about the cgame for games where the DLL has both game and cgame
 extern CGameInfo cgameinfo;
 
 #endif // QMM2_GAMEINFO_H

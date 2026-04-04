@@ -273,8 +273,11 @@ const char* dll_error() {
     DWORD ret = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
         nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&buf, 0, nullptr);
 
-    // GetLastError may return unhandled exception error numbers, which FormatMessageA may not know about  
-    str = (ret && buf) ? buf : fmt::format("Unknown error #{}", err);
+    if (ret && buf)
+        str = buf;
+    // generic message in case FormatMessageA doesn't know about error code
+    else
+        str = fmt::format("Unknown error #{}", err);
 
     LocalFree(buf); // no-op to pass NULL
 

@@ -23,99 +23,105 @@ Created By:
 // ----- Mod suffix and extension -----
 // ------------------------------------
 
-// SUF_DLL: standard suffixes for mod DLLs per OS/arch ("x86", "i386", "x86_64", "x86_64")
-// X64_SUF_DLL: ioRTCW and ET:Legacy use "x64" suffix for 64-bit windows instead of "x86_64"
-// EXT_DLL: standard extensions for mod DLLs per OS (".dll", ".so")
-// SP_DLL + MP_DLL: COD, RTCWMP & WET filename changes between linux/windows
-// UO_DLL: CODUO filename changes between linux/windows
-
-// EXT_QVM: standard extension for mod QVM (".qvm")
-// MOD_DLL: concatenation of SUF_DLL and EXT_DLL
-// X64_DLL: concatenation of X64_SUF_DLL and EXT_DLL
-
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
- #define SUF_DLL "x86_64"
- #define X64_SUF_DLL "x64"
+ #define SUF_DLL "x86_64"               // Standard suffixes for mod DLLs ("x86", "i386", "x86_64", "x86_64")
+ #define X64_SUF_DLL "x64"              // ioRTCW and ET:Legacy suffixes for mod DLLs ("x86", "i386", "x64", "x86_64")
 #elif defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_32)
- #define SUF_DLL "x86"
- #define X64_SUF_DLL "x86"
+ #define SUF_DLL "x86"                  // Standard suffixes for mod DLLs ("x86", "i386", "x86_64", "x86_64")
+ #define X64_SUF_DLL "x86"              // ioRTCW and ET:Legacy suffixes for mod DLLs ("x86", "i386", "x64", "x86_64")
 #elif defined(QMM_OS_LINUX) && defined(QMM_ARCH_64)
- #define SUF_DLL "x86_64"
- #define X64_SUF_DLL "x86_64"
+ #define SUF_DLL "x86_64"               // Standard suffixes for mod DLLs ("x86", "i386", "x86_64", "x86_64")
+ #define X64_SUF_DLL "x86_64"           // ioRTCW and ET:Legacy suffixes for mod DLLs ("x86", "i386", "x64", "x86_64")
 #elif defined(QMM_OS_LINUX) && defined(QMM_ARCH_32)
- #define SUF_DLL "i386"
- #define X64_SUF_DLL "i386" 
+ #define SUF_DLL "i386"                 // Standard suffixes for mod DLLs ("x86", "i386", "x86_64", "x86_64")
+ #define X64_SUF_DLL "i386"             // ioRTCW and ET:Legacy suffixes for mod DLLs ("x86", "i386", "x64", "x86_64")
 #else
  #error Unknown architecture + OS combination
 #endif
 
 #if defined(QMM_OS_WINDOWS)
- #define EXT_DLL ".dll"
- #define SP_DLL "_sp_"
- #define MP_DLL "_mp_"
- #define UO_DLL "uo_game" MP_DLL
+ #define EXT_DLL ".dll"                 // Standard extensions for mod DLLs per OS (".dll", ".so")
+ #define SP_DLL "_sp_"                  // RTCWSP filename changes between linux/Windows
+ #define MP_DLL "_mp_"                  // COD, RTCWMP & WET filename changes between linux/Windows
+ #define UO_DLL "uo_game" MP_DLL        // CODUO filename changes between linux/Windows
 #elif defined(QMM_OS_LINUX)
- #define EXT_DLL ".so"
- #define SP_DLL ".sp."
- #define MP_DLL ".mp."
- #define UO_DLL "game" MP_DLL "uo."
+ #define EXT_DLL ".so"                  // Standard extensions for mod DLLs per OS (".dll", ".so")
+ #define SP_DLL ".sp."                  // RTCWSP filename changes between linux/Windows
+ #define MP_DLL ".mp."                  // COD, RTCWMP & WET filename changes between linux/Windows
+ #define UO_DLL "game" MP_DLL "uo."     // CODUO filename changes between linux/Windows
 #endif 
 
-#define EXT_QVM ".qvm"
-#define MOD_DLL SUF_DLL EXT_DLL
-#define X64_DLL X64_SUF_DLL EXT_DLL
+#define EXT_QVM ".qvm"                  // Standard extension for mod QVM (".qvm")
+#define MOD_DLL SUF_DLL EXT_DLL         // Standard extensions and suffixes for mod DLLs ("x86.dll", "i386.so", "x86_64.dll", "x86_64.so")
+#define X64_DLL X64_SUF_DLL EXT_DLL     // ioRTCW and ET:Legacy suffixes for mod DLLs ("x86.dll", "i386.so", "x64.dll", "x86_64.so")
 
 // ------------------------------
 // ----- Game support stuff -----
 // ------------------------------
 
-// engine/mod API type
+// API type for engine/mod
 enum APIType {
-    QMM_API_ERROR,
+    QMM_API_ERROR,          // Error/unknown
 
-    QMM_API_QVM,			// mod-only
+    QMM_API_QVM,			// Mod-only
 
-    QMM_API_DLLENTRY,
-    QMM_API_GETGAMEAPI,
-    QMM_API_GETMODULEAPI,
+    QMM_API_DLLENTRY,       // dllEntry()
+    QMM_API_GETGAMEAPI,     // GetGameAPI()
+    QMM_API_GETMODULEAPI,   // GetModuleAPI()
 };
-const char* APIType_Name(APIType);		// return the string form of the enum
-const char* APIType_Function(APIType);	// return the entry function name
 
-// a list of all the engine messages/constants used by QMM. if you change this, update the GEN_GAME_QMM_*_MSGS macros
+/**
+* @brief Get name of APIType enum
+*
+* @param api APIType value
+* @return String name of the APIType enum
+*/
+const char* APIType_Name(APIType api);
+
+/**
+* @brief Get function of APIType enum
+*
+* @param api APIType value
+* @return String name of the entry function associated with api
+*/
+const char* APIType_Function(APIType api);
+
+// List of all the engine messages/constants used by QMM. If you change this, update the GEN_GAME_QMM_ENG_MSGS macro.
 enum {
-    // general purpose
+    // General purpose
     QMM_G_PRINT, QMM_G_ERROR, QMM_G_ARGV, QMM_G_ARGC, QMM_G_SEND_CONSOLE_COMMAND, QMM_G_GET_CONFIGSTRING,
-    // cvars
+    // CVars
     QMM_G_CVAR_REGISTER, QMM_G_CVAR_VARIABLE_STRING_BUFFER, QMM_G_CVAR_VARIABLE_INTEGER_VALUE, QMM_CVAR_SERVERINFO, QMM_CVAR_ROM,
-    // files
+    // Files
     QMM_G_FS_FOPEN_FILE, QMM_G_FS_READ, QMM_G_FS_WRITE, QMM_G_FS_FCLOSE_FILE, QMM_EXEC_APPEND, QMM_FS_READ,
 
-    // array size
+    // Array size
     QMM_ENGINE_MSG_COUNT,
 };
 
-// a list of all the mod messages used by QMM. if you change this, update the GEN_GAME_QMM_MSGS macro
+// List of all the mod messages/constants used by QMM. If you change this, update the GEN_GAME_QMM_MOD_MSGS macro.
 enum {
     QMM_GAME_INIT, QMM_GAME_SHUTDOWN, QMM_GAME_CONSOLE_COMMAND,
 
-    // array size
+    // Array size
     QMM_MOD_MSG_COUNT,
 };
 
-// macros to output game-specific message values to match the QMM_ enums above
+// Output game-specific message values to match the QMM engine messages.
 #define GEN_GAME_QMM_ENG_MSGS() \
 	{ \
 		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING, \
 		G_CVAR_REGISTER, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, \
 		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, \
 	}
+
+// Output game-specific message values to match the QMM mod messages.
 #define GEN_GAME_QMM_MOD_MSGS() \
 	{ \
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
 	}
 
-// pure virtual base class for game support
+// Pure virtual base class for game support
 // need to implement all functions except:
 // * DefaultQVMName - only need if the game supports QVMs. default will return nullptr (this is how QMM determines support)
 // * ModCvar - only need if the engine's cvar for determining mod is different from "fs_game"
@@ -161,110 +167,144 @@ struct GameSupport {
     virtual int QVMSyscall(uint8_t*, int, int*) { return 0; }
 };
 
+// Table of pointers to GameSupport objects
 extern std::vector<GameSupport*> api_supportedgames;
 
-// macros to make game support a bit easier to do
-
-// generate extern for each game's support object (used at the top of game_api.cpp)
+// Generate extern for each game's support object (used at the top of gameapi.cpp)
 #define GEN_GAME_EXTS(game)	extern GameSupport* game##_gamesupport
 
-// generate game support object (used at the top of game_XYZ.cpp)
+// Generate game support object (used at the top of game_XYZ.cpp)
 #define GEN_GAME_OBJ(game) static game##_GameSupport gamesupport; GameSupport* game##_gamesupport = &gamesupport
 
-// reference game support object in api_supportedgames list
+// Reference game support object (used in gameapi.cpp in api_supportedgames list)
 #define GET_GAME_OBJ(game) game##_gamesupport
 
-// generate a case/string line for use in the *MsgNames functions
+// Generate a case/string line for use in the *MsgNames functions
 #define GEN_CASE(x)		case x: return #x
 
 // ----------------------------
 // ----- API vararg stuff -----
 // ----------------------------
 
-// max amount of vmMain args for games that support QVM
+// Max amount of vmMain args for games that support QVM
 constexpr int QVM_MAX_VMMAIN_ARGS = 6;
 
-// max amount of vmMain args in any game
+// Max amount of vmMain args in any game
 constexpr int QMM_MAX_VMMAIN_ARGS = 9;
-// pull vmMain args from varargs
+
+// Pull vmMain args from varargs
 #define QMM_GET_VMMAIN_ARGS()   intptr_t args[QMM_MAX_VMMAIN_ARGS] = {}; \
                                 va_list arglist; \
                                 va_start(arglist, cmd); \
                                 for (int i = 0; i < QMM_MAX_VMMAIN_ARGS; ++i) \
                                     args[i] = va_arg(arglist, intptr_t); \
                                 va_end(arglist)
-// generate list of all vmMain args
+// Generate list of all vmMain args for callsites
 #define QMM_PUT_VMMAIN_ARGS()	args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]
 
-// max amount of syscall args in any game
+// Max amount of syscall args in any game
 constexpr int QMM_MAX_SYSCALL_ARGS = 18;
-// pull syscall args from varargs
+// Pull syscall args from varargs
 #define QMM_GET_SYSCALL_ARGS()  intptr_t args[QMM_MAX_SYSCALL_ARGS] = {}; \
                                 va_list arglist; \
                                 va_start(arglist, cmd); \
                                 for (int i = 0; i < QMM_MAX_SYSCALL_ARGS; ++i) \
                                     args[i] = va_arg(arglist, intptr_t); \
                                 va_end(arglist)
-// generate list of all syscall args
+// Generate list of all syscall args for callsites
 #define QMM_PUT_SYSCALL_ARGS()	args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17]
 
 // ----------------------------
 // ----- GetGameAPI stuff -----
 // ----------------------------
 
-// handle calls from QMM and plugins into the engine
+// Handle calls from QMM and plugins into the engine
 #define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((eng_syscall)(orig_import. field))(QMM_PUT_SYSCALL_ARGS()); break
+// Handle accessing an engine-exported variable
 #define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_import. field); break
-// handle specific arg types (for passing float args in the right registers), void return type
+// Handle 0 args, void return type
 #define ROUTE_IMPORT_0_V(field, cmd) case cmd: orig_import. field(); break
+// Handle 1 specific arg type (for passing float args in the right registers), void return type
 #define ROUTE_IMPORT_1_V(field, cmd, type0) case cmd: orig_import. field(type0 args[0]); break
+// Handle 2 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_IMPORT_2_V(field, cmd, type0, type1) case cmd: orig_import. field(type0 args[0], type1 args[1]); break
+// Handle 3 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_IMPORT_3_V(field, cmd, type0, type1, type2) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2]); break
+// Handle 4 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_IMPORT_4_V(field, cmd, type0, type1, type2, type3) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3]); break
+// Handle 5 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_IMPORT_5_V(field, cmd, type0, type1, type2, type3, type4) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4]); break
+// Handle 6 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_IMPORT_6_V(field, cmd, type0, type1, type2, type3, type4, type5) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5]); break
+// Handle 7 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_IMPORT_7_V(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6]); break
+// Handle 8 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_IMPORT_8_V(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7]); break
+// Handle 9 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_IMPORT_9_V(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8]); break
+// Handle 10 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_IMPORT_10_V(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8], type9 args[9]); break
-// handle specific arg types (for passing float args in the right registers)
+// Handle 0 args
 #define ROUTE_IMPORT_0(field, cmd) case cmd: ret = (intptr_t)orig_import. field(); break
+// Handle 1 specific arg type (for passing float args in the right registers)
 #define ROUTE_IMPORT_1(field, cmd, type0) case cmd: ret = (intptr_t)orig_import. field(type0 args[0]); break
+// Handle 2 specific arg types (for passing float args in the right registers)
 #define ROUTE_IMPORT_2(field, cmd, type0, type1) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1]); break
+// Handle 3 specific arg types (for passing float args in the right registers)
 #define ROUTE_IMPORT_3(field, cmd, type0, type1, type2) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2]); break
+// Handle 4 specific arg types (for passing float args in the right registers)
 #define ROUTE_IMPORT_4(field, cmd, type0, type1, type2, type3) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3]); break
+// Handle 5 specific arg types (for passing float args in the right registers)
 #define ROUTE_IMPORT_5(field, cmd, type0, type1, type2, type3, type4) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4]); break
+// Handle 6 specific arg types (for passing float args in the right registers)
 #define ROUTE_IMPORT_6(field, cmd, type0, type1, type2, type3, type4, type5) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5]); break
+// Handle 7 specific arg types (for passing float args in the right registers)
 #define ROUTE_IMPORT_7(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6]); break
+// Handle 8 specific arg types (for passing float args in the right registers)
 #define ROUTE_IMPORT_8(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7]); break
+// Handle 9 specific arg types (for passing float args in the right registers)
 #define ROUTE_IMPORT_9(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8]); break
+// Handle 10 specific arg types (for passing float args in the right registers)
 #define ROUTE_IMPORT_10(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8], type9 args[9]); break
+// Handle 18 specific arg types (for passing float args in the right registers)
 #define ROUTE_IMPORT_18(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16, type17) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8], type9 args[9], type10 args[10], type11 args[11], type12 args[12], type13 args[13], type14 args[14], type15 args[15], type16 args[16], type17 args[17]); break
-// handle specific arg types (for passing float args in the right registers), float return type
+// Handle 0 args, float return type
 #define ROUTE_IMPORT_0_F(field, cmd) case cmd: fret = orig_import. field(); ret = *(int*)&fret; break
+// Handle 1 specific arg type (for passing float args in the right registers), float return type
 #define ROUTE_IMPORT_1_F(field, cmd, type0) case cmd: fret = orig_import. field(type0 args[0]); ret = *(int*)&fret; break
+// Handle 2 specific arg types (for passing float args in the right registers), float return type
 #define ROUTE_IMPORT_2_F(field, cmd, type0, type1) case cmd: fret = orig_import. field(type0 args[0], type1 args[1]); ret = *(int*)&fret; break
+// Handle 3 specific arg types (for passing float args in the right registers), float return type
 #define ROUTE_IMPORT_3_F(field, cmd, type0, type1, type2) case cmd: fret = orig_import. field(type0 args[0], type1 args[1], type2 args[2]); ret = *(int*)&fret; break
+// Handle 4 specific arg types (for passing float args in the right registers), float return type
 #define ROUTE_IMPORT_4_F(field, cmd, type0, type1, type2, type3) case cmd: fret = orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3]); ret = *(int*)&fret; break
 
-// handle calls from QMM and plugins into the mod
+// Handle calls from QMM and plugins into the mod
 #define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((mod_vmMain)(orig_export-> field))(QMM_PUT_VMMAIN_ARGS()); break
+// Handle accessing a mod-exported variable
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_export-> field); break
-// handle specific arg types (for passing float args in the right registers), void return type
+// Handle 0 args, void return type
 #define ROUTE_EXPORT_0_V(field, cmd) case cmd: orig_export-> field(); break
+// Handle 1 specific arg type (for passing float args in the right registers), void return type
 #define ROUTE_EXPORT_1_V(field, cmd, type0) case cmd: orig_export-> field(type0 args[0]); break
+// Handle 2 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_EXPORT_2_V(field, cmd, type0, type1) case cmd: orig_export-> field(type0 args[0], type1 args[1]); break
+// Handle 3 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_EXPORT_3_V(field, cmd, type0, type1, type2) case cmd: orig_export-> field(type0 args[0], type1 args[1], type2 args[2]); break
+// Handle 7 specific arg types (for passing float args in the right registers), void return type
 #define ROUTE_EXPORT_7_V(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: orig_export-> field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6]); break
-// handle specific arg types (for passing float args in the right registers)
+// Handle 0 args
 #define ROUTE_EXPORT_0(field, cmd) case cmd: ret = (intptr_t)orig_export-> field(); break
+// Handle 1 specific arg type (for passing float args in the right registers)
 #define ROUTE_EXPORT_1(field, cmd, type0) case cmd: ret = (intptr_t)orig_export-> field(type0 args[0]); break
+// Handle 2 specific arg types (for passing float args in the right registers)
 #define ROUTE_EXPORT_2(field, cmd, type0, type1) case cmd: ret = (intptr_t)orig_export-> field(type0 args[0], type1 args[1]); break
+// Handle 3 specific arg types (for passing float args in the right registers)
 #define ROUTE_EXPORT_3(field, cmd, type0, type1, type2) case cmd: ret = (intptr_t)orig_export-> field( type0 args[0], type1 args[1], type2 args[2]); break
 
-// handle calls from mod into QMM
+// Handle calls from mod into QMM
 #define GEN_IMPORT(field, cmd)	(decltype(qmm_import. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8, intptr_t arg9, intptr_t arg10, intptr_t arg11, intptr_t arg12, intptr_t arg13, intptr_t arg14, intptr_t arg15, intptr_t arg16, intptr_t arg17) { return ::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17); }
-// handle specific arg types (for passing float args in the right registers)
+// Handle specific arg types (for passing float args in the right registers)
 #define  GEN_IMPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { return (typeret)::qmm_syscall(cmd, arg0); }
 #define  GEN_IMPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1); }
 #define  GEN_IMPORT_3(field, cmd, typeret, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2); }
@@ -283,16 +323,16 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 #define GEN_IMPORT_16(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15); }
 #define GEN_IMPORT_17(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15, type16 arg16) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
 #define GEN_IMPORT_18(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16, type17) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15, type16 arg16, type17 arg17) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17); }
-// handle specific arg types (for passing float args in the right registers), float return type
+// Handle specific arg types (for passing float args in the right registers), float return type
 #define  GEN_IMPORT_0_F(field, cmd) +[]() -> float { intptr_t ret = ::qmm_syscall(cmd); return *(float*)&ret; }
 #define  GEN_IMPORT_1_F(field, cmd, type0) +[](type0 arg0) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0); return *(float*)&ret; }
 #define  GEN_IMPORT_2_F(field, cmd, type0, type1) +[](type0 arg0, type1 arg1) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1); return *(float*)&ret; }
 #define  GEN_IMPORT_3_F(field, cmd, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1, arg2); return *(float*)&ret; }
 #define  GEN_IMPORT_4_F(field, cmd, type0, type1, type2, type3) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1, arg2, arg3); return *(float*)&ret; }
 
-// handle calls from engine into QMM
+// Handle calls from engine into QMM
 #define  GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { cgameinfo.is_from_QMM = true; return ::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
-// handle specific arg types (for passing float args in the right registers)
+// Handle specific arg types (for passing float args in the right registers)
 #define  GEN_EXPORT_0(field, cmd, typeret) +[]() -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd); }
 #define  GEN_EXPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0); }
 #define  GEN_EXPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { cgameinfo.is_from_QMM = true; return (typeret)::vmMain(cmd, arg0, arg1); }
@@ -308,15 +348,15 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 // ----- QVM stuff -----
 // ---------------------
 
-// these macros handle qvm syscall arguments in GAME_QVMSyscall functions in game_*.cpp
+// These macros handle qvm syscall arguments in GAME_QVMSyscall functions in game_*.cpp
 
-// this gets an argument value (evaluate to an intptr_t)
-#define VMARG(arg)	(intptr_t)args[arg]
+// This gets the n'th argument value (evaluate to an intptr_t)
+#define VMARG(n)	(intptr_t)args[n]
 
-// this adds the base VM address pointer to an argument value (evaluate to a pointer)
-#define VMPTR(arg)	(args[arg] ? membase + args[arg] : nullptr)
+// This adds the base VM address pointer to the n'th argument value (evaluate to a pointer)
+#define VMPTR(n)	(args[n] ? membase + args[n] : nullptr)
 
-// this subtracts the base VM address pointer from a value, for returning a pointer from syscall (this should evaluate to an int)
+// This subtracts the base VM address pointer from given pointer value (for returning a pointer from syscall, evaluate to an int)
 #define VMRET(ptr)	(int)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
 
 #endif // QMM2_GAMEAPI_H

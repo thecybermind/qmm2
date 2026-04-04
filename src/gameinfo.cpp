@@ -71,7 +71,10 @@ CGameInfo cgameinfo = {
 };
 
 
-intptr_t GameInfo::msg_G_PRINT, GameInfo::msg_GAME_INIT, GameInfo::msg_GAME_CONSOLE_COMMAND, GameInfo::msg_GAME_SHUTDOWN;
+intptr_t GameInfo::msg_G_PRINT;                // Value of G_PRINT for the detected game
+intptr_t GameInfo::msg_GAME_INIT;              // Value of GAME_INIT for the detected game
+intptr_t GameInfo::msg_GAME_CONSOLE_COMMAND;   // Value of GAME_CONSOLE_COMMAND for the detected game
+intptr_t GameInfo::msg_GAME_SHUTDOWN;          // Value of GAME_SHUTDOWN for the detected game
 
 
 void* GameInfo::HandleEntry(void* import, void* extra, APIType engine) {
