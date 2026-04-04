@@ -22,7 +22,7 @@ Created By:
 #include <cstring>
 #include <cstdio>
 #include <q2r/rerelease/game.h>
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include "format.hpp"
 // QMM-specific Q2R header

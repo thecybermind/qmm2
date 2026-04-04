@@ -19,7 +19,7 @@ Created By:
 #include "format.hpp"
 #include "config.hpp"
 #include "gameinfo.hpp"
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "qmmapi.h"
 #include "plugin.hpp"
 #include "mod.hpp"      // g_mod

@@ -12,7 +12,7 @@ Created By:
 #include <rtcwsp/game/q_shared.h>
 #include <rtcwsp/game/g_public.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <vector>
 #include <string>

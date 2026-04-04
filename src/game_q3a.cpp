@@ -12,7 +12,7 @@ Created By:
 #include <q3a/game/q_shared.h>
 #include <q3a/game/g_public.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <string>
 // QMM-specific Q3A header

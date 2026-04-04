@@ -18,7 +18,7 @@ Created By:
 #include <stef2/game/g_public.h>
 #undef GAME_DLL
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <vector>
 #include <string>

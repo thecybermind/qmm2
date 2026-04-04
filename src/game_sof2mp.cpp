@@ -17,7 +17,7 @@ Created By:
 #include <sof2mp/game/g_public.h>
 #include <sof2mp/gametype/gt_public.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <string>
 // QMM-specific SOF2MP header

@@ -21,7 +21,7 @@ Created By:
 #include <sin/game/q_shared.h>
 #include <sin/game/game.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include "format.hpp"
 // QMM-specific SIN header

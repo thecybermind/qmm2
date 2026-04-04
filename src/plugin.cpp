@@ -15,7 +15,7 @@ Created By:
 #include <string>
 #include <filesystem>
 #include "qmmapi.h"
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include "config.hpp"
 #include "gameinfo.hpp"

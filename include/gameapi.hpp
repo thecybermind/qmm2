@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef QMM2_GAME_API_H
-#define QMM2_GAME_API_H
+#ifndef QMM2_GAMEAPI_H
+#define QMM2_GAMEAPI_H
 
 #include "version.h"
 #include <cstdint>  // intptr_t
@@ -319,4 +319,4 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 // this subtracts the base VM address pointer from a value, for returning a pointer from syscall (this should evaluate to an int)
 #define VMRET(ptr)	(int)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
 
-#endif // QMM2_GAME_API_H
+#endif // QMM2_GAMEAPI_H
