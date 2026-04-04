@@ -162,7 +162,7 @@ C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
 
 
 C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import) {
-    return gameinfo.HandleEntry((void*)apiversion, import, QMM_API_GETMODULEAPI);
+    return gameinfo.HandleEntry((void*)(intptr_t)apiversion, import, QMM_API_GETMODULEAPI);
 }
 
 
