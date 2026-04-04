@@ -53,6 +53,7 @@ static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr
 static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unused]], intptr_t index);
 static const char* s_plugin_helper_ModDir(plugin_id plid [[maybe_unused]]);
 
+// Struct of plugin helper functions
 static plugin_funcs s_pluginfuncs = {
     s_plugin_helper_WriteQMMLog,
     s_plugin_helper_VarArgs,
@@ -79,7 +80,7 @@ static plugin_funcs s_pluginfuncs = {
     s_plugin_helper_ModDir,
 };
 
-// struct to store all the globals available to plugins
+// This holds global variables that are available to plugins via helper functions.
 plugin_globals g_plugin_globals = {
     0,			// final_return
     0,			// orig_return
@@ -87,12 +88,17 @@ plugin_globals g_plugin_globals = {
     QMM_UNUSED,	// plugin_result
 };
 
+// List of QMM plugins
 std::vector<Plugin> g_plugins;
 
-// store registered QVM function IDs for plugins
+// This holds pseudo-syscall IDs. They are registered to a given plugin, and when the QVM interpreter executes the
+// syscall ID, the plugin's QMM_QVMHandler function is called.
 std::map<int, Plugin*> g_registered_qvm_funcs;
+
+// This is the next pseudo-syscall ID to return to plugins.
 static int s_next_qvm_func = QMM_QVM_FUNC_STARTING_ID;
 
+// Struct of variables to pass to plugins' QMM_Attach
 static plugin_vars s_pluginvars = {
     0,				// vmbase, set in plugin_load
     &g_plugin_globals.final_return,
@@ -114,21 +120,20 @@ const char* plugin_result_to_str(plugin_res res) {
 }
 
 
-// wrapper free function for GameSupport::syscall to pass to plugins
+// Wrapper syscall function to pass to plugins
 static intptr_t s_plugin_game_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
     return gameinfo.game->syscall(cmd, QMM_PUT_SYSCALL_ARGS());
 }
 
 
-// wrapper free function for GameSupport::vmMain to pass to plugins
+// Wrapper vmMain function to pass to plugins
 static intptr_t s_plugin_game_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
     return gameinfo.game->vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 }
 
 
-// returns: -1 if failed to load and don't continue, 0 if failed to load and continue, 1 if loaded
 int plugin_load(Plugin& p, std::string file) {
     int ret = 0;
 
@@ -256,6 +261,14 @@ void plugin_unload(Plugin& p) {
 }
 
 
+/**
+* @brief Write to the QMM log.
+*
+* @param plid Plugin ID of the calling plugin
+* @param severity Log message severity
+* @param fmt Format string
+* @param ... Format arguments
+*/
 static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char* fmt, ...) {
     if (!fmt) {
         QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called WriteQMMLog() with null fmt\n";
@@ -287,6 +300,14 @@ static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char
 }
 
 
+/**
+* @brief Construct a string from format string.
+*
+* @param plid Plugin ID of the calling plugin
+* @param fmt FOrmat string
+* @param ... Format arguments
+* @return Pointer to the constructed string
+*/
 static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* fmt, ...) {
     va_list	argptr;
     static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
@@ -306,6 +327,12 @@ static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char
 }
 
 
+/**
+* @brief Is the mod a QVM?
+*
+* @param plid Plugin ID of the calling plugin
+* @return 0 if the mod is not a QVM, !0 otherwise
+*/
 static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]]) {
     int ret = g_mod.vmbase != 0;
 
@@ -315,6 +342,13 @@ static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]]) {
 }
 
 
+/**
+* @brief Convert engine message value to string.
+*
+* @param plid Plugin ID of the calling plugin
+* @param msg Engine message to convert
+* @return String name of engine message
+*/
 static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
     const char* ret = gameinfo.game->EngMsgName(msg);
 
@@ -324,6 +358,13 @@ static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], i
 }
 
 
+/**
+* @brief Convert mod message value to string.
+*
+* @param plid Plugin ID of the calling plugin
+* @param msg Mod message to convert
+* @return String name of mod message
+*/
 static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
     const char* ret = gameinfo.game->ModMsgName(msg);
 
@@ -333,6 +374,13 @@ static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], i
 }
 
 
+/**
+* @brief Get integer value of a cvar.
+*
+* @param plid Plugin ID of the calling plugin
+* @param cvar Name of cvar
+* @return Integer value of cvar
+*/
 static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], const char* cvar) {
     intptr_t ret = 0;
     if (cvar && *cvar)
@@ -344,6 +392,13 @@ static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], cons
 }
 
 
+/**
+* @brief Get string value of a cvar.
+*
+* @param plid Plugin ID of the calling plugin
+* @param cvar Name of cvar
+* @return Pointer to string value of cvar
+*/
 static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], const char* cvar) {
     static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
@@ -363,6 +418,12 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
 }
 
 
+/**
+* @brief Returns the QMM short code for the active engine.
+*
+* @param plid Plugin ID of the calling plugin
+* @return Pointer to string representing the active game engine
+*/
 static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]]) {
     const char* ret = gameinfo.game->GameCode();
 
@@ -372,6 +433,16 @@ static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]]
 }
 
 
+/**
+* @brief Fill buffer with the desired command argument with G_ARGV.
+*
+* This function automatically handles both types of G_ARGV: one which fills a buffer and one which returns the value.
+*
+* @param plid Plugin ID of the calling plugin
+* @param argn Argument number to retrieve
+* @param buf Buffer to store result in
+* @param buflen Length of buf
+*/ 
 static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn, char* buf, intptr_t buflen) {
     if (buf && buflen)
         ArgV(argn, buf, buflen);
@@ -380,7 +451,14 @@ static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn,
 }
 
 
-// same as the SDK's Info_ValueForKey function
+/**
+* @brief Same as the SDK's Info_ValueForKey function.
+*
+* @param plid Plugin ID of the calling plugin
+* @param userinfo Userinfo string to search
+* @param key Key to find value for
+* @return Pointer to string containing value ("" if not found)
+*/
 static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused]], const char* userinfo, const char* key) {
     static std::string value[ROTATING_BUFFER_NUM];
     static int index = 0;
@@ -417,6 +495,12 @@ static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused
 }
 
 
+/**
+* @brief Retrieve a node from the QMM configuration file.
+*
+* @param key Slash-separated node to find
+* @return JSON object representing the node (or an empty node if not found)
+*/
 static nlohmann::json s_plugin_cfg_get_node(std::string key) {
     if (key[0] == '/')
         key = key.substr(1);
@@ -431,6 +515,14 @@ static nlohmann::json s_plugin_cfg_get_node(std::string key) {
     return node;
 }
 
+
+/**
+* @brief Retrieve a string from the QMM configuration file.
+*
+* @param plid Plugin ID of the calling plugin
+* @param key Slash-separated node to find
+* @return Pointer to string representing the node (or "" if not found)
+*/
 static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]], const char* key) {
     static std::string value[ROTATING_BUFFER_NUM];
     static int index = 0;
@@ -448,6 +540,13 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
 }
 
 
+/**
+* @brief Retrieve an integer from the QMM configuration file.
+*
+* @param plid Plugin ID of the calling plugin
+* @param key Slash-separated node to find
+* @return Integer value of node (or -1 if not found)
+*/
 static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const char* key) {
     nlohmann::json node = s_plugin_cfg_get_node(key);
     int ret = cfg_get_int(node, path_basename(key));
@@ -458,6 +557,13 @@ static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const c
 }
 
 
+/**
+* @brief Retrieve a boolean value from the QMM configuration file.
+*
+* @param plid Plugin ID of the calling plugin
+* @param key Slash-separated node to find
+* @return Boolean value of node (or false if not found)
+*/
 static int s_plugin_helper_ConfigGetBool(plugin_id plid [[maybe_unused]], const char* key) {
     nlohmann::json node = s_plugin_cfg_get_node(key);
     int ret = (int)cfg_get_bool(node, path_basename(key));
@@ -468,6 +574,13 @@ static int s_plugin_helper_ConfigGetBool(plugin_id plid [[maybe_unused]], const 
 }
 
 
+/**
+* @brief Retrieve a list of strings from the QMM configuration file.
+*
+* @param plid Plugin ID of the calling plugin
+* @param key Slash-separated node to find
+* @return Pointer to a null-terminated array of strings representing the values of node
+*/
 static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unused]], const char* key) {
     static std::vector<std::string> value[ROTATING_BUFFER_NUM];
     // plugin API needs to be C-compatible, so this vector stores the .c_str() of each string in the value vector
@@ -492,6 +605,13 @@ static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unu
 }
 
 
+/**
+* @brief Retrieve a list of strings from the QMM configuration file.
+*
+* @param plid Plugin ID of the calling plugin
+* @param key Slash-separated node to find
+* @return Pointer to an array of ints representing the values of node (the first index is the number of remaining indexes)
+*/
 static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], const char* key) {
     static std::vector<int> value[ROTATING_BUFFER_NUM];
     static int index = 0;
@@ -510,7 +630,17 @@ static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], c
 }
 
 
-// get a configstring with G_GET_CONFIGSTRING, based on game engine type
+/**
+* @brief Get a configstring with G_GET_CONFIGSTRING.
+* 
+* This function automatically handles both types of G_GET_CONFIGSTRING: one which fills a buffer and one which returns
+* the value.
+*
+* @param plid Plugin ID of the calling plugin
+* @param index Configstring index to retrieve
+* @param buf Buffer to store value in
+* @param buflen Length of buf
+*/
 static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], intptr_t index, char* buf, intptr_t buflen) {
     // char* (*getConfigstring)(int index);
     // void trap_GetConfigstring(int num, char* buffer, int bufferSize);
@@ -527,7 +657,15 @@ static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], int
 }
 
 
-// broadcast a message to plugins' QMM_PluginMessage() functions
+/**
+* @brief Broadcast a message to each plugin's QMM_PluginMessage() function.
+*
+* @param plid Plugin ID of the calling plugin
+* @param message A pointer to string that is passed to QMM_PluginMessage
+* @param buf A generic pointer that is passed to QMM_PluginMessage
+* @param buflen Length of buf
+* @return Number of plugins that received the message
+*/
 static int s_plugin_helper_PluginBroadcast(plugin_id plid, const char* message, void* buf, intptr_t buflen) {
     // count how many plugins were called
     int total = 0;
@@ -548,7 +686,16 @@ static int s_plugin_helper_PluginBroadcast(plugin_id plid, const char* message, 
 }
 
 
-// send a message to a specific plugin's QMM_PluginMessage() functions
+/**
+* @brief Send a message to a specific plugin's QMM_PluginMessage() function.
+*
+* @param plid Plugin ID of the calling plugin
+* @param to_plid Plugin ID to receive the message
+* @param message A pointer to string that is passed to QMM_PluginMessage
+* @param buf A generic pointer that is passed to QMM_PluginMessage
+* @param buflen Length of buf
+* @return 0 if unsuccessful, !0 if successful
+*/
 static int s_plugin_helper_PluginSend(plugin_id plid, plugin_id to_plid, const char* message, void* buf, intptr_t buflen) {
     // don't let a plugin call itself
     if (plid == to_plid)
@@ -571,7 +718,12 @@ static int s_plugin_helper_PluginSend(plugin_id plid, plugin_id to_plid, const c
 }
 
 
-// register a new QVM function ID to the calling plugin (0 if unsuccessful)
+/**
+* @brief Register a new QVM function ID to the calling plugin
+*
+* @param plid Plugin ID of the calling plugin
+* @return QVM function ID (0 if unsuccessful)
+*/
 static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
     int ret = 0;
 
@@ -600,7 +752,15 @@ static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
 }
 
 
-// exec a given QVM function function ID
+/**
+* @brief Execute a given QVM function
+*
+* @param plid Plugin ID of the calling plugin
+* @param instruction QVM function ID to execute
+* @param argc Number of arguments
+* @param argv Arguments to pass to function
+* @return Return value of QVM function
+*/
 static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int instruction, int argc, int* argv) {
     int ret = qvm_exec_ex(&g_mod.vm, (size_t)instruction, argc, argv);
 
@@ -610,6 +770,15 @@ static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int inst
 }
 
 
+/**
+* @brief Fill buffer with the desired command argument with G_ARGV.
+*
+* This function automatically handles both types of G_ARGV: one which fills a buffer and one which returns the value.
+*
+* @param plid Plugin ID of the calling plugin
+* @param argn Argument number to retrieve
+* @return Pointer to string with command argument
+*/
 static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr_t argn) {
     static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
@@ -625,6 +794,16 @@ static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr
 }
 
 
+/**
+* @brief Get a configstring with G_GET_CONFIGSTRING.
+*
+* This function automatically handles both types of G_GET_CONFIGSTRING: one which fills a buffer and one which returns
+* the value.
+*
+* @param plid Plugin ID of the calling plugin
+* @param configindex Configstring index to retrieve
+* @return Pointer to string with configstring
+*/
 static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unused]], intptr_t configindex) {
     static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
@@ -647,6 +826,12 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
 }
 
 
+/**
+* @brief Get the mod directory.
+*
+* @param plid Plugin ID of the calling plugin
+* @return Pointer to string with mod directory
+*/
 static const char* s_plugin_helper_ModDir(plugin_id plid [[maybe_unused]]) {
     const char* ret = gameinfo.mod_dir.c_str();
 
