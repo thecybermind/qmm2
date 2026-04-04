@@ -14,7 +14,7 @@ Created By:
 
 #include <string>
 #include "qmmapi.h"
-#include "game_api.hpp"
+#include "gameapi.hpp"
 
 // Currently-loaded game & game engine info.
 struct GameInfo {
