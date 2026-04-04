@@ -121,13 +121,14 @@ enum {
 		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
 	}
 
-// Pure virtual base class for game support
-// need to implement all functions except:
-// * DefaultQVMName - only need if the game supports QVMs. default will return nullptr (this is how QMM determines support)
+// Pure virtual base class for game support.
+// Derived classes need to implement all functions except:
+// * DefaultQVMName - only need if the game supports QVMs. Default will return nullptr (this is how QMM determines QVM support).
 // * ModCvar - only need if the engine's cvar for determining mod is different from "fs_game"
-// * QVMSyscall - only need if the game supports QVMs. default returns 0
-// need to implement qmm_eng_msgs and qmm_mod_msgs (use GEN_GAME_QMM_ENG_MSGS() and GEN_GAME_QMM_MOD_MSGS() macros)
+// * QVMSyscall - only need if the game supports QVMs. Default returns 0.
+// Derived classes also need to implement qmm_eng_msgs and qmm_mod_msgs (use GEN_GAME_QMM_ENG_MSGS() and GEN_GAME_QMM_MOD_MSGS() macros).
 struct GameSupport {
+    // todo doc style for all these functions
     // return string containing name of engine message (G_x)
     virtual const char* EngMsgName(intptr_t) = 0;
     // return string containing name of mod message (GAME_x)

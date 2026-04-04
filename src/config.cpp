@@ -14,7 +14,9 @@ Created By:
 #include <fstream>
 #include "config.hpp"
 
+// Primary configuration object
 nlohmann::json g_cfg;
+
 
 nlohmann::json cfg_load(std::string file) {
     std::ifstream f(file);
