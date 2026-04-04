@@ -19,8 +19,8 @@ Created By:
 #define QVM_MAGIC                       0x12721444
 
 // Magic number is stored in file as 45 14 72 12
-// QVM version 2: ioQuake3/ioRTCW added a new version of QVM with jumptables for JIT.
-// There is no difference if interpreted, and header addition can be ignored.
+// QVM version 2: ioQuake3 added a new version of QVM with jump targets for JIT optimization.
+// There is no difference if interpreted, and extra header field can be ignored.
 #define QVM_MAGIC_VER2                  0x12721445
 
 // Amount of operands the opstack can hold (same amount used by Q3 engine)
@@ -48,24 +48,24 @@ Created By:
 
 // Conditional branches
 
-// Branch, compare top 2 opstack operands as signed integers
+// Conditional branch to param; compare top 2 opstack operands as signed integers
 #define QVM_JUMP_SIF(o) if (opstack[1] o opstack[0]) { QVM_JUMP(param); } QVM_POPN(2)
-// Branch, compare top 2 opstack operands as unsigned integers
+// Conditional branch to param; compare top 2 opstack operands as unsigned integers
 #define QVM_JUMP_UIF(o) if (*(unsigned int*)&opstack[1] o *(unsigned int*)&opstack[0]) { QVM_JUMP(param); } QVM_POPN(2)
-// Branch, compare top 2 opstack operands as floats
+// Conditional branch to param; compare top 2 opstack operands as floats
 #define QVM_JUMP_FIF(o) if (*(float*)&opstack[1] o *(float*)&opstack[0]) { QVM_JUMP(param); } QVM_POPN(2)
 
 // Math operations
 
-// Signed integer operation (opstack[0] done to opstack[1], stored in opstack[1])
+// Signed integer operation; opstack[0] done to opstack[1], stored in opstack[1]
 #define QVM_SOP(o) opstack[1] o opstack[0]; QVM_POP()
-// Unsigned integer operation (opstack[0] done to opstack[1], stored in opstack[1])
+// Unsigned integer operation; opstack[0] done to opstack[1], stored in opstack[1]
 #define QVM_UOP(o) *(unsigned int*)&opstack[1] o *(unsigned int*)&opstack[0]; QVM_POP()
-// Floating point operation (opstack[0] done to opstack[1], stored in opstack[1])
+// Floating point operation; opstack[0] done to opstack[1], stored in opstack[1]
 #define QVM_FOP(o) *(float*)&opstack[1] o *(float*)&opstack[0]; QVM_POP()
-// Signed integer operation (done to self)
+// Signed integer operation; opstack[0] done to self
 #define QVM_SSOP(o) opstack[0] = o opstack[0]
-// Floating point operation (done to self)
+// Floating point operation; opstack[0] done to self
 #define QVM_SFOP(o) *(float*)&opstack[0] = o *(float*)&opstack[0]
 
 // Type of pointer to function that receives syscalls (engine traps) out of VM
@@ -76,38 +76,38 @@ typedef enum {
     QVM_OP_UNDEF,       // Undefined (error)
     QVM_OP_NOP,         // No-op
     QVM_OP_BREAK,       // Break to debugger (unused, treated as no-op)
-    QVM_OP_ENTER,       // Enter a function, increase program stack by 'param' bytes
-    QVM_OP_LEAVE,       // Leave a function, decrease program stack by 'param' bytes
-    QVM_OP_CALL,        // Call a function, store IP in program stack, jump to o1
+    QVM_OP_ENTER,       // Enter a function, increase program stack by param bytes
+    QVM_OP_LEAVE,       // Leave a function, decrease program stack by param bytes
+    QVM_OP_CALL,        // Store IP in program stack, jump to o1
     QVM_OP_PUSH,        // Push 0 onto opstack
     QVM_OP_POP,         // Pop o1 from opstack
-    QVM_OP_CONST,       // Push 'param' onto opstack
-    QVM_OP_LOCAL,       // Push address of 'param'th value of program stack onto opstack
+    QVM_OP_CONST,       // Push param onto opstack
+    QVM_OP_LOCAL,       // Push address of paramth value of program stack onto opstack
     QVM_OP_JUMP,        // Jump to o1
-    QVM_OP_EQ,          // Conditional jump to 'param', if o1 == o2
-    QVM_OP_NE,          // Conditional jump to 'param', if o1 != o2
-    QVM_OP_LTI,         // Conditional jump to 'param', if o1 < o2
-    QVM_OP_LEI,         // Conditional jump to 'param', if o1 <= o2
-    QVM_OP_GTI,         // Conditional jump to 'param', if o1 > o2
-    QVM_OP_GEI,         // Conditional jump to 'param', if o1 >= o2
-    QVM_OP_LTU,         // Conditional jump to 'param', if o1 < o2 (unsigned)
-    QVM_OP_LEU,         // Conditional jump to 'param', if o1 <= o2 (unsigned)
-    QVM_OP_GTU,         // Conditional jump to 'param', if o1 > o2 (unsigned)
-    QVM_OP_GEU,         // Conditional jump to 'param', if o1 >= o2 (unsigned)
-    QVM_OP_EQF,         // Conditional jump to 'param', if o1 == o2 (float)
-    QVM_OP_NEF,         // Conditional jump to 'param', if o1 != o2 (float)
-    QVM_OP_LTF,         // Conditional jump to 'param', if o1 < o2 (float)
-    QVM_OP_LEF,         // Conditional jump to 'param', if o1 <= o2 (float)
-    QVM_OP_GTF,         // Conditional jump to 'param', if o1 > o2 (float)
-    QVM_OP_GEF,         // Conditional jump to 'param', if o1 >= o2 (float)
+    QVM_OP_EQ,          // Conditional jump to param, if o1 == o2
+    QVM_OP_NE,          // Conditional jump to param, if o1 != o2
+    QVM_OP_LTI,         // Conditional jump to param, if o1 < o2
+    QVM_OP_LEI,         // Conditional jump to param, if o1 <= o2
+    QVM_OP_GTI,         // Conditional jump to param, if o1 > o2
+    QVM_OP_GEI,         // Conditional jump to param, if o1 >= o2
+    QVM_OP_LTU,         // Conditional jump to param, if o1 < o2 (unsigned)
+    QVM_OP_LEU,         // Conditional jump to param, if o1 <= o2 (unsigned)
+    QVM_OP_GTU,         // Conditional jump to param, if o1 > o2 (unsigned)
+    QVM_OP_GEU,         // Conditional jump to param, if o1 >= o2 (unsigned)
+    QVM_OP_EQF,         // Conditional jump to param, if o1 == o2 (float)
+    QVM_OP_NEF,         // Conditional jump to param, if o1 != o2 (float)
+    QVM_OP_LTF,         // Conditional jump to param, if o1 < o2 (float)
+    QVM_OP_LEF,         // Conditional jump to param, if o1 <= o2 (float)
+    QVM_OP_GTF,         // Conditional jump to param, if o1 > o2 (float)
+    QVM_OP_GEF,         // Conditional jump to param, if o1 >= o2 (float)
     QVM_OP_LOAD1,       // Load 1-byte value at address o1, store in o1
     QVM_OP_LOAD2,       // Load 2-byte value at address o1, store in o1
     QVM_OP_LOAD4,       // Load 4-byte value at address o1, store in o1
     QVM_OP_STORE1,      // Store 1-byte value in o1 into address o2 
     QVM_OP_STORE2,      // Store 2-byte value in o1 into address o2
     QVM_OP_STORE4,      // Store 4-byte value in o1 into address o2
-    QVM_OP_ARG,         // Store o1 in 'param'th value of program stack
-    QVM_OP_BLOCK_COPY,  // Copy 'param' bytes from address o1 to address o2
+    QVM_OP_ARG,         // Store o1 in paramth value of program stack
+    QVM_OP_BLOCK_COPY,  // Copy param bytes from address o1 to address o2
     QVM_OP_SEX8,        // Sign extension of 8-bit value in o1
     QVM_OP_SEX16,       // Sign extension of 16-bit value in o2
     QVM_OP_NEGI,        // Math operation, o1 = -o1
@@ -134,7 +134,7 @@ typedef enum {
     QVM_OP_CVIF,        // Math operation, convert int o1 to float
     QVM_OP_CVFI,        // Math operation, convert float o1 to int
 
-    QVM_OP_NUM_OPS,     // Number of QVM operations
+    QVM_OP_NUM_OPS,     // Number of QVM opcodes
 } qvm_opcode;
 
 // Array of strings of opcode names
@@ -142,27 +142,28 @@ extern const char* qvm_opcodename[];
 
 // A single instruction in memory
 typedef struct {
-    qvm_opcode op;
-    int param;
+    qvm_opcode op;              // Opcode
+    int param;                  // Immediate
 } qvm_op;
 
 // QVM file header
 typedef struct {
-    uint32_t magic;
-    uint32_t instructioncount;
-    uint32_t codeoffset;
-    uint32_t codelen;
-    uint32_t dataoffset;
-    uint32_t datalen;
-    uint32_t litlen;
-    uint32_t bsslen;
+    uint32_t magic;             // Magic number
+    uint32_t instructioncount;  // Number of instructions in code segment
+    uint32_t codeoffset;        // Offset of code segment
+    uint32_t codelen;           // Length of code segment
+    uint32_t dataoffset;        // Offset of data segment
+    uint32_t datalen;           // Length of data segment
+    uint32_t litlen;            // Length of lit segment
+    uint32_t bsslen;            // Length of bss segment
+    // uint32_t jtrglen;        // Length of jump target table in version 2, only used by ioQuake3 for JIT optimization
 } qvm_header;
 
 // Allocator type for custom allocation
 typedef struct {
-    void* (*alloc)(ptrdiff_t size, void* ctx);
-    void  (*free)(void* ptr, ptrdiff_t size, void* ctx);
-    void* ctx;
+    void* (*alloc)(ptrdiff_t size, void* ctx);              // Function to allocate 'size' bytes, given 'ctx' context pointer
+    void  (*free)(void* ptr, ptrdiff_t size, void* ctx);    // Function to free 'size' bytes existing at 'ptr', given 'ctx' context pointer
+    void* ctx;                                              // Context pointer
 } qvm_alloc;
 
 // Default VM allocator (uses malloc/free)
