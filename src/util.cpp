@@ -227,7 +227,7 @@ intptr_t util_get_milliseconds() {
 
     if (!initialized) {
         initialized = true;
-        startTime = now.time_since_epoch();;
+        startTime = now.time_since_epoch();
     }
     return (intptr_t)std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch() - startTime).count();
 }
