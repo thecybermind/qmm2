@@ -863,7 +863,7 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
 
     // if this ptr was not the most recently-allocated block, fail
     if (ptr != vm->hunkptr) {
-        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free out of order: got %d, expected %d\n", ptr, vm->hunkptr);
+        log_c(QMM_LOG_WARNING, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free out of order: got %d, expected %d\n", ptr, vm->hunkptr);
         return;
     }
 
