@@ -16,7 +16,7 @@ Created By:
 #include <malloc.h>
 #include <string.h>     // memcpy and memset
 #include <stdio.h>
-#include <time.h>
+#include <time.h>       // struct timespec and timespec_get
 #include "qvm.h"
 
 #ifdef QMM_LOGGING
@@ -915,7 +915,7 @@ void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
     fputs("\n\n", fp);
 
     // IP
-    fprintf(fp, "Instruction pointer offset: %td (%08X)\nInstruction: %s %d\n\n", instruction - vm->codesegment, instruction - vm->codesegment, qvm_opcodename[instruction->op], instruction->param);
+    fprintf(fp, "Instruction pointer offset: %td (%08tx)\nInstruction: %s %d\n\n", instruction - vm->codesegment, instruction - vm->codesegment, qvm_opcodename[instruction->op], instruction->param);
     
     // program stack
     fputs("Stack:\n-----\n", fp);
@@ -936,7 +936,7 @@ void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
     uint8_t* p = vm->datasegment;
     while (p < vm->datasegment + vm->dataseglen) {
         // print offset
-        fprintf(fp, "%04X ", p - vm->datasegment);
+        fprintf(fp, "%04tX ", p - vm->datasegment);
 
         // print hex values
         for (int b = 0; b < 32; b++) {
