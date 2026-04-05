@@ -128,44 +128,141 @@ enum {
 // * QVMSyscall - only need if the game supports QVMs. Default returns 0.
 // Derived classes also need to implement qmm_eng_msgs and qmm_mod_msgs (use GEN_GAME_QMM_ENG_MSGS() and GEN_GAME_QMM_MOD_MSGS() macros).
 struct GameSupport {
-    // todo doc style for all these functions
-    // return string containing name of engine message (G_x)
-    virtual const char* EngMsgName(intptr_t) = 0;
-    // return string containing name of mod message (GAME_x)
-    virtual const char* ModMsgName(intptr_t) = 0;
-    // allows game support code to check if the qmm/engine info matches the game
-    virtual bool AutoDetect(APIType) = 0;
-    // allows game support code to handle the entrypoint once game was detected
-    virtual void* Entry(void*, void*, APIType) = 0;
-    // allows game support code to handle the mod's entrypoint once DLL is loaded
-    virtual bool ModLoad(void*, APIType) = 0;
-    // allows game support code to handle when the mod DLL is unloaded
+    /**
+    * @brief Return string containing name of engine message.
+    *
+    * @param msg Message value
+    * @return String name of the message
+    */
+    virtual const char* EngMsgName(intptr_t msg) = 0;
+
+    /**
+    * @brief Return string containing name of mod message.
+    *
+    * @param msg Message value
+    * @return String name of the message
+    */
+    virtual const char* ModMsgName(intptr_t msg) = 0;
+
+    /**
+    * @brief Allow game support code to determine if it is the currently-loaded game.
+    *
+    * @param engine_api APIType for the method QMM was loaded by
+    * @return true if it is the currently-loaded game, false otherwise
+    */
+    virtual bool AutoDetect(APIType engine_api) = 0;
+
+    /**
+    * @brief Allow game support code to process QMM entry point logic.
+    *
+    * @param arg0 First argument to entry point
+    * @param arg1 Second argument to entry point
+    * @param engine_api APIType for the method QMM was loaded by
+    * @return Pointer to return back to the engine
+    */
+    virtual void* Entry(void* arg0, void* arg1, APIType engine_api) = 0;
+
+    /**
+    * @brief Allow game support code to process mod entry point logic.
+    *
+    * @param entry Entry point based on engine_api
+    * @param engine_api APIType for the method QMM was loaded by
+    * @return true if the mod load was successful, false otherwise
+    */
+    virtual bool ModLoad(void* entry, APIType mod_api) = 0;
+
+    /**
+    * @brief Allow game support code to process mod unloading logic.
+    */
     virtual void ModUnload() = 0;
-    // returns game-specific engine message value (G_x) for a specific message that QMM uses
+
+    /**
+    * @brief Gets game-specific engine message value (G_x) for a specific message that QMM uses internally.
+    *
+    * @param msg QMM message flag
+    * @return Game-specific engine message value
+    */
     virtual int QMMEngMsg(int msg) = 0;
-    // returns game-specific mod message value (GAME_x) for a specific message that QMM uses
+
+    /**
+    * @brief Gets game-specific mod message value (GAME_x) for a specific message that QMM uses internally.
+    *
+    * @param msg QMM message flag
+    * @return Game-specific mod message value
+    */
     virtual int QMMModMsg(int msg) = 0;
 
-    // tells game support code to call into the engine
-    virtual intptr_t syscall(intptr_t, ...) = 0;
-    // tells game support code to call into the mod
-    virtual intptr_t vmMain(intptr_t, ...) = 0;
+    /**
+    * @brief Game-specific code to call into the engine with given cmd and arguments.
+    *
+    * @param cmd Engine function
+    * @param ... Engine arguments
+    * @return Engine function return value
+    */
+    virtual intptr_t syscall(intptr_t cmd, ...) = 0;
 
-    // returns the mod DLL name used by the game
+    /**
+    * @brief Game-specific code to call into the mod with given cmd and arguments.
+    *
+    * @param cmd Mod function
+    * @param ... Mod arguments
+    * @return Mod function return value
+    */
+    virtual intptr_t vmMain(intptr_t cmd, ...) = 0;
+
+    /**
+    * @brief Get default filename for mod DLL.
+    *
+    * @return Default filename for mod DLL
+    */
     virtual const char* DefaultDLLName() = 0;
-    // returns the QVM name used by the game
+
+    /**
+    * @brief Get default filename for mod QVM file.
+    *
+    * @return Default filename for mod QVM file (NULL if not supported)
+    */
     virtual const char* DefaultQVMName() { return nullptr; }
-    // returns the default mod directory for the game
+
+    /**
+    * @brief Get default mod directory for game engine.
+    *
+    * @return Default mod directory for game engine
+    */
     virtual const char* DefaultModDir() = 0;
-    // returns the cvar for loaded mod dir
+
+    /**
+    * @brief Get cvar that holds the mod directory.
+    *
+    * @return Cvar that holds the mod directory
+    */
     virtual const char* ModCvar() { return "fs_game"; }
-    // returns the full name of the game
+
+    /**
+    * @brief Get full name of game engine.
+    *
+    * @return Full name of game engine
+    */
     virtual const char* GameName() = 0;
-    // returns the QMM short code for the game
+
+    /**
+    * @brief Get QMM short code for game engine.
+    *
+    * @return QMM short code for game engine
+    */
     virtual const char* GameCode() = 0;
 
-    // called by the QVM interpreter for syscalls. allows the game support code to convert pointer args
-    virtual int QVMSyscall(uint8_t*, int, int*) { return 0; }
+    /**
+    * @brief Handler for syscalls out of the QVM.
+    * 
+    * This function should route the call to qmm_syscall while modifying pointer arguments using the VMPTR(x) macro.
+    *
+    * @param membase Starting address of the QVM datasegment
+    * @param cmd Engine message
+    * @param args Engine arguments
+    * @return Engine function return value
+    */
+    virtual int QVMSyscall(uint8_t* membase, int cmd, int* args) { (void)membase; (void)cmd; (void)args; return 0; }
 };
 
 // Table of pointers to GameSupport objects
