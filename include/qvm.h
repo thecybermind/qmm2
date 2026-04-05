@@ -206,22 +206,23 @@ extern "C" {
 #endif // __cplusplus
 
 /**
-* @brief Create and initialize a new VM from a QVM file
+* @brief Create and initialize a new VM from a QVM file.
 * 
-* @param qvm Pointer to qvm object to store VM information
+* @param vm Pointer to QVM object to store VM information
 * @param filemem Buffer with QVM file contents
 * @param filesize Size of the filemem buffer
 * @param qvmsyscall Function to be called for engine traps
-* @param verify_data (Boolean) Should data segment reads and writes be validated?
+* @param verify_data Should data segment reads and writes be validated?
+* @param hunk_size Size of hunk in VM data segment
 * @param allocator Pointer to a qvm_alloc object which contains custom alloc/free function pointers (pass NULL for default)
 * @return 1 if success, 0 if failure
 */
 int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsyscall, int verify_data, size_t hunk_size, qvm_alloc* allocator);
 
 /**
-* @brief Begin execution in a VM
+* @brief Begin execution in a VM at the start of the code segment.
 *
-* @param vm Pointer to qvm object to execute
+* @param vm Pointer to QVM object to execute
 * @param argc Number of arguments to pass to VM entry point
 * @param argv Array of arguments to pass to VM entry point
 * @return Return value from VM entry point
@@ -229,9 +230,9 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
 int qvm_exec(qvm* vm, int argc, int* argv);
 
 /**
-* @brief Begin execution in a VM at a given instruction
+* @brief Begin execution in a VM at a given instruction.
 *
-* @param vm Pointer to qvm object to execute
+* @param vm Pointer to QVM object to execute
 * @param instruction Instruction to begin execution at
 * @param argc Number of arguments to pass to VM entry point
 * @param argv Array of arguments to pass to VM entry point
@@ -240,16 +241,16 @@ int qvm_exec(qvm* vm, int argc, int* argv);
 int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv);
 
 /**
-* @brief Unload a VM
+* @brief Unload a VM.
 *
-* @param qvm Pointer to qvm object to unload
+* @param qvm Pointer to QVM object to unload
 */
 void qvm_unload(qvm* vm);
 
 /**
-* @brief Allocate memory in the hunk
+* @brief Allocate memory in a VM's hunk.
 * 
-* @param vm Pointer to qvm object to allocate memory in
+* @param vm Pointer to QVM object to allocate memory in
 * @param size Size of block to allocate
 * @param init Initial data to copy into allocation
 * @return VM-based pointer to allocated block
@@ -257,14 +258,28 @@ void qvm_unload(qvm* vm);
 int qvm_hunk_alloc(qvm* vm, size_t size, const void* init);
 
 /**
-* @brief Allocate memory in the hunk
+* @brief Free memory in a VM's hunk.
 * 
-* @param vm Pointer to qvm object to allocate memory in
+* Since the hunk is stack allocated, you can only truly free a block if it was the most recently allocated block.
+* 
+* This function silently fails if the provided block is not the most recent.
+* 
+* @param vm Pointer to QVM object to allocate memory in
 * @param ptr VM-based pointer to allocated block
 * @param size Size of block that was allocated
 * @param out Data to copy out of the allocation
 */
 void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out);
+
+/**
+* @brief Dump VM memory/stacks.
+* 
+* @param vm Pointer to QVM object
+* @param opstack Current opstack pointer
+* @param opstackhigh End of opstack
+* @param instruction Current instruction pointer
+*/
+void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction);
 
 #ifdef __cplusplus
 }
