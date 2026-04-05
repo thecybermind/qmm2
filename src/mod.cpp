@@ -23,6 +23,7 @@ Created By:
 #include "plugin.hpp"
 #include "util.hpp"
 
+// The game mod
 Mod g_mod;
 
 
