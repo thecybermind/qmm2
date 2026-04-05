@@ -16,7 +16,7 @@ Created By:
 #include <stvoyhm/game/q_shared.h>
 #include <stvoyhm/game/g_public.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <string>
 // QMM-specific STVOYHM header

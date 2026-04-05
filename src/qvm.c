@@ -11,9 +11,12 @@ Created By:
 
 #define QMM_LOGGING
 
-#include <stdint.h> // intptr_t and uint8_t
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdint.h>     // intptr_t and uint8_t
 #include <malloc.h>
-#include <string.h> // memcpy and memset
+#include <string.h>     // memcpy and memset
+#include <stdio.h>
+#include <time.h>       // struct timespec and timespec_get
 #include "qvm.h"
 
 #ifdef QMM_LOGGING
@@ -339,6 +342,11 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
     // hardcoded param for op
     int param;
 
+#if defined(_DEBUG)
+    struct timespec time_start;
+    (void)timespec_get(&time_start, TIME_UTC);
+#endif
+    
     // main instruction loop
     do {
         // verify program stack pointer is in program stack
@@ -359,9 +367,9 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
         // get the instruction's opcode and param
         op = (qvm_opcode)opptr->op;
         param = opptr->param;
-        
-        // throughout opcode handling, opptr points to the NEXT instruction to execute
-        ++opptr;
+
+        // throughout the interpreter loop, opptr points to the next instruction
+        opptr++;
 
         switch (op) {
         // miscellaneous opcodes
@@ -371,16 +379,17 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
             // explicit fallthrough
         default:
             // anything else
-            // todo: dump stacks/memory?
-            log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: unhandled opcode %d\n", instruction, opptr - codesegment, op);
+            log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: unhandled opcode %d\n", instruction, opptr - 1 - codesegment, op);
             goto fail;
 
         case QVM_OP_NOP:
             // no op
-            // explicit fallthrough
+            break;
+
         case QVM_OP_BREAK:
-            // break to debugger, treat as no op for now
-            // todo: dump stacks/memory?
+            // break to debugger, dump qvm info
+            vm->stackptr = programstack;
+            qvm_dump(vm, opstack, opstackhigh, opptr - 1);
             break;
 
         // functions
@@ -399,7 +408,7 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
             // verify the value saved in programstack[1] matches param, then remove stack frame (size=param).
             // then, grab RII from top of previous stack frame and then jump to it
             if (programstack[1] != param) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: QVM_OP_LEAVE param (%d) does not match QVM_OP_ENTER param (%d)\n", instruction, opptr - codesegment, param, programstack[1]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: QVM_OP_LEAVE param (%d) does not match QVM_OP_ENTER param (%d)\n", instruction, opptr - 1 - codesegment, param, programstack[1]);
                 goto fail;
             }
             // clean up stack frame
@@ -664,7 +673,7 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
         case QVM_OP_DIVI:
             // division
             if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - codesegment, qvm_opcodename[op]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
                 goto fail;
             }
             QVM_SOP( /= );
@@ -673,7 +682,7 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
         case QVM_OP_DIVU:
             // unsigned division
             if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - codesegment, qvm_opcodename[op]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
                 goto fail;
             }
             QVM_UOP( /= );
@@ -682,7 +691,7 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
         case QVM_OP_MODI:
             // modulus
             if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - codesegment, qvm_opcodename[op]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
                 goto fail;
             }
             QVM_SOP( %= );
@@ -691,7 +700,7 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
         case QVM_OP_MODU:
             // unsigned modulus
             if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - codesegment, qvm_opcodename[op]);
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
                 goto fail;
             }
             QVM_UOP( %= );
@@ -781,9 +790,17 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
         } // switch (op)
     } while (opptr);
 
+#if defined(_DEBUG)
+    struct timespec time_end;
+    (void)timespec_get(&time_end, TIME_UTC);
+    int64_t timediff = (time_end.tv_sec - time_start.tv_sec) * 1000000000;
+    timediff += (time_end.tv_nsec - time_start.tv_nsec);
+    log_c(QMM_LOG_TRACE, QMM_LOGGING_TAG, "qvm_exec(%zu): Execution took %lld nanoseconds.\n", instruction, timediff);
+#endif
+
     // compare stored frame size like in QVM_OP_LEAVE
     if (programstack[1] != framesize) {
-        log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error after execution: stack frame size (%d) does not match entry stack frame size (%d)\n", opptr - codesegment, programstack[1], framesize);
+        log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error after execution: stack frame size (%d) does not match entry stack frame size (%d)\n", instruction, programstack[1], framesize);
         goto fail;
     }
 
@@ -797,6 +814,13 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
     return opstack[0];
 
 fail:
+    // save our local program stack pointer back into the qvm object (for dump)
+    vm->stackptr = programstack;
+
+    // generate dumps
+    qvm_dump(vm, opstack, opstackhigh, opptr - 1);
+    
+    // unload
     qvm_unload(vm);
     return 0;
 }
@@ -839,7 +863,7 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
 
     // if this ptr was not the most recently-allocated block, fail
     if (ptr != vm->hunkptr) {
-        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free out of order: got %d, expected %d\n", ptr, vm->hunkptr);
+        log_c(QMM_LOG_WARNING, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free out of order: got %d, expected %d\n", ptr, vm->hunkptr);
         return;
     }
 
@@ -857,7 +881,99 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
 }
 
 
-// return a string name for the VM opcode
+void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
+    if (!vm->memory)
+        return;
+
+    // dump code segment to file
+    FILE* fp = fopen("qvm_dump_code.bin", "w");
+    fwrite(vm->codesegment, 1, vm->codeseglen, fp);
+    fclose(fp);
+    
+    // dump data segment to file
+    fp = fopen("qvm_dump_data.bin", "w");
+    fwrite(vm->datasegment, 1, vm->dataseglen, fp);
+    fclose(fp);
+
+    // dump annotated info to file
+    fp = fopen("qvm_dump.txt", "w");
+    fputs("VM state:\n-----\n", fp);
+
+    // op stack
+    int* opstackptr = opstack;
+    fputs("Opstack (hex): ", fp);
+    while (opstackptr < opstackhigh) {
+        fprintf(fp, "%08x ", *opstackptr);
+        opstackptr++;
+    }
+    opstackptr = opstack;
+    fputs("\nOpstack (dec): ", fp);
+    while (opstackptr < opstackhigh) {
+        fprintf(fp, "%d ", *opstackptr);
+        opstackptr++;
+    }
+    fputs("\n\n", fp);
+
+    // IP
+    fprintf(fp, "Instruction pointer offset: %td (%08tx)\nInstruction: %s %d\n\n", instruction - vm->codesegment, instruction - vm->codesegment, qvm_opcodename[instruction->op], instruction->param);
+    
+    // program stack
+    fputs("Stack:\n-----\n", fp);
+    int* stackptr = vm->stackptr;
+    while (stackptr < vm->stackhigh) {
+        fprintf(fp, "0x%08x (%d) (RII)\n", stackptr[0], stackptr[0]);
+        fprintf(fp, "0x%08x (%d) (Framesize)\n", stackptr[1], stackptr[1]);
+        for (int i = 2; i < stackptr[1] / 4; i++)
+            fprintf(fp, "0x%08x (%d)\n", stackptr[i], stackptr[i]);
+        stackptr += (stackptr[1] / 4);
+        fputs("-----\n", fp);
+        fflush(fp);
+    }
+    fputs("\n", fp);
+
+    // data segment
+    fputs("Data segment:\n-----\n", fp);
+    uint8_t* p = vm->datasegment;
+    while (p < vm->datasegment + vm->dataseglen) {
+        // print offset
+        fprintf(fp, "%04tX ", p - vm->datasegment);
+
+        // print hex values
+        for (int b = 0; b < 32; b++) {
+            // halfway through the row, print a gap
+            if (b == 16)
+                fputs("   ", fp);
+            // if this row runs out of data before the end, print empty spaces
+            if (p + b >= vm->datasegment + vm->dataseglen)
+                fputs("   ", fp);
+            else
+                fprintf(fp, " %02X", p[b]);
+        }
+
+        fputs("    ", fp);
+
+        // print characters
+        for (int b = 0; b < 32; b++) {
+            // halfway through the row, print a gap
+            if (b == 16)
+                fprintf(fp, " ");
+            // if this row runs out of data before the end, print empty spaces
+            if (p + b >= vm->datasegment + vm->dataseglen)
+                fprintf(fp, " ");
+            else
+                fprintf(fp, "%c", (p[b] < 32 || p[b] >= 127) ? '.' : *(char*)&p[b]);
+        }
+
+        fprintf(fp, "\n");
+        fflush(fp);
+
+        p += 32;
+    }
+    fclose(fp);
+}
+
+
+// Array of strings of opcode names
 const char* qvm_opcodename[] = {
     "QVM_OP_UNDEF",
     "QVM_OP_NOP",
@@ -934,4 +1050,5 @@ static void qvm_free_default(void* ptr, ptrdiff_t size, void* ctx) {
 }
 
 
+// Default VM allocator (uses malloc/free)
 qvm_alloc qvm_allocator_default = { qvm_alloc_default, qvm_free_default, NULL };

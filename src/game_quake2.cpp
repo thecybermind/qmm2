@@ -17,7 +17,7 @@ Created By:
 #include <string>
 #include <quake2/game/q_shared.h>
 #include <quake2/game/game.h>
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include "format.hpp"
 // QMM-specific QUAKE2 header
@@ -319,10 +319,10 @@ intptr_t QUAKE2_GameSupport::syscall(intptr_t cmd, ...) {
 
         break;
     }
-    case G_MILLISECONDS: {
+    case G_MILLISECONDS:
         ret = util_get_milliseconds();
         break;
-    }
+
     default:
         break;
     };

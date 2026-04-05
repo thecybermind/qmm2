@@ -20,7 +20,7 @@ Created By:
 #define GAME_DLL
 #include <mohsh/fgame/g_public.h>
 #undef GAME_DLL
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include "format.hpp"
 #include <vector>

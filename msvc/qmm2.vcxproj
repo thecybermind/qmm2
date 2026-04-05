@@ -189,8 +189,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\config.cpp" />
+    <ClCompile Include="..\src\gameapi.cpp" />
     <ClCompile Include="..\src\gameinfo.cpp" />
-    <ClCompile Include="..\src\game_api.cpp" />
     <ClCompile Include="..\src\game_cod11mp.cpp" />
     <ClCompile Include="..\src\game_codmp.cpp" />
     <ClCompile Include="..\src\game_coduomp.cpp" />
@@ -228,8 +228,8 @@
   <ItemGroup>
     <ClInclude Include="..\include\config.hpp" />
     <ClInclude Include="..\include\format.hpp" />
+    <ClInclude Include="..\include\gameapi.hpp" />
     <ClInclude Include="..\include\gameinfo.hpp" />
-    <ClInclude Include="..\include\game_api.hpp" />
     <ClInclude Include="..\include\game_cod11mp.h" />
     <ClInclude Include="..\include\game_codmp.h" />
     <ClInclude Include="..\include\game_coduomp.h" />

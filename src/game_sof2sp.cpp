@@ -15,7 +15,7 @@ Created By:
 
 #include <sof2sp/g_public.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 // QMM-specific SOF2SP header
 #include "game_sof2sp.h"

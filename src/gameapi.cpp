@@ -11,7 +11,7 @@ Created By:
 
 #include "version.h"
 #include <vector>
-#include "game_api.hpp"
+#include "gameapi.hpp"
 
 // externs for each game's support objects
 GEN_GAME_EXTS(COD11MP);
@@ -38,6 +38,7 @@ GEN_GAME_EXTS(SOF2SP);
 GEN_GAME_EXTS(STEF2);
 GEN_GAME_EXTS(STVOYSP);
 
+// Table of pointers to GameSupport objects
 std::vector<GameSupport*> api_supportedgames = {
 	// vmMain games
 	GET_GAME_OBJ(Q3A),

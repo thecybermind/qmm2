@@ -16,7 +16,7 @@ Created By:
 #include <stvoysp/game/q_shared.h>
 #include <stvoysp/game/g_public.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <vector>
 #include <string>

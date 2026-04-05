@@ -11,7 +11,7 @@ Created By:
 
 #include <jk2sp/game/q_shared.h>
 #include <jk2sp/game/g_public.h>
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <vector>
 #include <string>

@@ -19,14 +19,15 @@ Created By:
 #include "format.hpp"
 #include "config.hpp"
 #include "gameinfo.hpp"
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "qmmapi.h"
 #include "plugin.hpp"
 #include "mod.hpp"      // g_mod
 #include "qvm.h"        // QVM_MAGIC
 #include "util.hpp"
 
-GameInfo gameinfo;    // information about the engine and environment
+// Currently-loaded game & game engine info.
+GameInfo gameinfo;
 
 /* About cgame passthrough hack (not Quake 2 Remaster (Q2R), see comments before GetCGameAPI() for that):
    Some single player games, like Star Trek Voyager: Elite Force (STVOYSP), Jedi Knight 2 (JK2SP) and Jedi
@@ -56,22 +57,24 @@ GameInfo gameinfo;    // information about the engine and environment
 
    The final piece is that single player games shutdown and init the DLL a lot, particularly at every new
    level or between-level cutscene. When QMM detects that it is being shutdown and "cgameinfo.syscall" is
-   set, it no longer unloads the mod DLL and sets "cgameinfo.shutdown" bool to true. Then, when a vmMain
-   call is being handled as a passthrough, and "cgameinfo.shutdown" is true, it will then unload the mod
-   DLL. This allows the cgame system to shutdown properly.
+   set, it no longer unloads the mod DLL and sets "cgameinfo.is_shutdown" bool to true. Then, after a
+   vmMain call is being handled as a passthrough, and "cgameinfo.is_shutdown" is true, it will unload the
+   mod DLL. This allows the cgame system to shutdown properly.
 */
 
-// basic information about the cgame for games where the DLL has both game and cgame
+// Basic information about the cgame for games where the DLL has both game and cgame
 CGameInfo cgameinfo = {
     nullptr,    // syscall
     nullptr,    // vmMain
     false,      // is_from_QMM
-    false,      // shutdown
+    false,      // is_shutdown
 };
 
 
-// cache some dynamic message values that get evaluated a lot
-intptr_t GameInfo::msg_G_PRINT, GameInfo::msg_GAME_INIT, GameInfo::msg_GAME_CONSOLE_COMMAND, GameInfo::msg_GAME_SHUTDOWN;
+intptr_t GameInfo::msg_G_PRINT;                // Value of G_PRINT for the detected game
+intptr_t GameInfo::msg_GAME_INIT;              // Value of GAME_INIT for the detected game
+intptr_t GameInfo::msg_GAME_CONSOLE_COMMAND;   // Value of GAME_CONSOLE_COMMAND for the detected game
+intptr_t GameInfo::msg_GAME_SHUTDOWN;          // Value of GAME_SHUTDOWN for the detected game
 
 
 void* GameInfo::HandleEntry(void* import, void* extra, APIType engine) {
@@ -133,7 +136,6 @@ void* GameInfo::HandleEntry(void* import, void* extra, APIType engine) {
 }
 
 
-// general code to get path/module/binary/etc information
 void GameInfo::DetectEnv() {
     // save exe module path
     this->exe_path = path_normalize(util_get_proc_path());
@@ -168,7 +170,6 @@ void GameInfo::DetectEnv() {
 }
 
 
-// general code to load config file
 void GameInfo::LoadConfig(std::string config_filename) {
     // load config file, try the following locations in order:
     // "<qmmdir>/qmm2.json"
@@ -194,7 +195,6 @@ void GameInfo::LoadConfig(std::string config_filename) {
 }
 
 
-// general code to auto-detect what game engine loaded us
 bool GameInfo::DetectGame(std::string cfg_game, APIType engine) {
     if (cfg_game.empty())
         cfg_game = "auto";
@@ -225,7 +225,6 @@ bool GameInfo::DetectGame(std::string cfg_game, APIType engine) {
 }
 
 
-// general code to find a mod file to load
 bool GameInfo::LoadMod(std::string cfg_mod) {
     if (cfg_mod.empty())
         cfg_mod = "auto";
@@ -274,7 +273,6 @@ bool GameInfo::LoadMod(std::string cfg_mod) {
 }
 
 
-// general code to find a plugin file to load
 bool GameInfo::LoadPlugin(std::string plugin_path) {
     Plugin p;
     // absolute path, just attempt to load it directly
@@ -311,7 +309,6 @@ bool GameInfo::LoadPlugin(std::string plugin_path) {
 }
 
 
-// route syscall or vmMain call to plugins and mod (combined to reduce code duplication)
 intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) const {
     const char* msg_name;
     const char* func_name;
