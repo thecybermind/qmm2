@@ -12,7 +12,7 @@ Created By:
 #include <jk2mp/game/q_shared.h>
 #include <jk2mp/game/g_public.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <string>
 // QMM-specific JK2MP header

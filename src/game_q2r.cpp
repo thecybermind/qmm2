@@ -22,7 +22,7 @@ Created By:
 #include <cstring>
 #include <cstdio>
 #include <q2r/rerelease/game.h>
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include "format.hpp"
 // QMM-specific Q2R header
@@ -339,6 +339,9 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
         ret = true;
         break;
     }
+    case G_MILLISECONDS:
+        ret = util_get_milliseconds();
+        break;
 
     default:
         break;

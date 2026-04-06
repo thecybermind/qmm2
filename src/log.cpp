@@ -18,9 +18,11 @@ static AixLog::log_sink_ptr s_log_sink_file = nullptr;
 
 static AixLog::Severity s_log_level = QMM2_LOG_DEFAULT_SEVERITY;
 
+
 bool log_level_match(int severity) {
     return severity >= (int)QMM2_LOG_CONSOLE_SEVERITY || severity >= (int)s_log_level;
 }
+
 
 void log_init(std::string file, AixLog::Severity severity, bool append) {
     if (append)
@@ -67,7 +69,14 @@ std::string log_format(const AixLog::Metadata& metadata, const std::string& mess
 }
 
 
-// so qvm.c can log stuff
+/**
+* @brief Varargs function so qvm.c can log
+*
+* @param severity Log severity
+* @param tag Logtag to use
+* @param fmt Format string
+* @param ... Format arguments
+*/
 extern "C" void log_c(int severity, const char* tag, const char* fmt, ...) {
     // exit early if neither log level (game console and log file) is met
     if (!log_level_match(severity))

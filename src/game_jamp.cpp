@@ -12,7 +12,7 @@ Created By:
 #include <jamp/game/q_shared.h>
 #include <jamp/game/g_public.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <string>
 // QMM-specific JAMP header
@@ -25,7 +25,7 @@ struct JAMP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
     virtual const char* ModMsgName(intptr_t msg);
     virtual bool AutoDetect(APIType engine_api);
-    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual void* Entry(void* arg0, void* arg1, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
     virtual void ModUnload();
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }

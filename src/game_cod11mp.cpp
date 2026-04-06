@@ -15,7 +15,7 @@ Created By:
 
 #include <cod11mp/game/g_public.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <string>
 // QMM-specific COD11MP header

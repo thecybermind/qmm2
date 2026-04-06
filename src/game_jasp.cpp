@@ -12,7 +12,7 @@ Created By:
 #include <jasp/game/q_shared.h>
 #include <jasp/game/g_public.h>
 
-#include "game_api.hpp"
+#include "gameapi.hpp"
 #include "log.hpp"
 #include <map>
 #include <vector>
