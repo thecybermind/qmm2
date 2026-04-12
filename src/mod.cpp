@@ -38,7 +38,9 @@ bool Mod::Load(std::string file) {
 
     // only allow qvm mods if the game engine supports it
     if (str_striequal(ext, EXT_QVM) && gameinfo.game->DefaultQVMName()) {
-        return this->LoadQVM();
+        if (!this->LoadQVM())
+            goto fail;
+        return true;
     }
     // if DLL
     else if (str_striequal(ext, EXT_DLL)) {
@@ -140,26 +142,47 @@ int Mod::QVM_syscall(uint8_t* membase, int cmd, int* args) {
 }
 
 
+struct EngineFileRead {
+    EngineFileRead() : handle(0) {}
+    uint8_t* Open(std::string path) {
+        intptr_t filelen = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FOPEN_FILE), path.c_str(), &this->handle, QMM_ENG_MSG(QMM_FS_READ));
+        if (filelen <= 0 || !this->handle) {
+            this->Close();
+            return nullptr;
+        }
+        this->file.resize((size_t)filelen);
+        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_READ), this->file.data(), this->file.size(), this->handle);
+        return this->file.data();
+    }
+    int Size() {
+        return this->file.size();
+    }
+    void Close() {
+        this->file.clear();
+        if (handle)
+            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), this->handle);
+        this->handle = 0;
+    }
+    ~EngineFileRead() {
+        this->Close();
+    }
+private:
+    int handle;
+    std::vector<uint8_t> file;
+};
+
+
 bool Mod::LoadQVM() {
-    int fpk3 = 0;
-    intptr_t filelen;
-    std::vector<uint8_t> filemem;
+    EngineFileRead file;
     bool verify_data;
-    size_t hunk_size = 0;
-    bool loaded;
+    size_t hunk_size;
 
     // load file using engine functions to read into pk3s if necessary
-    filelen = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FOPEN_FILE), this->path.c_str(), &fpk3, QMM_ENG_MSG(QMM_FS_READ));
-    if (filelen <= 0 || !fpk3) {
+    uint8_t* filedata = file.Open(this->path);
+    if (!filedata) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << this->path << "\"): Could not open QVM for reading\n";
-        if (fpk3)
-            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), fpk3);
-        goto fail;
+        return false;
     }
-    filemem.resize((size_t)filelen);
-
-    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_READ), filemem.data(), filelen, fpk3);
-    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), fpk3);
 
     // get data verification setting from config
     verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
@@ -167,19 +190,17 @@ bool Mod::LoadQVM() {
     hunk_size = (size_t)cfg_get_int(g_cfg, "qvmhunksize", 0);
 
     // attempt to load mod
-    loaded = qvm_load(&this->vm, filemem.data(), filemem.size(), Mod::QVM_syscall, verify_data, hunk_size, nullptr);
-    if (!loaded) {
+    if (!qvm_load(&this->vm, filedata, file.Size(), Mod::QVM_syscall, verify_data, hunk_size, nullptr)) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << this->path << "\"): QVM load failed\n";
-        goto fail;
+        return false;
     }
 
     this->vmbase = (intptr_t)this->vm.datasegment;
 
     // pass the qvm vmMain function pointer to the game-specific mod load handler
-    if (!gameinfo.game->ModLoad((void*)Mod::QVM_vmMain, QMM_API_QVM))
-    {
+    if (!gameinfo.game->ModLoad((void*)Mod::QVM_vmMain, QMM_API_QVM)) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << path_basename(this->path) << "\"): Mod load failed?\n";
-        goto fail;
+        return false;
     }
 
     this->api = QMM_API_QVM;
@@ -187,10 +208,6 @@ bool Mod::LoadQVM() {
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "Mod::LoadQVM(\"" << path_basename(this->path) << "\"): QVM loaded successfully with verify_data " << (this->vm.verify_data ? "on" : "off") << " and hunk size " << this->vm.hunksize << "\n";
 
     return true;
-
-fail:
-    this->Unload();
-    return false;
 }
 
 

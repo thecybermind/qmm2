@@ -37,6 +37,9 @@ struct Mod {
     */
     void Unload();
 
+    // todo: to "own" the dll or vm resource, we need to implement rule of 5
+    // this will assist with RAII during mod loading to remove "goto fail" handlers
+
 private:
     // Entry point into QVM mods. Passed to GameSupport::Entry
     static intptr_t QVM_vmMain(intptr_t cmd, ...);

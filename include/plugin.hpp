@@ -44,6 +44,9 @@ struct Plugin {
     plugin_pluginmessage QMM_PluginMessage = nullptr;   // QMM_PluginMessage function pointer (optional)
     plugin_qvmhandler QMM_QVMHandler = nullptr;         // QMM_QVMHandler function pointer (optional)
     plugin_info* plugininfo = nullptr;                  // Plugin-provided info
+
+    // todo: move plugin_load and plugin_unload to member functions.
+    // also to "own" the dll resource, we need to implement rule of 5
 };
 
 // This holds global variables that are available to plugins via helper functions.
