@@ -334,7 +334,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // unload each plugin (call QMM_Detach, and then dlclose)
         QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
         for (Plugin& p : g_plugins) {
-            plugin_unload(p);
+            p.Unload();
         }
         g_plugins.clear();
 
@@ -379,7 +379,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
         CONSOLE_PRINT ("(QMM) PIFV       : " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
         CONSOLE_PRINTF("(QMM) Plugins    : {}\n", g_plugins.size());
         CONSOLE_PRINTF("(QMM) Loaded mod : {} ({})\n", g_mod.path, APIType_Function(g_mod.api));
-        if (g_mod.vmbase) {
+        if (g_mod.vm.memory) {
             CONSOLE_PRINT ("(QMM)\n");
             CONSOLE_PRINT ("(QMM) QVM mod information\n");
             CONSOLE_PRINT ("(QMM) -------------------\n");

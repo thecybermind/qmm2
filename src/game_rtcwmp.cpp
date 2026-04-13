@@ -131,7 +131,7 @@ intptr_t RTCWMP_GameSupport::vmMain(intptr_t cmd, ...) {
     // some of the args passed to these mod functions are pointers existing in the engine,
     // which was fine before ioRTCW added qvm support. we can do what ioRTCW did and alloc
     // some space inside the hunk in the qvm data segment and copy the data there and back
-    if (cmd == AICAST_VISIBLEFROMPOS && g_mod.vmbase) {
+    if (cmd == AICAST_VISIBLEFROMPOS && g_mod.vm.memory) {
         // return AICast_VisibleFromPos((float*)arg0, arg1, (float*)arg2, arg3, arg4);
         int arg0 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[0]);
         int arg2 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[2]);
@@ -139,13 +139,13 @@ intptr_t RTCWMP_GameSupport::vmMain(intptr_t cmd, ...) {
         qvm_hunk_free(&g_mod.vm, arg2, sizeof(vec3_t), (void*)args[2]);
         qvm_hunk_free(&g_mod.vm, arg0, sizeof(vec3_t), (void*)args[0]);
     }
-    else if (cmd == AICAST_CHECKATTACKATPOS && g_mod.vmbase) {
+    else if (cmd == AICAST_CHECKATTACKATPOS && g_mod.vm.memory) {
         // return AICast_CheckAttackAtPos( arg0, arg1, (float *)arg2, arg3, arg4 );
         int arg2 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[2]);
         ret = orig_vmMain(cmd, args[0], args[1], arg2, args[3], args[4]);
         qvm_hunk_free(&g_mod.vm, arg2, sizeof(vec3_t), (void*)args[2]);
     }
-    else if (cmd == GAME_RETRIEVE_MOVESPEEDS_FROM_CLIENT && g_mod.vmbase && args[1]) {
+    else if (cmd == GAME_RETRIEVE_MOVESPEEDS_FROM_CLIENT && g_mod.vm.memory && args[1]) {
         // G_RetrieveMoveSpeedsFromClient( arg0, (char *)arg1 );
         size_t arg1len = strlen((char*)args[1]) + 1;
         int arg1 = qvm_hunk_alloc(&g_mod.vm, arg1len, (void*)args[1]);
@@ -159,8 +159,8 @@ intptr_t RTCWMP_GameSupport::vmMain(intptr_t cmd, ...) {
 
     // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
     // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
-    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vmbase) {
-        ret += g_mod.vmbase;
+    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vm.memory) {
+        ret += (intptr_t)g_mod.vm.memory;
     }
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "RTCWMP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";

@@ -244,29 +244,27 @@ bool GameInfo::LoadMod(std::string cfg_mod) {
     // "<mod>"
     // "<qmmdir>/<mod>"
     // "<exedir>/<moddir>/<mod>"
-    else {
-        std::vector<std::string> try_paths;
-        // if "mod" config setting was "auto"
-        if (str_striequal(cfg_mod, "auto")) {
-            // treat as if "mod" config setting was "qmm_" plus the default dll name for this engine
-            cfg_mod = fmt::format("qmm_{}", this->game->DefaultDLLName());
-            // add QVM filename to search list if this game supports it
-            if (this->game->DefaultQVMName())
-                try_paths.push_back(this->game->DefaultQVMName());
-        }
-        // if "mod" config setting was a relative path, do nothing special unless QVM
-        if (str_striequal(path_baseext(cfg_mod), EXT_QVM) && this->game->DefaultQVMName())
-            try_paths.push_back(cfg_mod);
-        try_paths.push_back(fmt::format("{}/{}", this->qmm_dir, cfg_mod));
-        try_paths.push_back(fmt::format("{}/{}/{}", this->exe_dir, this->mod_dir, cfg_mod));
-        for (std::string& try_path : try_paths) {
-            try_path = path_normalize(try_path);
-            if (try_path.empty() || !path_is_allowed(try_path))
-                continue;
-            QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << try_path << "\"\n";
-            if (g_mod.Load(try_path))
-                return true;
-        }
+    std::vector<std::string> try_paths;
+    // if "mod" config setting was "auto"
+    if (str_striequal(cfg_mod, "auto")) {
+        // treat as if "mod" config setting was "qmm_" plus the default dll name for this engine
+        cfg_mod = fmt::format("qmm_{}", this->game->DefaultDLLName());
+        // add QVM filename to search list if this game supports it
+        if (this->game->DefaultQVMName())
+            try_paths.push_back(this->game->DefaultQVMName());
+    }
+    // if "mod" config setting was a relative path, do nothing special unless QVM
+    if (str_striequal(path_baseext(cfg_mod), EXT_QVM) && this->game->DefaultQVMName())
+        try_paths.push_back(cfg_mod);
+    try_paths.push_back(fmt::format("{}/{}", this->qmm_dir, cfg_mod));
+    try_paths.push_back(fmt::format("{}/{}/{}", this->exe_dir, this->mod_dir, cfg_mod));
+    for (std::string& try_path : try_paths) {
+        try_path = path_normalize(try_path);
+        if (try_path.empty() || !path_is_allowed(try_path))
+            continue;
+        QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << try_path << "\"\n";
+        if (g_mod.Load(try_path))
+            return true;
     }
 
     return false;
@@ -278,8 +276,8 @@ bool GameInfo::LoadPlugin(std::string plugin_path) {
     // absolute path, just attempt to load it directly
     if (path_is_absolute(plugin_path)) {
         // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
-        if (plugin_load(p, plugin_path) > 0) {
-            g_plugins.push_back(p);
+        if (p.Load(plugin_path) > 0) {
+            g_plugins.push_back(std::move(p));
             return true;
         }
         return false;
@@ -296,12 +294,16 @@ bool GameInfo::LoadPlugin(std::string plugin_path) {
         if (try_path.empty() || !path_is_allowed(try_path))
             continue;
         // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
-        int ret = plugin_load(p, try_path);
+        int ret = p.Load(try_path);
         if (ret > 0) {
-            g_plugins.push_back(p);
+            g_plugins.push_back(std::move(p));
             return true;
         }
-        if (ret < 0)
+        // file not found, bad DLL, or not a valid plugin DLL
+        else if (ret == 0)
+            continue;
+        // path was to a valid plugin DLL, but shouldn't be loaded
+        else if (ret < 0)
             return false;
     }
 
@@ -349,7 +351,7 @@ intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) const {
         else
             plugin_ret = p.QMM_vmMain(cmd, args);
 
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "( " << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << plugin_result_to_str(g_plugin_globals.plugin_result) << "\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "( " << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << Plugin::plugin_result_to_str(g_plugin_globals.plugin_result) << "\n";
 
         // set new max result
         max_result = util_max(g_plugin_globals.plugin_result, max_result);
@@ -404,7 +406,7 @@ intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) const {
         else
             plugin_ret = p.QMM_vmMain_Post(cmd, args);
 
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "_Post( " << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << plugin_result_to_str(g_plugin_globals.plugin_result) << "\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "_Post( " << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << Plugin::plugin_result_to_str(g_plugin_globals.plugin_result) << "\n";
 
         // ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR
         if (g_plugin_globals.plugin_result == QMM_ERROR) {
@@ -420,4 +422,38 @@ intptr_t GameInfo::Route(bool is_syscall, intptr_t cmd, intptr_t* args) const {
     g_plugin_globals = old_globals;
 
     return final_ret;
+}
+
+
+EngineFileRead::EngineFileRead() : handle(0) {
+}
+
+
+uint8_t* EngineFileRead::Open(std::string path) {
+    intptr_t filelen = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FOPEN_FILE), path.c_str(), &this->handle, QMM_ENG_MSG(QMM_FS_READ));
+    if (filelen <= 0 || !this->handle) {
+        this->Close();
+        return nullptr;
+    }
+    this->file.resize((size_t)filelen);
+    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_READ), this->file.data(), this->file.size(), this->handle);
+    return this->file.data();
+}
+
+
+int EngineFileRead::Size() {
+    return this->file.size();
+}
+
+
+void EngineFileRead::Close() {
+    this->file.clear();
+    if (handle)
+        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), this->handle);
+    this->handle = 0;
+}
+
+
+EngineFileRead::~EngineFileRead() {
+    this->Close();
 }

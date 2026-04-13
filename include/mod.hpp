@@ -21,7 +21,6 @@ struct Mod {
     std::string path;				// Mod file path
     qvm vm = {};					// QVM object
     void* dll = nullptr;			// OS DLL handle
-    intptr_t vmbase = 0;			// Base data segment address for QVMs (0 if DLL mod)
     APIType api = QMM_API_ERROR;	// API the mod DLL was loaded with
 
     /**
@@ -36,10 +35,6 @@ struct Mod {
     * @brief Unload mod file
     */
     void Unload();
-
-    // todo: to "own" the dll or vm resource, we need to implement rule of 5
-    // this will assist with RAII during mod loading to remove "goto fail" handlers
-
 private:
     // Entry point into QVM mods. Passed to GameSupport::Entry
     static intptr_t QVM_vmMain(intptr_t cmd, ...);
@@ -50,17 +45,20 @@ private:
     /**
     * @brief Attempt to load Mod::file a QVM mod
     *
+    * @param file Path to QVM mod file
     * @return true if mod load was successful, false otherwise
     */
-    bool LoadQVM();
+    bool LoadQVM(std::string file);
 
     /**
-    * @brief Attempt to load Mod::file as a DLL mod with the given API type
+    * @brief Attempt to initialize Mod::dll as a DLL mod with the given API type
     *
+    * @param file Path to DLL mod file
+    * @param handle Pointer to loaded DLL
     * @param dll_api API type to load the mod
     * @return true if mod load was successful, false otherwise
     */
-    bool LoadDLL(APIType dll_api);
+    bool InitDLL(std::string file, void* handle, APIType dll_api);
 };
 
 // The game mod

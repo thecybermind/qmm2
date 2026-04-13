@@ -134,4 +134,33 @@ struct CGameInfo {
 // Basic information about the cgame for games where the DLL has both game and cgame
 extern CGameInfo cgameinfo;
 
+// RAII class to read a file using engine functions
+struct EngineFileRead {
+    EngineFileRead();
+    ~EngineFileRead();
+
+    /**
+    * @brief Open file.
+    *
+    * @param path Filename to open
+    * @return Pointer to contents of file
+    */
+    uint8_t* Open(std::string path);
+
+    /**
+    * @brief Size of file.
+    *
+    * @return File size
+    */
+    int Size();
+
+    /**
+    * @brief Close file.
+    */
+    void Close();
+private:
+    int handle;
+    std::vector<uint8_t> file;
+};
+
 #endif // QMM2_GAMEINFO_H

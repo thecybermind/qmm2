@@ -133,7 +133,7 @@ intptr_t JK2MP_GameSupport::vmMain(intptr_t cmd, ...) {
     // one arg passed to this function is a string that lives in the engine. i don't think this
     // can ever actually be called, but it seems weird this was overlooked for QVM mods by the
     // original engine AND by OpenJK
-    if (cmd == GAME_ROFF_NOTETRACK_CALLBACK && g_mod.vmbase && args[1]) {
+    if (cmd == GAME_ROFF_NOTETRACK_CALLBACK && g_mod.vm.memory && args[1]) {
         // G_ROFF_NotetrackCallback( &g_entities[arg0], (const char *)arg1 );
         size_t arg1len = strlen((char*)args[1]) + 1;
         int arg1 = qvm_hunk_alloc(&g_mod.vm, arg1len, (void*)args[1]);
@@ -146,8 +146,8 @@ intptr_t JK2MP_GameSupport::vmMain(intptr_t cmd, ...) {
 
     // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
     // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
-    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vmbase) {
-        ret += g_mod.vmbase;
+    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vm.memory) {
+        ret += (intptr_t)g_mod.vm.memory;
     }
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "JK2MP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
