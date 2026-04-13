@@ -47,6 +47,7 @@ struct Plugin {
 
     Plugin();
     ~Plugin();
+    // delete copy constructor/assignment since a Plugin object owns the DLL pointer
     Plugin(const Plugin& other) = delete;
     Plugin& operator=(const Plugin& other) = delete;
     Plugin(Plugin&& other) noexcept;
