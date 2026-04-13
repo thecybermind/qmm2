@@ -27,6 +27,38 @@ Created By:
 Mod g_mod;
 
 
+Mod::Mod() : vm({}), dll(nullptr), api(QMM_API_ERROR) {
+}
+
+
+Mod::~Mod() {
+    this->Unload();
+}
+
+
+Mod::Mod(Mod&& other) noexcept : Mod() {
+    if (this == &other)
+        return;
+
+    *this = std::move(other);
+}
+
+
+Mod& Mod::operator=(Mod&& other) noexcept {
+    if (this == &other)
+        return *this;
+
+    // swap since a Mod "owns" the QVM
+    std::swap(this->vm, other.vm);
+    // swap since a Mod "owns" the dll handle
+    std::swap(this->dll, other.dll);
+    this->path = other.path;
+    this->api = other.api;
+
+    return *this;
+}
+
+
 bool Mod::Load(std::string file) {
     // if this mod somehow already has a dll or qvm pointer, wipe it first
     if (this->dll || this->vm.memory)
@@ -72,11 +104,14 @@ bool Mod::Load(std::string file) {
 
 void Mod::Unload() {
     // call the game-specific mod unload callback
-    gameinfo.game->ModUnload();
-    qvm_unload(&this->vm);
+    if (gameinfo.game)
+        gameinfo.game->ModUnload();
     if (this->dll)
         dll_close(this->dll);
-    *this = Mod();
+    qvm_unload(&this->vm);
+    qvm_init(&this->vm);
+    this->dll = nullptr;
+    this->api = QMM_API_ERROR;
 }
 
 

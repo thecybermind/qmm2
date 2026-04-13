@@ -145,11 +145,13 @@ Plugin& Plugin::operator=(Plugin&& other) noexcept {
     if (this == &other)
         return *this;
 
+    // swap since a Plugin "owns" the dll handle
     std::swap(this->dll, other.dll);
     this->path = other.path;
     this->QMM_Query = other.QMM_Query;
     this->QMM_Attach = other.QMM_Attach;
-    this->QMM_Detach = other.QMM_Detach;
+    // swap since QMM_Detach is called for an unloading plugin in Unload/destructor
+    std::swap(this->QMM_Detach, other.QMM_Detach);
     this->QMM_vmMain = other.QMM_vmMain;
     this->QMM_vmMain_Post = other.QMM_vmMain_Post;
     this->QMM_syscall = other.QMM_syscall;
@@ -261,6 +263,7 @@ int Plugin::Load(std::string file) {
     }
 
     this->path = file;
+    // optional plugin functions
     this->QMM_PluginMessage = (Plugin::plugin_pluginmessage)dll_symbol(this->dll, "QMM_PluginMessage");
     this->QMM_QVMHandler = (Plugin::plugin_qvmhandler)dll_symbol(this->dll, "QMM_QVMHandler");
 
@@ -269,11 +272,9 @@ int Plugin::Load(std::string file) {
 
 
 void Plugin::Unload() {
-    if (this->dll) {
-        if (this->QMM_Detach)
-            this->QMM_Detach();
-        dll_close(this->dll);
-    }
+    if (this->dll && this->QMM_Detach)
+        this->QMM_Detach();
+    dll_close(this->dll);
     this->dll = nullptr;
     this->path.clear();
     this->QMM_Query = nullptr;

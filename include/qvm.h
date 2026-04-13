@@ -205,6 +205,14 @@ typedef struct {
 extern "C" {
 #endif // __cplusplus
 
+
+/**
+* @brief Initialize a blank VM object.
+*
+* @param vm Pointer to QVM object to initialize
+*/
+void qvm_init(qvm* vm);
+
 /**
 * @brief Create and initialize a new VM from a QVM file.
 * 

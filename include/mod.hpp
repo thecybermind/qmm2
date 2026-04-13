@@ -18,10 +18,18 @@ Created By:
 
 // A game mod
 struct Mod {
-    std::string path;				// Mod file path
     qvm vm = {};					// QVM object
     void* dll = nullptr;			// OS DLL handle
+    std::string path;				// Mod file path
     APIType api = QMM_API_ERROR;	// API the mod DLL was loaded with
+
+    Mod();
+    ~Mod();
+    // delete copy constructor/assignment since a Mod object owns the DLL pointer and QVM object
+    Mod(const Mod& other) = delete;
+    Mod& operator=(const Mod& other) = delete;
+    Mod(Mod&& other) noexcept;
+    Mod& operator=(Mod&& other) noexcept;
 
     /**
     * @brief Load the given mod file
@@ -43,7 +51,7 @@ private:
     static int QVM_syscall(uint8_t* membase, int cmd, int* args);
 
     /**
-    * @brief Attempt to load Mod::file a QVM mod
+    * @brief Attempt to load a QVM mod
     *
     * @param file Path to QVM mod file
     * @return true if mod load was successful, false otherwise
