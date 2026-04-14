@@ -62,7 +62,21 @@ Check out some plugins at the [Plugin List](https://github.com/thecybermind/qmm2
 
 ## Thanks
 
+Designed by:
+  - Kevin Masterson
+
+Special thanks to:
+  - Brian Stumm
+  - loupgarou21
+  - nevcairiel
+  - BAILOPAN
+  - Lumpy
+  - para
+  - I have forgotten many since 2004; please let me know!
+		
 QMM uses the following libraries:  
-  - [nlohmann/json](https://github.com/nlohmann/json) - for reading the configuration file
-  - [aixlog](https://github.com/badaix/aixlog) - for logging (including to game console!)
-  - [fmtlib](https://github.com/fmtlib/fmt) - for string formatting
+  - [nlohmann/json](https://github.com/nlohmann/json)
+  - [aixlog](https://github.com/badaix/aixlog)
+  - [fmtlib](https://github.com/fmtlib/fmt)
+
+See the LIBLICENSES file for each of these libraries' licenses.
