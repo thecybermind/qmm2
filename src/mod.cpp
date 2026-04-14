@@ -92,7 +92,7 @@ bool Mod::Load(std::string file) {
         if (this->InitDLL(file, handle, QMM_API_DLLENTRY))
             return true;
 
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << path_basename(file) << "\"): Unable to locate mod entry point\n";
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << path_basename(file) << "\"): Unable to locate a valid mod entry point\n";
     }
     else {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << path_basename(file) << "\"): Unknown mod file format\n";
@@ -103,14 +103,13 @@ bool Mod::Load(std::string file) {
 
 
 void Mod::Unload() {
-    // call the game-specific mod unload callback
-    if (gameinfo.game)
+    // call the game-specific mod unload callback only if a mod was actually loaded
+    if (gameinfo.game && (this->dll || this->vm.memory))
         gameinfo.game->ModUnload();
-    if (this->dll)
-        dll_close(this->dll);
+    dll_close(this->dll);
+    this->dll = nullptr;
     qvm_unload(&this->vm);
     qvm_init(&this->vm);
-    this->dll = nullptr;
     this->api = QMM_API_ERROR;
 }
 
@@ -194,6 +193,8 @@ bool Mod::LoadQVM(std::string file) {
     // pass the qvm vmMain function pointer to the game-specific mod load handler
     if (!gameinfo.game->ModLoad((void*)Mod::QVM_vmMain, QMM_API_QVM)) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << path_basename(file) << "\"): Mod load failed?\n";
+        // call ModUnload to allow game support code to reset
+        gameinfo.game->ModUnload();
         return false;
     }
 
@@ -228,6 +229,9 @@ bool Mod::InitDLL(std::string file, void* handle, APIType dll_api) {
             return true;
         }
 
+        // call ModUnload to allow game support code to reset
+        gameinfo.game->ModUnload();
+
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << path_basename(file) << "\"): " << gameinfo.game->GameCode() << "_GameSupport::ModLoad returned false\n";
 
         return false;
@@ -254,6 +258,9 @@ bool Mod::InitDLL(std::string file, void* handle, APIType dll_api) {
             this->path = file;
             return true;
         }
+
+        // call ModUnload to allow game support code to reset
+        gameinfo.game->ModUnload();
 
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << path_basename(file) << "\"): " << gameinfo.game->GameCode() << "_GameSupport::ModLoad returned false\n";
 
