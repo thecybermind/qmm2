@@ -442,7 +442,7 @@ uint8_t* EngineFileRead::Open(std::string path) {
 
 
 int EngineFileRead::Size() {
-    return this->file.size();
+    return (int)this->file.size();
 }
 
 
