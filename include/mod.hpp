@@ -18,11 +18,18 @@ Created By:
 
 // A game mod
 struct Mod {
-    std::string path;				// Mod file path
     qvm vm = {};					// QVM object
     void* dll = nullptr;			// OS DLL handle
-    intptr_t vmbase = 0;			// Base data segment address for QVMs (0 if DLL mod)
+    std::string path;				// Mod file path
     APIType api = QMM_API_ERROR;	// API the mod DLL was loaded with
+
+    Mod();
+    ~Mod();
+    // delete copy constructor/assignment since a Mod object owns the DLL pointer and QVM object
+    Mod(const Mod& other) = delete;
+    Mod& operator=(const Mod& other) = delete;
+    Mod(Mod&& other) noexcept;
+    Mod& operator=(Mod&& other) noexcept;
 
     /**
     * @brief Load the given mod file
@@ -36,7 +43,6 @@ struct Mod {
     * @brief Unload mod file
     */
     void Unload();
-
 private:
     // Entry point into QVM mods. Passed to GameSupport::Entry
     static intptr_t QVM_vmMain(intptr_t cmd, ...);
@@ -45,19 +51,22 @@ private:
     static int QVM_syscall(uint8_t* membase, int cmd, int* args);
 
     /**
-    * @brief Attempt to load Mod::file a QVM mod
+    * @brief Attempt to load a QVM mod
     *
+    * @param file Path to QVM mod file
     * @return true if mod load was successful, false otherwise
     */
-    bool LoadQVM();
+    bool LoadQVM(std::string file);
 
     /**
-    * @brief Attempt to load Mod::file as a DLL mod with the given API type
+    * @brief Attempt to initialize Mod::dll as a DLL mod with the given API type
     *
+    * @param file Path to DLL mod file
+    * @param handle Pointer to loaded DLL
     * @param dll_api API type to load the mod
     * @return true if mod load was successful, false otherwise
     */
-    bool LoadDLL(APIType dll_api);
+    bool InitDLL(std::string file, void* handle, APIType dll_api);
 };
 
 // The game mod

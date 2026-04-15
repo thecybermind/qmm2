@@ -28,9 +28,47 @@ enum { QMM_LOG_TRACE, QMM_LOG_DEBUG, QMM_LOG_INFO, QMM_LOG_NOTICE, QMM_LOG_WARNI
 #endif
 
 
+void qvm_init(qvm* vm) {
+    if (!vm)
+        return;
+
+    vm->magic = 0;
+
+    vm->syscall = NULL;
+
+    vm->memory = NULL;
+    vm->memorysize = 0;
+
+    vm->codesegment = NULL;
+    vm->datasegment = NULL;
+    
+    vm->instructioncount = 0;
+    vm->codeseglen = 0;
+    vm->dataseglen = 0;
+
+    vm->stacksize = 0;
+    vm->stacklow = NULL;
+    vm->stackhigh = NULL;
+
+    vm->hunksize = 0;
+    vm->hunklow = 0;
+    vm->hunkhigh = 0;
+
+    vm->stackptr = NULL;
+    vm->hunkptr = 0;
+
+    vm->filesize = 0;
+    vm->allocator = NULL;
+    vm->verify_data = 0;
+}
+
+
 int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsyscall, int verify_data, size_t hunk_size, qvm_alloc* allocator) {
     if (!vm || vm->memory || !filemem || !filesize || !qvmsyscall)
         return 0;
+
+    // start fresh
+    qvm_init(vm);
 
     if (filesize < sizeof(qvm_header)) {
         log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: too small for header\n");
@@ -230,13 +268,13 @@ fail:
 }
 
 
-static qvm qvm_empty;
 void qvm_unload(qvm* vm) {
     if (!vm)
         return;
     if (vm->memory)
         vm->allocator->free(vm->memory, vm->memorysize, vm->allocator->ctx);
-    *vm = qvm_empty;
+    vm->memory = NULL;
+    qvm_init(vm);
 }
 
 

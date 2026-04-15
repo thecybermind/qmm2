@@ -133,8 +133,8 @@ intptr_t Q3A_GameSupport::vmMain(intptr_t cmd, ...) {
 
     // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
     // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
-    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vmbase) {
-        ret += g_mod.vmbase;
+    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vm.memory) {
+        ret += (intptr_t)g_mod.vm.memory;
     }
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Q3A_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";

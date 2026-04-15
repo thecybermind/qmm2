@@ -46,7 +46,7 @@ CXXFLAGS := -Wall -pipe -fPIC -std=c++17
 LDFLAGS  := -shared -fPIC
 LDLIBS   :=
 
-REL_CPPFLAGS := $(CPPFLAGS)
+REL_CPPFLAGS := $(CPPFLAGS) -DNDEBUG
 DBG_CPPFLAGS := $(CPPFLAGS) -D_DEBUG
 
 REL_CFLAGS_32 := $(CFLAGS) -m32 -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror

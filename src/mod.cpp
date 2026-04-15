@@ -27,63 +27,90 @@ Created By:
 Mod g_mod;
 
 
+Mod::Mod() : vm({}), dll(nullptr), api(QMM_API_ERROR) {
+}
+
+
+Mod::~Mod() {
+    this->Unload();
+}
+
+
+Mod::Mod(Mod&& other) noexcept : Mod() {
+    if (this == &other)
+        return;
+
+    *this = std::move(other);
+}
+
+
+Mod& Mod::operator=(Mod&& other) noexcept {
+    if (this == &other)
+        return *this;
+
+    // swap since a Mod "owns" the QVM
+    std::swap(this->vm, other.vm);
+    // swap since a Mod "owns" the dll handle
+    std::swap(this->dll, other.dll);
+    this->path = other.path;
+    this->api = other.api;
+
+    return *this;
+}
+
+
 bool Mod::Load(std::string file) {
     // if this mod somehow already has a dll or qvm pointer, wipe it first
     if (this->dll || this->vm.memory)
         this->Unload();
 
-    this->path = file;
-
     std::string ext = path_baseext(file);
 
     // only allow qvm mods if the game engine supports it
     if (str_striequal(ext, EXT_QVM) && gameinfo.game->DefaultQVMName()) {
-        return this->LoadQVM();
+        return this->LoadQVM(file);
     }
     // if DLL
     else if (str_striequal(ext, EXT_DLL)) {
         // load DLL
-        this->dll = dll_load(file.c_str());
-        if (!this->dll) {
+        void* handle = dll_load(file.c_str());
+        if (!handle) {
             QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << file << "\"): DLL load failed: " << dll_error() << "\n";
-            goto fail;
+            return false;
         }
 
         // if this DLL is the same as QMM, cancel
-        if (this->dll == gameinfo.qmm_module_ptr) {
+        if (handle == gameinfo.qmm_module_ptr) {
             QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << path_basename(file) << "\"): DLL is actually QMM?\n";
-            goto fail;
+            return false;
         }
 
-        this->vmbase = 0;
-
-        if (this->LoadDLL(QMM_API_GETGAMEAPI))
+        if (this->InitDLL(file, handle, QMM_API_GETGAMEAPI))
             return true;
-        if (this->LoadDLL(QMM_API_GETMODULEAPI))
+        if (this->InitDLL(file, handle, QMM_API_GETMODULEAPI))
             return true;
-        if (this->LoadDLL(QMM_API_DLLENTRY))
+        if (this->InitDLL(file, handle, QMM_API_DLLENTRY))
             return true;
 
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << path_basename(file) << "\"): Unable to locate mod entry point\n";
-        goto fail;
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << path_basename(file) << "\"): Unable to locate a valid mod entry point\n";
     }
     else {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << path_basename(file) << "\"): Unknown mod file format\n";
     }
 
-fail:
-    this->Unload();
     return false;
 }
 
 
 void Mod::Unload() {
-    // call the game-specific mod unload callback
-    gameinfo.game->ModUnload();
+    // call the game-specific mod unload callback only if a mod was actually loaded
+    if (gameinfo.game && (this->dll || this->vm.memory))
+        gameinfo.game->ModUnload();
+    dll_close(this->dll);
+    this->dll = nullptr;
     qvm_unload(&this->vm);
-    if (this->dll)
-        dll_close(this->dll);
-    *this = Mod();
+    qvm_init(&this->vm);
+    this->api = QMM_API_ERROR;
 }
 
 
@@ -140,26 +167,17 @@ int Mod::QVM_syscall(uint8_t* membase, int cmd, int* args) {
 }
 
 
-bool Mod::LoadQVM() {
-    int fpk3 = 0;
-    intptr_t filelen;
-    std::vector<uint8_t> filemem;
+bool Mod::LoadQVM(std::string file) {
+    EngineFileRead f;
     bool verify_data;
-    size_t hunk_size = 0;
-    bool loaded;
+    size_t hunk_size;
 
     // load file using engine functions to read into pk3s if necessary
-    filelen = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FOPEN_FILE), this->path.c_str(), &fpk3, QMM_ENG_MSG(QMM_FS_READ));
-    if (filelen <= 0 || !fpk3) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << this->path << "\"): Could not open QVM for reading\n";
-        if (fpk3)
-            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), fpk3);
-        goto fail;
+    uint8_t* filedata = f.Open(file);
+    if (!filedata) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << file << "\"): Could not open QVM for reading\n";
+        return false;
     }
-    filemem.resize((size_t)filelen);
-
-    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_READ), filemem.data(), filelen, fpk3);
-    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), fpk3);
 
     // get data verification setting from config
     verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
@@ -167,68 +185,67 @@ bool Mod::LoadQVM() {
     hunk_size = (size_t)cfg_get_int(g_cfg, "qvmhunksize", 0);
 
     // attempt to load mod
-    loaded = qvm_load(&this->vm, filemem.data(), filemem.size(), Mod::QVM_syscall, verify_data, hunk_size, nullptr);
-    if (!loaded) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << this->path << "\"): QVM load failed\n";
-        goto fail;
+    if (!qvm_load(&this->vm, filedata, f.Size(), Mod::QVM_syscall, verify_data, hunk_size, nullptr)) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << file << "\"): QVM load failed\n";
+        return false;
     }
-
-    this->vmbase = (intptr_t)this->vm.datasegment;
 
     // pass the qvm vmMain function pointer to the game-specific mod load handler
-    if (!gameinfo.game->ModLoad((void*)Mod::QVM_vmMain, QMM_API_QVM))
-    {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << path_basename(this->path) << "\"): Mod load failed?\n";
-        goto fail;
+    if (!gameinfo.game->ModLoad((void*)Mod::QVM_vmMain, QMM_API_QVM)) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << path_basename(file) << "\"): Mod load failed?\n";
+        // call ModUnload to allow game support code to reset
+        gameinfo.game->ModUnload();
+        return false;
     }
 
-    this->api = QMM_API_QVM;
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Mod::LoadQVM(\"" << path_basename(file) << "\"): QVM loaded successfully with verify_data " << (this->vm.verify_data ? "on" : "off") << " and hunk size " << this->vm.hunksize << "\n";
 
-    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Mod::LoadQVM(\"" << path_basename(this->path) << "\"): QVM loaded successfully with verify_data " << (this->vm.verify_data ? "on" : "off") << " and hunk size " << this->vm.hunksize << "\n";
+    this->api = QMM_API_QVM;
+    this->path = file;
 
     return true;
-
-fail:
-    this->Unload();
-    return false;
 }
 
 
-bool Mod::LoadDLL(APIType dll_api) {
-    this->api = dll_api;
-
+bool Mod::InitDLL(std::string file, void* handle, APIType dll_api) {
     switch (dll_api) {
     case QMM_API_GETGAMEAPI:
     case QMM_API_GETMODULEAPI: {
         // these are together because they work the same, just with a different function name
 
         // look for GetGameAPI/GetModuleAPI function
-        mod_GetGameAPI pfnGGA = (mod_GetGameAPI)dll_symbol(this->dll, APIType_Function(dll_api));
+        mod_GetGameAPI pfnGGA = (mod_GetGameAPI)dll_symbol(handle, APIType_Function(dll_api));
         if (!pfnGGA) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadDLL(\"" << path_basename(this->path) << "\"): Could not locate mod entry point \"" << APIType_Function(dll_api) << "\"\n";
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << path_basename(file) << "\"): Could not locate mod entry point \"" << APIType_Function(dll_api) << "\"\n";
             return false;
         }
 
         // pass GGA/GMA function to game-specific mod load handler
         if (gameinfo.game->ModLoad((void*)pfnGGA, dll_api)) {
             // if mod load handler says good to go, we do too
+            this->api = dll_api;
+            this->dll = handle;
+            this->path = file;
             return true;
         }
 
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadDLL(\"" << path_basename(this->path) << "\"): " << gameinfo.game->GameCode() << "_GameSupport::ModLoad returned false\n";
+        // call ModUnload to allow game support code to reset
+        gameinfo.game->ModUnload();
+
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << path_basename(file) << "\"): " << gameinfo.game->GameCode() << "_GameSupport::ModLoad returned false\n";
 
         return false;
     }
     case QMM_API_DLLENTRY: {
-        mod_dllEntry pfndllEntry = (mod_dllEntry)dll_symbol(this->dll, "dllEntry");
+        mod_dllEntry pfndllEntry = (mod_dllEntry)dll_symbol(handle, "dllEntry");
         if (!pfndllEntry) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadDLL(\"" << path_basename(this->path) << "\"): Could not locate mod entry point \"dllEntry\"\n";
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << path_basename(file) << "\"): Could not locate mod entry point \"dllEntry\"\n";
             return false;
         }
 
-        mod_vmMain pfnvmMain = (mod_vmMain)dll_symbol(this->dll, "vmMain");
+        mod_vmMain pfnvmMain = (mod_vmMain)dll_symbol(handle, "vmMain");
         if (!pfnvmMain) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadDLL(\"" << path_basename(this->path) << "\"): Could not locate mod entry point \"vmMain\"\n";
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << path_basename(file) << "\"): Could not locate mod entry point \"vmMain\"\n";
             return false;
         }
 
@@ -236,10 +253,16 @@ bool Mod::LoadDLL(APIType dll_api) {
         if (gameinfo.game->ModLoad((void*)pfnvmMain, dll_api)) {
             // if mod load handler says good to go, we also need to pass qmm_syscall to mod's dllEntry function
             pfndllEntry(qmm_syscall);
+            this->api = dll_api;
+            this->dll = handle;
+            this->path = file;
             return true;
         }
 
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadDLL(\"" << path_basename(this->path) << "\"): " << gameinfo.game->GameCode() << "_GameSupport::ModLoad returned false\n";
+        // call ModUnload to allow game support code to reset
+        gameinfo.game->ModUnload();
+
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << path_basename(file) << "\"): " << gameinfo.game->GameCode() << "_GameSupport::ModLoad returned false\n";
 
         return false;
     }

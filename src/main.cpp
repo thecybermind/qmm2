@@ -247,9 +247,11 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // check command line arguments for a mod filename
         cfg_mod = util_get_cmdline_arg("--qmm_mod", cfg_mod);
         if (!gameinfo.LoadMod(cfg_mod)) {
-            gameinfo.is_shutdown = true;
-            QMMLOG(QMM_LOG_FATAL, "QMM") << "vmMain(" << gameinfo.game->ModMsgName(cmd) << "): Unable to load mod using \"" << cfg_mod << "\"\n";
-            ENG_SYSCALL(QMM_FAIL_G_ERROR, "\nFatal QMM Error:\nQMM was unable to load the mod file.\nPlease set the \"mod\" option in qmm2.json.\nRefer to the documentation for more information.\n");
+            if (!gameinfo.is_shutdown) {
+                gameinfo.is_shutdown = true;
+                QMMLOG(QMM_LOG_FATAL, "QMM") << "QMM was unable to load the mod file using \"" << cfg_mod << "\". Please set the \"mod\" option in qmm2.json. Refer to the documentation for more information.\n";
+                ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ERROR), "\nFatal QMM Error:\nQMM was unable to load the mod file.\nPlease set the \"mod\" option in qmm2.json.\nRefer to the documentation for more information.\n");
+            }
             return 0;
         }
         QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << APIType_Function(g_mod.api) << " mod \"" << g_mod.path << "\"\n";
@@ -334,7 +336,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // unload each plugin (call QMM_Detach, and then dlclose)
         QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
         for (Plugin& p : g_plugins) {
-            plugin_unload(p);
+            p.Unload();
         }
         g_plugins.clear();
 
@@ -379,7 +381,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
         CONSOLE_PRINT ("(QMM) PIFV       : " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
         CONSOLE_PRINTF("(QMM) Plugins    : {}\n", g_plugins.size());
         CONSOLE_PRINTF("(QMM) Loaded mod : {} ({})\n", g_mod.path, APIType_Function(g_mod.api));
-        if (g_mod.vmbase) {
+        if (g_mod.vm.memory) {
             CONSOLE_PRINT ("(QMM)\n");
             CONSOLE_PRINT ("(QMM) QVM mod information\n");
             CONSOLE_PRINT ("(QMM) -------------------\n");
@@ -440,6 +442,25 @@ static void HandleQMMCommand(intptr_t arg_start) {
         g_cfg = cfg_load(gameinfo.cfg_path);
         CONSOLE_PRINT("(QMM) Configuration file reloaded!\n");
     }
+    else if (str_striequal("credits", arg1) || str_striequal("thanks", arg1)) {
+        CONSOLE_PRINT("(QMM) QMM credits:\n");
+        CONSOLE_PRINT("(QMM) Designed by:\n");
+        CONSOLE_PRINT("(QMM)  - Kevin Masterson\n");
+        CONSOLE_PRINT("(QMM)\n");
+        CONSOLE_PRINT("(QMM) Special thanks to:\n");
+        CONSOLE_PRINT("(QMM)  - BAStumm\n");
+        CONSOLE_PRINT("(QMM)  - loupgarou21\n");
+        CONSOLE_PRINT("(QMM)  - nevcairiel\n");
+        CONSOLE_PRINT("(QMM)  - BAILOPAN\n");
+        CONSOLE_PRINT("(QMM)  - Lumpy\n");
+        CONSOLE_PRINT("(QMM)  - para\n");
+        CONSOLE_PRINT("(QMM)  - I have forgotten many since 2004; please let me know!\n");
+        CONSOLE_PRINT("(QMM)\n");
+        CONSOLE_PRINT("(QMM) QMM uses the following libraries:\n");
+        CONSOLE_PRINT("(QMM)  - nlohmann/json - https://github.com/nlohmann/json\n");
+        CONSOLE_PRINT("(QMM)  - aixlog - https://github.com/badaix/aixlog\n");
+        CONSOLE_PRINT("(QMM)  - fmtlib - https://github.com/fmtlib/fmt\n");
+    }
     else {
         CONSOLE_PRINT("(QMM) Usage: qmm <command> [params]\n");
         CONSOLE_PRINT("(QMM) Available commands:\n");
@@ -448,6 +469,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
         CONSOLE_PRINT("(QMM) qmm plugin <id> - outputs info on plugin with id\n");
         CONSOLE_PRINT("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
         CONSOLE_PRINT("(QMM) qmm reload - reloads the QMM configuration file\n");
+        CONSOLE_PRINT("(QMM) qmm credits - QMM credits\n");
     }
 }
 

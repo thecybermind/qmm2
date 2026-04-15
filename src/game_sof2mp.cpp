@@ -137,7 +137,7 @@ intptr_t SOF2MP_GameSupport::vmMain(intptr_t cmd, ...) {
     // some of the args passed to GAME_GAMETYPE_COMMAND are pointers from the gametype QVM. while both the SOF2MP engine
     // and the SOF2GT_QMM plugin will convert them from QVM pointers to real pointers on the way in from the gametype QVM,
     // these are going back into the game QVM, so we need to copy the strings/objects to the qvm hunk
-    if (cmd == GAME_GAMETYPE_COMMAND && g_mod.vmbase) {
+    if (cmd == GAME_GAMETYPE_COMMAND && g_mod.vm.memory) {
         switch (args[0]) {
         // arg1 is a string
         case GTCMD_REGISTERSOUND:       // int  ( const char* soundFile );
@@ -235,8 +235,8 @@ intptr_t SOF2MP_GameSupport::vmMain(intptr_t cmd, ...) {
 
     // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
     // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
-    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vmbase) {
-        ret += g_mod.vmbase;
+    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vm.memory) {
+        ret += (intptr_t)g_mod.vm.memory;
     }
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2MP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";

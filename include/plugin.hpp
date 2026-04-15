@@ -44,6 +44,36 @@ struct Plugin {
     plugin_pluginmessage QMM_PluginMessage = nullptr;   // QMM_PluginMessage function pointer (optional)
     plugin_qvmhandler QMM_QVMHandler = nullptr;         // QMM_QVMHandler function pointer (optional)
     plugin_info* plugininfo = nullptr;                  // Plugin-provided info
+
+    Plugin();
+    ~Plugin();
+    // delete copy constructor/assignment since a Plugin object owns the DLL pointer
+    Plugin(const Plugin& other) = delete;
+    Plugin& operator=(const Plugin& other) = delete;
+    Plugin(Plugin&& other) noexcept;
+    Plugin& operator=(Plugin&& other) noexcept;
+
+    /**
+    * @brief Load a QMM plugin
+    *
+    * @param file Path to Plugin pDLL
+    * @return >1 if load successful, 0 if file load failed, <0 if plugin loaded but QMM_Attach returned 0
+    */
+    int Load(std::string file);
+
+    /**
+    * @brief Unload a QMM plugin
+    *
+    */
+    void Unload();
+
+    /**
+    * @brief Convert a plugin result flag to string
+    *
+    * @param res Plugin result to convert
+    * @return Converted plugin result
+    */
+    static const char* plugin_result_to_str(plugin_res res);
 };
 
 // This holds global variables that are available to plugins via helper functions.
@@ -64,29 +94,5 @@ constexpr int QMM_QVM_FUNC_STARTING_ID = 10000;
 // This holds pseudo-syscall IDs. They are registered to a given plugin, and when the QVM interpreter executes the
 // syscall ID, the plugin's QMM_QVMHandler function is called.
 extern std::map<int, Plugin*> g_registered_qvm_funcs;
-
-/**
-* @brief Convert a plugin result flag to string
-*
-* @param res Plugin result to convert
-* @return Converted plugin result
-*/
-const char* plugin_result_to_str(plugin_res res);
-
-/**
-* @brief Load a QMM plugin
-*
-* @param p Reference to Plugin object to load
-* @param file Path to Plugin pDLL
-* @return >1 if load successful, 0 if file load failed, <0 if plugin loaded but QMM_Attach returned 0
-*/
-int plugin_load(Plugin& p, std::string file);
-
-/**
-* @brief Unload a QMM plugin
-*
-* @param p Reference to Plugin object to load
-*/
-void plugin_unload(Plugin& p);
 
 #endif // QMM2_PLUGIN_H
