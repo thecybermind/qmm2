@@ -115,8 +115,8 @@ intptr_t QUAKE2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(dprintf, G_DPRINTF);
         ROUTE_IMPORT(cprintf, G_CPRINTF);
         ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
-        ROUTE_IMPORT_6_V(sound, G_SOUND, (edict_t*), (int), (int), *(float*)&, *(float*)&, *(float*)&);
-        ROUTE_IMPORT_7_V(positioned_sound, G_POSITIONED_SOUND, (float*), (edict_t*), (int), (int), *(float*)&, *(float*)&, *(float*)&);
+        ROUTE_IMPORT_6_V(sound, G_SOUND, edict_t*, int, int, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST);
+        ROUTE_IMPORT_7_V(positioned_sound, G_POSITIONED_SOUND, float*, edict_t*, int, int, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST);
         ROUTE_IMPORT(configstring, G_CONFIGSTRING);
         ROUTE_IMPORT(error, G_ERROR);
         ROUTE_IMPORT(modelindex, G_MODELINDEX);
@@ -139,11 +139,11 @@ intptr_t QUAKE2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(WriteByte, G_MSG_WRITEBYTE);
         ROUTE_IMPORT(WriteShort, G_MSG_WRITESHORT);
         ROUTE_IMPORT(WriteLong, G_MSG_WRITELONG);
-        ROUTE_IMPORT_1_V(WriteFloat, G_MSG_WRITEFLOAT, *(float*)&);
+        ROUTE_IMPORT_1_V(WriteFloat, G_MSG_WRITEFLOAT, FLOAT_CAST);
         ROUTE_IMPORT(WriteString, G_MSG_WRITESTRING);
         ROUTE_IMPORT(WritePosition, G_MSG_WRITEPOSITION);
         ROUTE_IMPORT(WriteDir, G_MSG_WRITEDIR);
-        ROUTE_IMPORT_1_V(WriteAngle, G_MSG_WRITEANGLE, *(float*)&);
+        ROUTE_IMPORT_1_V(WriteAngle, G_MSG_WRITEANGLE, FLOAT_CAST);
         ROUTE_IMPORT(TagMalloc, G_TAGMALLOC);
         ROUTE_IMPORT(TagFree, G_TAGFREE);
         ROUTE_IMPORT(FreeTags, G_FREETAGS);
@@ -154,7 +154,7 @@ intptr_t QUAKE2_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(argv, G_ARGV);
         ROUTE_IMPORT(args, G_ARGS);
         ROUTE_IMPORT(AddCommandString, G_ADDCOMMANDSTRING);
-        ROUTE_IMPORT_2_V(DebugGraph, G_DEBUGGRAPH, *(float*)&, (int));
+        ROUTE_IMPORT_2_V(DebugGraph, G_DEBUGGRAPH, FLOAT_CAST, int);
 
         // handle cmds for variables, this is how a plugin would get these values if needed
 

@@ -17,6 +17,7 @@ Created By:
 #include <cstdarg>
 #include <vector>
 #include "qmmapi.h"
+#include "util.hpp"
 
 
 // ------------------------------------
@@ -316,89 +317,52 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 // ----- GetGameAPI stuff -----
 // ----------------------------
 
+// cast a ROUTE_ argument to float
+#define FLOAT_CAST	horrible_cast<float>
+
 // Handle calls from QMM and plugins into the engine
 #define ROUTE_IMPORT(field, cmd)		case cmd: ret = ((eng_syscall)(orig_import. field))(QMM_PUT_SYSCALL_ARGS()); break
 // Handle accessing an engine-exported variable
 #define ROUTE_IMPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_import. field); break
-// Handle 0 args, void return type
-#define ROUTE_IMPORT_0_V(field, cmd) case cmd: orig_import. field(); break
-// Handle 1 specific arg type (for passing float args in the right registers), void return type
-#define ROUTE_IMPORT_1_V(field, cmd, type0) case cmd: orig_import. field(type0 args[0]); break
-// Handle 2 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_IMPORT_2_V(field, cmd, type0, type1) case cmd: orig_import. field(type0 args[0], type1 args[1]); break
-// Handle 3 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_IMPORT_3_V(field, cmd, type0, type1, type2) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2]); break
-// Handle 4 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_IMPORT_4_V(field, cmd, type0, type1, type2, type3) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3]); break
-// Handle 5 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_IMPORT_5_V(field, cmd, type0, type1, type2, type3, type4) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4]); break
-// Handle 6 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_IMPORT_6_V(field, cmd, type0, type1, type2, type3, type4, type5) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5]); break
-// Handle 7 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_IMPORT_7_V(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6]); break
-// Handle 8 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_IMPORT_8_V(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7]); break
-// Handle 9 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_IMPORT_9_V(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8]); break
-// Handle 10 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_IMPORT_10_V(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9) case cmd: orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8], type9 args[9]); break
-// Handle 0 args
-#define ROUTE_IMPORT_0(field, cmd) case cmd: ret = (intptr_t)orig_import. field(); break
-// Handle 1 specific arg type (for passing float args in the right registers)
-#define ROUTE_IMPORT_1(field, cmd, type0) case cmd: ret = (intptr_t)orig_import. field(type0 args[0]); break
-// Handle 2 specific arg types (for passing float args in the right registers)
-#define ROUTE_IMPORT_2(field, cmd, type0, type1) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1]); break
-// Handle 3 specific arg types (for passing float args in the right registers)
-#define ROUTE_IMPORT_3(field, cmd, type0, type1, type2) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2]); break
-// Handle 4 specific arg types (for passing float args in the right registers)
-#define ROUTE_IMPORT_4(field, cmd, type0, type1, type2, type3) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3]); break
-// Handle 5 specific arg types (for passing float args in the right registers)
-#define ROUTE_IMPORT_5(field, cmd, type0, type1, type2, type3, type4) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4]); break
-// Handle 6 specific arg types (for passing float args in the right registers)
-#define ROUTE_IMPORT_6(field, cmd, type0, type1, type2, type3, type4, type5) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5]); break
-// Handle 7 specific arg types (for passing float args in the right registers)
-#define ROUTE_IMPORT_7(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6]); break
-// Handle 8 specific arg types (for passing float args in the right registers)
-#define ROUTE_IMPORT_8(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7]); break
-// Handle 9 specific arg types (for passing float args in the right registers)
-#define ROUTE_IMPORT_9(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8]); break
-// Handle 10 specific arg types (for passing float args in the right registers)
-#define ROUTE_IMPORT_10(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8], type9 args[9]); break
-// Handle 18 specific arg types (for passing float args in the right registers)
-#define ROUTE_IMPORT_18(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16, type17) case cmd: ret = (intptr_t)orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6], type7 args[7], type8 args[8], type9 args[9], type10 args[10], type11 args[11], type12 args[12], type13 args[13], type14 args[14], type15 args[15], type16 args[16], type17 args[17]); break
+// Handle X specific arg type (for passing float args in the right registers), void return type
+#define ROUTE_IMPORT_1_V(field, cmd, type0) case cmd: orig_import. field((type0)(args[0])); break
+#define ROUTE_IMPORT_2_V(field, cmd, type0, type1) case cmd: orig_import. field((type0)(args[0]), (type1)(args[1])); break
+#define ROUTE_IMPORT_3_V(field, cmd, type0, type1, type2) case cmd: orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2])); break
+#define ROUTE_IMPORT_4_V(field, cmd, type0, type1, type2, type3) case cmd: orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3])); break
+#define ROUTE_IMPORT_5_V(field, cmd, type0, type1, type2, type3, type4) case cmd: orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4])); break
+#define ROUTE_IMPORT_6_V(field, cmd, type0, type1, type2, type3, type4, type5) case cmd: orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5])); break
+#define ROUTE_IMPORT_7_V(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5]), (type6)(args[6])); break
+#define ROUTE_IMPORT_8_V(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7) case cmd: orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5]), (type6)(args[6]), (type7)(args[7])); break
+#define ROUTE_IMPORT_9_V(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8) case cmd: orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5]), (type6)(args[6]), (type7)(args[7]), (type8)(args[8])); break
+#define ROUTE_IMPORT_10_V(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9) case cmd: orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5]), (type6)(args[6]), (type7)(args[7]), (type8)(args[8]), (type9)(args[9])); break
+// Handle X specific arg type (for passing float args in the right registers)
+#define ROUTE_IMPORT_1(field, cmd, type0) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0])); break
+#define ROUTE_IMPORT_2(field, cmd, type0, type1) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0]), (type1)(args[1])); break
+#define ROUTE_IMPORT_3(field, cmd, type0, type1, type2) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2])); break
+#define ROUTE_IMPORT_4(field, cmd, type0, type1, type2, type3) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3])); break
+#define ROUTE_IMPORT_5(field, cmd, type0, type1, type2, type3, type4) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4])); break
+#define ROUTE_IMPORT_6(field, cmd, type0, type1, type2, type3, type4, type5) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5])); break
+#define ROUTE_IMPORT_7(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5]), (type6)(args[6])); break
+#define ROUTE_IMPORT_8(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5]), (type6)(args[6]), (type7)(args[7])); break
+#define ROUTE_IMPORT_9(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5]), (type6)(args[6]), (type7)(args[7]), (type8)(args[8])); break
+#define ROUTE_IMPORT_10(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5]), (type6)(args[6]), (type7)(args[7]), (type8)(args[8]), (type9)(args[9])); break
+#define ROUTE_IMPORT_18(field, cmd, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16, type17) case cmd: ret = (intptr_t)orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5]), (type6)(args[6]), (type7)(args[7]), (type8)(args[8]), (type9)(args[9]), (type10)(args[10]), (type11)(args[11]), (type12)(args[12]), (type13)(args[13]), (type14)(args[14]), (type15)(args[15]), (type16)(args[16]), (type17)(args[17])); break
 // Handle 0 args, float return type
 #define ROUTE_IMPORT_0_F(field, cmd) case cmd: fret = orig_import. field(); ret = *(int*)&fret; break
-// Handle 1 specific arg type (for passing float args in the right registers), float return type
-#define ROUTE_IMPORT_1_F(field, cmd, type0) case cmd: fret = orig_import. field(type0 args[0]); ret = *(int*)&fret; break
-// Handle 2 specific arg types (for passing float args in the right registers), float return type
-#define ROUTE_IMPORT_2_F(field, cmd, type0, type1) case cmd: fret = orig_import. field(type0 args[0], type1 args[1]); ret = *(int*)&fret; break
-// Handle 3 specific arg types (for passing float args in the right registers), float return type
-#define ROUTE_IMPORT_3_F(field, cmd, type0, type1, type2) case cmd: fret = orig_import. field(type0 args[0], type1 args[1], type2 args[2]); ret = *(int*)&fret; break
-// Handle 4 specific arg types (for passing float args in the right registers), float return type
-#define ROUTE_IMPORT_4_F(field, cmd, type0, type1, type2, type3) case cmd: fret = orig_import. field(type0 args[0], type1 args[1], type2 args[2], type3 args[3]); ret = *(int*)&fret; break
+// Handle X specific arg type (for passing float args in the right registers), float return type
+#define ROUTE_IMPORT_1_F(field, cmd, type0) case cmd: fret = orig_import. field((type0)(args[0])); ret = *(int*)&fret; break
+#define ROUTE_IMPORT_2_F(field, cmd, type0, type1) case cmd: fret = orig_import. field((type0)(args[0]), (type1)(args[1])); ret = *(int*)&fret; break
+#define ROUTE_IMPORT_3_F(field, cmd, type0, type1, type2) case cmd: fret = orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2])); ret = *(int*)&fret; break
+#define ROUTE_IMPORT_4_F(field, cmd, type0, type1, type2, type3) case cmd: fret = orig_import. field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3])); ret = *(int*)&fret; break
 
 // Handle calls from QMM and plugins into the mod
 #define ROUTE_EXPORT(field, cmd)		case cmd: ret = ((mod_vmMain)(orig_export-> field))(QMM_PUT_VMMAIN_ARGS()); break
 // Handle accessing a mod-exported variable
 #define ROUTE_EXPORT_VAR(field, cmd)	case cmd: ret = (intptr_t)&(orig_export-> field); break
-// Handle 0 args, void return type
-#define ROUTE_EXPORT_0_V(field, cmd) case cmd: orig_export-> field(); break
-// Handle 1 specific arg type (for passing float args in the right registers), void return type
-#define ROUTE_EXPORT_1_V(field, cmd, type0) case cmd: orig_export-> field(type0 args[0]); break
-// Handle 2 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_EXPORT_2_V(field, cmd, type0, type1) case cmd: orig_export-> field(type0 args[0], type1 args[1]); break
-// Handle 3 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_EXPORT_3_V(field, cmd, type0, type1, type2) case cmd: orig_export-> field(type0 args[0], type1 args[1], type2 args[2]); break
-// Handle 7 specific arg types (for passing float args in the right registers), void return type
-#define ROUTE_EXPORT_7_V(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: orig_export-> field(type0 args[0], type1 args[1], type2 args[2], type3 args[3], type4 args[4], type5 args[5], type6 args[6]); break
-// Handle 0 args
-#define ROUTE_EXPORT_0(field, cmd) case cmd: ret = (intptr_t)orig_export-> field(); break
-// Handle 1 specific arg type (for passing float args in the right registers)
-#define ROUTE_EXPORT_1(field, cmd, type0) case cmd: ret = (intptr_t)orig_export-> field(type0 args[0]); break
-// Handle 2 specific arg types (for passing float args in the right registers)
-#define ROUTE_EXPORT_2(field, cmd, type0, type1) case cmd: ret = (intptr_t)orig_export-> field(type0 args[0], type1 args[1]); break
-// Handle 3 specific arg types (for passing float args in the right registers)
-#define ROUTE_EXPORT_3(field, cmd, type0, type1, type2) case cmd: ret = (intptr_t)orig_export-> field( type0 args[0], type1 args[1], type2 args[2]); break
+// Handle X specific arg type (for passing float args in the right registers), void return type
+#define ROUTE_EXPORT_7_V(field, cmd, type0, type1, type2, type3, type4, type5, type6) case cmd: orig_export-> field((type0)(args[0]), (type1)(args[1]), (type2)(args[2]), (type3)(args[3]), (type4)(args[4]), (type5)(args[5]), (type6)(args[6])); break
+// Handle X specific arg type (for passing float args in the right registers)
+#define ROUTE_EXPORT_3(field, cmd, type0, type1, type2) case cmd: ret = (intptr_t)orig_export-> field( (type0)(args[0]), (type1)(args[1]), (type2)(args[2])); break
 
 // Handle calls from mod into QMM
 #define GEN_IMPORT(field, cmd)	(decltype(qmm_import. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8, intptr_t arg9, intptr_t arg10, intptr_t arg11, intptr_t arg12, intptr_t arg13, intptr_t arg14, intptr_t arg15, intptr_t arg16, intptr_t arg17) { return ::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17); }
@@ -422,11 +386,11 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 #define GEN_IMPORT_17(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15, type16 arg16) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); }
 #define GEN_IMPORT_18(field, cmd, typeret, type0, type1, type2, type3, type4, type5, type6, type7, type8, type9, type10, type11, type12, type13, type14, type15, type16, type17) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6, type7 arg7, type8 arg8, type9 arg9, type10 arg10, type11 arg11, type12 arg12, type13 arg13, type14 arg14, type15 arg15, type16 arg16, type17 arg17) -> typeret { return (typeret)::qmm_syscall(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17); }
 // Handle specific arg types (for passing float args in the right registers), float return type
-#define  GEN_IMPORT_0_F(field, cmd) +[]() -> float { intptr_t ret = ::qmm_syscall(cmd); return *(float*)&ret; }
-#define  GEN_IMPORT_1_F(field, cmd, type0) +[](type0 arg0) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0); return *(float*)&ret; }
-#define  GEN_IMPORT_2_F(field, cmd, type0, type1) +[](type0 arg0, type1 arg1) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1); return *(float*)&ret; }
-#define  GEN_IMPORT_3_F(field, cmd, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1, arg2); return *(float*)&ret; }
-#define  GEN_IMPORT_4_F(field, cmd, type0, type1, type2, type3) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1, arg2, arg3); return *(float*)&ret; }
+#define GEN_IMPORT_0_F(field, cmd) +[]() -> float { intptr_t ret = ::qmm_syscall(cmd); return *(float*)&ret; }
+#define GEN_IMPORT_1_F(field, cmd, type0) +[](type0 arg0) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0); return *(float*)&ret; }
+#define GEN_IMPORT_2_F(field, cmd, type0, type1) +[](type0 arg0, type1 arg1) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1); return *(float*)&ret; }
+#define GEN_IMPORT_3_F(field, cmd, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1, arg2); return *(float*)&ret; }
+#define GEN_IMPORT_4_F(field, cmd, type0, type1, type2, type3) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3) -> float { intptr_t ret = ::qmm_syscall(cmd, arg0, arg1, arg2, arg3); return *(float*)&ret; }
 
 // Handle calls from engine into QMM
 #define  GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { cgameinfo.is_from_QMM = true; return ::vmMain(cmd, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }

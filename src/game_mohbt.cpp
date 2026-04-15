@@ -148,7 +148,7 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
         // handled below since we do special handling to deal with the "when" argument
         //ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
         //ROUTE_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND);
-        ROUTE_IMPORT_1_V(DebugGraph, G_DEBUGGRAPH, *(float*)&);
+        ROUTE_IMPORT_1_V(DebugGraph, G_DEBUGGRAPH, FLOAT_CAST);
         ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
         ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
         ROUTE_IMPORT(MSG_WriteBits, G_MSG_WRITEBITS);
@@ -157,11 +157,11 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(MSG_WriteSVC, G_MSG_WRITESVC);
         ROUTE_IMPORT(MSG_WriteShort, G_MSG_WRITESHORT);
         ROUTE_IMPORT(MSG_WriteLong, G_MSG_WRITELONG);
-        ROUTE_IMPORT_1_V(MSG_WriteFloat, G_MSG_WRITEFLOAT, *(float*)&);
+        ROUTE_IMPORT_1_V(MSG_WriteFloat, G_MSG_WRITEFLOAT, FLOAT_CAST);
         ROUTE_IMPORT(MSG_WriteString, G_MSG_WRITESTRING);
-        ROUTE_IMPORT_1_V(MSG_WriteAngle8, G_MSG_WRITEANGLE8, *(float*)&);
-        ROUTE_IMPORT_1_V(MSG_WriteAngle16, G_MSG_WRITEANGLE16, *(float*)&);
-        ROUTE_IMPORT_1_V(MSG_WriteCoord, G_MSG_WRITECOORD, *(float*)&);
+        ROUTE_IMPORT_1_V(MSG_WriteAngle8, G_MSG_WRITEANGLE8, FLOAT_CAST);
+        ROUTE_IMPORT_1_V(MSG_WriteAngle16, G_MSG_WRITEANGLE16, FLOAT_CAST);
+        ROUTE_IMPORT_1_V(MSG_WriteCoord, G_MSG_WRITECOORD, FLOAT_CAST);
         ROUTE_IMPORT(MSG_WriteDir, G_MSG_WRITEDIR);
         ROUTE_IMPORT(MSG_StartCGM, G_MSG_STARTCGM);
         ROUTE_IMPORT(MSG_EndCGM, G_MSG_ENDCGM);
@@ -178,7 +178,7 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(SightTraceEntity, G_SIGHTTRACEENTITY);
         ROUTE_IMPORT(SightTrace, G_SIGHTTRACE);
         ROUTE_IMPORT(trace, G_TRACE);
-        ROUTE_IMPORT_2_F(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION, (float*), (float*));
+        ROUTE_IMPORT_2_F(CM_VisualObfuscation, G_CM_VISUALOBFUSCATION, float*, float*);
         ROUTE_IMPORT(GetShader, G_GETSHADER);
         ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
         ROUTE_IMPORT(PointBrushnum, G_POINTBRUSHNUM);
@@ -204,20 +204,20 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(TIKI_NumAnims, G_TIKI_NUMANIMS);
         ROUTE_IMPORT(TIKI_NumSurfaces, G_TIKI_NUMSURFACES);
         ROUTE_IMPORT(TIKI_NumTags, G_TIKI_NUMTAGS);
-        ROUTE_IMPORT_4_V(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS, (dtiki_t*), *(float*)&, (float*), (float*));
+        ROUTE_IMPORT_4_V(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS, dtiki_t*, FLOAT_CAST, float*, float*);
         ROUTE_IMPORT(TIKI_GetSkeletor, G_TIKI_GETSKELETOR);
         ROUTE_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM);
         ROUTE_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME);
         ROUTE_IMPORT(Anim_Random, G_ANIM_RANDOM);
         ROUTE_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES);
-        ROUTE_IMPORT_2_F(Anim_Time, G_ANIM_TIME, (dtiki_t*), (int));
-        ROUTE_IMPORT_2_F(Anim_Frametime, G_ANIM_FRAMETIME, (dtiki_t*), (int));
-        ROUTE_IMPORT_2_F(Anim_CrossTime, G_ANIM_CROSSTIME, (dtiki_t*), (int));
+        ROUTE_IMPORT_2_F(Anim_Time, G_ANIM_TIME, dtiki_t*, int);
+        ROUTE_IMPORT_2_F(Anim_Frametime, G_ANIM_FRAMETIME, dtiki_t*, int);
+        ROUTE_IMPORT_2_F(Anim_CrossTime, G_ANIM_CROSSTIME, dtiki_t*, int);
         ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
         ROUTE_IMPORT(Anim_AngularDelta, G_ANIM_ANGULARDELTA);
         ROUTE_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA);
-        ROUTE_IMPORT_5_V(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME, (dtiki_t*), (int), *(float*)&, *(float*)&, (float*));
-        ROUTE_IMPORT_5_V(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME, (dtiki_t*), (int), *(float*)&, *(float*)&, (float*));
+        ROUTE_IMPORT_5_V(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME, dtiki_t*, int, FLOAT_CAST, FLOAT_CAST, float*);
+        ROUTE_IMPORT_5_V(Anim_AngularDeltaOverTime, G_ANIM_ANGULARDELTAOVERTIME, dtiki_t*, int, FLOAT_CAST, FLOAT_CAST, float*);
         ROUTE_IMPORT(Anim_Flags, G_ANIM_FLAGS);
         ROUTE_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL);
         ROUTE_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS);
@@ -230,10 +230,10 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME);
         ROUTE_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME);
         ROUTE_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM);
-        ROUTE_IMPORT_5(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL, (orientation_t*), (dtiki_t*), (int), (int), *(float*)&);
+        ROUTE_IMPORT_5(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL, orientation_t*, dtiki_t*, int, int, FLOAT_CAST);
         ROUTE_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL);
-        ROUTE_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, (dtiki_t*), (int), (int), *(float*)&);
-        ROUTE_IMPORT_6_V(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, (dtiki_t*), (int), (const frameInfo_t*), (int*), (vec4_t*), *(float*)&);
+        ROUTE_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, dtiki_t*, int, int, FLOAT_CAST);
+        ROUTE_IMPORT_6_V(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, FLOAT_CAST);
         ROUTE_IMPORT(CM_GetHitLocationInfo, G_CM_GETHITLOCATIONINFO);
         ROUTE_IMPORT(CM_GetHitLocationInfoSecondary, G_CM_GETHITLOCATIONINFOSECONDARY);
         ROUTE_IMPORT(Alias_Add, G_ALIAS_ADD);
@@ -248,9 +248,9 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR);
         ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
         ROUTE_IMPORT(locationprintf, G_LOCATIONPRINTF);
-        ROUTE_IMPORT_9_V(Sound, G_SOUND, (vec3_t*), (int), (int), (const char*), *(float*)&, *(float*)&, *(float*)&, *(float*)&, (int));
+        ROUTE_IMPORT_9_V(Sound, G_SOUND, vec3_t*, int, int, const char*, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, int);
         ROUTE_IMPORT(StopSound, G_STOPSOUND);
-        ROUTE_IMPORT_2_F(SoundLength, G_SOUNDLENGTH, (int), (const char*));
+        ROUTE_IMPORT_2_F(SoundLength, G_SOUNDLENGTH, int, const char*);
         ROUTE_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES);
         ROUTE_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING);
         ROUTE_IMPORT(CalcCRC, G_CALCCRC);
@@ -276,7 +276,7 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(HudDrawRect, G_HUDDRAWRECT);
         ROUTE_IMPORT(HudDrawVirtualSize, G_HUDDRAWVIRTUALSIZE);
         ROUTE_IMPORT(HudDrawColor, G_HUDDRAWCOLOR);
-        ROUTE_IMPORT_2_V(HudDrawAlpha, G_HUDDRAWALPHA, (int), *(float*)&);
+        ROUTE_IMPORT_2_V(HudDrawAlpha, G_HUDDRAWALPHA, int, FLOAT_CAST);
         ROUTE_IMPORT(HudDrawString, G_HUDDRAWSTRING);
         ROUTE_IMPORT(HudDrawFont, G_HUDDRAWFONT);
         ROUTE_IMPORT(SanitizeName, G_SANITIZENAME);
@@ -507,7 +507,7 @@ intptr_t MOHBT_GameSupport::vmMain(intptr_t cmd, ...) {
         ROUTE_EXPORT(ArchiveString, GAME_ARCHIVE_STRING);
         ROUTE_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME);
         ROUTE_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION);
-        ROUTE_EXPORT_7_V(DebugCircle, GAME_DEBUG_CIRCLE, (float*), *(float*)&, *(float*)&, *(float*)&, *(float*)&, *(float*)&, (qboolean));
+        ROUTE_EXPORT_7_V(DebugCircle, GAME_DEBUG_CIRCLE, float*, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, qboolean);
         ROUTE_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER);
         ROUTE_EXPORT(SoundCallback, GAME_SOUND_CALLBACK);
 

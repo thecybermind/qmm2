@@ -260,4 +260,19 @@ T util_max(T a, T b) {
     return (a > b ? a : b);
 }
 
+
+template <class OutputClass, class InputClass>
+union horrible_union {
+    OutputClass out;
+    InputClass in;
+};
+// Same as reinterpret_cast<T>(x) but for anything
+template <class OutputClass, class InputClass>
+inline OutputClass horrible_cast(const InputClass input) {
+    horrible_union<OutputClass, InputClass> u;
+    u.in = input;
+    return u.out;
+}
+
+
 #endif // QMM2_UTIL_H
