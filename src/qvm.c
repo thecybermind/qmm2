@@ -876,7 +876,10 @@ int qvm_hunk_alloc(qvm* vm, size_t size, const void* init) {
         return 0;
     }
 
-    vm->hunkptr -= (int)size;
+    // round up to nearest 8-byte multiple
+    size_t realsize = (size + 7) & ~7;
+
+    vm->hunkptr -= (int)realsize;
 
     if (init)
         memcpy(vm->datasegment + vm->hunkptr, init, size);
@@ -905,8 +908,11 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
         return;
     }
 
+    // round up to nearest 8-byte multiple
+    size_t realsize = (size + 7) & ~7;
+
     // size too big or 0
-    if (!size || (ptr + (int)size > vm->hunkhigh)) {
+    if (!size || (ptr + (int)realsize > vm->hunkhigh)) {
         log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free invalid size %zu\n", size);
         return;
     }
@@ -915,7 +921,7 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
     if (out)
         memcpy(out, vm->datasegment + ptr, size);
 
-    vm->hunkptr += (int)size;
+    vm->hunkptr += (int)realsize;
 }
 
 
