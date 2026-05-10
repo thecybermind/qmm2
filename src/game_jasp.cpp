@@ -150,19 +150,19 @@ intptr_t JASP_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(G2API_PrecacheGhoul2Model, G_G2API_PRECACHEGHOUL2MODEL);
         ROUTE_IMPORT(G2API_InitGhoul2Model, G_G2API_INITGHOUL2MODEL);
         ROUTE_IMPORT(G2API_SetSkin, G_G2API_SETSKIN);
-        ROUTE_IMPORT_9(G2API_SetBoneAnim, G_G2API_SETBONEANIM, (CGhoul2Info*), (const char*), (int), (int), (int), *(float*)&, (int), *(float*)&, (int));
+        ROUTE_IMPORT_9(G2API_SetBoneAnim, G_G2API_SETBONEANIM, CGhoul2Info*, const char*, int, int, int, FLOAT_CAST, int, FLOAT_CAST, int);
         ROUTE_IMPORT(G2API_SetBoneAngles, G_G2API_SETBONEANGLES);
         ROUTE_IMPORT(G2API_SetBoneAnglesIndex, G_G2API_SETBONEANGLESINDEX);
         ROUTE_IMPORT(G2API_SetBoneAnglesMatrix, G_G2API_SETBONEANGLESMATRIX);
         ROUTE_IMPORT(G2API_CopyGhoul2Instance, G_G2API_COPYGHOUL2INSTANCE);
-        ROUTE_IMPORT_9(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, (CGhoul2Info*), (int), (int), (int), (int), *(float*)&, (int), *(float*)&, (int));
+        ROUTE_IMPORT_9(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, CGhoul2Info*, int, int, int, int, FLOAT_CAST, int, FLOAT_CAST, int);
         ROUTE_IMPORT(G2API_SetLodBias, G_G2API_SETLODBIAS);
         ROUTE_IMPORT(G2API_SetShader, G_G2API_SETSHADER);
         ROUTE_IMPORT(G2API_RemoveGhoul2Model, G_G2API_REMOVEGHOUL2MODEL);
         ROUTE_IMPORT(G2API_SetSurfaceOnOff, G_G2API_SETSURFACEONOFF);
         ROUTE_IMPORT(G2API_SetRootSurface, G_G2API_SETROOTSURFACE);
         ROUTE_IMPORT(G2API_RemoveSurface, G_G2API_REMOVESURFACE);
-        ROUTE_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, (CGhoul2Info*), (int), (int), *(float*)&, *(float*)&, (int));
+        ROUTE_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, CGhoul2Info*, int, int, FLOAT_CAST, FLOAT_CAST, int);
         ROUTE_IMPORT(G2API_GetBoneAnim, G_G2API_GETBONEANIM);
         ROUTE_IMPORT(G2API_GetBoneAnimIndex, G_G2API_GETBONEANIMINDEX);
         ROUTE_IMPORT(G2API_GetAnimRange, G_G2API_GETANIMRANGE);
@@ -211,7 +211,7 @@ intptr_t JASP_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(G2API_SetRagDoll, G_G2API_SETRAGDOLL);
         ROUTE_IMPORT(G2API_AnimateG2Models, G_G2API_ANIMATEG2MODELS);
         ROUTE_IMPORT(G2API_RagPCJConstraint, G_G2API_RAGPCJCONSTRAINT);
-        ROUTE_IMPORT_3(G2API_RagPCJGradientSpeed, G_G2API_RAGPCJGRADIENTSPEED, (CGhoul2Info_v&), (const char*), *(float*)&);
+        ROUTE_IMPORT_3(G2API_RagPCJGradientSpeed, G_G2API_RAGPCJGRADIENTSPEED, CGhoul2Info_v&, const char*, FLOAT_CAST);
         ROUTE_IMPORT(G2API_RagEffectorGoal, G_G2API_RAGEFFECTORGOAL);
         ROUTE_IMPORT(G2API_GetRagBonePos, G_G2API_GETRAGBONEPOS);
         ROUTE_IMPORT(G2API_RagEffectorKick, G_G2API_RAGEFFECTORKICK);
@@ -229,7 +229,7 @@ intptr_t JASP_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(WE_GetWindVector, G_WE_GETWINDVECTOR);
         ROUTE_IMPORT(WE_GetWindGusting, G_WE_GETWINDGUSTING);
         ROUTE_IMPORT(WE_IsOutside, G_WE_ISOUTSIDE);
-        ROUTE_IMPORT_1_F(WE_IsOutsideCausingPain, G_WE_ISOUTSIDECAUSINGPAIN, (float*));
+        ROUTE_IMPORT_1_F(WE_IsOutsideCausingPain, G_WE_ISOUTSIDECAUSINGPAIN, float*);
         ROUTE_IMPORT_0_F(WE_GetChanceOfSaberFizz, G_WE_GETCHANCEOFSABERFIZZ);
         ROUTE_IMPORT(WE_IsShaking, G_WE_ISSHAKING);
         ROUTE_IMPORT(WE_AddWeatherZone, G_WE_ADDWEATHERZONE);
@@ -670,12 +670,12 @@ game_import_t JASP_GameSupport::qmm_import = {
         GEN_IMPORT(G2API_PrecacheGhoul2Model, G_G2API_PRECACHEGHOUL2MODEL),
         GEN_IMPORT(G2API_InitGhoul2Model, G_G2API_INITGHOUL2MODEL),
         GEN_IMPORT(G2API_SetSkin, G_G2API_SETSKIN),
-        GEN_IMPORT_9(G2API_SetBoneAnim, G_G2API_SETBONEANIM, qboolean, CGhoul2Info*, const char*, const int, const int, const int, const float, const int, const float, const int),
+        GEN_IMPORT_9(G2API_SetBoneAnim, G_G2API_SETBONEANIM, qboolean, CGhoul2Info*, const char*, int, int, int, float, int, float, int),
         GEN_IMPORT(G2API_SetBoneAngles, G_G2API_SETBONEANGLES),
         GEN_IMPORT(G2API_SetBoneAnglesIndex, G_G2API_SETBONEANGLESINDEX),
         GEN_IMPORT(G2API_SetBoneAnglesMatrix, G_G2API_SETBONEANGLESMATRIX),
         GEN_IMPORT(G2API_CopyGhoul2Instance, G_G2API_COPYGHOUL2INSTANCE),
-        GEN_IMPORT_9(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, qboolean, CGhoul2Info*, const int, const int, const int, const int, const float, const int, const float, const int),
+        GEN_IMPORT_9(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, qboolean, CGhoul2Info*, int, int, int, int, float, int, float, int),
         GEN_IMPORT(G2API_SetLodBias, G_G2API_SETLODBIAS),
         GEN_IMPORT(G2API_SetShader, G_G2API_SETSHADER),
         GEN_IMPORT(G2API_RemoveGhoul2Model, G_G2API_REMOVEGHOUL2MODEL),
@@ -731,7 +731,7 @@ game_import_t JASP_GameSupport::qmm_import = {
         GEN_IMPORT(G2API_SetRagDoll, G_G2API_SETRAGDOLL),
         GEN_IMPORT(G2API_AnimateG2Models, G_G2API_ANIMATEG2MODELS),
         GEN_IMPORT(G2API_RagPCJConstraint, G_G2API_RAGPCJCONSTRAINT),
-        GEN_IMPORT_3(G2API_RagPCJGradientSpeed, G_G2API_RAGPCJGRADIENTSPEED, qboolean, CGhoul2Info_v&, const char*, const float),
+        GEN_IMPORT_3(G2API_RagPCJGradientSpeed, G_G2API_RAGPCJGRADIENTSPEED, qboolean, CGhoul2Info_v&, const char*, float),
         GEN_IMPORT(G2API_RagEffectorGoal, G_G2API_RAGEFFECTORGOAL),
         GEN_IMPORT(G2API_GetRagBonePos, G_G2API_GETRAGBONEPOS),
         GEN_IMPORT(G2API_RagEffectorKick, G_G2API_RAGEFFECTORKICK),

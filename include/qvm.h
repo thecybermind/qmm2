@@ -29,6 +29,8 @@ Created By:
 #define QVM_PROGRAMSTACK_SIZE           0x10000
 // Default size of temporary hunk segment (ioRTCW defaults to 2 MiB) (1MiB)
 #define QVM_HUNK_SIZE                   0x100000
+// Alignment of hunk in bytes
+#define QVM_HUNK_ALIGNMENT              8
 
 // Round "var" up to next power of 2: https://stackoverflow.com/a/1322548/809900
 #define QVM_NEXT_POW_2(var) var--; var |= var >> 1; var |= var >> 2; var |= var >> 4; var |= var >> 8; var |= var >> 16; var++
