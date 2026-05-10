@@ -876,8 +876,8 @@ int qvm_hunk_alloc(qvm* vm, size_t size, const void* init) {
         return 0;
     }
 
-    // round up to nearest 8-byte multiple
-    size_t realsize = (size + 7) & ~7;
+    // round up size for alignment
+    size_t realsize = (size + (QVM_HUNK_ALIGNMENT-1)) & ~(QVM_HUNK_ALIGNMENT - 1);
 
     vm->hunkptr -= (int)realsize;
 
@@ -908,8 +908,8 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
         return;
     }
 
-    // round up to nearest 8-byte multiple
-    size_t realsize = (size + 7) & ~7;
+    // round up size for alignment
+    size_t realsize = (size + (QVM_HUNK_ALIGNMENT - 1)) & ~(QVM_HUNK_ALIGNMENT - 1);
 
     // size too big or 0
     if (!size || (ptr + (int)realsize > vm->hunkhigh)) {
