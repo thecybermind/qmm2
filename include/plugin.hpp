@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef QMM2_PLUGIN_H
-#define QMM2_PLUGIN_H
+#ifndef QMM2_PLUGIN_HPP
+#define QMM2_PLUGIN_HPP
 
 #include <vector>
 #include <map>
@@ -95,4 +95,4 @@ constexpr int QMM_QVM_FUNC_STARTING_ID = 10000;
 // syscall ID, the plugin's QMM_QVMHandler function is called.
 extern std::map<int, Plugin*> g_registered_qvm_funcs;
 
-#endif // QMM2_PLUGIN_H
+#endif // QMM2_PLUGIN_HPP

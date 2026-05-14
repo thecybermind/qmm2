@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef QMM2_UTIL_H
-#define QMM2_UTIL_H
+#ifndef QMM2_UTIL_HPP
+#define QMM2_UTIL_HPP
 
 #include <vector>
 #include <string>
@@ -275,4 +275,4 @@ inline OutputClass horrible_cast(const InputClass input) {
 }
 
 
-#endif // QMM2_UTIL_H
+#endif // QMM2_UTIL_HPP

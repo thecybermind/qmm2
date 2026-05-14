@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef QMM2_MOD_H
-#define QMM2_MOD_H
+#ifndef QMM2_MOD_HPP
+#define QMM2_MOD_HPP
 
 #include <string>
 #include "gameapi.hpp"
@@ -72,5 +72,5 @@ private:
 // The game mod
 extern Mod g_mod;
 
-#endif // QMM2_MOD_H
+#endif // QMM2_MOD_HPP
 

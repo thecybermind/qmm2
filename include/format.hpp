@@ -9,11 +9,11 @@ Created By:
 
 */
 
-#ifndef QMM2_FORMAT_H
-#define QMM2_FORMAT_H
+#ifndef QMM2_FORMAT_HPP
+#define QMM2_FORMAT_HPP
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include <fmt/std.h>
 
-#endif // QMM2_FORMAT_H
+#endif // QMM2_FORMAT_HPP

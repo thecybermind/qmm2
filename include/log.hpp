@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef QMM2_LOG_H
-#define QMM2_LOG_H
+#ifndef QMM2_LOG_HPP
+#define QMM2_LOG_HPP
 
 #ifdef __cplusplus
 
@@ -136,4 +136,4 @@ enum {
     QMM_LOG_FATAL               // Fatal (highest log level)
 };
 
-#endif // QMM2_LOG_H
+#endif // QMM2_LOG_HPP

@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef QMM2_GAMEINFO_H
-#define QMM2_GAMEINFO_H
+#ifndef QMM2_GAMEINFO_HPP
+#define QMM2_GAMEINFO_HPP
 
 #include <string>
 #include "qmmapi.h"
@@ -163,4 +163,4 @@ private:
     std::vector<uint8_t> file;
 };
 
-#endif // QMM2_GAMEINFO_H
+#endif // QMM2_GAMEINFO_HPP

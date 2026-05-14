@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef QMM2_MAIN_H
-#define QMM2_MAIN_H
+#ifndef QMM2_MAIN_HPP
+#define QMM2_MAIN_HPP
 
 #include <cstdint>  // intptr_t
 #include "qmmapi.h" // C_DLLEXPORT
@@ -135,4 +135,4 @@ intptr_t qmm_syscall(intptr_t cmd, ...);
 */
 void ArgV(intptr_t argn, char* buf, intptr_t buflen);
 
-#endif // QMM2_MAIN_H
+#endif // QMM2_MAIN_HPP
