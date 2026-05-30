@@ -323,7 +323,9 @@ bool str_striequal(std::string s1, std::string s2) {
 char* strncpyz(char* dest, const char* src, size_t count) {
     if (!dest || !src || !count)
         return dest;
+    // strncpy may not null-terminate if it writes a full buffer
     char* ret = strncpy(dest, src, count);
+    // so we null-terminate manually
     dest[count - 1] = '\0';
     return ret;
 }
