@@ -63,10 +63,10 @@ bool JK2MP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "jk2mp") && !str_stristr(gameinfo.exe_file, "jk2ded"))
+    if (!str_stristr(GameInfo::exe_file, "jk2mp") && !str_stristr(GameInfo::exe_file, "jk2ded"))
         return false;
 
     return true;

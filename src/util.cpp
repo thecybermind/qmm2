@@ -66,8 +66,8 @@ bool path_is_allowed(std::string path) {
         return true;
 
     path = path_normalize(path);
-    auto rel_qmm = std::filesystem::relative(path, gameinfo.qmm_dir);
-    auto rel_exe = std::filesystem::relative(path, gameinfo.exe_dir);
+    auto rel_qmm = std::filesystem::relative(path, GameInfo::qmm_dir);
+    auto rel_exe = std::filesystem::relative(path, GameInfo::exe_dir);
     // if there is no relative path, the return is ""
     // if the relative path requires going back up, it starts with ".."
     // otherwise it should be the relative path from qmm_dir or exe_dir 

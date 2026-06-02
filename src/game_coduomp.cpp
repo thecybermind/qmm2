@@ -62,10 +62,10 @@ bool CODUOMP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "coduomp") && !str_stristr(gameinfo.exe_file, "coduo_lnxded"))
+    if (!str_stristr(GameInfo::exe_file, "coduomp") && !str_stristr(GameInfo::exe_file, "coduo_lnxded"))
         return false;
 
     return true;

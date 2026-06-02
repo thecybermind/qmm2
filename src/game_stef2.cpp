@@ -79,10 +79,10 @@ bool STEF2_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "ef"))
+    if (!str_stristr(GameInfo::exe_file, "ef"))
         return false;
 
     return true;
@@ -1380,7 +1380,7 @@ void STEF2_GameSupport::SpawnEntities(const char* mapname, const char* entstring
         entity_tokens = util_parse_entstring(entstring);
         token_counter = 0;
     }
-    cgameinfo.is_from_QMM = true;
+    CGameInfo::is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, levelTime);
 }
 

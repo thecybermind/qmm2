@@ -58,10 +58,10 @@ bool WET_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "et"))
+    if (!str_stristr(GameInfo::exe_file, "et"))
         return false;
 
     return true;

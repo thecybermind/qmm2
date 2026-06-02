@@ -62,10 +62,10 @@ bool CODMP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "codmp") && !str_stristr(gameinfo.exe_file, "cod_lnxded"))
+    if (!str_stristr(GameInfo::exe_file, "codmp") && !str_stristr(GameInfo::exe_file, "cod_lnxded"))
         return false;
 
     return true;

@@ -75,10 +75,10 @@ bool JASP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "jasp") && !str_stristr(gameinfo.exe_file, "openjk_sp"))
+    if (!str_stristr(GameInfo::exe_file, "jasp") && !str_stristr(GameInfo::exe_file, "openjk_sp"))
         return false;
 
     return true;
@@ -765,7 +765,7 @@ void JASP_GameSupport::Init(const char* mapname, const char* spawntarget, int ch
         subbsp_entity_tokens[-1] = util_parse_entstring(entstring);
         token_counter[-1] = 0;
     }
-    cgameinfo.is_from_QMM = true;
+    CGameInfo::is_from_QMM = true;
     (void)::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
 }
 

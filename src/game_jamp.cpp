@@ -76,16 +76,16 @@ bool JAMP_GameSupport::AutoDetect(APIType engineapi) {
         return false;
 
     // QMM filename must match default or an OpenJK temp filename (if DLL was pulled from .pk3)
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName())
-        && !str_striequal(gameinfo.qmm_file.substr(0, 3), "ojk")
-        && !str_striequal(path_baseext(gameinfo.qmm_file), ".tmp"))
+    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName())
+        && !str_striequal(GameInfo::qmm_file.substr(0, 3), "ojk")
+        && !str_striequal(path_baseext(GameInfo::qmm_file), ".tmp"))
     {
         return false;
     }
 
-    if (!str_stristr(gameinfo.exe_file, "jamp")
-        && !str_stristr(gameinfo.exe_file, "openjk.") // do not match openjk_sp
-        && !str_stristr(gameinfo.exe_file, "openjkded"))
+    if (!str_stristr(GameInfo::exe_file, "jamp")
+        && !str_stristr(GameInfo::exe_file, "openjk.") // do not match openjk_sp
+        && !str_stristr(GameInfo::exe_file, "openjkded"))
     {
         return false;
     }

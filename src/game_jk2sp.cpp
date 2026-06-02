@@ -74,10 +74,10 @@ bool JK2SP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "jk2sp") && !str_stristr(gameinfo.exe_file, "openjo_sp"))
+    if (!str_stristr(GameInfo::exe_file, "jk2sp") && !str_stristr(GameInfo::exe_file, "openjo_sp"))
         return false;
 
     return true;
@@ -654,7 +654,7 @@ void JK2SP_GameSupport::Init(const char* mapname, const char* spawntarget, int c
         entity_tokens = util_parse_entstring(entstring);
         token_counter = 0;
     }
-    cgameinfo.is_from_QMM = true;
+    CGameInfo::is_from_QMM = true;
     (void)::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
 }
 

@@ -62,10 +62,10 @@ bool RTCWMP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "wolfmp") && !str_stristr(gameinfo.exe_file, "wolfded"))
+    if (!str_stristr(GameInfo::exe_file, "wolfmp") && !str_stristr(GameInfo::exe_file, "wolfded"))
         return false;
 
     return true;
