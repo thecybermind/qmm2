@@ -260,13 +260,23 @@ T util_max(T a, T b) {
     return (a > b ? a : b);
 }
 
-
+// Helper type for horrible_cast
 template <class OutputClass, class InputClass>
 union horrible_union {
     OutputClass out;
     InputClass in;
 };
-// Same as reinterpret_cast<T>(x) but for anything
+
+/**
+* @brief Casts anything to anything.
+* 
+* Used primarily to convert intptr_t to float in ROUTE_IMPORT/ROUTE_EXPORT calls without "*(float*)&arg0".
+*
+* @param InputClass any type
+* @param OutputClass any type
+* @param input an object of type InputClass
+* @return input object re-interpreted as an OutputClass
+*/
 template <class OutputClass, class InputClass>
 inline OutputClass horrible_cast(const InputClass input) {
     horrible_union<OutputClass, InputClass> u;
