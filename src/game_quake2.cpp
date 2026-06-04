@@ -23,7 +23,7 @@ Created By:
 // QMM-specific QUAKE2 header
 #include "game_quake2.h"
 #include "qmm.hpp"
-#include "main.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct QUAKE2_GameSupport : public GameSupport {
@@ -627,7 +627,7 @@ qboolean QUAKE2_GameSupport::ClientConnect(edict_t* ent, char* userinfo) {
         else
             userinfos[clientnum] = userinfo;
     }
-    CGameInfo::is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     return ::vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
 }
 
@@ -643,7 +643,7 @@ void QUAKE2_GameSupport::ClientUserinfoChanged(edict_t* ent, char* userinfo) {
         else
             userinfos[clientnum] = userinfo;
     }
-    CGameInfo::is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
@@ -656,7 +656,7 @@ void QUAKE2_GameSupport::SpawnEntities(char* mapname, char* entstring, char* spa
         entity_tokens = util_parse_entstring(entstring);
         token_counter = 0;
     }
-    CGameInfo::is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 

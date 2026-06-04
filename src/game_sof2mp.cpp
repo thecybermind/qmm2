@@ -23,7 +23,7 @@ Created By:
 // QMM-specific SOF2MP header
 #include "game_sof2mp.h"
 #include "qmm.hpp"
-#include "main.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
 

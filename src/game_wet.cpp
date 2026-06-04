@@ -18,7 +18,7 @@ Created By:
 // QMM-specific WET header
 #include "game_wet.h"
 #include "qmm.hpp"
-#include "main.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct WET_GameSupport : public GameSupport {

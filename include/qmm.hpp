@@ -105,6 +105,25 @@ namespace QMM {
     extern intptr_t msg_GAME_INIT;              // Value of GAME_INIT for the detected game
     extern intptr_t msg_GAME_CONSOLE_COMMAND;   // Value of GAME_CONSOLE_COMMAND for the detected game
     extern intptr_t msg_GAME_SHUTDOWN;          // Value of GAME_SHUTDOWN for the detected game
+
+    // This is used if we couldn't determine a game engine and we have to fail.
+    // G_ERROR appears to be 1 in all supported dllEntry games.
+    // They are different in some GetGameAPI games, but for those we just return nullptr from GetGameAPI.
+    constexpr int FAIL_G_ERROR = 1;
+
+    // Store cgame passthrough stuff
+    namespace CGame {
+        // Store syscall pointer to pass through to the mod's dllEntry function
+        extern eng_syscall syscall;
+        // Store mod's vmMain function to pass vmMain calls if is_from_QMM is false
+        extern mod_vmMain vmMain;
+        // This flag is set by the GEN_EXPORT macro(s) before calling into vmMain.
+        // If true, the vmMain call is assumed to be from a lambda in QMM's game_export_t.
+        // If false, the vmMain call is assumed to be directly from the engine to call into the cgame.
+        extern bool is_from_QMM;
+        // If true, GAME_SHUTDOWN has been called, but the mod DLL was kept loaded so cgame shutdown can run.
+        extern bool is_shutdown;
+    };
 };
 
 
@@ -115,26 +134,6 @@ namespace QMM {
 
 // Call game-specific syscall handler
 #define ENG_SYSCALL					(QMM::game->syscall)
-
-// This is used if we couldn't determine a game engine and we have to fail.
-// G_ERROR appears to be 1 in all supported dllEntry games.
-// They are different in some GetGameAPI games, but for those we just return nullptr from GetGameAPI.
-constexpr int QMM_FAIL_G_ERROR = 1;
-
-
-// Store cgame passthrough stuff
-namespace CGameInfo {
-    // Store syscall pointer to pass through to the mod's dllEntry function
-    extern eng_syscall syscall;
-    // Store mod's vmMain function to pass vmMain calls if is_from_QMM is false
-    extern mod_vmMain vmMain;
-    // This flag is set by the GEN_EXPORT macro(s) before calling into vmMain.
-    // If true, the vmMain call is assumed to be from a lambda in QMM's game_export_t.
-    // If false, the vmMain call is assumed to be directly from the engine to call into the cgame.
-    extern bool is_from_QMM;
-    // If true, GAME_SHUTDOWN has been called, but the mod DLL was kept loaded so cgame shutdown can run.
-    extern bool is_shutdown;
-};
 
 
 // RAII class to read a file using engine functions

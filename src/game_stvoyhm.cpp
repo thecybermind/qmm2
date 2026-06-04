@@ -23,7 +23,7 @@ Created By:
 #include "game_stvoyhm.h"
 #include "qmm.hpp"
 #include "mod.hpp"      // g_mod
-#include "main.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct STVOYHM_GameSupport : public GameSupport {

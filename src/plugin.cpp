@@ -19,8 +19,8 @@ Created By:
 #include "log.hpp"
 #include "config.hpp"
 #include "qmm.hpp"
-#include "mod.hpp"
-#include "plugin.hpp"
+#include "plugin.hpp"   // g_plugins
+#include "mod.hpp"      // g_mod
 #include "qvm.h"
 #include "util.hpp"
 

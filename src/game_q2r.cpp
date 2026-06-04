@@ -28,7 +28,7 @@ Created By:
 // QMM-specific Q2R header
 #include "game_q2r.h"
 #include "qmm.hpp"
-#include "main.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct Q2R_GameSupport : public GameSupport {
@@ -738,7 +738,7 @@ bool Q2R_GameSupport::ClientConnect(edict_t* ent, char* userinfo, const char* so
         else
             userinfos[clientnum] = userinfo;
     }
-    CGameInfo::is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     return (bool)::vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
 }
 
@@ -754,7 +754,7 @@ void Q2R_GameSupport::ClientUserinfoChanged(edict_t* ent, const char* userinfo) 
         else
             userinfos[clientnum] = userinfo;
     }
-    CGameInfo::is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
@@ -766,7 +766,7 @@ void Q2R_GameSupport::SpawnEntities(const char* mapname, const char* entstring, 
         entity_tokens = util_parse_entstring(entstring);
         token_counter = 0;
     }
-    CGameInfo::is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 

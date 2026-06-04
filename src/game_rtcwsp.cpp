@@ -19,7 +19,7 @@ Created By:
 // QMM-specific RTCWSP header
 #include "game_rtcwsp.h"
 #include "qmm.hpp"
-#include "main.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct RTCWSP_GameSupport : public GameSupport {

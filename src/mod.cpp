@@ -18,9 +18,9 @@ Created By:
 #include "qmm.hpp"
 #include "config.hpp"
 #include "main.hpp"         // qmm_syscall
-#include "mod.hpp"
+#include "mod.hpp"          // g_mod
+#include "plugin.hpp"       // g_plugins
 #include "qvm.h"
-#include "plugin.hpp"
 #include "util.hpp"
 
 // The game mod

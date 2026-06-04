@@ -20,7 +20,7 @@ Created By:
 // QMM-specific SOF2SP header
 #include "game_sof2sp.h"
 #include "qmm.hpp"
-#include "main.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct SOF2SP_GameSupport : public GameSupport {

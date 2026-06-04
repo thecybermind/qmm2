@@ -21,53 +21,54 @@ Created By:
 #include "qmm.hpp"
 #include "gameapi.hpp"
 #include "qmmapi.h"
-#include "plugin.hpp"
+#include "plugin.hpp"   // g_plugins
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
 
-namespace CGameInfo {
-    /* About cgame passthrough hack (not Quake 2 Remaster (Q2R), see comments before GetCGameAPI() for that):
-       Some single player games, like Star Trek Voyager: Elite Force (STVOYSP), Jedi Knight 2 (JK2SP) and Jedi
-       Academy (JASP), place the game (server side) and cgame (client side) in the same DLL. The game system
-       uses GetGameAPI and the cgame system uses dllEntry/vmMain/syscall.
-
-       Since we don't care about the cgame system, QMM will forward the dllEntry call to the mod (with the real
-       cgame syscall pointer), and then forward all the incoming cgame vmMain calls directly to the mod's vmMain
-       function.
-
-       We do this with a few fields in the "CGameInfo" namespace. First, the "CGameInfo::syscall" pointer
-       variable is used to store the syscall pointer if dllEntry is called after QMM was already loaded from
-       GetGameAPI. Then, dllEntry exits.
-
-       Next, the "CGameInfo::is_from_QMM" bool is used to flag incoming calls to vmMain as coming from a
-       game-specific GetGameAPI vmMain wrapper struct (i.e. qmm_export) meaning the call actually came from the
-       game system (as opposed to cgame). This flag is set in the GEN_EXPORT macros and all of the custom static
-       polyfill functions that route to vmMain. It is set back to false immediately after checking and handling
-       passthrough calls.
-
-       Next, when the GAME_INIT event comes through, and we load the actual mod DLL, we also check to see if
-       "CGameInfo::syscall" is set. If it is, we look for "dllEntry" in the DLL, and pass "CGameInfo::syscall"
-       to it. Next, we look for "vmMain" in the DLL and then store it in the "CGameInfo::vmMain" pointer.
-
-       Whenever control enters vmMain and "CGameInfo::is_from_QMM" is false (meaning it was called directly by
-       the engine for the cgame system), it routes the call to the mod's vmMain stored in "CGameInfo::vmMain".
-
-       The final piece is that single player games shutdown and init the DLL a lot, particularly at every new
-       level or between-level cutscene. When QMM detects that it is being shutdown and "CGameInfo::syscall" is
-       set, it no longer unloads the mod DLL and sets "CGameInfo::is_shutdown" bool to true. Then, after a
-       vmMain call is being handled as a passthrough, and "CGameInfo::is_shutdown" is true, it will unload the
-       mod DLL. This allows the cgame system to shutdown properly.
-    */
-    //
-
-
-    eng_syscall syscall = nullptr;
-    mod_vmMain vmMain = nullptr;
-    bool is_from_QMM = false;
-    bool is_shutdown = false;
-}
 
 namespace QMM {
+
+    namespace CGame {
+        /* About cgame passthrough hack (not Quake 2 Remaster (Q2R), see comments before GetCGameAPI() for that):
+           Some single player games, like Star Trek Voyager: Elite Force (STVOYSP), Jedi Knight 2 (JK2SP) and Jedi
+           Academy (JASP), place the game (server side) and cgame (client side) in the same DLL. The game system
+           uses GetGameAPI and the cgame system uses dllEntry/vmMain/syscall.
+
+           Since we don't care about the cgame system, QMM will forward the dllEntry call to the mod (with the real
+           cgame syscall pointer), and then forward all the incoming cgame vmMain calls directly to the mod's vmMain
+           function.
+
+           We do this with a few fields in the "CGame" namespace. First, the "QMM::CGame::syscall" pointer
+           variable is used to store the syscall pointer if dllEntry is called after QMM was already loaded from
+           GetGameAPI. Then, dllEntry exits.
+
+           Next, the "QMM::CGame::is_from_QMM" bool is used to flag incoming calls to vmMain as coming from a
+           game-specific GetGameAPI vmMain wrapper struct (i.e. qmm_export) meaning the call actually came from the
+           game system (as opposed to cgame). This flag is set in the GEN_EXPORT macros and all of the custom static
+           polyfill functions that route to vmMain. It is set back to false immediately after checking and handling
+           passthrough calls.
+
+           Next, when the GAME_INIT event comes through, and we load the actual mod DLL, we also check to see if
+           "QMM::CGame::syscall" is set. If it is, we look for "dllEntry" in the DLL, and pass "QMM::CGame::syscall"
+           to it. Next, we look for "vmMain" in the DLL and then store it in the "QMM::CGame::vmMain" pointer.
+
+           Whenever control enters vmMain and "QMM::CGame::is_from_QMM" is false (meaning it was called directly by
+           the engine for the cgame system), it routes the call to the mod's vmMain stored in "QMM::CGame::vmMain".
+
+           The final piece is that single player games shutdown and init the DLL a lot, particularly at every new
+           level or between-level cutscene. When QMM detects that it is being shutdown and "QMM::CGame::syscall" is
+           set, it no longer unloads the mod DLL and sets "QMM::CGame::is_shutdown" bool to true. Then, after a
+           vmMain call is being handled as a passthrough, and "QMM::CGame::is_shutdown" is true, it will unload the
+           mod DLL. This allows the cgame system to shutdown properly.
+        */
+        //
+
+        eng_syscall syscall = nullptr;
+        mod_vmMain vmMain = nullptr;
+        bool is_from_QMM = false;
+        bool is_shutdown = false;
+    }
+
     std::string exe_path;
     std::string exe_dir;
     std::string exe_file;

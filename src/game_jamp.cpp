@@ -18,7 +18,7 @@ Created By:
 // QMM-specific JAMP header
 #include "game_jamp.h"
 #include "qmm.hpp"
-#include "main.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct JAMP_GameSupport : public GameSupport {

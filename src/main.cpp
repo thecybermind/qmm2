@@ -105,7 +105,7 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall) {
     // QMM is already loaded, so this is a cgame passthrough situation. since the mod DLL isn't loaded yet, we can
     // just store the syscall pointer and pass it to the mod once it's loaded in vmMain(GAME_INIT)
     if (QMM::game && QMM::api == QMM_API_GETGAMEAPI) {
-        CGameInfo::syscall = syscall;
+        QMM::CGame::syscall = syscall;
         QMMLOG(QMM_LOG_DEBUG, "QMM") << "Passthrough syscall = " << syscall << "\n";
         return;
     }
@@ -169,19 +169,19 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
     // if this is a call from cgame and we need to pass this call onto the mod
-    if (CGameInfo::syscall && !CGameInfo::is_from_QMM) {
+    if (QMM::CGame::syscall && !QMM::CGame::is_from_QMM) {
         // cancel if cgame portion of mod isn't actually loaded yet
-        if (!CGameInfo::vmMain)
+        if (!QMM::CGame::vmMain)
             return 0;
 
         QMMLOG(QMM_LOG_TRACE, "QMM") << "Passthrough vmMain(" << cmd << ") called\n";
 
-        intptr_t ret = CGameInfo::vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+        intptr_t ret = QMM::CGame::vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
         QMMLOG(QMM_LOG_TRACE, "QMM") << "Passthrough vmMain(" << cmd << ") returning " << ret << "\n";
 
         // next call into combined mod DLL after GAME_SHUTDOWN should be CGAME_SHUTDOWN so unload mod now
-        if (CGameInfo::is_shutdown) {
+        if (QMM::CGame::is_shutdown) {
             // unload mod (dlclose)
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
             g_mod.Unload();
@@ -191,7 +191,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     }
 
     // clear passthrough flag
-    CGameInfo::is_from_QMM = false;
+    QMM::CGame::is_from_QMM = false;
 
     // couldn't load engine info, so we will just call syscall(G_ERROR) to exit
     if (!QMM::game) {
@@ -203,7 +203,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
                 printf("\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
                 std::exit(-1);
             }
-            QMM::syscall(QMM_FAIL_G_ERROR, "\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
+            QMM::syscall(QMM::FAIL_G_ERROR, "\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
         }
         return 0;
     }
@@ -259,14 +259,14 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // mod DLL is loaded, so find the vmMain and dllEntry functions and call dllEntry.
         // JASP+JK2SP's cgame dllEntry functions actually call into the syscall almost immediately,
         // so make sure we store vmMain first in case there's some re-entrancy
-        if (CGameInfo::syscall) {
-            CGameInfo::vmMain = (mod_vmMain)dll_symbol(g_mod.dll, "vmMain");
-            QMMLOG(QMM_LOG_DEBUG, "QMM") << "Storing cgame vmMain = " << CGameInfo::vmMain << "\n";
+        if (QMM::CGame::syscall) {
+            QMM::CGame::vmMain = (mod_vmMain)dll_symbol(g_mod.dll, "vmMain");
+            QMMLOG(QMM_LOG_DEBUG, "QMM") << "Storing cgame vmMain = " << QMM::CGame::vmMain << "\n";
 
             // pass original cgame syscall to dllEntry in mod
             mod_dllEntry pfndllEntry = (mod_dllEntry)dll_symbol(g_mod.dll, "dllEntry");
             QMMLOG(QMM_LOG_DEBUG, "QMM") << "Passing cgame syscall to dllEntry = " << pfndllEntry << "\n";
-            pfndllEntry(CGameInfo::syscall);
+            pfndllEntry(QMM::CGame::syscall);
         }
 
         // load plugins
@@ -322,8 +322,8 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         // cgame passthrough hack:
         // hack to keep single player games shutting down correctly between levels/cutscenes/etc
-        if (CGameInfo::syscall) {
-            CGameInfo::is_shutdown = true;
+        if (QMM::CGame::syscall) {
+            QMM::CGame::is_shutdown = true;
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "Delaying shutting down mod so cgame shutdown can run\n";
         }
         else {

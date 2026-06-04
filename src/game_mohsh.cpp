@@ -28,7 +28,7 @@ Created By:
 // QMM-specific MOHSH header
 #include "game_mohsh.h"
 #include "qmm.hpp"
-#include "main.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct MOHSH_GameSupport : public GameSupport {
@@ -1033,7 +1033,7 @@ void MOHSH_GameSupport::SpawnEntities(char* entstring, int levelTime) {
         entity_tokens = util_parse_entstring(entstring);
         token_counter = 0;
     }
-    CGameInfo::is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
 }
 
