@@ -17,7 +17,7 @@ Created By:
 #include <string>
 // QMM-specific RTCWMP header
 #include "game_rtcwmp.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "main.hpp"
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
@@ -62,10 +62,10 @@ bool RTCWMP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(GameInfo::exe_file, "wolfmp") && !str_stristr(GameInfo::exe_file, "wolfded"))
+    if (!str_stristr(QMM::exe_file, "wolfmp") && !str_stristr(QMM::exe_file, "wolfded"))
         return false;
 
     return true;

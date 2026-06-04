@@ -17,7 +17,7 @@ Created By:
 #include <string>
 // QMM-specific JK2MP header
 #include "game_jk2mp.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "main.hpp"
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
@@ -63,10 +63,10 @@ bool JK2MP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(GameInfo::exe_file, "jk2mp") && !str_stristr(GameInfo::exe_file, "jk2ded"))
+    if (!str_stristr(QMM::exe_file, "jk2mp") && !str_stristr(QMM::exe_file, "jk2ded"))
         return false;
 
     return true;

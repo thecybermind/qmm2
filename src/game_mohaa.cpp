@@ -28,7 +28,7 @@ Created By:
 #include <string>
 // QMM-specific MOHAA header
 #include "game_mohaa.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -83,10 +83,10 @@ bool MOHAA_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(GameInfo::exe_file, "mohaa"))
+    if (!str_stristr(QMM::exe_file, "mohaa"))
         return false;
 
     return true;
@@ -340,7 +340,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         fileHandle_t* f = (fileHandle_t*)args[1];
         fsMode_t mode = (fsMode_t)args[2];
         if (mode == FS_READ) {
-            std::string path = fmt::format("{}/{}", GameInfo::qmm_dir, qpath);
+            std::string path = fmt::format("{}/{}", QMM::qmm_dir, qpath);
             FILE* fp = fopen(path.c_str(), "rb");
             if (!fp || fseek(fp, 0, SEEK_END) != 0) {
                 ret = -1;

@@ -17,7 +17,7 @@ Created By:
 #include <string>
 // QMM-specific Q3A header
 #include "game_q3a.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "main.hpp"
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
@@ -63,10 +63,10 @@ bool Q3A_GameSupport::AutoDetect(APIType engine_api) {
     if (engine_api != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(GameInfo::exe_file, "quake3") && !str_stristr(GameInfo::exe_file, "q3ded"))
+    if (!str_stristr(QMM::exe_file, "quake3") && !str_stristr(QMM::exe_file, "q3ded"))
         return false;
 
     return true;

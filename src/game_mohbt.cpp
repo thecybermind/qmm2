@@ -27,7 +27,7 @@ Created By:
 #include <string>
 // QMM-specific MOHBT header
 #include "game_mohbt.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -82,10 +82,10 @@ bool MOHBT_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(GameInfo::exe_file, "break"))
+    if (!str_stristr(QMM::exe_file, "break"))
         return false;
 
     return true;
@@ -353,7 +353,7 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
             str_mode = "wb";
         else if (mode == FS_APPEND)
             str_mode = "ab";
-        std::string path = fmt::format("{}/{}", GameInfo::qmm_dir, qpath);
+        std::string path = fmt::format("{}/{}", QMM::qmm_dir, qpath);
         if (mode != FS_READ)
             path_mkdir(path_dirname(path));
         FILE* fp = fopen(path.c_str(), str_mode);

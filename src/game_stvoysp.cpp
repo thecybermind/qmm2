@@ -22,7 +22,7 @@ Created By:
 #include <string>
 // QMM-specific STVOYSP header
 #include "game_stvoysp.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -77,10 +77,10 @@ bool STVOYSP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(GameInfo::exe_file, "stvoy"))
+    if (!str_stristr(QMM::exe_file, "stvoy"))
         return false;
 
     return true;

@@ -20,7 +20,7 @@ Created By:
 #include <string>
 // QMM-specific CODUOMP header
 #include "game_coduomp.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "util.hpp"
 
 struct CODUOMP_GameSupport : public GameSupport {
@@ -62,10 +62,10 @@ bool CODUOMP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(GameInfo::exe_file, "coduomp") && !str_stristr(GameInfo::exe_file, "coduo_lnxded"))
+    if (!str_stristr(QMM::exe_file, "coduomp") && !str_stristr(QMM::exe_file, "coduo_lnxded"))
         return false;
 
     return true;

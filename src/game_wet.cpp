@@ -17,7 +17,7 @@ Created By:
 #include <string>
 // QMM-specific WET header
 #include "game_wet.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -58,10 +58,10 @@ bool WET_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(GameInfo::exe_file, "et"))
+    if (!str_stristr(QMM::exe_file, "et"))
         return false;
 
     return true;

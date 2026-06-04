@@ -24,7 +24,7 @@ Created By:
 #include <string>
 // QMM-specific STEF2 header
 #include "game_stef2.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -79,10 +79,10 @@ bool STEF2_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(GameInfo::exe_file, "ef"))
+    if (!str_stristr(QMM::exe_file, "ef"))
         return false;
 
     return true;

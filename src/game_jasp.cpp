@@ -19,7 +19,7 @@ Created By:
 #include <string>
 // QMM-specific JASP header
 #include "game_jasp.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -75,10 +75,10 @@ bool JASP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName()))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(GameInfo::exe_file, "jasp") && !str_stristr(GameInfo::exe_file, "openjk_sp"))
+    if (!str_stristr(QMM::exe_file, "jasp") && !str_stristr(QMM::exe_file, "openjk_sp"))
         return false;
 
     return true;

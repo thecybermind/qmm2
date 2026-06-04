@@ -9,15 +9,15 @@ Created By:
 
 */
 
-#ifndef QMM2_GAMEINFO_HPP
-#define QMM2_GAMEINFO_HPP
+#ifndef QMM2_QMM_HPP
+#define QMM2_QMM_HPP
 
 #include <string>
 #include "qmmapi.h"
 #include "gameapi.hpp"
 
 // Currently-loaded game & game engine info.
-namespace GameInfo {
+namespace QMM {
     extern std::string exe_path;			// Full path of running server binary
     extern std::string exe_dir;				// Directory of running server binary
     extern std::string exe_file;			// Filename of running server binary
@@ -90,6 +90,17 @@ namespace GameInfo {
     */
     intptr_t Route(bool is_syscall, intptr_t cmd, intptr_t* args);
 
+    /**
+    * @brief Fill "buf" with a given argument.
+    *
+    * This will use G_ARGV, but supports either type: fill buffer, or return string
+    *
+    * @param argn Number of argument to receive
+    * @param buf String buffer to fill
+    * @param buflen Size of buf
+    */
+    void ArgV(intptr_t argn, char* buf, intptr_t buflen);
+
     extern intptr_t msg_G_PRINT;                // Value of G_PRINT for the detected game
     extern intptr_t msg_GAME_INIT;              // Value of GAME_INIT for the detected game
     extern intptr_t msg_GAME_CONSOLE_COMMAND;   // Value of GAME_CONSOLE_COMMAND for the detected game
@@ -98,16 +109,12 @@ namespace GameInfo {
 
 
 // Convert from QMM_G_ message to actual G_ message
-#define QMM_ENG_MSG					(GameInfo::game->QMMEngMsg)
+#define QMM_ENG_MSG					(QMM::game->QMMEngMsg)
 // Convert from QMM_GAME_ message to actual GAME_ message
-#define QMM_MOD_MSG					(GameInfo::game->QMMModMsg)
+#define QMM_MOD_MSG					(QMM::game->QMMModMsg)
 
 // Call game-specific syscall handler
-#define ENG_SYSCALL					(GameInfo::game->syscall)
-// Print string to game console
-#define CONSOLE_PRINT(str)			ENG_SYSCALL(GameInfo::msg_G_PRINT, str)
-// Print formatted string to game console
-#define CONSOLE_PRINTF(str, ...)	ENG_SYSCALL(GameInfo::msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
+#define ENG_SYSCALL					(QMM::game->syscall)
 
 // This is used if we couldn't determine a game engine and we have to fail.
 // G_ERROR appears to be 1 in all supported dllEntry games.
@@ -159,4 +166,4 @@ private:
     std::vector<uint8_t> file;
 };
 
-#endif // QMM2_GAMEINFO_HPP
+#endif // QMM2_QMM_HPP

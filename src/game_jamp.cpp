@@ -17,7 +17,7 @@ Created By:
 #include <string>
 // QMM-specific JAMP header
 #include "game_jamp.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -76,16 +76,16 @@ bool JAMP_GameSupport::AutoDetect(APIType engineapi) {
         return false;
 
     // QMM filename must match default or an OpenJK temp filename (if DLL was pulled from .pk3)
-    if (!str_striequal(GameInfo::qmm_file, DefaultDLLName())
-        && !str_striequal(GameInfo::qmm_file.substr(0, 3), "ojk")
-        && !str_striequal(path_baseext(GameInfo::qmm_file), ".tmp"))
+    if (!str_striequal(QMM::qmm_file, DefaultDLLName())
+        && !str_striequal(QMM::qmm_file.substr(0, 3), "ojk")
+        && !str_striequal(path_baseext(QMM::qmm_file), ".tmp"))
     {
         return false;
     }
 
-    if (!str_stristr(GameInfo::exe_file, "jamp")
-        && !str_stristr(GameInfo::exe_file, "openjk.") // do not match openjk_sp
-        && !str_stristr(GameInfo::exe_file, "openjkded"))
+    if (!str_stristr(QMM::exe_file, "jamp")
+        && !str_stristr(QMM::exe_file, "openjk.") // do not match openjk_sp
+        && !str_stristr(QMM::exe_file, "openjkded"))
     {
         return false;
     }

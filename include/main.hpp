@@ -39,10 +39,10 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall);
 * A game_import_t is given to the mod which has lambdas for each pointer that calls QMM's syscall(enum, ...).
 *
 * The original import/export tables are stored. When QMM and plugins need to call the mod or engine,
-* gameinfo->game.vmMain or gameinfo->game.syscall point to game-specific functions which will take the cmd, and
-* route to the proper function pointer in the struct.
+* QMM::game.vmMain or QMM::game.syscall point to game-specific functions which will take the cmd, and route to
+* the proper function pointer in the struct.
 *
-* SOF2SP engine passes an apiversion as the first arg, and import is the second arg
+* The SOF2SP engine passes an apiversion as the first arg, and import is the second arg.
 *
 * @param import Pointer to engine's import function table
 * @param extra Optional argument in some engines
@@ -123,16 +123,5 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
 * @return Return value of engine call
 */
 intptr_t qmm_syscall(intptr_t cmd, ...);
-
-/**
-* @brief Fill "buf" with a given argument.
-*
-* This will use G_ARGV, but supports either type: fill buffer, or return string
-*
-* @param argn Number of argument to receive
-* @param buf String buffer to fill
-* @param buflen Size of buf
-*/
-void ArgV(intptr_t argn, char* buf, intptr_t buflen);
 
 #endif // QMM2_MAIN_HPP

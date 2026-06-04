@@ -18,7 +18,7 @@ Created By:
 #include "log.hpp"
 #include "format.hpp"
 #include "config.hpp"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "gameapi.hpp"
 #include "qmmapi.h"
 #include "plugin.hpp"
@@ -35,9 +35,9 @@ namespace CGameInfo {
        cgame syscall pointer), and then forward all the incoming cgame vmMain calls directly to the mod's vmMain
        function.
 
-       We do this with a few fields in the "cgameinfo" struct. First, the "CGameInfo::syscall" pointer variable
-       is used to store the syscall pointer if dllEntry is called after QMM was already loaded from GetGameAPI.
-       Then, dllEntry exits.
+       We do this with a few fields in the "CGameInfo" namespace. First, the "CGameInfo::syscall" pointer
+       variable is used to store the syscall pointer if dllEntry is called after QMM was already loaded from
+       GetGameAPI. Then, dllEntry exits.
 
        Next, the "CGameInfo::is_from_QMM" bool is used to flag incoming calls to vmMain as coming from a
        game-specific GetGameAPI vmMain wrapper struct (i.e. qmm_export) meaning the call actually came from the
@@ -67,7 +67,7 @@ namespace CGameInfo {
     bool is_shutdown = false;
 }
 
-namespace GameInfo {
+namespace QMM {
     std::string exe_path;
     std::string exe_dir;
     std::string exe_file;
@@ -97,7 +97,7 @@ namespace GameInfo {
 
         // on returning nullptr:    
         // if GetGameAPI+GetModuleAPI, returning nullptr causes the engine to error out, so InitGame/vmMain will never be called
-        // if dllEntry, QMM will check !GameInfo::game in vmMain(GAME_INIT) and call G_ERROR
+        // if dllEntry, QMM will check !QMM::game in vmMain(GAME_INIT) and call G_ERROR
 
         DetectEnv();
 
@@ -203,7 +203,7 @@ namespace GameInfo {
         }
 
         // a default constructed json object is a blank {}, so in case of load failure, we can still try to read from it and assume defaults
-        QMMLOG(QMM_LOG_WARNING, "QMM") << "GameInfo::LoadConfig(): Unable to load config file \"" << config_filename << "\", all settings will use default values\n";
+        QMMLOG(QMM_LOG_WARNING, "QMM") << "QMM::LoadConfig(): Unable to load config file \"" << config_filename << "\", all settings will use default values\n";
     }
 
 
@@ -434,6 +434,20 @@ namespace GameInfo {
         g_plugin_globals = old_globals;
 
         return final_ret;
+    }
+
+
+    void ArgV(intptr_t argn, char* buf, intptr_t buflen) {
+        if (!buf || !buflen)
+            return;
+
+        // char* (*argv)(int argn);
+        // void trap_Argv(int argn, char* buffer, int bufferSize);
+        // some games don't return pointers because of QVM interaction, so if this returns anything but null
+        // (or true?), we probably are in an api game, and need to get the arg from the return value instead
+        intptr_t ret = QMM::game->syscall(QMM::game->QMMEngMsg(QMM_G_ARGV), argn, buf, buflen);
+        if (ret > 1)
+            strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
 }
 
