@@ -110,6 +110,7 @@ const char* APIType_Function(APIType api) {
 		return "GetGameAPI";
 	case QMM_API_GETMODULEAPI:
 		return "GetModuleAPI";
+
 	default:
 		return "unknown";
 	};

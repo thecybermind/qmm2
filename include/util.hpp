@@ -284,5 +284,4 @@ inline OutputClass horrible_cast(const InputClass input) {
     return u.out;
 }
 
-
 #endif // QMM2_UTIL_HPP

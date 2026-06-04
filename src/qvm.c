@@ -80,6 +80,7 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     vm->verify_data = verify_data;
     // if null, use default allocator (uses malloc/free)
     vm->allocator = allocator ? allocator : &qvm_allocator_default;
+    // if 0, use default size
     vm->hunksize = hunk_size ? hunk_size : QVM_HUNK_SIZE;
 
     qvm_header header;
