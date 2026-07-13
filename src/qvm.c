@@ -903,12 +903,6 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
         return;
     }
 
-    // if this ptr was not the most recently-allocated block, fail
-    if (ptr != vm->hunkptr) {
-        log_c(QMM_LOG_WARNING, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free out of order: got %d, expected %d\n", ptr, vm->hunkptr);
-        return;
-    }
-
     // round up size for alignment
     size_t realsize = (size + (QVM_HUNK_ALIGNMENT - 1)) & ~(QVM_HUNK_ALIGNMENT - 1);
 
@@ -921,6 +915,12 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
     // get memory back out
     if (out)
         memcpy(out, vm->datasegment + ptr, size);
+
+    // if this ptr was not the most recently-allocated block, do not modify hunkptr
+    if (ptr != vm->hunkptr) {
+        log_c(QMM_LOG_WARNING, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free out of order: got %d, expected %d\n", ptr, vm->hunkptr);
+        return;
+    }
 
     vm->hunkptr += (int)realsize;
 }
