@@ -287,6 +287,7 @@ namespace Util {
 
 }   // namespace Util
 
+// Allow this to be usable outside of the namespace like a "regular" C++-style cast
 using Util::horrible_cast;
 
 #endif // QMM2_UTIL_HPP

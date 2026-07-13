@@ -214,7 +214,6 @@ namespace QMM {
 
         bool is_auto = Util::str_striequal(cfg_game, "auto");
 
-        // for (api_supportedgame& game : api_supportedgames) {
         for (GameSupport* gamesupport : api_supportedgames) {
             // if short name matches config option, we found it!
             if (!is_auto && Util::str_striequal(cfg_game, gamesupport->GameCode())) {
