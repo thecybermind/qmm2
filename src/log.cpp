@@ -14,60 +14,63 @@ Created By:
 #include "log.hpp"
 #include "format.hpp"
 
-static AixLog::log_sink_ptr s_log_sink_file = nullptr;
+namespace Log {
 
-static AixLog::Severity s_log_level = QMM2_LOG_DEFAULT_SEVERITY;
+    static AixLog::log_sink_ptr s_log_sink_file = nullptr;
 
-
-bool log_level_match(int severity) {
-    return severity >= (int)QMM2_LOG_CONSOLE_SEVERITY || severity >= (int)s_log_level;
-}
+    static AixLog::Severity s_log_level = DEFAULT_SEVERITY;
 
 
-void log_init(std::string file, AixLog::Severity severity, bool append) {
-    if (append)
-        s_log_sink_file = std::make_shared<SinkFileAppend>(severity, file);
-    else
-        s_log_sink_file = std::make_shared<AixLog::SinkFile>(severity, file);
-
-    AixLog::Log::init({ s_log_sink_file });
-}
+    bool log_level_match(int severity) {
+        return severity >= (int)CONSOLE_SEVERITY || severity >= (int)s_log_level;
+    }
 
 
-int log_severity_from_name(std::string severity) {
-    return (int)AixLog::to_severity(severity, QMM2_LOG_DEFAULT_SEVERITY);
-}
+    void log_init(std::string file, AixLog::Severity severity, bool append) {
+        if (append)
+            s_log_sink_file = std::make_shared<SinkFileAppend>(severity, file);
+        else
+            s_log_sink_file = std::make_shared<AixLog::SinkFile>(severity, file);
+
+        AixLog::Log::init({ s_log_sink_file });
+    }
 
 
-std::string log_name_from_severity(int severity) {
-    return AixLog::to_string((AixLog::Severity)severity);
-}
+    int log_severity_from_name(std::string severity) {
+        return (int)AixLog::to_severity(severity, DEFAULT_SEVERITY);
+    }
 
 
-void log_set_severity(int severity) {
-    s_log_level = (AixLog::Severity)severity;
-    (*s_log_sink_file).filter.add_filter((AixLog::Severity)severity);
-}
+    std::string log_name_from_severity(int severity) {
+        return AixLog::to_string((AixLog::Severity)severity);
+    }
+
+
+    void log_set_severity(int severity) {
+        s_log_level = (AixLog::Severity)severity;
+        (*s_log_sink_file).filter.add_filter((AixLog::Severity)severity);
+    }
 
 
 #if 0
-// actually in log.h, just here for visibility
-template <typename T>
-void log_add_sink(T func, AixLog::Severity level = AixLog::Severity::notice) {
-    AixLog::Log::instance().add_logsink<AixLog::SinkCallback>(level, func);
-}
+    // actually in log.h, just here for visibility
+    template <typename T>
+    void log_add_sink(T func, AixLog::Severity level = AixLog::Severity::notice) {
+        AixLog::Log::instance().add_logsink<AixLog::SinkCallback>(level, func);
+    }
 #endif
 
 
-std::string log_format(const AixLog::Metadata& metadata, const std::string& message, bool timestamp) {
-    std::string output = fmt::format("({}) {}\n", metadata.tag.text, message);
-    if ((int)metadata.severity >= QMM_LOG_WARNING)
-        output = fmt::format("[{}] {}", AixLog::to_string(metadata.severity), output);
-    if (timestamp && metadata.timestamp)
-        output = fmt::format("{} {}", metadata.timestamp.to_string(), output);
-    return output;
-}
+    std::string log_format(const AixLog::Metadata& metadata, const std::string& message, bool timestamp) {
+        std::string output = fmt::format("({}) {}\n", metadata.tag.text, message);
+        if ((int)metadata.severity >= QMM_LOG_WARNING)
+            output = fmt::format("[{}] {}", AixLog::to_string(metadata.severity), output);
+        if (timestamp && metadata.timestamp)
+            output = fmt::format("{} {}", metadata.timestamp.to_string(), output);
+        return output;
+    }
 
+}   // namespace Log
 
 /**
 * @brief Varargs function so qvm.c can log
@@ -79,7 +82,7 @@ std::string log_format(const AixLog::Metadata& metadata, const std::string& mess
 */
 extern "C" void log_c(int severity, const char* tag, const char* fmt, ...) {
     // exit early if neither log level (game console and log file) is met
-    if (!log_level_match(severity))
+    if (!Log::log_level_match(severity))
         return;
 
     va_list	argptr;

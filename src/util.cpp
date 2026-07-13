@@ -372,4 +372,4 @@ namespace Util {
         return ret;
     }
 
-}
+}   // namespace Util

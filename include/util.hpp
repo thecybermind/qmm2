@@ -285,7 +285,7 @@ namespace Util {
         return u.out;
     }
 
-}
+}   // namespace Util
 
 using Util::horrible_cast;
 

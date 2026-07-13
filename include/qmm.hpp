@@ -124,7 +124,7 @@ namespace QMM {
         // If true, GAME_SHUTDOWN has been called, but the mod DLL was kept loaded so cgame shutdown can run.
         extern bool is_shutdown;
     };
-};
+};   // namespace QMM
 
 
 // Convert from QMM_G_ message to actual G_ message

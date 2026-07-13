@@ -104,7 +104,7 @@ namespace QMM {
 
         api = engine;
 
-        log_init(fmt::format("{}/qmm2.log", qmm_dir));
+        Log::log_init(fmt::format("{}/qmm2.log", qmm_dir));
 
         QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") (" << APIType_Function(engine) << ") loaded!\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "QMM path: \"" << qmm_path << "\"\n";
@@ -121,12 +121,12 @@ namespace QMM {
         LoadConfig(Util::util_get_cmdline_arg("--qmm_config", "qmm2.json"));
 
         // update log severity from config file
-        std::string cfg_loglevel = cfg_get_string(g_cfg, "loglevel", "");
+        std::string cfg_loglevel = Config::cfg_get_string(Config::g_cfg, "loglevel", "");
         if (!cfg_loglevel.empty())
-            log_set_severity(log_severity_from_name(cfg_loglevel));
+            Log::log_set_severity(Log::log_severity_from_name(cfg_loglevel));
 
         // detect game (possibly take setting from config file, or auto-detect)
-        std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
+        std::string cfg_game = Config::cfg_get_string(Config::g_cfg, "game", "auto");
         // check command line arguments for a game code
         cfg_game = Util::util_get_cmdline_arg("--qmm_game", cfg_game);
         // failed to get engine information
@@ -195,8 +195,8 @@ namespace QMM {
             try_path = Util::path_normalize(try_path);
             if (try_path.empty() || !Util::path_is_allowed(try_path))
                 continue;
-            g_cfg = cfg_load(try_path);
-            if (!g_cfg.empty()) {
+            Config::g_cfg = Config::cfg_load(try_path);
+            if (!Config::g_cfg.empty()) {
                 cfg_path = try_path;
                 QMMLOG(QMM_LOG_NOTICE, "QMM") << "Config file found! Path: \"" << cfg_path << "\"\n";
                 return;
@@ -450,7 +450,7 @@ namespace QMM {
         if (ret > 1)
             Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
-}
+}   // namespace QMM
 
 
 EngineFileRead::EngineFileRead() : handle(0) {

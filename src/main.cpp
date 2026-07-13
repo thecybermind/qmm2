@@ -215,10 +215,10 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         (void)Util::util_get_milliseconds();
 
         // add engine G_PRINT logger (info level and above)
-        log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
-                ENG_SYSCALL(QMM::msg_G_PRINT, log_format(metadata, message, false).c_str());
+        Log::log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
+                ENG_SYSCALL(QMM::msg_G_PRINT, Log::log_format(metadata, message, false).c_str());
             },
-            QMM2_LOG_CONSOLE_SEVERITY);
+            Log::CONSOLE_SEVERITY);
 
         QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") initializing\n";
 
@@ -233,7 +233,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         QMMLOG(QMM_LOG_INFO, "QMM") << "Game: " << QMM::game->GameCode() << "/\"" << QMM::game->GameName() << "\" (Source: " << (QMM::is_auto_detected ? "Auto-detected" : "Config file") << ")\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "ModDir: " << QMM::mod_dir << "\n";
-        QMMLOG(QMM_LOG_INFO, "QMM") << "Config file: \"" << QMM::cfg_path << "\" " << (g_cfg.is_discarded() ? "(error)" : "") << "\n";
+        QMMLOG(QMM_LOG_INFO, "QMM") << "Config file: \"" << QMM::cfg_path << "\" " << (Config::g_cfg.is_discarded() ? "(error)" : "") << "\n";
 
         QMMLOG(QMM_LOG_INFO, "QMM") << "Built: " QMM_COMPILE " by " QMM_BUILDER "\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "URL: " QMM_URL "\n";
@@ -242,7 +242,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
 
         // load mod
-        std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
+        std::string cfg_mod = Config::cfg_get_string(Config::g_cfg, "mod", "auto");
         // check command line arguments for a mod filename
         cfg_mod = Util::util_get_cmdline_arg("--qmm_mod", cfg_mod);
         if (!QMM::LoadMod(cfg_mod)) {
@@ -271,7 +271,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         // load plugins
         QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
-        for (std::string& plugin_path : cfg_get_array_str(g_cfg, "plugins")) {
+        for (std::string& plugin_path : Config::cfg_get_array_str(Config::g_cfg, "plugins")) {
             QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
             if (QMM::LoadPlugin(plugin_path)) {
                 QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" loaded\n";
@@ -283,7 +283,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << g_plugins.size() << " plugin(s)\n";
 
         // exec the qmmexec cfg
-        std::string cfg_execcfg = cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
+        std::string cfg_execcfg = Config::cfg_get_string(Config::g_cfg, "execcfg", "qmmexec.cfg");
         if (!cfg_execcfg.empty()) {
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "Executing config file \"" << cfg_execcfg << "\"\n";
             ENG_SYSCALL(QMM_ENG_MSG(QMM_G_SEND_CONSOLE_COMMAND), QMM_ENG_MSG(QMM_EXEC_APPEND), fmt::format("exec {}\n", cfg_execcfg).c_str());
@@ -379,7 +379,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
         CONSOLE_PRINT ("(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ")\n");
         CONSOLE_PRINTF("(QMM) Game       : {}/\"{}\" ({}) (Source: {})\n", QMM::game->GameCode(), QMM::game->GameName(), APIType_Function(QMM::api), QMM::is_auto_detected ? "Auto-detected" : "Config file");
         CONSOLE_PRINTF("(QMM) ModDir     : {}\n", QMM::mod_dir);
-        CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", QMM::cfg_path, g_cfg.empty() ? "(error)" : "");
+        CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", QMM::cfg_path, Config::g_cfg.empty() ? "(error)" : "");
         CONSOLE_PRINT ("(QMM) Built      : " QMM_COMPILE " by " QMM_BUILDER "\n");
         CONSOLE_PRINT ("(QMM) URL        : " QMM_URL "\n");
         CONSOLE_PRINT ("(QMM) PIFV       : " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
@@ -438,12 +438,12 @@ static void HandleQMMCommand(intptr_t arg_start) {
             CONSOLE_PRINT("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
             return;
         }
-        int severity = log_severity_from_name(arg2);
-        log_set_severity(severity);
-        CONSOLE_PRINTF("(QMM) Log level set to {}\n", log_name_from_severity(severity));
+        int severity = Log::log_severity_from_name(arg2);
+        Log::log_set_severity(severity);
+        CONSOLE_PRINTF("(QMM) Log level set to {}\n", Log::log_name_from_severity(severity));
     }
     else if (Util::str_striequal("reload", arg1)) {
-        g_cfg = cfg_load(QMM::cfg_path);
+        Config::g_cfg = Config::cfg_load(QMM::cfg_path);
         CONSOLE_PRINT("(QMM) Configuration file reloaded!\n");
     }
     else if (Util::str_striequal("credits", arg1) || Util::str_striequal("thanks", arg1)) {

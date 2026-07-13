@@ -180,9 +180,9 @@ bool Mod::LoadQVM(std::string file) {
     }
 
     // get data verification setting from config
-    verify_data = cfg_get_bool(g_cfg, "qvmverifydata", true);
+    verify_data = Config::cfg_get_bool(Config::g_cfg, "qvmverifydata", true);
     // get hunk size setting from config
-    hunk_size = (size_t)cfg_get_int(g_cfg, "qvmhunksize", 0);
+    hunk_size = (size_t)Config::cfg_get_int(Config::g_cfg, "qvmhunksize", 0);
 
     // attempt to load mod
     if (!qvm_load(&this->vm, filedata, f.Size(), Mod::QVM_syscall, verify_data, hunk_size, nullptr)) {
