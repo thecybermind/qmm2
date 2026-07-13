@@ -75,14 +75,14 @@ bool RTCWSP_GameSupport::AutoDetect(APIType engineapi) {
         return false;
 
     // check for either dll name
-    if (!str_striequal(QMM::qmm_file, iortcw_dllname) && !str_striequal(QMM::qmm_file, official_dllname))
+    if (!Util::str_striequal(QMM::qmm_file, iortcw_dllname) && !Util::str_striequal(QMM::qmm_file, official_dllname))
         return false;
 
-    if (!str_stristr(QMM::exe_file, "wolfsp"))
+    if (!Util::str_stristr(QMM::exe_file, "wolfsp"))
         return false;
 
     // loaded in iortcw?
-    if (str_striequal(QMM::qmm_file, iortcw_dllname))
+    if (Util::str_striequal(QMM::qmm_file, iortcw_dllname))
         is_iortcw = true;
 
     return true;

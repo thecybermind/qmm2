@@ -169,14 +169,14 @@ int Plugin::Load(std::string file) {
         return 0;
 
     // load DLL
-    if (!(this->dll = dll_load(file.c_str()))) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << file << "\"): DLL load failed for plugin: " << dll_error() << "\n";
+    if (!(this->dll = Util::dll_load(file.c_str()))) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << file << "\"): DLL load failed for plugin: " << Util::dll_error() << "\n";
         return 0;
     }
 
     // if this DLL is the same as QMM, cancel
     if (this->dll == QMM::qmm_module_ptr) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): DLL is actually QMM?\n";
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): DLL is actually QMM?\n";
         // treat this failure specially. this is a valid DLL, but it is QMM
         return -1;
     }
@@ -184,21 +184,21 @@ int Plugin::Load(std::string file) {
     // if this DLL is the same as another loaded plugin, cancel
     for (Plugin& t : g_plugins) {
         if (this->dll == t.dll) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): DLL is already loaded as plugin\n";
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): DLL is already loaded as plugin\n";
             // treat this failure specially. this is a valid plugin, but it is already loaded
             return -1;
         }
     }
 
-    if (!(this->QMM_Query = (Plugin::plugin_query)dll_symbol(this->dll, "QMM_Query"))) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_Query\" function\n";
+    if (!(this->QMM_Query = (Plugin::plugin_query)Util::dll_symbol(this->dll, "QMM_Query"))) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): Unable to find \"QMM_Query\" function\n";
         return 0;
     }
 
     // call initial plugin entry point, get interface version
     this->QMM_Query(&this->plugininfo);
     if (!this->plugininfo) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): QMM_Query() returned NULL Plugininfo\n";
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Query() returned NULL Plugininfo\n";
         return 0;
     }
 
@@ -212,41 +212,41 @@ int Plugin::Load(std::string file) {
 
     // if the plugin's major interface version is lower, don't load and suggest to upgrade plugin
     if (this->plugininfo->pifv_major < QMM_PIFV_MAJOR) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Plugin's interface version (" << this->plugininfo->pifv_major << ":" << this->plugininfo->pifv_minor << ") is less than QMM's (" STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "), suggest upgrading plugin.\n";
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): Plugin's interface version (" << this->plugininfo->pifv_major << ":" << this->plugininfo->pifv_minor << ") is less than QMM's (" STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "), suggest upgrading plugin.\n";
         return 0;
     }
     // if the plugin's interface version is higher, don't load and suggest to upgrade QMM
     else if (this->plugininfo->pifv_major > QMM_PIFV_MAJOR || this->plugininfo->pifv_minor > QMM_PIFV_MINOR) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Plugin's interface version (" << this->plugininfo->pifv_major << ":" << this->plugininfo->pifv_minor << ") is greater than QMM's (" STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "), suggest upgrading QMM.\n";
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): Plugin's interface version (" << this->plugininfo->pifv_major << ":" << this->plugininfo->pifv_minor << ") is greater than QMM's (" STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "), suggest upgrading QMM.\n";
         return 0;
     }
     // at this point, major versions match and the plugin's minor version is less than or equal to QMM's
 
     // find remaining QMM api functions or fail
-    if (!(this->QMM_Attach = (Plugin::plugin_attach)dll_symbol(this->dll, "QMM_Attach"))) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_Attach\" function\n";
+    if (!(this->QMM_Attach = (Plugin::plugin_attach)Util::dll_symbol(this->dll, "QMM_Attach"))) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): Unable to find \"QMM_Attach\" function\n";
         return 0;
     }
-    if (!(this->QMM_Detach = (Plugin::plugin_detach)dll_symbol(this->dll, "QMM_Detach"))) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_Detach\" function\n";
+    if (!(this->QMM_Detach = (Plugin::plugin_detach)Util::dll_symbol(this->dll, "QMM_Detach"))) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): Unable to find \"QMM_Detach\" function\n";
         return 0;
     }
 
     // find hook callback functions
-    if (!(this->QMM_vmMain = (Plugin::plugin_callback)dll_symbol(this->dll, "QMM_vmMain"))) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_vmMain\" function\n";
+    if (!(this->QMM_vmMain = (Plugin::plugin_callback)Util::dll_symbol(this->dll, "QMM_vmMain"))) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): Unable to find \"QMM_vmMain\" function\n";
         return 0;
     }
-    if (!(this->QMM_syscall = (Plugin::plugin_callback)dll_symbol(this->dll, "QMM_syscall"))) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_syscall\" function\n";
+    if (!(this->QMM_syscall = (Plugin::plugin_callback)Util::dll_symbol(this->dll, "QMM_syscall"))) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): Unable to find \"QMM_syscall\" function\n";
         return 0;
     }
-    if (!(this->QMM_vmMain_Post = (Plugin::plugin_callback)dll_symbol(this->dll, "QMM_vmMain_Post"))) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_vmMain_Post\" function\n";
+    if (!(this->QMM_vmMain_Post = (Plugin::plugin_callback)Util::dll_symbol(this->dll, "QMM_vmMain_Post"))) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): Unable to find \"QMM_vmMain_Post\" function\n";
         return 0;
     }
-    if (!(this->QMM_syscall_Post = (Plugin::plugin_callback)dll_symbol(this->dll, "QMM_syscall_Post"))) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): Unable to find \"QMM_syscall_Post\" function\n";
+    if (!(this->QMM_syscall_Post = (Plugin::plugin_callback)Util::dll_symbol(this->dll, "QMM_syscall_Post"))) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): Unable to find \"QMM_syscall_Post\" function\n";
         return 0;
     }
 
@@ -256,15 +256,15 @@ int Plugin::Load(std::string file) {
     // call QMM_Attach. if it fails (returns 0), destructor will call QMM_Detach and unload DLL
     // QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
     if (!(this->QMM_Attach(s_plugin_game_syscall, s_plugin_game_vmMain, &g_plugin_globals.plugin_result, &s_pluginfuncs, &s_pluginvars))) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << path_basename(file) << "\"): QMM_Attach() returned 0\n";
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Attach() returned 0\n";
         // treat this failure specially. this is a valid plugin, but it decided on its own that it shouldn't be loaded
         return -1;
     }
 
     this->path = file;
     // optional plugin functions
-    this->QMM_PluginMessage = (Plugin::plugin_pluginmessage)dll_symbol(this->dll, "QMM_PluginMessage");
-    this->QMM_QVMHandler = (Plugin::plugin_qvmhandler)dll_symbol(this->dll, "QMM_QVMHandler");
+    this->QMM_PluginMessage = (Plugin::plugin_pluginmessage)Util::dll_symbol(this->dll, "QMM_PluginMessage");
+    this->QMM_QVMHandler = (Plugin::plugin_qvmhandler)Util::dll_symbol(this->dll, "QMM_QVMHandler");
 
     return 1;
 }
@@ -273,7 +273,7 @@ int Plugin::Load(std::string file) {
 void Plugin::Unload() {
     if (this->dll && this->QMM_Detach)
         this->QMM_Detach();
-    dll_close(this->dll);
+    Util::dll_close(this->dll);
     this->dll = nullptr;
     this->path.clear();
     this->QMM_Query = nullptr;
@@ -337,7 +337,7 @@ static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char
     va_end(argptr);
 
     // not QMMLOG since we already checked log_level_match()
-    LOG(severity, str_toupper(logtag)) << buf;
+    LOG(severity, Util::str_toupper(logtag)) << buf;
 }
 
 
@@ -572,7 +572,7 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
 
     // cycle rotating buffer and store string
     index = (index + 1) & ROTATING_BUFFER_MASK;
-    value[index] = cfg_get_string(node, path_basename(key));
+    value[index] = cfg_get_string(node, Util::path_basename(key));
     const char* ret = value[index].c_str();
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetStr(\"" << key << "\") = \"" << ret << "\"\n";
@@ -590,7 +590,7 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
 */
 static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const char* key) {
     nlohmann::json node = s_plugin_cfg_get_node(key);
-    int ret = cfg_get_int(node, path_basename(key));
+    int ret = cfg_get_int(node, Util::path_basename(key));
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetInt(\"" << key << "\") = " << ret << "\n";
 
@@ -607,7 +607,7 @@ static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const c
 */
 static int s_plugin_helper_ConfigGetBool(plugin_id plid [[maybe_unused]], const char* key) {
     nlohmann::json node = s_plugin_cfg_get_node(key);
-    int ret = (int)cfg_get_bool(node, path_basename(key));
+    int ret = (int)cfg_get_bool(node, Util::path_basename(key));
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetBool(\"" << key << "\") = " << ret << "\n";
 
@@ -632,7 +632,7 @@ static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unu
 
     // cycle rotating buffer and store array
     index = (index + 1) & ROTATING_BUFFER_MASK;
-    value[index] = cfg_get_array_str(node, path_basename(key));
+    value[index] = cfg_get_array_str(node, Util::path_basename(key));
     // fill valuep with const char*s from value
     valuep[index].clear();
     for (std::string& s : value[index]) {
@@ -661,7 +661,7 @@ static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], c
 
     // cycle rotating buffer and store array
     index = (index + 1) & ROTATING_BUFFER_MASK;
-    value[index] = cfg_get_array_int(node, path_basename(key));
+    value[index] = cfg_get_array_int(node, Util::path_basename(key));
     // insert length of the array as the first element
     value[index].insert(value[index].begin(), (int)value[index].size());
 
@@ -691,7 +691,7 @@ static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], int
     if (buf && buflen) {
         intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), index, buf, buflen);
         if (ret > 1)
-            strncpyz(buf, (const char*)ret, (size_t)buflen);
+            Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetConfigString(" << index << ") = \"" << buf << "\"\n";
@@ -859,7 +859,7 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
     // instead
     intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), configindex, str[index], sizeof(str[index]));
     if (ret > 1)
-        strncpyz(str[index], (const char*)ret, sizeof(str[index]));
+        Util::strncpyz(str[index], (const char*)ret, sizeof(str[index]));
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetConfigString2(" << configindex << ") = \"" << str[index] << "\"\n";
 

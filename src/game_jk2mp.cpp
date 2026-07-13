@@ -22,7 +22,6 @@ Created By:
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
 
-
 struct JK2MP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
     virtual const char* ModMsgName(intptr_t msg);
@@ -63,10 +62,10 @@ bool JK2MP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(QMM::exe_file, "jk2mp") && !str_stristr(QMM::exe_file, "jk2ded"))
+    if (!Util::str_stristr(QMM::exe_file, "jk2mp") && !Util::str_stristr(QMM::exe_file, "jk2ded"))
         return false;
 
     return true;

@@ -21,7 +21,6 @@ Created By:
 #include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
-
 struct JK2SP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
     virtual const char* ModMsgName(intptr_t msg);
@@ -74,10 +73,10 @@ bool JK2SP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(QMM::exe_file, "jk2sp") && !str_stristr(QMM::exe_file, "openjo_sp"))
+    if (!Util::str_stristr(QMM::exe_file, "jk2sp") && !Util::str_stristr(QMM::exe_file, "openjo_sp"))
         return false;
 
     return true;
@@ -246,7 +245,7 @@ intptr_t JK2SP_GameSupport::syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }
@@ -651,7 +650,7 @@ std::vector<std::string> JK2SP_GameSupport::entity_tokens;
 size_t JK2SP_GameSupport::token_counter = 0;
 void JK2SP_GameSupport::Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition) {
     if (entstring) {
-        entity_tokens = util_parse_entstring(entstring);
+        entity_tokens = Util::util_parse_entstring(entstring);
         token_counter = 0;
     }
     QMM::CGame::is_from_QMM = true;

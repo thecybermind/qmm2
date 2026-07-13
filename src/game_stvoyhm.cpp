@@ -66,10 +66,10 @@ bool STVOYHM_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(QMM::exe_file, "stvoyhm"))
+    if (!Util::str_stristr(QMM::exe_file, "stvoyhm"))
         return false;
 
     return true;

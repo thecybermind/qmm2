@@ -67,10 +67,10 @@ bool SOF2MP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(QMM::exe_file, "sof2mp") && !str_stristr(QMM::exe_file, "sof2ded"))
+    if (!Util::str_stristr(QMM::exe_file, "sof2mp") && !Util::str_stristr(QMM::exe_file, "sof2ded"))
         return false;
 
     return true;

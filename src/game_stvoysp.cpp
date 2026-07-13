@@ -77,10 +77,10 @@ bool STVOYSP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(QMM::exe_file, "stvoy"))
+    if (!Util::str_stristr(QMM::exe_file, "stvoy"))
         return false;
 
     return true;
@@ -189,7 +189,7 @@ intptr_t STVOYSP_GameSupport::syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }
@@ -467,7 +467,7 @@ std::vector<std::string> STVOYSP_GameSupport::entity_tokens;
 size_t STVOYSP_GameSupport::token_counter = 0;
 void STVOYSP_GameSupport::Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition) {
     if (entstring) {
-        entity_tokens = util_parse_entstring(entstring);
+        entity_tokens = Util::util_parse_entstring(entstring);
         token_counter = 0;
     }
     QMM::CGame::is_from_QMM = true;

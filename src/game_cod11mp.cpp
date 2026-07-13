@@ -21,7 +21,6 @@ Created By:
 // QMM-specific COD11MP header
 #include "game_cod11mp.h"
 
-
 struct COD11MP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
     virtual const char* ModMsgName(intptr_t msg);

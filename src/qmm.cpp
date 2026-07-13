@@ -118,7 +118,7 @@ namespace QMM {
         }
 
         // load config file. check command line arguments for a config filename
-        LoadConfig(util_get_cmdline_arg("--qmm_config", "qmm2.json"));
+        LoadConfig(Util::util_get_cmdline_arg("--qmm_config", "qmm2.json"));
 
         // update log severity from config file
         std::string cfg_loglevel = cfg_get_string(g_cfg, "loglevel", "");
@@ -128,7 +128,7 @@ namespace QMM {
         // detect game (possibly take setting from config file, or auto-detect)
         std::string cfg_game = cfg_get_string(g_cfg, "game", "auto");
         // check command line arguments for a game code
-        cfg_game = util_get_cmdline_arg("--qmm_game", cfg_game);
+        cfg_game = Util::util_get_cmdline_arg("--qmm_game", cfg_game);
         // failed to get engine information
         if (!DetectGame(cfg_game, engine) || !game) {
             QMMLOG(QMM_LOG_FATAL, "QMM") << APIType_Function(engine) << "(): Unable to determine game engine using \"" << cfg_game << "\"\n";
@@ -151,17 +151,17 @@ namespace QMM {
 
     void DetectEnv() {
         // save exe module path
-        exe_path = path_normalize(util_get_proc_path());
-        exe_dir = path_dirname(exe_path);
-        exe_file = path_basename(exe_path);
+        exe_path = Util::path_normalize(Util::util_get_proc_path());
+        exe_dir = Util::path_dirname(exe_path);
+        exe_file = Util::path_basename(exe_path);
 
         // save qmm module path
-        qmm_path = path_normalize(util_get_qmm_path());
-        qmm_dir = path_dirname(qmm_path);
-        qmm_file = path_basename(qmm_path);
+        qmm_path = Util::path_normalize(Util::util_get_qmm_path());
+        qmm_dir = Util::path_dirname(qmm_path);
+        qmm_file = Util::path_basename(qmm_path);
 
         // save qmm module pointer
-        qmm_module_ptr = util_get_qmm_handle();
+        qmm_module_ptr = Util::util_get_qmm_handle();
 
         // since we don't have the mod directory yet (can only officially get it using engine functions), we can
         // attempt to get the mod directory from the qmm path. if the qmm dir is the same as the exe dir, it's
@@ -169,15 +169,15 @@ namespace QMM {
         // 
         // this doesn't have to be exact, since it will only be used for config loading until the engine is
         // determined and we can actually ask for the mod directory in vmMain(GAME_INIT)
-        if (str_striequal(qmm_dir, exe_dir)) {
+        if (Util::str_striequal(qmm_dir, exe_dir)) {
             mod_dir = ".";
         }
         else {
-            mod_dir = path_basename(qmm_dir);
+            mod_dir = Util::path_basename(qmm_dir);
         }
 
         // hack for OpenJK if the DLL is loaded from a pak file
-        if (str_striequal(mod_dir, "temp")) {
+        if (Util::str_striequal(mod_dir, "temp")) {
             mod_dir = "base";
         }
     }
@@ -192,8 +192,8 @@ namespace QMM {
             fmt::format("{}/{}/{}", exe_dir, mod_dir, config_filename),
         };
         for (std::string& try_path : try_paths) {
-            try_path = path_normalize(try_path);
-            if (try_path.empty() || !path_is_allowed(try_path))
+            try_path = Util::path_normalize(try_path);
+            if (try_path.empty() || !Util::path_is_allowed(try_path))
                 continue;
             g_cfg = cfg_load(try_path);
             if (!g_cfg.empty()) {
@@ -212,12 +212,12 @@ namespace QMM {
         if (cfg_game.empty())
             cfg_game = "auto";
 
-        bool is_auto = str_striequal(cfg_game, "auto");
+        bool is_auto = Util::str_striequal(cfg_game, "auto");
 
         // for (api_supportedgame& game : api_supportedgames) {
         for (GameSupport* gamesupport : api_supportedgames) {
             // if short name matches config option, we found it!
-            if (!is_auto && str_striequal(cfg_game, gamesupport->GameCode())) {
+            if (!is_auto && Util::str_striequal(cfg_game, gamesupport->GameCode())) {
                 QMMLOG(QMM_LOG_INFO, "QMM") << "Found game match for config option \"" << cfg_game << "\"\n";
                 game = gamesupport;
                 is_auto_detected = false;
@@ -244,7 +244,7 @@ namespace QMM {
 
         QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to find mod using \"" << cfg_mod << "\"\n";
         // if "mod" config setting is an absolute path, just attempt to load it directly
-        if (!str_striequal(cfg_mod, "auto") && path_is_absolute(cfg_mod)) {
+        if (!Util::str_striequal(cfg_mod, "auto") && Util::path_is_absolute(cfg_mod)) {
             QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << cfg_mod << "\"\n";
             return g_mod.Load(cfg_mod);
         }
@@ -259,7 +259,7 @@ namespace QMM {
         // "<exedir>/<moddir>/<mod>"
         std::vector<std::string> try_paths;
         // if "mod" config setting was "auto"
-        if (str_striequal(cfg_mod, "auto")) {
+        if (Util::str_striequal(cfg_mod, "auto")) {
             // treat as if "mod" config setting was "qmm_" plus the default dll name for this engine
             cfg_mod = fmt::format("qmm_{}", game->DefaultDLLName());
             // add QVM filename to search list if this game supports it
@@ -267,13 +267,13 @@ namespace QMM {
                 try_paths.push_back(game->DefaultQVMName());
         }
         // if "mod" config setting was a relative path, do nothing special unless QVM
-        if (str_striequal(path_baseext(cfg_mod), EXT_QVM) && game->DefaultQVMName())
+        if (Util::str_striequal(Util::path_baseext(cfg_mod), EXT_QVM) && game->DefaultQVMName())
             try_paths.push_back(cfg_mod);
         try_paths.push_back(fmt::format("{}/{}", qmm_dir, cfg_mod));
         try_paths.push_back(fmt::format("{}/{}/{}", exe_dir, mod_dir, cfg_mod));
         for (std::string& try_path : try_paths) {
-            try_path = path_normalize(try_path);
-            if (try_path.empty() || !path_is_allowed(try_path))
+            try_path = Util::path_normalize(try_path);
+            if (try_path.empty() || !Util::path_is_allowed(try_path))
                 continue;
             QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << try_path << "\"\n";
             if (g_mod.Load(try_path))
@@ -287,7 +287,7 @@ namespace QMM {
     bool LoadPlugin(std::string plugin_path) {
         Plugin p;
         // absolute path, just attempt to load it directly
-        if (path_is_absolute(plugin_path)) {
+        if (Util::path_is_absolute(plugin_path)) {
             // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
             if (p.Load(plugin_path) > 0) {
                 g_plugins.push_back(std::move(p));
@@ -303,8 +303,8 @@ namespace QMM {
             fmt::format("{}/{}/{}", exe_dir, mod_dir, plugin_path),
         };
         for (std::string& try_path : try_paths) {
-            try_path = path_normalize(try_path);
-            if (try_path.empty() || !path_is_allowed(try_path))
+            try_path = Util::path_normalize(try_path);
+            if (try_path.empty() || !Util::path_is_allowed(try_path))
                 continue;
             // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
             int ret = p.Load(try_path);
@@ -367,7 +367,7 @@ namespace QMM {
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "( " << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << Plugin::plugin_result_to_str(g_plugin_globals.plugin_result) << "\n";
 
             // set new max result
-            max_result = util_max(g_plugin_globals.plugin_result, max_result);
+            max_result = Util::util_max(g_plugin_globals.plugin_result, max_result);
             // store current max result in global for plugins
             g_plugin_globals.high_result = max_result;
             // invalid/error result values
@@ -448,7 +448,7 @@ namespace QMM {
         // (or true?), we probably are in an api game, and need to get the arg from the return value instead
         intptr_t ret = QMM::game->syscall(QMM::game->QMMEngMsg(QMM_G_ARGV), argn, buf, buflen);
         if (ret > 1)
-            strncpyz(buf, (const char*)ret, (size_t)buflen);
+            Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
 }
 

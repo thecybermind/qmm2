@@ -94,10 +94,10 @@ bool Q2R_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(QMM::exe_file, "quake2ex"))
+    if (!Util::str_stristr(QMM::exe_file, "quake2ex"))
         return false;
 
     return true;
@@ -214,7 +214,7 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
         *buffer = '\0';
         cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
         if (cvar)
-            strncpyz(buffer, cvar->string, (size_t)bufsize);
+            Util::strncpyz(buffer, cvar->string, (size_t)bufsize);
         break;
     }
     case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -247,7 +247,7 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
             str_mode = "ab";
         std::string path = fmt::format("{}/{}", QMM::qmm_dir, qpath);
         if (mode != FS_READ)
-            path_mkdir(path_dirname(path));
+            Util::path_mkdir(Util::path_dirname(path));
         FILE* fp = fopen(path.c_str(), str_mode);
         if (!fp) {
             ret = -1;
@@ -322,7 +322,7 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
         intptr_t bufferSize = args[2];
         *buffer = '\0';
         if (userinfos.count(num))
-            strncpyz(buffer, userinfos[num].c_str(), (size_t)bufferSize);
+            Util::strncpyz(buffer, userinfos[num].c_str(), (size_t)bufferSize);
         break;
     }
     case G_GET_ENTITY_TOKEN: {
@@ -335,12 +335,12 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = true;
         break;
     }
     case G_MILLISECONDS:
-        ret = util_get_milliseconds();
+        ret = Util::util_get_milliseconds();
         break;
 
     default:
@@ -763,7 +763,7 @@ std::vector<std::string> Q2R_GameSupport::entity_tokens;
 size_t Q2R_GameSupport::token_counter = 0;
 void Q2R_GameSupport::SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
     if (entstring) {
-        entity_tokens = util_parse_entstring(entstring);
+        entity_tokens = Util::util_parse_entstring(entstring);
         token_counter = 0;
     }
     QMM::CGame::is_from_QMM = true;

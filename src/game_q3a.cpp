@@ -22,7 +22,6 @@ Created By:
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
 
-
 struct Q3A_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
     virtual const char* ModMsgName(intptr_t msg);
@@ -63,10 +62,10 @@ bool Q3A_GameSupport::AutoDetect(APIType engine_api) {
     if (engine_api != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(QMM::exe_file, "quake3") && !str_stristr(QMM::exe_file, "q3ded"))
+    if (!Util::str_stristr(QMM::exe_file, "quake3") && !Util::str_stristr(QMM::exe_file, "q3ded"))
         return false;
 
     return true;

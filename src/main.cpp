@@ -212,7 +212,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
     if (cmd == QMM::msg_GAME_INIT) {
         // initialize our polyfill milliseconds tracker so that now is 0
-        (void)util_get_milliseconds();
+        (void)Util::util_get_milliseconds();
 
         // add engine G_PRINT logger (info level and above)
         log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
@@ -244,7 +244,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // load mod
         std::string cfg_mod = cfg_get_string(g_cfg, "mod", "auto");
         // check command line arguments for a mod filename
-        cfg_mod = util_get_cmdline_arg("--qmm_mod", cfg_mod);
+        cfg_mod = Util::util_get_cmdline_arg("--qmm_mod", cfg_mod);
         if (!QMM::LoadMod(cfg_mod)) {
             if (!QMM::is_shutdown) {
                 QMM::is_shutdown = true;
@@ -260,11 +260,11 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         // JASP+JK2SP's cgame dllEntry functions actually call into the syscall almost immediately,
         // so make sure we store vmMain first in case there's some re-entrancy
         if (QMM::CGame::syscall) {
-            QMM::CGame::vmMain = (mod_vmMain)dll_symbol(g_mod.dll, "vmMain");
+            QMM::CGame::vmMain = (mod_vmMain)Util::dll_symbol(g_mod.dll, "vmMain");
             QMMLOG(QMM_LOG_DEBUG, "QMM") << "Storing cgame vmMain = " << QMM::CGame::vmMain << "\n";
 
             // pass original cgame syscall to dllEntry in mod
-            mod_dllEntry pfndllEntry = (mod_dllEntry)dll_symbol(g_mod.dll, "dllEntry");
+            mod_dllEntry pfndllEntry = (mod_dllEntry)Util::dll_symbol(g_mod.dll, "dllEntry");
             QMMLOG(QMM_LOG_DEBUG, "QMM") << "Passing cgame syscall to dllEntry = " << pfndllEntry << "\n";
             pfndllEntry(QMM::CGame::syscall);
         }
@@ -301,12 +301,12 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         // if command is "sv", then get the next arg
         // idTech2 games use "sv" to run a gamedll command
-        if (str_striequal("sv", arg_cmd)) {
+        if (Util::str_striequal("sv", arg_cmd)) {
             argn++;
             QMM::ArgV(argn, arg_cmd, sizeof(arg_cmd));
         }
         // check for "qmm" command
-        if (str_striequal("qmm", arg_cmd) || str_striequal("/qmm", arg_cmd)) {
+        if (Util::str_striequal("qmm", arg_cmd) || Util::str_striequal("/qmm", arg_cmd)) {
             // because of "sv", pass 0 or 1 which gets added to argn in the handler function
             HandleQMMCommand(argn);
             return 1;
@@ -375,7 +375,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
     if (argc > arg_start + 2)
         QMM::ArgV(arg_start + 2, arg2, sizeof(arg2));
 
-    if (str_striequal("status", arg1) || str_striequal("info", arg1)) {
+    if (Util::str_striequal("status", arg1) || Util::str_striequal("info", arg1)) {
         CONSOLE_PRINT ("(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ")\n");
         CONSOLE_PRINTF("(QMM) Game       : {}/\"{}\" ({}) (Source: {})\n", QMM::game->GameCode(), QMM::game->GameName(), APIType_Function(QMM::api), QMM::is_auto_detected ? "Auto-detected" : "Config file");
         CONSOLE_PRINTF("(QMM) ModDir     : {}\n", QMM::mod_dir);
@@ -402,7 +402,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
             CONSOLE_PRINTF("(QMM) QVM data validation: {}\n", g_mod.vm.verify_data ? "on" : "off");
         }
     }
-    else if (str_striequal("list", arg1)) {
+    else if (Util::str_striequal("list", arg1)) {
         CONSOLE_PRINT("(QMM) id - plugin [version]\n");
         CONSOLE_PRINT("(QMM) ---------------------\n");
         int num = 1;
@@ -411,7 +411,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
             num++;
         }
     }
-    else if (str_striequal("plugin", arg1) || str_striequal("plugininfo", arg1)) {
+    else if (Util::str_striequal("plugin", arg1) || Util::str_striequal("plugininfo", arg1)) {
         if (argc == arg_start + 2) {
             CONSOLE_PRINT("(QMM) qmm info <id> - outputs info on plugin with id\n");
             return;
@@ -433,7 +433,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
             CONSOLE_PRINTF("(QMM) Unable to find plugin #{}\n", arg2);
         }
     }
-    else if (str_striequal("loglevel", arg1)) {
+    else if (Util::str_striequal("loglevel", arg1)) {
         if (argc == arg_start + 2) {
             CONSOLE_PRINT("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
             return;
@@ -442,11 +442,11 @@ static void HandleQMMCommand(intptr_t arg_start) {
         log_set_severity(severity);
         CONSOLE_PRINTF("(QMM) Log level set to {}\n", log_name_from_severity(severity));
     }
-    else if (str_striequal("reload", arg1)) {
+    else if (Util::str_striequal("reload", arg1)) {
         g_cfg = cfg_load(QMM::cfg_path);
         CONSOLE_PRINT("(QMM) Configuration file reloaded!\n");
     }
-    else if (str_striequal("credits", arg1) || str_striequal("thanks", arg1)) {
+    else if (Util::str_striequal("credits", arg1) || Util::str_striequal("thanks", arg1)) {
         CONSOLE_PRINT("(QMM) QMM credits:\n");
         CONSOLE_PRINT("(QMM) Designed by:\n");
         CONSOLE_PRINT("(QMM)  - Kevin Masterson\n");
@@ -490,7 +490,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
             return nullptr;
         }
         QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Passing on call to mod DLL.\n";
-        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)dll_symbol(g_mod.dll, "GetCGameAPI");
+        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(g_mod.dll, "GetCGameAPI");
         return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
     }
 
@@ -498,11 +498,11 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
     QMM::DetectEnv();
 
     std::string modpath = fmt::format("{}/qmm_{}", QMM::qmm_dir, QMM::qmm_file);
-    void* dll = dll_load(modpath.c_str());
+    void* dll = Util::dll_load(modpath.c_str());
     if (!dll)
         return nullptr;
 
-    mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)dll_symbol(dll, "GetCGameAPI");
+    mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(dll, "GetCGameAPI");
 
     // return CGame export from mod DLL
     // note we do not unload the DLL

@@ -72,10 +72,10 @@ bool SOF2SP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(QMM::qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(QMM::exe_file, "sof2"))
+    if (!Util::str_stristr(QMM::exe_file, "sof2"))
         return false;
 
     return true;
