@@ -546,7 +546,7 @@ static nlohmann::json s_plugin_cfg_get_node(std::string key) {
     if (key[0] == '/')
         key = key.substr(1);
 
-    nlohmann::json node = Config::g_cfg;
+    nlohmann::json node = g_cfg;
 
     std::filesystem::path keypath = key;
     for (auto& segment : keypath.parent_path()) {

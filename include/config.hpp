@@ -16,11 +16,12 @@ Created By:
 #include <vector>
 #include <nlohmann/json.hpp>
 
+
+// Primary configuration object
+extern nlohmann::json g_cfg;
+
+
 namespace Config {
-
-    // Primary configuration object
-    extern nlohmann::json g_cfg;
-
     /**
     * @brief Load configuration file
     *
