@@ -73,7 +73,7 @@ namespace Util {
         // if there is no relative path, the return is ""
         // if the relative path requires going back up, it starts with ".."
         // otherwise it should be the relative path from qmm_dir or exe_dir 
-        if ((!rel_qmm.empty() && rel_qmm.string()[0] != '.') || (!rel_exe.empty() && rel_exe.string()[0] != '.'))
+        if ((!rel_qmm.empty() && rel_qmm.u8string()[0] != '.') || (!rel_exe.empty() && rel_exe.u8string()[0] != '.'))
             return true;
         return false;
     }
@@ -167,7 +167,7 @@ namespace Util {
 
 #if defined(QMM_OS_WINDOWS)
         if (!GetModuleFileName(nullptr, path, sizeof(path)))
-            return "";
+            path[0] = '\0';
 #elif defined(QMM_OS_LINUX)
         // readlink does NOT null terminate at all
         // we pass sizeof-1 to guarantee the \0 from init is still present at the end of the string
@@ -187,15 +187,16 @@ namespace Util {
 
 #if defined(QMM_OS_WINDOWS)
         if (!GetModuleFileName(s_dll, path, sizeof(path)))
-            return "";
+            path[0] = '\0';
+
 #elif defined(QMM_OS_LINUX)
         Dl_info dli;
         memset(&dli, 0, sizeof(dli));
 
         if (!dladdr(&dli, &dli))
-            return "";
-
-        Util::strncpyz(path, dli.dli_fname, sizeof(path));
+            path[0] = '\0';
+        else
+            strncpyz(path, dli.dli_fname, sizeof(path));
 #endif
         return path;
     }
