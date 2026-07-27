@@ -466,6 +466,10 @@ static void HandleQMMCommand(intptr_t arg_start) {
         CONSOLE_PRINT("(QMM)  - fmtlib - https://github.com/fmtlib/fmt\n");
     }
     else {
+        if (!Util::str_striequal("help", arg1)) {
+            CONSOLE_PRINTF("(QMM) Unknown command: {}\n", arg1);
+            CONSOLE_PRINT ("(QMM)\n");
+        }
         CONSOLE_PRINT("(QMM) Usage: qmm <command> [params]\n");
         CONSOLE_PRINT("(QMM) Available commands:\n");
         CONSOLE_PRINT("(QMM) qmm info - displays information about QMM\n");
