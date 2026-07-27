@@ -402,7 +402,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
             CONSOLE_PRINTF("(QMM) QVM data validation: {}\n", g_mod.vm.verify_data ? "on" : "off");
         }
     }
-    else if (Util::str_striequal("list", arg1)) {
+    else if (Util::str_striequal("list", arg1) || Util::str_striequal("pluginlist", arg1)) {
         CONSOLE_PRINT("(QMM) id - plugin [version]\n");
         CONSOLE_PRINT("(QMM) ---------------------\n");
         int num = 1;
@@ -413,7 +413,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
     }
     else if (Util::str_striequal("plugin", arg1) || Util::str_striequal("plugininfo", arg1)) {
         if (argc == arg_start + 2) {
-            CONSOLE_PRINT("(QMM) qmm info <id> - outputs info on plugin with id\n");
+            CONSOLE_PRINTF("(QMM) qmm {} <id> - outputs info on plugin with id\n", arg1);
             return;
         }
         size_t pid = (size_t)atoi(arg2);
@@ -435,7 +435,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
     }
     else if (Util::str_striequal("loglevel", arg1)) {
         if (argc == arg_start + 2) {
-            CONSOLE_PRINT("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
+            CONSOLE_PRINTF("(QMM) qmm {} <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n", arg1);
             return;
         }
         int severity = Log::log_severity_from_name(arg2);
@@ -473,11 +473,12 @@ static void HandleQMMCommand(intptr_t arg_start) {
         CONSOLE_PRINT("(QMM) Usage: qmm <command> [params]\n");
         CONSOLE_PRINT("(QMM) Available commands:\n");
         CONSOLE_PRINT("(QMM) qmm info - displays information about QMM\n");
-        CONSOLE_PRINT("(QMM) qmm list - displays information about loaded QMM plugins\n");
+        CONSOLE_PRINT("(QMM) qmm list - displays list of loaded QMM plugins\n");
         CONSOLE_PRINT("(QMM) qmm plugin <id> - outputs info on plugin with id\n");
         CONSOLE_PRINT("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
         CONSOLE_PRINT("(QMM) qmm reload - reloads the QMM configuration file\n");
         CONSOLE_PRINT("(QMM) qmm credits - QMM credits\n");
+        CONSOLE_PRINT("(QMM) qmm help - displays this help\n");
     }
 }
 
