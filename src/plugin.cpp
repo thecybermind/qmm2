@@ -10,6 +10,8 @@ Created By:
 */
 
 #define _CRT_SECURE_NO_WARNINGS
+#include "version.h"    // STRINGIFY macro
+
 #include <cstdarg>
 #include <vector>
 #include <string>

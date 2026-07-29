@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "version.h"
+#include "osdef.h"
 
 #if defined(QMM_ARCH_32)
 

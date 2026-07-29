@@ -12,7 +12,7 @@ Created By:
 #ifndef QMM2_GAMEAPI_HPP
 #define QMM2_GAMEAPI_HPP
 
-#include "version.h"
+#include "osdef.h"
 #include <cstdint>  // intptr_t
 #include <cstdarg>
 #include <vector>
@@ -36,8 +36,6 @@ Created By:
 #elif defined(QMM_OS_LINUX) && defined(QMM_ARCH_32)
  #define SUF_DLL "i386"                 // Standard suffixes for mod DLLs ("x86", "i386", "x86_64", "x86_64")
  #define X64_SUF_DLL "i386"             // ioRTCW and ET:Legacy suffixes for mod DLLs ("x86", "i386", "x64", "x86_64")
-#else
- #error Unknown architecture + OS combination
 #endif
 
 #if defined(QMM_OS_WINDOWS)

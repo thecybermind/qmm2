@@ -10,7 +10,7 @@ Created By:
 */
 
 #define _CRT_SECURE_NO_WARNINGS 1
-#include "version.h"
+#include "osdef.h"
 #include <cctype>
 #include <cstring>
 #include <cstdint>
@@ -64,10 +64,12 @@ namespace Util {
 
 
     bool path_is_allowed(std::string path) {
+        // if QVM, let the engine's file functions handle path validation
         if (path_baseext(path) == EXT_QVM)
             return true;
 
         path = path_normalize(path);
+        // get portions of the path that match the exe and QMM DLL paths
         auto rel_qmm = std::filesystem::relative(path, QMM::qmm_dir);
         auto rel_exe = std::filesystem::relative(path, QMM::exe_dir);
         // if there is no relative path, the return is ""
@@ -88,7 +90,6 @@ namespace Util {
     std::string path_basename(std::string path) {
         std::filesystem::path fspath = path;
         return fspath.filename().u8string();
-
     }
 
 
@@ -109,7 +110,8 @@ namespace Util {
     bool path_is_relative(std::string path) {
         if (path.empty())
             return false;
-        return !path_is_absolute(path);
+        std::filesystem::path fspath = path;
+        return fspath.is_relative();
     }
 
 

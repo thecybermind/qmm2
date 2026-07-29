@@ -12,6 +12,8 @@ Created By:
 #ifndef QMM2_VERSION_H
 #define QMM2_VERSION_H
 
+#include "osdef.h"
+
 // Evaluate and stringify a macro
 #define STRINGIFY(x) STRINGIFY2(x)
 #define STRINGIFY2(x) #x
@@ -33,28 +35,20 @@ Created By:
 // QMM URL
 #define QMM_URL         "https://github.com/thecybermind/qmm2/"
 
-#if defined(_WIN32)
+#if defined(QMM_OS_WINDOWS)
  #define QMM_OS			"Windows"
- #define QMM_OS_WINDOWS // Windows
- #ifdef _WIN64
-  #define QMM_ARCH      "x86_64"
-  #define QMM_ARCH_64   // x86-64
- #else
-  #define QMM_ARCH      "x86"
-  #define QMM_ARCH_32   // x86
- #endif
-#elif defined(__linux__)
+#elif defined(QMM_OS_LINUX)
  #define QMM_OS			"Linux"
- #define QMM_OS_LINUX   // Linux
- #ifdef __LP64__
-  #define QMM_ARCH      "x86_64"
-  #define QMM_ARCH_64   // x86-64
- #else
-  #define QMM_ARCH      "x86"
-  #define QMM_ARCH_32   // x86
- #endif
 #else
  #error Unknown OS
+#endif
+
+#if defined(QMM_ARCH_64)
+ #define QMM_ARCH "x86_64"
+#elif defined(QMM_ARCH_32)
+ #define QMM_ARCH "x86"
+#else
+ #error Unknown Arch
 #endif
 
 // Comma-separated DWORD form of version for qmm2.rc

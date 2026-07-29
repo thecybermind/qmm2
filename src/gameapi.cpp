@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "version.h"
+#include "osdef.h"
 #include <vector>
 #include "gameapi.hpp"
 
