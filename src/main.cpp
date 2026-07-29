@@ -367,6 +367,11 @@ intptr_t qmm_syscall(intptr_t cmd, ...) {
 // Print formatted string to game console
 #define CONSOLE_PRINTF(str, ...)	ENG_SYSCALL(QMM::msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
 
+/**
+* @brief Handle parsing of "qmm" command in vmMain(GAME_CONSOLE_COMMAND)
+*
+* @param arg_start index of "qmm" argument (all other arguments are relative to this)
+*/
 static void HandleQMMCommand(intptr_t arg_start) {
     char arg1[10] = "", arg2[10] = "";
 
