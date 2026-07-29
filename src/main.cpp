@@ -370,7 +370,7 @@ intptr_t qmm_syscall(intptr_t cmd, ...) {
 /**
 * @brief Handle parsing of "qmm" command in vmMain(GAME_CONSOLE_COMMAND)
 *
-* @param arg_start index of "qmm" argument (all other arguments are relative to this)
+* @param arg_start ArgV index of "qmm" argument (all other arguments are relative to this)
 */
 static void HandleQMMCommand(intptr_t arg_start) {
     char arg1[10] = "", arg2[10] = "";
