@@ -168,7 +168,7 @@ int Mod::QVM_syscall(uint8_t* membase, int cmd, int* args) {
 
 
 bool Mod::LoadQVM(std::string file) {
-    EngineFileRead f;       // read QVM file using engine functions to see into .pk3s
+    QMM::EngineFileRead f;       // read QVM file using engine functions to see into .pk3s
     bool verify_data;
     size_t hunk_size;
 

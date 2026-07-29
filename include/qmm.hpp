@@ -124,6 +124,36 @@ namespace QMM {
         // If true, GAME_SHUTDOWN has been called, but the mod DLL was kept loaded so cgame shutdown can run.
         extern bool is_shutdown;
     };
+
+    // RAII class to read a file using engine functions
+    struct EngineFileRead {
+        EngineFileRead();
+        ~EngineFileRead();
+
+        /**
+        * @brief Open file.
+        *
+        * @param path Filename to open
+        * @return Pointer to contents of file
+        */
+        uint8_t* Open(std::string path);
+
+        /**
+        * @brief Size of file.
+        *
+        * @return File size
+        */
+        int Size();
+
+        /**
+        * @brief Close file.
+        */
+        void Close();
+    private:
+        int handle;
+        std::vector<uint8_t> file;
+    };
+
 };   // namespace QMM
 
 
@@ -134,35 +164,5 @@ namespace QMM {
 
 // Call game-specific syscall handler
 #define ENG_SYSCALL					(QMM::game->syscall)
-
-
-// RAII class to read a file using engine functions
-struct EngineFileRead {
-    EngineFileRead();
-    ~EngineFileRead();
-
-    /**
-    * @brief Open file.
-    *
-    * @param path Filename to open
-    * @return Pointer to contents of file
-    */
-    uint8_t* Open(std::string path);
-
-    /**
-    * @brief Size of file.
-    *
-    * @return File size
-    */
-    int Size();
-
-    /**
-    * @brief Close file.
-    */
-    void Close();
-private:
-    int handle;
-    std::vector<uint8_t> file;
-};
 
 #endif // QMM2_QMM_HPP
