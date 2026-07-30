@@ -67,6 +67,8 @@ enum APIType {
     QMM_API_DLLENTRY,       // dllEntry()
     QMM_API_GETGAMEAPI,     // GetGameAPI()
     QMM_API_GETMODULEAPI,   // GetModuleAPI()
+
+    QMM_API_GETCGAMEAPI,     // GetCGameAPI()
 };
 
 /**
