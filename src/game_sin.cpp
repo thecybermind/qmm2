@@ -463,8 +463,8 @@ void* SIN_GameSupport::Entry(void* import, void*, APIType) {
 }
 
 
-bool SIN_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_GETGAMEAPI)
+bool SIN_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;

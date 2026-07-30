@@ -159,8 +159,8 @@ void* STVOYHM_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-bool STVOYHM_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_DLLENTRY && modapi != QMM_API_QVM)
+bool STVOYHM_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_DLLENTRY && mod_api != QMM_API_QVM)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

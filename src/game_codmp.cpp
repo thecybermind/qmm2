@@ -150,8 +150,8 @@ void* CODMP_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-bool CODMP_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_DLLENTRY)
+bool CODMP_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_DLLENTRY)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

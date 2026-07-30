@@ -547,10 +547,12 @@ intptr_t JAMP_GameSupport::vmMain(intptr_t cmd, ...) {
 }
 
 
-void* JAMP_GameSupport::Entry(void* arg0, void* arg1, APIType engine) {
-    QMMLOG(QMM_LOG_DEBUG, "QMM") << "JAMP_GameSupport::Entry(" << arg0 << ", " << arg1 << ", " << APIType_Name(engine) << ") called\n";
+void* JAMP_GameSupport::Entry(void* arg0, void* arg1, APIType engine_api) {
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "JAMP_GameSupport::Entry(" << arg0 << ", " << arg1 << ", " << APIType_Name(engine_api) << ") called\n";
 
-    if (engine == QMM_API_GETMODULEAPI) {
+    void* ret = nullptr;
+
+    if (engine_api == QMM_API_GETMODULEAPI) {
         orig_apiversion = (intptr_t)arg0;
 
         // original import struct from engine
@@ -560,37 +562,36 @@ void* JAMP_GameSupport::Entry(void* arg0, void* arg1, APIType engine) {
 
         // fill in variables of our hooked import struct to pass to the mod
 
-        QMMLOG(QMM_LOG_DEBUG, "QMM") << "JAMP_GameSupport::Entry(" << arg0 << ", " << arg1 << ", " << APIType_Name(engine) << ") returning " << &qmm_export << "\n";
 
         // struct full of export lambdas to QMM's vmMain
         // this gets returned to the game engine, but we haven't loaded the mod yet.
-        return &qmm_export;
+        ret = &qmm_export;
     }
-    else if (engine == QMM_API_DLLENTRY) {
+    else if (engine_api == QMM_API_DLLENTRY) {
+        // if QMM is loaded as dllEntry by the original JAMP engine, then we don't know the apiversion.
+        // save it from SDK and hope it matches if we need to load the OpenJK gamedll
+        orig_apiversion = GAME_API_VERSION;
+
         // store original syscall from engine
         orig_syscall = (eng_syscall)arg0;
 
-        QMMLOG(QMM_LOG_DEBUG, "QMM") << "JAMP_GameSupport::Entry(" << arg0 << ", " << arg1 << ", " << APIType_Name(engine) << ") returning\n";
-
-        return nullptr;
+        ret = nullptr;
     }
 
-    return nullptr;
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "JAMP_GameSupport::Entry(" << arg0 << ", " << arg1 << ", " << APIType_Name(engine_api) << ") returning " << ret << "\n";
+
+    return ret;
 }
 
 
-bool JAMP_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi == QMM_API_GETMODULEAPI) {
+bool JAMP_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api == QMM_API_GETMODULEAPI) {
         mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
-        // api version gets passed before import pointer
-        // if QMM was loaded with dllEntry, then orig_apiversion is 0 so try to get it from SDK
-        if (orig_syscall || !orig_apiversion)
-            orig_apiversion = GAME_API_VERSION;
         orig_export = (game_export_t*)pfnGGA((void*)orig_apiversion, &qmm_import);
 
         return !!orig_export;
     }
-    else if (modapi == QMM_API_DLLENTRY) {
+    else if (mod_api == QMM_API_DLLENTRY) {
         orig_vmMain = (mod_vmMain)entry;
         return !!orig_vmMain;
     }
