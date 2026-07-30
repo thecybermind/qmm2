@@ -289,7 +289,7 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out);
 * @param opstackhigh End of opstack
 * @param instruction Current instruction pointer
 */
-void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction);
+void qvm_dump(qvm* vm, const int* opstack, const int* opstackhigh, const qvm_op* instruction);
 
 #ifdef __cplusplus
 }

@@ -926,7 +926,7 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
 }
 
 
-void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
+void qvm_dump(qvm* vm, const int* opstack, const int* opstackhigh, const qvm_op* instruction) {
     if (!vm->memory)
         return;
 
@@ -945,7 +945,7 @@ void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
     fputs("VM state:\n-----\n", fp);
 
     // op stack
-    int* opstackptr = opstack;
+    const int* opstackptr = opstack;
     fputs("Opstack (hex): ", fp);
     while (opstackptr < opstackhigh) {
         fprintf(fp, "%08x ", *opstackptr);
@@ -964,7 +964,7 @@ void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
     
     // program stack
     fputs("Stack:\n-----\n", fp);
-    int* stackptr = vm->stackptr;
+    const int* stackptr = vm->stackptr;
     while (stackptr < vm->stackhigh) {
         fprintf(fp, "0x%08x (%d) (RII)\n", stackptr[0], stackptr[0]);
         fprintf(fp, "0x%08x (%d) (Framesize)\n", stackptr[1], stackptr[1]);
@@ -978,7 +978,7 @@ void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
 
     // data segment
     fputs("Data segment:\n-----\n", fp);
-    uint8_t* p = vm->datasegment;
+    const uint8_t* p = vm->datasegment;
     while (p < vm->datasegment + vm->dataseglen) {
         // print offset
         fprintf(fp, "%04tX ", p - vm->datasegment);
