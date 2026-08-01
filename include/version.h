@@ -23,7 +23,7 @@ Created By:
 // Minor semver component
 #define QMM_VERSION_MINOR	6
 // Revision semver component
-#define QMM_VERSION_REV		0
+#define QMM_VERSION_REV		1
 
 // String of dotted version number
 #define QMM_VERSION		STRINGIFY(QMM_VERSION_MAJOR) "." STRINGIFY(QMM_VERSION_MINOR) "." STRINGIFY(QMM_VERSION_REV)
