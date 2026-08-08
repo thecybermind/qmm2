@@ -66,7 +66,7 @@ Designed by:
   - Kevin Masterson
 
 Special thanks to:
-  - Brian Stumm
+  - BAStumm
   - loupgarou21
   - nevcairiel
   - BAILOPAN
