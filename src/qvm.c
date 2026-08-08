@@ -675,8 +675,7 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
             uint8_t* src = datasegment + srci;
             uint8_t* dst = datasegment + dsti;
             
-            if (dst && src && count)
-                memcpy(dst, src, count);
+            memcpy(dst, src, count);
 
             break;
         }
@@ -916,7 +915,7 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
     }
 
     // get memory back out
-    if (out && size)
+    if (out)
         memcpy(out, vm->datasegment + ptr, size);
 
     // if this ptr was not the most recently-allocated block, do not modify hunkptr
