@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "version.h"
+#include "osdef.h"
 
 #if defined(QMM_ARCH_32)
 
@@ -19,8 +19,8 @@ Created By:
 #include "log.hpp"
 // QMM-specific SOF2SP header
 #include "game_sof2sp.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct SOF2SP_GameSupport : public GameSupport {
@@ -72,10 +72,10 @@ bool SOF2SP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "sof2"))
+    if (!Util::str_stristr(QMM::exe_file, "sof2"))
         return false;
 
     return true;
@@ -332,8 +332,8 @@ void* SOF2SP_GameSupport::Entry(void* apiversion, void* import, APIType) {
 }
 
 
-bool SOF2SP_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_GETGAMEAPI)
+bool SOF2SP_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;

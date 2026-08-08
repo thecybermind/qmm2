@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "version.h"
+#include "osdef.h"
 
 #if defined(QMM_ARCH_32)
 
@@ -20,7 +20,7 @@ Created By:
 #include <string>
 // QMM-specific CODMP header
 #include "game_codmp.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "util.hpp"
 
 struct CODMP_GameSupport : public GameSupport {
@@ -62,10 +62,10 @@ bool CODMP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "codmp") && !str_stristr(gameinfo.exe_file, "cod_lnxded"))
+    if (!Util::str_stristr(QMM::exe_file, "codmp") && !Util::str_stristr(QMM::exe_file, "cod_lnxded"))
         return false;
 
     return true;
@@ -150,8 +150,8 @@ void* CODMP_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-bool CODMP_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_DLLENTRY)
+bool CODMP_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_DLLENTRY)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

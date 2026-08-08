@@ -17,8 +17,8 @@ Created By:
 #include <string>
 // QMM-specific RTCWMP header
 #include "game_rtcwmp.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
 
@@ -62,10 +62,10 @@ bool RTCWMP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "wolfmp") && !str_stristr(gameinfo.exe_file, "wolfded"))
+    if (!Util::str_stristr(QMM::exe_file, "wolfmp") && !Util::str_stristr(QMM::exe_file, "wolfded"))
         return false;
 
     return true;
@@ -181,8 +181,8 @@ void* RTCWMP_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-bool RTCWMP_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_DLLENTRY && modapi != QMM_API_QVM)
+bool RTCWMP_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_DLLENTRY && mod_api != QMM_API_QVM)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

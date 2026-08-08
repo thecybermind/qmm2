@@ -117,10 +117,13 @@
     <ClInclude Include="..\include\plugin.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\gameinfo.hpp">
+    <ClInclude Include="..\include\qmm.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\gameapi.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\osdef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -212,7 +215,7 @@
     <ClCompile Include="..\src\game_sof2sp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\gameinfo.cpp">
+    <ClCompile Include="..\src\qmm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\gameapi.cpp">

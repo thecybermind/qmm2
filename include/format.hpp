@@ -14,6 +14,6 @@ Created By:
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
-#include <fmt/std.h>
+#include <fmt/std.h>		// handle std:: types
 
 #endif // QMM2_FORMAT_HPP

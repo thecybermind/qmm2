@@ -80,6 +80,7 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
     vm->verify_data = verify_data;
     // if null, use default allocator (uses malloc/free)
     vm->allocator = allocator ? allocator : &qvm_allocator_default;
+    // if 0, use default size
     vm->hunksize = hunk_size ? hunk_size : QVM_HUNK_SIZE;
 
     qvm_header header;
@@ -902,12 +903,6 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
         return;
     }
 
-    // if this ptr was not the most recently-allocated block, fail
-    if (ptr != vm->hunkptr) {
-        log_c(QMM_LOG_WARNING, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free out of order: got %d, expected %d\n", ptr, vm->hunkptr);
-        return;
-    }
-
     // round up size for alignment
     size_t realsize = (size + (QVM_HUNK_ALIGNMENT - 1)) & ~(QVM_HUNK_ALIGNMENT - 1);
 
@@ -921,11 +916,17 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
     if (out)
         memcpy(out, vm->datasegment + ptr, size);
 
+    // if this ptr was not the most recently-allocated block, do not modify hunkptr
+    if (ptr != vm->hunkptr) {
+        log_c(QMM_LOG_WARNING, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free out of order: got %d, expected %d\n", ptr, vm->hunkptr);
+        return;
+    }
+
     vm->hunkptr += (int)realsize;
 }
 
 
-void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
+void qvm_dump(qvm* vm, const int* opstack, const int* opstackhigh, const qvm_op* instruction) {
     if (!vm->memory)
         return;
 
@@ -944,7 +945,7 @@ void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
     fputs("VM state:\n-----\n", fp);
 
     // op stack
-    int* opstackptr = opstack;
+    const int* opstackptr = opstack;
     fputs("Opstack (hex): ", fp);
     while (opstackptr < opstackhigh) {
         fprintf(fp, "%08x ", *opstackptr);
@@ -963,7 +964,7 @@ void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
     
     // program stack
     fputs("Stack:\n-----\n", fp);
-    int* stackptr = vm->stackptr;
+    const int* stackptr = vm->stackptr;
     while (stackptr < vm->stackhigh) {
         fprintf(fp, "0x%08x (%d) (RII)\n", stackptr[0], stackptr[0]);
         fprintf(fp, "0x%08x (%d) (Framesize)\n", stackptr[1], stackptr[1]);
@@ -977,7 +978,7 @@ void qvm_dump(qvm* vm, int* opstack, int* opstackhigh, qvm_op* instruction) {
 
     // data segment
     fputs("Data segment:\n-----\n", fp);
-    uint8_t* p = vm->datasegment;
+    const uint8_t* p = vm->datasegment;
     while (p < vm->datasegment + vm->dataseglen) {
         // print offset
         fprintf(fp, "%04tX ", p - vm->datasegment);

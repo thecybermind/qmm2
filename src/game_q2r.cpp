@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "version.h"
+#include "osdef.h"
 
 // AFAIK Quake 2 Remastered is only available on 64-bit Windows, so skip the whole file otherwise.
 // The game entry in game_api is similarly conditionally compiled.
@@ -27,8 +27,8 @@ Created By:
 #include "format.hpp"
 // QMM-specific Q2R header
 #include "game_q2r.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct Q2R_GameSupport : public GameSupport {
@@ -53,10 +53,6 @@ struct Q2R_GameSupport : public GameSupport {
 private:
     // update the export variables from orig_export
     static void update_exports();
-
-    // track configstrings for our G_GET_CONFIGSTRING syscall
-    static std::map<int, std::string> configstrings;
-    static void configstring(int num, const char* configstring);
 
     // track userinfo for our G_GET_USERINFO syscall
     static std::map<intptr_t, std::string> userinfos;
@@ -94,10 +90,10 @@ bool Q2R_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "quake2ex"))
+    if (!Util::str_stristr(QMM::exe_file, "quake2ex"))
         return false;
 
     return true;
@@ -214,7 +210,7 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
         *buffer = '\0';
         cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
         if (cvar)
-            strncpyz(buffer, cvar->string, (size_t)bufsize);
+            Util::strncpyz(buffer, cvar->string, (size_t)bufsize);
         break;
     }
     case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -245,9 +241,9 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
             str_mode = "wb";
         else if (mode == FS_APPEND)
             str_mode = "ab";
-        std::string path = fmt::format("{}/{}", gameinfo.qmm_dir, qpath);
+        std::string path = fmt::format("{}/{}", QMM::qmm_dir, qpath);
         if (mode != FS_READ)
-            path_mkdir(path_dirname(path));
+            Util::path_mkdir(Util::path_dirname(path));
         FILE* fp = fopen(path.c_str(), str_mode);
         if (!fp) {
             ret = -1;
@@ -322,7 +318,7 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
         intptr_t bufferSize = args[2];
         *buffer = '\0';
         if (userinfos.count(num))
-            strncpyz(buffer, userinfos[num].c_str(), (size_t)bufferSize);
+            Util::strncpyz(buffer, userinfos[num].c_str(), (size_t)bufferSize);
         break;
     }
     case G_GET_ENTITY_TOKEN: {
@@ -335,12 +331,12 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = true;
         break;
     }
     case G_MILLISECONDS:
-        ret = util_get_milliseconds();
+        ret = Util::util_get_milliseconds();
         break;
 
     default:
@@ -420,36 +416,51 @@ intptr_t Q2R_GameSupport::vmMain(intptr_t cmd, ...) {
 }
 
 
-void* Q2R_GameSupport::Entry(void* import, void*, APIType) {
-    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2R_GameSupport::Entry(" << import << ") called\n";
+void* Q2R_GameSupport::Entry(void* import, void*, APIType engine_api) {
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2R_GameSupport::Entry(" << import << ", " << APIType_Name(engine_api) << ") called\n";
 
-    // original import struct from engine
-    // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
-    game_import_t* gi = (game_import_t*)import;
-    orig_import = *gi;
+    void* ret = nullptr;
 
-    // fill in variables of our hooked import struct to pass to the mod
-    qmm_import.tick_rate = orig_import.tick_rate;
-    qmm_import.frame_time_s = orig_import.frame_time_s;
-    qmm_import.frame_time_ms = orig_import.frame_time_ms;
+    if (engine_api == QMM_API_GETGAMEAPI) {
+        // original import struct from engine
+        // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
+        game_import_t* gi = (game_import_t*)import;
+        orig_import = *gi;
 
-    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2R_GameSupport::Entry(" << import << ") returning " << &qmm_export << "\n";
+        // fill in variables of our hooked import struct to pass to the mod
+        qmm_import.tick_rate = orig_import.tick_rate;
+        qmm_import.frame_time_s = orig_import.frame_time_s;
+        qmm_import.frame_time_ms = orig_import.frame_time_ms;
 
-    // struct full of export lambdas to QMM's vmMain
-    // this gets returned to the game engine, but we haven't loaded the mod yet.
-    // the only thing in this struct the engine uses before calling Init is the apiversion
-    return &qmm_export;
+        // struct full of export lambdas to QMM's vmMain
+        // this gets returned to the game engine, but we haven't loaded the mod yet.
+        // the only thing in this struct the engine uses before calling Init is the apiversion
+        ret = &qmm_export;
+    }
+    else if (engine_api == QMM_API_GETCGAMEAPI) {
+        // unused for now
+
+        ret = nullptr;
+    }
+
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2R_GameSupport::Entry(" << import << ", " << APIType_Name(engine_api) << ") returning " << ret << "\n";
+    return ret;
 }
 
 
-bool Q2R_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_GETGAMEAPI)
+bool Q2R_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api == QMM_API_GETGAMEAPI) {
+        mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
+        orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
+
+        return !!orig_export;
+    }
+    else if (mod_api == QMM_API_GETCGAMEAPI) {
+        // unused for now
         return false;
+    }
 
-    mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
-    orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
-
-    return !!orig_export;
+    return false;
 }
 
 
@@ -738,7 +749,7 @@ bool Q2R_GameSupport::ClientConnect(edict_t* ent, char* userinfo, const char* so
         else
             userinfos[clientnum] = userinfo;
     }
-    cgameinfo.is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     return (bool)::vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
 }
 
@@ -754,7 +765,7 @@ void Q2R_GameSupport::ClientUserinfoChanged(edict_t* ent, const char* userinfo) 
         else
             userinfos[clientnum] = userinfo;
     }
-    cgameinfo.is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
 }
 
@@ -763,10 +774,10 @@ std::vector<std::string> Q2R_GameSupport::entity_tokens;
 size_t Q2R_GameSupport::token_counter = 0;
 void Q2R_GameSupport::SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
     if (entstring) {
-        entity_tokens = util_parse_entstring(entstring);
+        entity_tokens = Util::util_parse_entstring(entstring);
         token_counter = 0;
     }
-    cgameinfo.is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
 }
 

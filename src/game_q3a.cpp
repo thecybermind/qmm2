@@ -17,11 +17,10 @@ Created By:
 #include <string>
 // QMM-specific Q3A header
 #include "game_q3a.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
-
 
 struct Q3A_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
@@ -63,10 +62,10 @@ bool Q3A_GameSupport::AutoDetect(APIType engine_api) {
     if (engine_api != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "quake3") && !str_stristr(gameinfo.exe_file, "q3ded"))
+    if (!Util::str_stristr(QMM::exe_file, "quake3") && !Util::str_stristr(QMM::exe_file, "q3ded"))
         return false;
 
     return true;
@@ -155,8 +154,8 @@ void* Q3A_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-bool Q3A_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_DLLENTRY && modapi != QMM_API_QVM)
+bool Q3A_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_DLLENTRY && mod_api != QMM_API_QVM)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

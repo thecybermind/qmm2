@@ -18,8 +18,8 @@ Created By:
 #include <string>
 // QMM-specific RTCWSP header
 #include "game_rtcwsp.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct RTCWSP_GameSupport : public GameSupport {
@@ -75,14 +75,14 @@ bool RTCWSP_GameSupport::AutoDetect(APIType engineapi) {
         return false;
 
     // check for either dll name
-    if (!str_striequal(gameinfo.qmm_file, iortcw_dllname) && !str_striequal(gameinfo.qmm_file, official_dllname))
+    if (!Util::str_striequal(QMM::qmm_file, iortcw_dllname) && !Util::str_striequal(QMM::qmm_file, official_dllname))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "wolfsp"))
+    if (!Util::str_stristr(QMM::exe_file, "wolfsp"))
         return false;
 
     // loaded in iortcw?
-    if (str_striequal(gameinfo.qmm_file, iortcw_dllname))
+    if (Util::str_striequal(QMM::qmm_file, iortcw_dllname))
         is_iortcw = true;
 
     return true;
@@ -179,8 +179,8 @@ void* RTCWSP_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-bool RTCWSP_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_DLLENTRY)
+bool RTCWSP_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_DLLENTRY)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

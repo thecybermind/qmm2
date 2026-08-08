@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "version.h"
+#include "osdef.h"
 
 #if defined(QMM_ARCH_32)
 
@@ -28,8 +28,8 @@ Created By:
 #include <string>
 // QMM-specific MOHAA header
 #include "game_mohaa.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct MOHAA_GameSupport : public GameSupport {
@@ -83,10 +83,10 @@ bool MOHAA_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "mohaa"))
+    if (!Util::str_stristr(QMM::exe_file, "mohaa"))
         return false;
 
     return true;
@@ -302,7 +302,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         *buffer = '\0';
         cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
         if (cvar)
-            strncpyz(buffer, cvar->string, (size_t)bufsize);
+            Util::strncpyz(buffer, cvar->string, (size_t)bufsize);
         break;
     }
     case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -340,7 +340,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         fileHandle_t* f = (fileHandle_t*)args[1];
         fsMode_t mode = (fsMode_t)args[2];
         if (mode == FS_READ) {
-            std::string path = fmt::format("{}/{}", gameinfo.qmm_dir, qpath);
+            std::string path = fmt::format("{}/{}", QMM::qmm_dir, qpath);
             FILE* fp = fopen(path.c_str(), "rb");
             if (!fp || fseek(fp, 0, SEEK_END) != 0) {
                 ret = -1;
@@ -415,7 +415,7 @@ intptr_t MOHAA_GameSupport::syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }
@@ -528,8 +528,8 @@ void* MOHAA_GameSupport::Entry(void* import, void*, APIType) {
 }
 
 
-bool MOHAA_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_GETGAMEAPI)
+bool MOHAA_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
@@ -986,10 +986,10 @@ std::vector<std::string> MOHAA_GameSupport::entity_tokens;
 size_t MOHAA_GameSupport::token_counter = 0;
 void MOHAA_GameSupport::SpawnEntities(char* entstring, int levelTime) {
     if (entstring) {
-        entity_tokens = util_parse_entstring(entstring);
+        entity_tokens = Util::util_parse_entstring(entstring);
         token_counter = 0;
     }
-    cgameinfo.is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
 }
 

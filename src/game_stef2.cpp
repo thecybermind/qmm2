@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "version.h"
+#include "osdef.h"
 
 #if defined(QMM_ARCH_32)
 
@@ -24,8 +24,8 @@ Created By:
 #include <string>
 // QMM-specific STEF2 header
 #include "game_stef2.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct STEF2_GameSupport : public GameSupport {
@@ -79,10 +79,10 @@ bool STEF2_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "ef"))
+    if (!Util::str_stristr(QMM::exe_file, "ef"))
         return false;
 
     return true;
@@ -474,7 +474,7 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }
@@ -581,8 +581,8 @@ void* STEF2_GameSupport::Entry(void* import, void*, APIType) {
 }
 
 
-bool STEF2_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_GETGAMEAPI)
+bool STEF2_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
@@ -1377,10 +1377,10 @@ std::vector<std::string> STEF2_GameSupport::entity_tokens;
 size_t STEF2_GameSupport::token_counter = 0;
 void STEF2_GameSupport::SpawnEntities(const char* mapname, const char* entstring, int levelTime) {
     if (entstring) {
-        entity_tokens = util_parse_entstring(entstring);
+        entity_tokens = Util::util_parse_entstring(entstring);
         token_counter = 0;
     }
-    cgameinfo.is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, levelTime);
 }
 

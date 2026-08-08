@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "version.h"
+#include "osdef.h"
 
 #if defined(QMM_ARCH_32)
 
@@ -20,7 +20,6 @@ Created By:
 #include <string>
 // QMM-specific COD11MP header
 #include "game_cod11mp.h"
-
 
 struct COD11MP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
@@ -138,8 +137,8 @@ void* COD11MP_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-bool COD11MP_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_DLLENTRY)
+bool COD11MP_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_DLLENTRY)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

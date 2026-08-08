@@ -19,8 +19,8 @@ Created By:
 #include <string>
 // QMM-specific JASP header
 #include "game_jasp.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct JASP_GameSupport : public GameSupport {
@@ -75,10 +75,10 @@ bool JASP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "jasp") && !str_stristr(gameinfo.exe_file, "openjk_sp"))
+    if (!Util::str_stristr(QMM::exe_file, "jasp") && !Util::str_stristr(QMM::exe_file, "openjk_sp"))
         return false;
 
     return true;
@@ -274,7 +274,7 @@ intptr_t JASP_GameSupport::syscall(intptr_t cmd, ...) {
         const char* entstring = orig_import.SetActiveSubBSP((int)active_subbsp);
         // if it returns an entstring (-1 won't), parse it
         if (active_subbsp != -1 && entstring) {
-            subbsp_entity_tokens[active_subbsp] = util_parse_entstring(entstring);
+            subbsp_entity_tokens[active_subbsp] = Util::util_parse_entstring(entstring);
             token_counter[active_subbsp] = 0;
         }
         ret = (intptr_t)entstring;
@@ -297,7 +297,7 @@ intptr_t JASP_GameSupport::syscall(intptr_t cmd, ...) {
         intptr_t bufferSize = args[1];
 
         // write current token into the buffer and increment token counter
-        strncpyz(buffer, tokens[tokencount++].c_str(), (size_t)bufferSize);
+        Util::strncpyz(buffer, tokens[tokencount++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }
@@ -397,8 +397,8 @@ void* JASP_GameSupport::Entry(void* import, void*, APIType) {
 }
 
 
-bool JASP_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_GETGAMEAPI)
+bool JASP_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
@@ -762,10 +762,10 @@ std::map<intptr_t, size_t> JASP_GameSupport::token_counter;
 intptr_t JASP_GameSupport::active_subbsp = -1;
 void JASP_GameSupport::Init(const char* mapname, const char* spawntarget, int checkSum, const char* entstring, int levelTime, int randomSeed, int globalTime, SavedGameJustLoaded_e eSavedGameJustLoaded, qboolean qbLoadTransition) {
     if (entstring) {
-        subbsp_entity_tokens[-1] = util_parse_entstring(entstring);
+        subbsp_entity_tokens[-1] = Util::util_parse_entstring(entstring);
         token_counter[-1] = 0;
     }
-    cgameinfo.is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
 }
 

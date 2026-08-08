@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "version.h"
+#include "osdef.h"
 
 #if defined(QMM_ARCH_32)
 
@@ -27,8 +27,8 @@ Created By:
 #include <string>
 // QMM-specific MOHBT header
 #include "game_mohbt.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct MOHBT_GameSupport : public GameSupport {
@@ -82,10 +82,10 @@ bool MOHBT_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_GETGAMEAPI)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "break"))
+    if (!Util::str_stristr(QMM::exe_file, "break"))
         return false;
 
     return true;
@@ -308,7 +308,7 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
         *buffer = '\0';
         cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
         if (cvar)
-            strncpyz(buffer, cvar->string, (size_t)bufsize);
+            Util::strncpyz(buffer, cvar->string, (size_t)bufsize);
         break;
     }
     case G_CVAR_VARIABLE_INTEGER_VALUE: {
@@ -353,9 +353,9 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
             str_mode = "wb";
         else if (mode == FS_APPEND)
             str_mode = "ab";
-        std::string path = fmt::format("{}/{}", gameinfo.qmm_dir, qpath);
+        std::string path = fmt::format("{}/{}", QMM::qmm_dir, qpath);
         if (mode != FS_READ)
-            path_mkdir(path_dirname(path));
+            Util::path_mkdir(Util::path_dirname(path));
         FILE* fp = fopen(path.c_str(), str_mode);
         if (!fp) {
             ret = -1;
@@ -444,7 +444,7 @@ intptr_t MOHBT_GameSupport::syscall(intptr_t cmd, ...) {
         char* buffer = (char*)args[0];
         intptr_t bufferSize = args[1];
 
-        strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
         ret = qtrue;
         break;
     }
@@ -557,8 +557,8 @@ void* MOHBT_GameSupport::Entry(void* import, void*, APIType) {
 }
 
 
-bool MOHBT_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_GETGAMEAPI)
+bool MOHBT_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_GETGAMEAPI)
         return false;
 
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
@@ -1030,10 +1030,10 @@ std::vector<std::string> MOHBT_GameSupport::entity_tokens;
 size_t MOHBT_GameSupport::token_counter = 0;
 void MOHBT_GameSupport::SpawnEntities(char* entstring, int levelTime) {
     if (entstring) {
-        entity_tokens = util_parse_entstring(entstring);
+        entity_tokens = Util::util_parse_entstring(entstring);
         token_counter = 0;
     }
-    cgameinfo.is_from_QMM = true;
+    QMM::CGame::is_from_QMM = true;
     (void)::vmMain(GAME_SPAWN_ENTITIES, entstring, levelTime);
 }
 

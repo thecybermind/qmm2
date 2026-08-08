@@ -9,7 +9,7 @@ Created By:
 
 */
 
-#include "version.h"
+#include "osdef.h"
 
 #if defined(QMM_ARCH_32)
 
@@ -21,9 +21,9 @@ Created By:
 #include <string>
 // QMM-specific STVOYHM header
 #include "game_stvoyhm.h"
-#include "gameinfo.hpp"
+#include "qmm.hpp"
 #include "mod.hpp"      // g_mod
-#include "main.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct STVOYHM_GameSupport : public GameSupport {
@@ -66,10 +66,10 @@ bool STVOYHM_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "stvoyhm"))
+    if (!Util::str_stristr(QMM::exe_file, "stvoyhm"))
         return false;
 
     return true;
@@ -159,8 +159,8 @@ void* STVOYHM_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-bool STVOYHM_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_DLLENTRY && modapi != QMM_API_QVM)
+bool STVOYHM_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_DLLENTRY && mod_api != QMM_API_QVM)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

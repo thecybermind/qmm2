@@ -17,8 +17,8 @@ Created By:
 #include <string>
 // QMM-specific WET header
 #include "game_wet.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct WET_GameSupport : public GameSupport {
@@ -58,10 +58,10 @@ bool WET_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "et"))
+    if (!Util::str_stristr(QMM::exe_file, "et"))
         return false;
 
     return true;
@@ -146,8 +146,8 @@ void* WET_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-bool WET_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_DLLENTRY)
+bool WET_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_DLLENTRY)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;

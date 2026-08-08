@@ -17,11 +17,10 @@ Created By:
 #include <string>
 // QMM-specific JK2MP header
 #include "game_jk2mp.h"
-#include "gameinfo.hpp"
-#include "main.hpp"
+#include "qmm.hpp"
+#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
-
 
 struct JK2MP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
@@ -63,10 +62,10 @@ bool JK2MP_GameSupport::AutoDetect(APIType engineapi) {
     if (engineapi != QMM_API_DLLENTRY)
         return false;
 
-    if (!str_striequal(gameinfo.qmm_file, DefaultDLLName()))
+    if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!str_stristr(gameinfo.exe_file, "jk2mp") && !str_stristr(gameinfo.exe_file, "jk2ded"))
+    if (!Util::str_stristr(QMM::exe_file, "jk2mp") && !Util::str_stristr(QMM::exe_file, "jk2ded"))
         return false;
 
     return true;
@@ -168,8 +167,8 @@ void* JK2MP_GameSupport::Entry(void* syscall, void*, APIType) {
 }
 
 
-bool JK2MP_GameSupport::ModLoad(void* entry, APIType modapi) {
-    if (modapi != QMM_API_DLLENTRY && modapi != QMM_API_QVM)
+bool JK2MP_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_DLLENTRY && mod_api != QMM_API_QVM)
         return false;
 
     orig_vmMain = (mod_vmMain)entry;
