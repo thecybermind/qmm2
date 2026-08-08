@@ -41,8 +41,8 @@ OBJ_DBG_32 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_32)/%.o) $(SRC_C:$(SRC_DI
 OBJ_DBG_64 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_64)/%.o) $(SRC_C:$(SRC_DIR)/%.c=$(OBJ_DIR_DBG_64)/%.o)
 
 CPPFLAGS  := -MMD -MP -I ./include -isystem ../qmm_sdks
-CFLAGS   := -Wall -pipe -fPIC -std=gnu17
-CXXFLAGS := -Wall -pipe -fPIC -std=c++17
+CFLAGS   := -Wall -pipe -fPIC -std=gnu17 -fsanitize=undefined -fsanitize=address
+CXXFLAGS := -Wall -pipe -fPIC -std=c++17 -fsanitize=undefined -fsanitize=address
 LDFLAGS  := -shared -fPIC
 LDLIBS   :=
 
