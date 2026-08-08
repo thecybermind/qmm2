@@ -106,7 +106,7 @@ namespace QMM {
 
         Log::log_init(fmt::format("{}/qmm2.log", qmm_dir));
 
-        QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") (" << APIType_Function(engine) << ") loaded!\n";
+        QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")] (" << APIType_Function(engine) << ") loaded!\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "QMM path: \"" << qmm_path << "\"\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "Engine path: \"" << exe_path << "\"\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "Mod directory (?): \"" << mod_dir << "\"\n";

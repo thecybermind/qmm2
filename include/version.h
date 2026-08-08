@@ -36,9 +36,9 @@ Created By:
 #define QMM_URL         "https://github.com/thecybermind/qmm2/"
 
 #if defined(QMM_OS_WINDOWS)
- #define QMM_OS			"Windows"
+ #define QMM_OS "Windows"
 #elif defined(QMM_OS_LINUX)
- #define QMM_OS			"Linux"
+ #define QMM_OS "Linux"
 #else
  #error Unknown OS
 #endif
@@ -49,6 +49,14 @@ Created By:
  #define QMM_ARCH "x86"
 #else
  #error Unknown Arch
+#endif
+
+#if defined(_DEBUG)
+ #define QMM_BUILD "Debug"
+#elif defined(NDEBUG)
+ #define QMM_BUILD "Release"
+#else
+ #define QMM_BUILD "Unknown"
 #endif
 
 // Comma-separated DWORD form of version for qmm2.rc

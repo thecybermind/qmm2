@@ -220,7 +220,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
             },
             Log::CONSOLE_SEVERITY);
 
-        QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") initializing\n";
+        QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")] initializing\n";
 
         // get mod dir from engine
         char moddir[256];
@@ -381,7 +381,7 @@ static void HandleQMMCommand(intptr_t arg_start) {
         QMM::ArgV(arg_start + 2, arg2, sizeof(arg2));
 
     if (Util::str_striequal("status", arg1) || Util::str_striequal("info", arg1)) {
-        CONSOLE_PRINT ("(QMM) QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ")\n");
+        CONSOLE_PRINT ("(QMM) QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")]\n");
         CONSOLE_PRINTF("(QMM) Game       : {}/\"{}\" ({}) (Source: {})\n", QMM::game->GameCode(), QMM::game->GameName(), APIType_Function(QMM::api), QMM::is_auto_detected ? "Auto-detected" : "Config file");
         CONSOLE_PRINTF("(QMM) ModDir     : {}\n", QMM::mod_dir);
         CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", QMM::cfg_path, g_cfg.empty() ? "(error)" : "");
