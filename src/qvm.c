@@ -98,13 +98,15 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
         goto fail;
     }
     if (header.codeoffset < sizeof(header) ||
-        header.codeoffset > filesize ||
+        header.codeoffset >= filesize ||
+        !header.codelen ||
         header.codeoffset + header.codelen > filesize) {
         log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: code offset/length has invalid value\n");
         goto fail;
     }
     if (header.dataoffset < sizeof(header) ||
-        header.dataoffset > filesize ||
+        header.dataoffset >= filesize ||
+        !header.datalen ||
         header.dataoffset + header.datalen + header.litlen > filesize) {
         log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: data offset/length has invalid value\n");
         goto fail;
@@ -672,8 +674,9 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
 
             uint8_t* src = datasegment + srci;
             uint8_t* dst = datasegment + dsti;
-
-            memcpy(dst, src, count);
+            
+            if (dst && src && count)
+                memcpy(dst, src, count);
 
             break;
         }
@@ -913,7 +916,7 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
     }
 
     // get memory back out
-    if (out)
+    if (out && size)
         memcpy(out, vm->datasegment + ptr, size);
 
     // if this ptr was not the most recently-allocated block, do not modify hunkptr
