@@ -576,6 +576,8 @@ int Q3A_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
     case G_MEMCPY:				// (void* dest, const void* src, size_t count)
     case G_STRNCPY:				// (char* strDest, const char* strSource, size_t count)
         qmm_syscall(cmd, VMPTR(0), VMPTR(1), VMARG(2));
+        // memcpy and strncpy should return the first arg. the engine does, but it will be the real dest pointer.
+        // instead of adjusting a return value, just manually return args[0]
         ret = args[0];
         break;
     case G_FS_READ:				// (void* buffer, int len, fileHandle_t f);
