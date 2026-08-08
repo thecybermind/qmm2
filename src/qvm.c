@@ -16,7 +16,9 @@ Created By:
 #include <malloc.h>
 #include <string.h>     // memcpy and memset
 #include <stdio.h>
+#if defined(_DEBUG)
 #include <time.h>       // struct timespec and timespec_get
+#endif
 #include "qvm.h"
 
 #ifdef QMM_LOGGING
