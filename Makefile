@@ -41,8 +41,8 @@ OBJ_DBG_32 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_32)/%.o) $(SRC_C:$(SRC_DI
 OBJ_DBG_64 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_64)/%.o) $(SRC_C:$(SRC_DIR)/%.c=$(OBJ_DIR_DBG_64)/%.o)
 
 CPPFLAGS  := -MMD -MP -I ./include -isystem ../qmm_sdks
-CFLAGS   := -Wall -pipe -fPIC -std=gnu17 -fsanitize=undefined -fsanitize=address
-CXXFLAGS := -Wall -pipe -fPIC -std=c++17 -fsanitize=undefined -fsanitize=address
+CFLAGS   := -Wall -pipe -fPIC -std=gnu17
+CXXFLAGS := -Wall -pipe -fPIC -std=c++17
 LDFLAGS  := -shared -fPIC
 LDLIBS   :=
 
@@ -51,13 +51,13 @@ DBG_CPPFLAGS := $(CPPFLAGS) -D_DEBUG
 
 REL_CFLAGS_32 := $(CFLAGS) -m32 -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
 REL_CFLAGS_64 := $(CFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
-DBG_CFLAGS_32 := $(CFLAGS) -m32 -g -pg
-DBG_CFLAGS_64 := $(CFLAGS) -g -pg
+DBG_CFLAGS_32 := $(CFLAGS) -m32 -g -pg -fsanitize=undefined -fsanitize=address
+DBG_CFLAGS_64 := $(CFLAGS) -g -pg -fsanitize=undefined -fsanitize=address
 
 REL_CXXFLAGS_32 := $(CXXFLAGS) -m32 -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
 REL_CXXFLAGS_64 := $(CXXFLAGS) -O2 -ffast-math -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
-DBG_CXXFLAGS_32 := $(CXXFLAGS) -m32 -g -pg
-DBG_CXXFLAGS_64 := $(CXXFLAGS) -g -pg
+DBG_CXXFLAGS_32 := $(CXXFLAGS) -m32 -g -pg -fsanitize=undefined -fsanitize=address
+DBG_CXXFLAGS_64 := $(CXXFLAGS) -g -pg -fsanitize=undefined -fsanitize=address
 
 REL_LDFLAGS_32 := $(LDFLAGS) -m32
 REL_LDFLAGS_64 := $(LDFLAGS)
