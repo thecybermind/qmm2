@@ -35,12 +35,14 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall);
 * function pointers back to the engine.
 * To best integrate this with QMM, game_xyz.cpp/.h create an enum for each import (syscall) and export (vmMain)
 * function/variable.
-* A game_export_t is given to the engine which has lambdas for each pointer that calls QMM's vmMain(enum, ...).
-* A game_import_t is given to the mod which has lambdas for each pointer that calls QMM's syscall(enum, ...).
+* A game_export_t is given to the engine which has lambdas for each function pointer that calls QMM's
+* vmMain_args(enum, args).
+* A game_import_t is given to the mod which has lambdas for each function pointer that calls QMM's
+* syscall_args(enum, args).
 *
 * The original import/export tables are stored. When QMM and plugins need to call the mod or engine,
-* QMM::game.vmMain or QMM::game.syscall point to game-specific functions which will take the cmd, and route to
-* the proper function pointer in the struct.
+* QMM::game->vmMain_args or QMM::game->syscall_args point to game-specific functions which will take the cmd, and
+* route to the proper function pointer in the struct.
 *
 * The SOF2SP engine passes an apiversion as the first arg, and import is the second arg.
 *
@@ -88,19 +90,21 @@ C_DLLEXPORT void* GetCGameAPI(void* import);
 * @brief Entry point: engine->qmm
 *
 * This is the "vmMain" function called by the engine as an entry point into the mod. First thing, we check if the
-* game info is not stored. This means that the engine could not be determined, so we fail with G_ERROR and tell the
-* user to set the game in the config file. If the engine was determined, it performs some internal tasks on a few
-* events, and then routes the function call to plugins and to the mod.
+* cgame system has stored a syscall pointer. If it has, it means that this is a call for the cgame system: the
+* game_import_t struct returned to the engine is filled with lambdas that call QMM::vmMain_args. Next, we check if
+* the game engine could not be determined. If so, we fail with G_ERROR and tell the user to set the game in the
+* config file. If the engine was determined, routes the function call to QMM::vmMain_args which subsequently calls
+* plugins and the mod.
 * 
-* For GetGameAPI games, the functions in the game_import_t struct passed to the engine call this function.
+* For GetGameAPI games, the functions in the game_import_t struct passed to the engine call QMM::vmMain_args.
 *
-* The internal events we track:
+* The events that QMM listens for to perform some tasks:
 * 
 * GAME_INIT (pre): load mod file, load plugins, and optionally execute a cfg file
 * 
 * GAME_CONSOLE_COMMAND (pre): handle "qmm" server command
 * 
-* GAME_SHUTDOWN (post): handle game shutting down
+* GAME_SHUTDOWN (post): unload plugins and mod file
 *
 * @param cmd Mod function to perform
 * @param ... cmd-specific arguments
@@ -112,9 +116,9 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
 * @brief Entry point: mod->qmm
 *
 * This is the "syscall" function called by the mod as a way to pass info to or get info from the engine.
-* It routes the function call to plugins and to the engine.
+* It routes the function call to QMM::syscall_args which subsequently calls plugins and the engine.
 * 
-* For GetGameAPI games, the functions in the game_export_t struct passed to the mod call this function.
+* For GetGameAPI games, the functions in the game_export_t struct returned to the mod call QMM::syscall_args.
 * 
 * Named qmm_syscall to avoid conflict with POSIX syscall function.
 *

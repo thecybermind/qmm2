@@ -234,7 +234,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
     mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(dll, "GetCGameAPI");
 
     // return CGame export from mod DLL
-    // note we do not unload the DLL
+    // TODO: in game_q2r.cpp, hook actual structs and unload after cgame->Shutdown
     return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
 }
 #endif // QMM_OS_WINDOWS && QMM_ARCH_64

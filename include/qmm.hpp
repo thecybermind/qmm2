@@ -102,7 +102,7 @@ namespace QMM {
     void ArgV(intptr_t argn, char* buf, intptr_t buflen);
 
     /**
-    * @brief Handle vmMain call using int* args
+    * @brief Handle vmMain call using intptr_t* args. 
     * 
     * @param cmd Mod function to perform
     * @param args Array of cmd-specific arguments
@@ -111,7 +111,7 @@ namespace QMM {
     intptr_t vmMain_args(intptr_t cmd, intptr_t* args);
 
     /**
-    * @brief Handle syscall call using int* args
+    * @brief Handle syscall call using intptr_t* args
     * 
     * @param cmd Engine function to perform
     * @param args Array of cmd-specific arguments

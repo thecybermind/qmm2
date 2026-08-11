@@ -334,7 +334,7 @@ extern std::vector<GameSupport*> api_supportedgames;
 // ----- GetGameAPI stuff -----
 // ----------------------------
 
-// Cast a ROUTE_IMPORt/ROUTE_EXPORT argument from intptr_t to float.
+// Cast a ROUTE_IMPORT/ROUTE_EXPORT argument from intptr_t to float.
 // TODO: Eventually this should be replaced by dynamic argument grabbing based on the cmd enum.
 #define FLOAT_CAST	horrible_cast<float>
 
