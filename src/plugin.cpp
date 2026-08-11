@@ -111,14 +111,14 @@ static plugin_vars s_pluginvars = {
 // Wrapper syscall function to pass to plugins
 static intptr_t s_plugin_game_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
-    return QMM::game->syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+    return QMM::game->syscall_args(cmd, args);
 }
 
 
 // Wrapper vmMain function to pass to plugins
 static intptr_t s_plugin_game_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
-    return QMM::game->vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    return QMM::game->vmMain_args(cmd, args);
 }
 
 

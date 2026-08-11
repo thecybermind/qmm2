@@ -20,7 +20,6 @@ Created By:
 // QMM-specific JASP header
 #include "game_jasp.h"
 #include "qmm.hpp"
-#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct JASP_GameSupport : public GameSupport {
@@ -33,8 +32,8 @@ struct JASP_GameSupport : public GameSupport {
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-    virtual intptr_t syscall(intptr_t, ...);
-    virtual intptr_t vmMain(intptr_t, ...);
+    virtual intptr_t syscall_args(intptr_t, intptr_t* args);
+    virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
 
     virtual const char* DefaultDLLName() { return "jagame" MOD_DLL; }
     virtual const char* DefaultModDir() { return "."; }
@@ -87,12 +86,9 @@ bool JASP_GameSupport::AutoDetect(APIType engineapi) {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t JASP_GameSupport::syscall(intptr_t cmd, ...) {
-    QMM_GET_SYSCALL_ARGS();
-
+intptr_t JASP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "JASP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
-
 
     // update export vars before calling into the engine
     update_exports();
@@ -211,7 +207,7 @@ intptr_t JASP_GameSupport::syscall(intptr_t cmd, ...) {
         ROUTE_IMPORT(G2API_SetRagDoll, G_G2API_SETRAGDOLL);
         ROUTE_IMPORT(G2API_AnimateG2Models, G_G2API_ANIMATEG2MODELS);
         ROUTE_IMPORT(G2API_RagPCJConstraint, G_G2API_RAGPCJCONSTRAINT);
-        ROUTE_IMPORT_3(G2API_RagPCJGradientSpeed, G_G2API_RAGPCJGRADIENTSPEED, CGhoul2Info_v&, const char*, FLOAT_CAST);
+        ROUTE_IMPORT_3(G2API_RagPCJGradientSpeed, G_G2API_RAGPCJGRADIENTSPEED, CGhoul2Info_v*, const char*, FLOAT_CAST);
         ROUTE_IMPORT(G2API_RagEffectorGoal, G_G2API_RAGEFFECTORGOAL);
         ROUTE_IMPORT(G2API_GetRagBonePos, G_G2API_GETRAGBONEPOS);
         ROUTE_IMPORT(G2API_RagEffectorKick, G_G2API_RAGEFFECTORKICK);
@@ -330,9 +326,7 @@ intptr_t JASP_GameSupport::syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t JASP_GameSupport::vmMain(intptr_t cmd, ...) {
-    QMM_GET_VMMAIN_ARGS();
-
+intptr_t JASP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "JASP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_export)
@@ -607,7 +601,8 @@ void JASP_GameSupport::update_exports() {
     if (changed) {
         // this will trigger this message to be fired to plugins, and then it will be handled
         // by the empty "case G_LOCATE_GAME_DATA" in syscall
-        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, nullptr, 0);
+        intptr_t args[] = { (intptr_t)qmm_export.gentities, qmm_export.num_entities, (intptr_t)qmm_export.gentitySize, (intptr_t)nullptr, 0 };
+        (void)QMM::syscall_args(G_LOCATE_GAME_DATA, args);
     }
 }
 
@@ -731,7 +726,7 @@ game_import_t JASP_GameSupport::qmm_import = {
         GEN_IMPORT(G2API_SetRagDoll, G_G2API_SETRAGDOLL),
         GEN_IMPORT(G2API_AnimateG2Models, G_G2API_ANIMATEG2MODELS),
         GEN_IMPORT(G2API_RagPCJConstraint, G_G2API_RAGPCJCONSTRAINT),
-        GEN_IMPORT_3(G2API_RagPCJGradientSpeed, G_G2API_RAGPCJGRADIENTSPEED, qboolean, CGhoul2Info_v&, const char*, float),
+        GEN_IMPORT_3(G2API_RagPCJGradientSpeed, G_G2API_RAGPCJGRADIENTSPEED, qboolean, CGhoul2Info_v*, const char*, float),
         GEN_IMPORT(G2API_RagEffectorGoal, G_G2API_RAGEFFECTORGOAL),
         GEN_IMPORT(G2API_GetRagBonePos, G_G2API_GETRAGBONEPOS),
         GEN_IMPORT(G2API_RagEffectorKick, G_G2API_RAGEFFECTORKICK),
@@ -765,8 +760,8 @@ void JASP_GameSupport::Init(const char* mapname, const char* spawntarget, int ch
         subbsp_entity_tokens[-1] = Util::util_parse_entstring(entstring);
         token_counter[-1] = 0;
     }
-    QMM::CGame::is_from_QMM = true;
-    (void)::vmMain(GAME_INIT, mapname, spawntarget, checkSum, entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition);
+    intptr_t args[] = { (intptr_t)mapname, (intptr_t)spawntarget, checkSum, (intptr_t)entstring, levelTime, randomSeed, globalTime, eSavedGameJustLoaded, qbLoadTransition };
+    (void)QMM::vmMain_args(GAME_INIT, args);
 }
 
 

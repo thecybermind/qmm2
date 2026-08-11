@@ -28,7 +28,6 @@ Created By:
 // QMM-specific Q2R header
 #include "game_q2r.h"
 #include "qmm.hpp"
-#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct Q2R_GameSupport : public GameSupport {
@@ -41,8 +40,8 @@ struct Q2R_GameSupport : public GameSupport {
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-    virtual intptr_t syscall(intptr_t, ...);
-    virtual intptr_t vmMain(intptr_t, ...);
+    virtual intptr_t syscall_args(intptr_t, intptr_t* args);
+    virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
 
     virtual const char* DefaultDLLName() { return "game_" X64_DLL; }
     virtual const char* DefaultModDir() { return "baseq2"; }
@@ -102,9 +101,7 @@ bool Q2R_GameSupport::AutoDetect(APIType engineapi) {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
-    QMM_GET_SYSCALL_ARGS();
-
+intptr_t Q2R_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2R_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
@@ -354,9 +351,7 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t Q2R_GameSupport::vmMain(intptr_t cmd, ...) {
-    QMM_GET_VMMAIN_ARGS();
-
+intptr_t Q2R_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2R_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_export)
@@ -630,8 +625,9 @@ void Q2R_GameSupport::update_exports() {
 
     if (changed) {
         // this will trigger this message to be fired to plugins, and then it will be handled
-        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
-        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, nullptr, 0);
+        // by the empty "case G_LOCATE_GAME_DATA" in syscall
+        intptr_t args[] = { (intptr_t)qmm_export.edicts, qmm_export.num_edicts, (intptr_t)qmm_export.edict_size, (intptr_t)nullptr, 0 };
+        (void)QMM::syscall_args(G_LOCATE_GAME_DATA, args);
     }
 }
 
@@ -737,6 +733,19 @@ game_import_t Q2R_GameSupport::qmm_import = {
 };
 
 
+std::vector<std::string> Q2R_GameSupport::entity_tokens;
+size_t Q2R_GameSupport::token_counter = 0;
+void Q2R_GameSupport::SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
+    if (entstring) {
+        entity_tokens = Util::util_parse_entstring(entstring);
+        token_counter = 0;
+    }
+
+    intptr_t args[] = { (intptr_t)mapname, (intptr_t)entstring, (intptr_t)spawnpoint };
+    (void)QMM::vmMain_args(GAME_SPAWN_ENTITIES, args);
+}
+
+
 std::map<intptr_t, std::string> Q2R_GameSupport::userinfos;
 bool Q2R_GameSupport::ClientConnect(edict_t* ent, char* userinfo, const char* social_id, bool isBot) {
     // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
@@ -749,8 +758,9 @@ bool Q2R_GameSupport::ClientConnect(edict_t* ent, char* userinfo, const char* so
         else
             userinfos[clientnum] = userinfo;
     }
-    QMM::CGame::is_from_QMM = true;
-    return (bool)::vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
+
+    intptr_t args[] = { (intptr_t)ent, (intptr_t)userinfo, (intptr_t)social_id, isBot };
+    return (bool)QMM::vmMain_args(GAME_CLIENT_CONNECT, args);
 }
 
 
@@ -765,20 +775,8 @@ void Q2R_GameSupport::ClientUserinfoChanged(edict_t* ent, const char* userinfo) 
         else
             userinfos[clientnum] = userinfo;
     }
-    QMM::CGame::is_from_QMM = true;
-    (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
-}
-
-
-std::vector<std::string> Q2R_GameSupport::entity_tokens;
-size_t Q2R_GameSupport::token_counter = 0;
-void Q2R_GameSupport::SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
-    if (entstring) {
-        entity_tokens = Util::util_parse_entstring(entstring);
-        token_counter = 0;
-    }
-    QMM::CGame::is_from_QMM = true;
-    (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
+    intptr_t args[] = { (intptr_t)ent, (intptr_t)userinfo };
+    (void)QMM::vmMain_args(GAME_CLIENT_USERINFO_CHANGED, args);
 }
 
 
