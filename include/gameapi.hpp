@@ -246,6 +246,15 @@ struct GameSupport {
     * @brief Game-specific code to call into the mod with given cmd and arguments.
     *
     * @param cmd Mod function
+    * @param ... Mod arguments
+    * @return Mod function return value
+    */
+    virtual intptr_t vmMain(intptr_t cmd, ...) { QMM_GET_VMMAIN_ARGS(); return this->vmMain_args(cmd, args); }
+
+    /**
+    * @brief Game-specific code to call into the mod with given cmd and arguments.
+    *
+    * @param cmd Mod function
     * @param args Array of mod arguments
     * @return Mod function return value
     */
