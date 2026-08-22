@@ -42,17 +42,14 @@ namespace QMM {
            variable is used to store the syscall pointer if dllEntry is called after QMM was already loaded from
            GetGameAPI. Then, dllEntry exits.
 
-           Next, the "QMM::CGame::is_from_QMM" bool is used to flag incoming calls to vmMain as coming from a
-           game-specific GetGameAPI vmMain wrapper struct (i.e. qmm_export) meaning the call actually came from the
-           game system (as opposed to cgame). This flag is set in the GEN_EXPORT macros and all of the custom static
-           polyfill functions that route to vmMain. It is set back to false immediately after checking and handling
-           passthrough calls.
+           Next, since all real game calls come through QMM::vmMain_args, we know that any call to vmMain while
+           "QMM::CGame::syscall" is set means it should be passed to the cgame.
 
            Next, when the GAME_INIT event comes through, and we load the actual mod DLL, we also check to see if
            "QMM::CGame::syscall" is set. If it is, we look for "dllEntry" in the DLL, and pass "QMM::CGame::syscall"
            to it. Next, we look for "vmMain" in the DLL and then store it in the "QMM::CGame::vmMain" pointer.
 
-           Whenever control enters vmMain and "QMM::CGame::is_from_QMM" is false (meaning it was called directly by
+           Whenever control enters vmMain and "QMM::CGame::syscall" is set (meaning it was called directly by
            the engine for the cgame system), it routes the call to the mod's vmMain stored in "QMM::CGame::vmMain".
 
            The final piece is that single player games shutdown and init the DLL a lot, particularly at every new
@@ -65,7 +62,6 @@ namespace QMM {
 
         eng_syscall syscall = nullptr;
         mod_vmMain vmMain = nullptr;
-        bool is_from_QMM = false;
         bool is_shutdown = false;
     }
 
@@ -106,7 +102,7 @@ namespace QMM {
 
         Log::log_init(fmt::format("{}/qmm2.log", qmm_dir));
 
-        QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " (" QMM_OS " " QMM_ARCH ") (" << APIType_Function(engine) << ") loaded!\n";
+        QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")] (" << APIType_Function(engine) << ") loaded!\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "QMM path: \"" << qmm_path << "\"\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "Engine path: \"" << exe_path << "\"\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "Mod directory (?): \"" << mod_dir << "\"\n";
@@ -387,9 +383,9 @@ namespace QMM {
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) called\n";
 
             if (is_syscall)
-                real_ret = gamesupport->syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+                real_ret = gamesupport->syscall_args(cmd, args);
             else
-                real_ret = gamesupport->vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+                real_ret = gamesupport->vmMain_args(cmd, args);
 
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) returning " << real_ret << "\n";
         }
@@ -445,9 +441,284 @@ namespace QMM {
         // void trap_Argv(int argn, char* buffer, int bufferSize);
         // some games don't return pointers because of QVM interaction, so if this returns anything but null
         // (or true?), we probably are in an api game, and need to get the arg from the return value instead
-        intptr_t ret = QMM::game->syscall(QMM::game->QMMEngMsg(QMM_G_ARGV), argn, buf, buflen);
+        intptr_t args[] = { argn, (intptr_t)buf, buflen };
+        intptr_t ret = QMM::game->syscall_args(QMM::game->QMMEngMsg(QMM_G_ARGV), args);
         if (ret > 1)
             Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
+    }
+
+
+    intptr_t vmMain_args(intptr_t cmd, intptr_t* args) {
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "vmMain(" << QMM::game->ModMsgName(cmd) << "(" << cmd << ")) called\n";
+
+        if (cmd == QMM::msg_GAME_INIT) {
+            // initialize our polyfill milliseconds tracker so that now is 0
+            (void)Util::util_get_milliseconds();
+
+            // add engine G_PRINT logger (info level and above)
+            Log::log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
+                ENG_SYSCALL(QMM::msg_G_PRINT, Log::log_format(metadata, message, false).c_str());
+                },
+                Log::CONSOLE_SEVERITY);
+
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")] initializing\n";
+
+            // get mod dir from engine
+            char moddir[256];
+            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), QMM::game->ModCvar(), moddir, sizeof(moddir));
+            moddir[sizeof(moddir) - 1] = '\0';
+            QMM::mod_dir = moddir;
+            // the default mod (including all singleplayer games) returns "" for the fs_game, so grab the default mod dir from game info instead
+            if (QMM::mod_dir.empty())
+                QMM::mod_dir = QMM::game->DefaultModDir();
+
+            QMMLOG(QMM_LOG_INFO, "QMM") << "Game: " << QMM::game->GameCode() << "/\"" << QMM::game->GameName() << "\" (Source: " << (QMM::is_auto_detected ? "Auto-detected" : "Config file") << ")\n";
+            QMMLOG(QMM_LOG_INFO, "QMM") << "ModDir: " << QMM::mod_dir << "\n";
+            QMMLOG(QMM_LOG_INFO, "QMM") << "Config file: \"" << QMM::cfg_path << "\" " << (g_cfg.is_discarded() ? "(error)" : "") << "\n";
+
+            QMMLOG(QMM_LOG_INFO, "QMM") << "Built: " QMM_COMPILE " by " QMM_BUILDER "\n";
+            QMMLOG(QMM_LOG_INFO, "QMM") << "URL: " QMM_URL "\n";
+
+            // create qmm_version cvar
+            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
+
+            // load mod
+            std::string cfg_mod = Config::cfg_get_string(g_cfg, "mod", "auto");
+            // check command line arguments for a mod filename
+            cfg_mod = Util::util_get_cmdline_arg("--qmm_mod", cfg_mod);
+            if (!QMM::LoadMod(cfg_mod)) {
+                if (!QMM::is_shutdown) {
+                    QMM::is_shutdown = true;
+                    QMMLOG(QMM_LOG_FATAL, "QMM") << "QMM was unable to load the mod file using \"" << cfg_mod << "\". Please set the \"mod\" option in qmm2.json. Refer to the documentation for more information.\n";
+                    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ERROR), "\nFatal QMM Error:\nQMM was unable to load the mod file.\nPlease set the \"mod\" option in qmm2.json.\nRefer to the documentation for more information.\n");
+                }
+                return 0;
+            }
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << APIType_Function(g_mod.api) << " mod \"" << g_mod.path << "\"\n";
+
+            // cgame passthrough hack:
+            // mod DLL is loaded, so find the vmMain and dllEntry functions and call dllEntry.
+            // JASP+JK2SP's cgame dllEntry functions actually call into the syscall almost immediately,
+            // so make sure we store vmMain first in case there's some re-entrancy
+            if (QMM::CGame::syscall) {
+                QMM::CGame::vmMain = (mod_vmMain)Util::dll_symbol(g_mod.dll, "vmMain");
+                QMMLOG(QMM_LOG_DEBUG, "QMM") << "Storing cgame vmMain = " << QMM::CGame::vmMain << "\n";
+
+                // pass original cgame syscall to dllEntry in mod
+                mod_dllEntry pfndllEntry = (mod_dllEntry)Util::dll_symbol(g_mod.dll, "dllEntry");
+                QMMLOG(QMM_LOG_DEBUG, "QMM") << "Passing cgame syscall to dllEntry = " << pfndllEntry << "\n";
+                pfndllEntry(QMM::CGame::syscall);
+            }
+
+            // load plugins
+            QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
+            for (std::string& plugin_path : Config::cfg_get_array_str(g_cfg, "plugins")) {
+                QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
+                if (QMM::LoadPlugin(plugin_path)) {
+                    QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" loaded\n";
+                }
+                else {
+                    QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" not loaded\n";
+                }
+            }
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << g_plugins.size() << " plugin(s)\n";
+
+            // exec the qmmexec cfg
+            std::string cfg_execcfg = Config::cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
+            if (!cfg_execcfg.empty()) {
+                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Executing config file \"" << cfg_execcfg << "\"\n";
+                ENG_SYSCALL(QMM_ENG_MSG(QMM_G_SEND_CONSOLE_COMMAND), QMM_ENG_MSG(QMM_EXEC_APPEND), fmt::format("exec {}\n", cfg_execcfg).c_str());
+            }
+
+            // we're done!
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Startup successful!\n";
+        }
+
+        else if (cmd == QMM::msg_GAME_CONSOLE_COMMAND) {
+            char arg_cmd[10];
+            int argn = 0;
+            // get command
+            QMM::ArgV(argn, arg_cmd, sizeof(arg_cmd));
+
+            // if command is "sv", then get the next arg
+            // idTech2 games use "sv" to run a gamedll command
+            if (Util::str_striequal("sv", arg_cmd)) {
+                argn++;
+                QMM::ArgV(argn, arg_cmd, sizeof(arg_cmd));
+            }
+            // check for "qmm" command
+            if (Util::str_striequal("qmm", arg_cmd) || Util::str_striequal("/qmm", arg_cmd)) {
+                // because of "sv", pass 0 or 1 which gets added to argn in the handler function
+                HandleQMMCommand(argn);
+                return 1;
+            }
+        }
+
+        // route call to plugins and mod
+        intptr_t ret = QMM::Route(false, cmd, args); // true = is_syscall
+
+        // handle shut down (this is after the plugins and mod get called with GAME_SHUTDOWN)
+        if (cmd == QMM::msg_GAME_SHUTDOWN) {
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutdown initiated!\n";
+
+            // cgame passthrough hack:
+            // hack to keep single player games shutting down correctly between levels/cutscenes/etc
+            if (QMM::CGame::syscall) {
+                QMM::CGame::is_shutdown = true;
+                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Delaying shutting down mod so cgame shutdown can run\n";
+            }
+            else {
+                // unload mod
+                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
+                g_mod.Unload();
+            }
+
+            // unload each plugin (call QMM_Detach, and then dlclose)
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
+            for (Plugin& p : g_plugins) {
+                p.Unload();
+            }
+            g_plugins.clear();
+
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Finished shutting down\n";
+        }
+
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "vmMain(" << QMM::game->ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
+
+        return ret;
+    }
+
+
+    intptr_t syscall_args(intptr_t cmd, intptr_t* args) {
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "syscall(" << QMM::game->EngMsgName(cmd) << "(" << cmd << ")) called\n";
+
+        // route call to plugins and mod
+        intptr_t ret = QMM::Route(true, cmd, args); // true = is_syscall
+
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "syscall(" << QMM::game->EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
+
+        return ret;
+    }
+
+
+    // Print string to game console
+#define CONSOLE_PRINT(str)			ENG_SYSCALL(msg_G_PRINT, str)
+// Print formatted string to game console
+#define CONSOLE_PRINTF(str, ...)	ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
+
+    void HandleQMMCommand(intptr_t arg_start) {
+        char arg1[10] = "", arg2[10] = "";
+
+        int argc = (int)ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ARGC));
+        QMM::ArgV(arg_start + 1, arg1, sizeof(arg1));
+        if (argc > arg_start + 2)
+            QMM::ArgV(arg_start + 2, arg2, sizeof(arg2));
+
+        if (Util::str_striequal("status", arg1) || Util::str_striequal("info", arg1)) {
+            CONSOLE_PRINT("(QMM) QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")]\n");
+            CONSOLE_PRINTF("(QMM) Game       : {}/\"{}\" ({}) (Source: {})\n", QMM::game->GameCode(), QMM::game->GameName(), APIType_Function(QMM::api), QMM::is_auto_detected ? "Auto-detected" : "Config file");
+            CONSOLE_PRINTF("(QMM) ModDir     : {}\n", QMM::mod_dir);
+            CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", QMM::cfg_path, g_cfg.empty() ? "(error)" : "");
+            CONSOLE_PRINT("(QMM) Built      : " QMM_COMPILE " by " QMM_BUILDER "\n");
+            CONSOLE_PRINT("(QMM) URL        : " QMM_URL "\n");
+            CONSOLE_PRINT("(QMM) PIFV       : " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
+            CONSOLE_PRINTF("(QMM) Plugins    : {}\n", g_plugins.size());
+            CONSOLE_PRINTF("(QMM) Loaded mod : {} ({})\n", g_mod.path, APIType_Function(g_mod.api));
+            if (g_mod.vm.memory) {
+                CONSOLE_PRINT("(QMM)\n");
+                CONSOLE_PRINT("(QMM) QVM mod information\n");
+                CONSOLE_PRINT("(QMM) -------------------\n");
+                CONSOLE_PRINTF("(QMM) QVM magic number   : {:x} ({})\n", g_mod.vm.magic, g_mod.vm.magic == QVM_MAGIC ? "QVM_MAGIC" : "QVM_MAGIC_VER2");
+                CONSOLE_PRINTF("(QMM) QVM file size      : {}\n", g_mod.vm.filesize);
+                CONSOLE_PRINTF("(QMM) QVM memory base    : {}\n", fmt::ptr(g_mod.vm.memory));
+                CONSOLE_PRINTF("(QMM) QVM memory size    : {}\n", g_mod.vm.memorysize);
+                CONSOLE_PRINTF("(QMM) QVM instr count    : {}\n", g_mod.vm.instructioncount);
+                CONSOLE_PRINTF("(QMM) QVM codeseg size   : {}\n", g_mod.vm.codeseglen);
+                CONSOLE_PRINTF("(QMM) QVM dataseg size   : {}\n", g_mod.vm.dataseglen);
+                CONSOLE_PRINTF("(QMM) QVM stack size     : {}\n", g_mod.vm.stacksize);
+                CONSOLE_PRINTF("(QMM) QVM hunk size      : {}\n", g_mod.vm.hunksize);
+                CONSOLE_PRINTF("(QMM) QVM hunk usage     : {}\n", g_mod.vm.hunkhigh - g_mod.vm.hunkptr);
+                CONSOLE_PRINTF("(QMM) QVM data validation: {}\n", g_mod.vm.verify_data ? "on" : "off");
+            }
+        }
+        else if (Util::str_striequal("list", arg1) || Util::str_striequal("pluginlist", arg1)) {
+            CONSOLE_PRINT("(QMM) id - plugin [version]\n");
+            CONSOLE_PRINT("(QMM) ---------------------\n");
+            int num = 1;
+            for (Plugin& p : g_plugins) {
+                CONSOLE_PRINTF("(QMM) {:>2} - {} [{}]\n", num, p.plugininfo->name, p.plugininfo->version);
+                num++;
+            }
+        }
+        else if (Util::str_striequal("plugin", arg1) || Util::str_striequal("plugininfo", arg1)) {
+            if (argc == arg_start + 2) {
+                CONSOLE_PRINTF("(QMM) qmm {} <id> - outputs info on plugin with id\n", arg1);
+                return;
+            }
+            size_t pid = (size_t)atoi(arg2);
+            if (pid > 0 && pid <= g_plugins.size()) {
+                Plugin& p = g_plugins[pid - 1];
+                CONSOLE_PRINTF("(QMM) Plugin info for #{}:\n", arg2);
+                CONSOLE_PRINTF("(QMM) Name: {}\n", p.plugininfo->name);
+                CONSOLE_PRINTF("(QMM) Version: {}\n", p.plugininfo->version);
+                CONSOLE_PRINTF("(QMM) URL: {}\n", p.plugininfo->url);
+                CONSOLE_PRINTF("(QMM) Author: {}\n", p.plugininfo->author);
+                CONSOLE_PRINTF("(QMM) Desc: {}\n", p.plugininfo->desc);
+                CONSOLE_PRINTF("(QMM) Logtag: {}\n", p.plugininfo->logtag);
+                CONSOLE_PRINTF("(QMM) Interface version: {}:{}\n", p.plugininfo->pifv_major, p.plugininfo->pifv_minor);
+                CONSOLE_PRINTF("(QMM) Path: {}\n", p.path);
+            }
+            else {
+                CONSOLE_PRINTF("(QMM) Unable to find plugin #{}\n", arg2);
+            }
+        }
+        else if (Util::str_striequal("loglevel", arg1)) {
+            if (argc == arg_start + 2) {
+                CONSOLE_PRINTF("(QMM) qmm {} <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n", arg1);
+                return;
+            }
+            int severity = Log::log_severity_from_name(arg2);
+            Log::log_set_severity(severity);
+            CONSOLE_PRINTF("(QMM) Log level set to {}\n", Log::log_name_from_severity(severity));
+        }
+        else if (Util::str_striequal("reload", arg1)) {
+            g_cfg = Config::cfg_load(QMM::cfg_path);
+            CONSOLE_PRINT("(QMM) Configuration file reloaded!\n");
+        }
+        else if (Util::str_striequal("credits", arg1) || Util::str_striequal("thanks", arg1)) {
+            CONSOLE_PRINT("(QMM) QMM credits:\n");
+            CONSOLE_PRINT("(QMM) Designed by:\n");
+            CONSOLE_PRINT("(QMM)  - Kevin Masterson\n");
+            CONSOLE_PRINT("(QMM)\n");
+            CONSOLE_PRINT("(QMM) Special thanks to:\n");
+            CONSOLE_PRINT("(QMM)  - BAStumm\n");
+            CONSOLE_PRINT("(QMM)  - loupgarou21\n");
+            CONSOLE_PRINT("(QMM)  - nevcairiel\n");
+            CONSOLE_PRINT("(QMM)  - BAILOPAN\n");
+            CONSOLE_PRINT("(QMM)  - Lumpy\n");
+            CONSOLE_PRINT("(QMM)  - para\n");
+            CONSOLE_PRINT("(QMM)  - I have forgotten many since 2004; please let me know!\n");
+            CONSOLE_PRINT("(QMM)\n");
+            CONSOLE_PRINT("(QMM) QMM uses the following libraries:\n");
+            CONSOLE_PRINT("(QMM)  - nlohmann/json - https://github.com/nlohmann/json\n");
+            CONSOLE_PRINT("(QMM)  - aixlog - https://github.com/badaix/aixlog\n");
+            CONSOLE_PRINT("(QMM)  - fmtlib - https://github.com/fmtlib/fmt\n");
+        }
+        else {
+            if (!Util::str_striequal("help", arg1)) {
+                CONSOLE_PRINTF("(QMM) Unknown command: {}\n", arg1);
+                CONSOLE_PRINT("(QMM)\n");
+            }
+            CONSOLE_PRINT("(QMM) Usage: qmm <command> [params]\n");
+            CONSOLE_PRINT("(QMM) Available commands:\n");
+            CONSOLE_PRINT("(QMM) qmm info - displays information about QMM\n");
+            CONSOLE_PRINT("(QMM) qmm list - displays list of loaded QMM plugins\n");
+            CONSOLE_PRINT("(QMM) qmm plugin <id> - outputs info on plugin with id\n");
+            CONSOLE_PRINT("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
+            CONSOLE_PRINT("(QMM) qmm reload - reloads the QMM configuration file\n");
+            CONSOLE_PRINT("(QMM) qmm credits - QMM credits\n");
+            CONSOLE_PRINT("(QMM) qmm help - displays this help\n");
+        }
     }
 
 

@@ -101,6 +101,31 @@ namespace QMM {
     */
     void ArgV(intptr_t argn, char* buf, intptr_t buflen);
 
+    /**
+    * @brief Handle vmMain call using intptr_t* args. 
+    * 
+    * @param cmd Mod function to perform
+    * @param args Array of cmd-specific arguments
+    * @return Return value of mod call
+    */
+    intptr_t vmMain_args(intptr_t cmd, intptr_t* args);
+
+    /**
+    * @brief Handle syscall call using intptr_t* args
+    * 
+    * @param cmd Engine function to perform
+    * @param args Array of cmd-specific arguments
+    * @return Return value of engine call
+    */
+    intptr_t syscall_args(intptr_t cmd, intptr_t* args);
+
+    /**
+    * @brief Handle parsing of "qmm" command in vmMain(GAME_CONSOLE_COMMAND)
+    *
+    * @param arg_start ArgV index of "qmm" argument (all other arguments are relative to this)
+    */
+    void HandleQMMCommand(intptr_t arg_start);
+
     extern intptr_t msg_G_PRINT;                // Value of G_PRINT for the detected game
     extern intptr_t msg_GAME_INIT;              // Value of GAME_INIT for the detected game
     extern intptr_t msg_GAME_CONSOLE_COMMAND;   // Value of GAME_CONSOLE_COMMAND for the detected game
@@ -115,12 +140,8 @@ namespace QMM {
     namespace CGame {
         // Store syscall pointer to pass through to the mod's dllEntry function
         extern eng_syscall syscall;
-        // Store mod's vmMain function to pass vmMain calls if is_from_QMM is false
+        // Store mod's vmMain function to pass vmMain calls
         extern mod_vmMain vmMain;
-        // This flag is set by the GEN_EXPORT macro(s) before calling into vmMain.
-        // If true, the vmMain call is assumed to be from a lambda in QMM's game_export_t.
-        // If false, the vmMain call is assumed to be directly from the engine to call into the cgame.
-        extern bool is_from_QMM;
         // If true, GAME_SHUTDOWN has been called, but the mod DLL was kept loaded so cgame shutdown can run.
         extern bool is_shutdown;
     };

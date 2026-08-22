@@ -28,7 +28,6 @@ Created By:
 // QMM-specific Q2R header
 #include "game_q2r.h"
 #include "qmm.hpp"
-#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct Q2R_GameSupport : public GameSupport {
@@ -37,12 +36,12 @@ struct Q2R_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload();
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-    virtual intptr_t syscall(intptr_t, ...);
-    virtual intptr_t vmMain(intptr_t, ...);
+    virtual intptr_t syscall_args(intptr_t, intptr_t* args);
+    virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
 
     virtual const char* DefaultDLLName() { return "game_" X64_DLL; }
     virtual const char* DefaultModDir() { return "baseq2"; }
@@ -76,6 +75,15 @@ private:
     // struct with lambdas that call QMM's vmMain function. this is given to the game engine
     static game_export_t qmm_export;
 
+    // a copt of the original import struct that comes from the game engine
+    static cgame_import_t orig_cgame_import;
+
+    // a copy of the original cgame export struct pointer that comes from the mod
+    static cgame_export_t* orig_cgame_export;
+
+    // struct with lambdas that call the mod's cgame functions. this is given to the game engine
+    static cgame_export_t qmm_cgame_export;
+
     const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
     // GAME_PREINIT gets called first, which is when QMM has to perform mod/plugin loading, but we
     // don't want to make plugins have to use separate code to handle the actual GAME_INIT message
@@ -87,7 +95,7 @@ GEN_GAME_OBJ(Q2R);
 
 // auto-detection logic for Q2R
 bool Q2R_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_GETGAMEAPI)
+    if (engineapi != QMM_API_GETGAMEAPI && engineapi != QMM_API_GETCGAMEAPI)
         return false;
 
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
@@ -102,9 +110,7 @@ bool Q2R_GameSupport::AutoDetect(APIType engineapi) {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
-    QMM_GET_SYSCALL_ARGS();
-
+intptr_t Q2R_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2R_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
@@ -354,9 +360,7 @@ intptr_t Q2R_GameSupport::syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t Q2R_GameSupport::vmMain(intptr_t cmd, ...) {
-    QMM_GET_VMMAIN_ARGS();
-
+intptr_t Q2R_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2R_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_export)
@@ -438,9 +442,15 @@ void* Q2R_GameSupport::Entry(void* import, void*, APIType engine_api) {
         ret = &qmm_export;
     }
     else if (engine_api == QMM_API_GETCGAMEAPI) {
-        // unused for now
+        // original import struct from engine
+        // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
+        cgame_import_t* gi = (cgame_import_t*)import;
+        orig_cgame_import = *gi;
 
-        ret = nullptr;
+        // struct full of export lambdas to call the original function in orig_cgame_export
+        // this gets returned to the game engine, but we haven't loaded the mod yet.
+        // the only thing in this struct the engine uses before calling Init is the apiversion
+        ret = &qmm_cgame_export;
     }
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2R_GameSupport::Entry(" << import << ", " << APIType_Name(engine_api) << ") returning " << ret << "\n";
@@ -456,16 +466,23 @@ bool Q2R_GameSupport::ModLoad(void* entry, APIType mod_api) {
         return !!orig_export;
     }
     else if (mod_api == QMM_API_GETCGAMEAPI) {
-        // unused for now
-        return false;
+        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)entry;
+        orig_cgame_export = (cgame_export_t*)pfnGCGA(&orig_cgame_import, nullptr);
+
+        return !!orig_cgame_export;
     }
 
     return false;
 }
 
 
-void Q2R_GameSupport::ModUnload() {
-    orig_export = nullptr;
+void Q2R_GameSupport::ModUnload(APIType mod_api) {
+    if (mod_api == QMM_API_GETGAMEAPI) {
+        orig_export = nullptr;
+    }
+    else if (mod_api == QMM_API_GETCGAMEAPI) {
+        orig_cgame_export = nullptr;
+    }
 }
 
 
@@ -630,8 +647,9 @@ void Q2R_GameSupport::update_exports() {
 
     if (changed) {
         // this will trigger this message to be fired to plugins, and then it will be handled
-        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
-        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, nullptr, 0);
+        // by the empty "case G_LOCATE_GAME_DATA" in syscall
+        intptr_t args[] = { (intptr_t)qmm_export.edicts, qmm_export.num_edicts, (intptr_t)qmm_export.edict_size, (intptr_t)nullptr, 0 };
+        (void)QMM::syscall_args(G_LOCATE_GAME_DATA, args);
     }
 }
 
@@ -737,6 +755,19 @@ game_import_t Q2R_GameSupport::qmm_import = {
 };
 
 
+std::vector<std::string> Q2R_GameSupport::entity_tokens;
+size_t Q2R_GameSupport::token_counter = 0;
+void Q2R_GameSupport::SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
+    if (entstring) {
+        entity_tokens = Util::util_parse_entstring(entstring);
+        token_counter = 0;
+    }
+
+    intptr_t args[] = { (intptr_t)mapname, (intptr_t)entstring, (intptr_t)spawnpoint };
+    (void)QMM::vmMain_args(GAME_SPAWN_ENTITIES, args);
+}
+
+
 std::map<intptr_t, std::string> Q2R_GameSupport::userinfos;
 bool Q2R_GameSupport::ClientConnect(edict_t* ent, char* userinfo, const char* social_id, bool isBot) {
     // get client number (ent->s.number is not set until CLIENT_BEGIN, so calculate based on edict_t*)
@@ -749,8 +780,9 @@ bool Q2R_GameSupport::ClientConnect(edict_t* ent, char* userinfo, const char* so
         else
             userinfos[clientnum] = userinfo;
     }
-    QMM::CGame::is_from_QMM = true;
-    return (bool)::vmMain(GAME_CLIENT_CONNECT, ent, userinfo, social_id, isBot);
+
+    intptr_t args[] = { (intptr_t)ent, (intptr_t)userinfo, (intptr_t)social_id, isBot };
+    return (bool)QMM::vmMain_args(GAME_CLIENT_CONNECT, args);
 }
 
 
@@ -765,20 +797,8 @@ void Q2R_GameSupport::ClientUserinfoChanged(edict_t* ent, const char* userinfo) 
         else
             userinfos[clientnum] = userinfo;
     }
-    QMM::CGame::is_from_QMM = true;
-    (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
-}
-
-
-std::vector<std::string> Q2R_GameSupport::entity_tokens;
-size_t Q2R_GameSupport::token_counter = 0;
-void Q2R_GameSupport::SpawnEntities(const char* mapname, const char* entstring, const char* spawnpoint) {
-    if (entstring) {
-        entity_tokens = Util::util_parse_entstring(entstring);
-        token_counter = 0;
-    }
-    QMM::CGame::is_from_QMM = true;
-    (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
+    intptr_t args[] = { (intptr_t)ent, (intptr_t)userinfo };
+    (void)QMM::vmMain_args(GAME_CLIENT_USERINFO_CHANGED, args);
 }
 
 
@@ -821,4 +841,35 @@ game_export_t Q2R_GameSupport::qmm_export = {
     GEN_EXPORT(Entity_IsVisibleToPlayer, GAME_ENTITY_ISVISIBLETOPLAYER),
     GEN_EXPORT(GetShadowLightData, GAME_GETSHADOWLIGHTDATA),
 };
+
+
+// a copt of the original import struct that comes from the game engine
+cgame_import_t Q2R_GameSupport::orig_cgame_import;
+
+// a copy of the original cgame export struct pointer that comes from the mod
+cgame_export_t* Q2R_GameSupport::orig_cgame_export;
+
+// struct with lambdas that call original cgame functions. this is given to the game engine
+cgame_export_t Q2R_GameSupport::qmm_cgame_export = {
+    0, // apiversion
+    +[]() { if (orig_cgame_export) orig_cgame_export->Init(); /* cgame loaded */ },
+    +[]() { if (orig_cgame_export) orig_cgame_export->Shutdown(); /* cgame unloaded */ },
+    +[](int32_t isplit, const cg_server_data_t* data, vrect_t hud_vrect, vrect_t hud_safe, int32_t scale, int32_t playernum, const player_state_t* ps) { if (orig_cgame_export) orig_cgame_export->DrawHUD(isplit, data, hud_vrect, hud_safe, scale, playernum, ps);  },
+    +[]() { if (orig_cgame_export) orig_cgame_export->TouchPics(); },
+    +[](const player_state_t* ps) -> layout_flags_t { if (orig_cgame_export) return orig_cgame_export->LayoutFlags(ps); return LAYOUTS_LAYOUT; },
+    +[](const player_state_t* ps) -> int32_t { if (orig_cgame_export) return orig_cgame_export->GetActiveWeaponWheelWeapon(ps); return 0; },
+    +[](const player_state_t* ps) -> uint32_t { if (orig_cgame_export) return orig_cgame_export->GetOwnedWeaponWheelWeapons(ps); return 0; },
+    +[](const player_state_t* ps, int32_t ammo_id) -> int16_t { if (orig_cgame_export) return orig_cgame_export->GetWeaponWheelAmmoCount(ps, ammo_id); return 0; },
+    +[](const player_state_t* ps, int32_t powerup_id) -> int16_t { if (orig_cgame_export) return orig_cgame_export->GetPowerupWheelCount(ps, powerup_id); return 0; },
+    +[](const player_state_t* ps) -> int16_t { if (orig_cgame_export) return orig_cgame_export->GetHitMarkerDamage(ps); return 0; },
+    +[](pmove_t* pmove) { if (orig_cgame_export) orig_cgame_export->Pmove(pmove); },
+    +[](int32_t i, const char* s) { if (orig_cgame_export) orig_cgame_export->ParseConfigString(i, s); },
+    +[](const char* str, int isplit, bool instant) { if (orig_cgame_export) orig_cgame_export->ParseCenterPrint(str, isplit, instant); },
+    +[](int32_t isplit) { if (orig_cgame_export) orig_cgame_export->ClearNotify(isplit); },
+    +[](int32_t isplit) { if (orig_cgame_export) orig_cgame_export->ClearCenterprint(isplit); },
+    +[](int32_t isplit, const char* msg, bool is_chat) { if (orig_cgame_export) orig_cgame_export->NotifyMessage(isplit, msg, is_chat); },
+    +[](monster_muzzleflash_id_t id, gvec3_ref_t offset) { if (orig_cgame_export) orig_cgame_export->GetMonsterFlashOffset(id, offset); },
+    +[](const char* name) -> void* { if (orig_cgame_export) return orig_cgame_export->GetExtension(name); return nullptr; },
+};
+
 #endif // QMM_OS_WINDOWS && QMM_ARCH_64

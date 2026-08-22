@@ -27,7 +27,6 @@ Created By:
 // QMM-specific SIN header
 #include "game_sin.h"
 #include "qmm.hpp"
-#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct SIN_GameSupport : public GameSupport {
@@ -36,12 +35,12 @@ struct SIN_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload();
+    virtual void ModUnload(APIType);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-    virtual intptr_t syscall(intptr_t, ...);
-    virtual intptr_t vmMain(intptr_t, ...);
+    virtual intptr_t syscall_args(intptr_t, intptr_t* args);
+    virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
 
     virtual const char* DefaultDLLName() { return "game" MOD_DLL; }
     virtual const char* DefaultModDir() { return "base"; }
@@ -103,9 +102,7 @@ bool SIN_GameSupport::AutoDetect(APIType engineapi) {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t SIN_GameSupport::syscall(intptr_t cmd, ...) {
-    QMM_GET_SYSCALL_ARGS();
-
+intptr_t SIN_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "SIN_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
@@ -384,9 +381,7 @@ intptr_t SIN_GameSupport::syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t SIN_GameSupport::vmMain(intptr_t cmd, ...) {
-    QMM_GET_VMMAIN_ARGS();
-
+intptr_t SIN_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "SIN_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_export)
@@ -474,7 +469,7 @@ bool SIN_GameSupport::ModLoad(void* entry, APIType mod_api) {
 }
 
 
-void SIN_GameSupport::ModUnload() {
+void SIN_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
 }
 
@@ -665,8 +660,9 @@ void SIN_GameSupport::update_exports() {
 
     if (changed) {
         // this will trigger this message to be fired to plugins, and then it will be handled
-        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
-        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, nullptr, 0);
+        // by the empty "case G_LOCATE_GAME_DATA" in syscall
+        intptr_t args[] = { (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, (intptr_t)nullptr, 0 };
+        QMM::syscall_args(G_LOCATE_GAME_DATA, args);
     }
 }
 
@@ -683,7 +679,8 @@ void SIN_GameSupport::configstring(int num, const char* configstring) {
         configstrings.erase(num);
     else
         configstrings[num] = configstring;
-    qmm_syscall(G_CONFIGSTRING, num, configstring);
+    intptr_t args[] = { num, (intptr_t)configstring };
+    QMM::syscall_args(G_CONFIGSTRING, args);
 }
 
 
@@ -794,8 +791,8 @@ qboolean SIN_GameSupport::ClientConnect(edict_t* ent, const char* userinfo) {
         else
             userinfos[clientnum] = userinfo;
     }
-    QMM::CGame::is_from_QMM = true;
-    return ::vmMain(GAME_CLIENT_CONNECT, ent, userinfo);
+    intptr_t args[] = { (intptr_t)ent, (intptr_t)userinfo };
+    return QMM::vmMain_args(GAME_CLIENT_CONNECT, args);
 }
 
 
@@ -810,8 +807,8 @@ void SIN_GameSupport::ClientUserinfoChanged(edict_t* ent, const char* userinfo) 
         else
             userinfos[clientnum] = userinfo;
     }
-    QMM::CGame::is_from_QMM = true;
-    (void)::vmMain(GAME_CLIENT_USERINFO_CHANGED, ent, userinfo);
+    intptr_t args[] = { (intptr_t)ent, (intptr_t)userinfo };
+    (void)QMM::vmMain_args(GAME_CLIENT_USERINFO_CHANGED, args);
 }
 
 
@@ -823,8 +820,8 @@ void SIN_GameSupport::SpawnEntities(const char* mapname, const char* entstring, 
         entity_tokens = Util::util_parse_entstring(entstring);
         token_counter = 0;
     }
-    QMM::CGame::is_from_QMM = true;
-    (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, spawnpoint);
+    intptr_t args[] = { (intptr_t)mapname, (intptr_t)entstring, (intptr_t)spawnpoint };
+    (void)QMM::vmMain_args(GAME_SPAWN_ENTITIES, args);
 }
 
 

@@ -28,12 +28,12 @@ struct JK2MP_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload();
+    virtual void ModUnload(APIType);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-    virtual intptr_t syscall(intptr_t, ...);
-    virtual intptr_t vmMain(intptr_t, ...);
+    virtual intptr_t syscall_args(intptr_t, intptr_t* args);
+    virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
 
     virtual const char* DefaultDLLName() { return "jk2mpgame" MOD_DLL; }
     virtual const char* DefaultQVMName() { return "vm/jk2mpgame.qvm"; }
@@ -74,12 +74,9 @@ bool JK2MP_GameSupport::AutoDetect(APIType engineapi) {
 
 // wrapper syscall function that calls actual engine func in orig_syscall
 // this is how QMM and plugins will call into the engine
-intptr_t JK2MP_GameSupport::syscall(intptr_t cmd, ...) {
-    QMM_GET_SYSCALL_ARGS();
-
+intptr_t JK2MP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "JK2MP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
-
 
     intptr_t ret = 0;
 
@@ -118,9 +115,7 @@ intptr_t JK2MP_GameSupport::syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func in orig_vmMain
 // this is how QMM and plugins will call into the mod
-intptr_t JK2MP_GameSupport::vmMain(intptr_t cmd, ...) {
-    QMM_GET_VMMAIN_ARGS();
-
+intptr_t JK2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "JK2MP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_vmMain)
@@ -177,7 +172,7 @@ bool JK2MP_GameSupport::ModLoad(void* entry, APIType mod_api) {
 }
 
 
-void JK2MP_GameSupport::ModUnload() {
+void JK2MP_GameSupport::ModUnload(APIType) {
     orig_vmMain = nullptr;
 }
 
@@ -637,6 +632,8 @@ int JK2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
     case G_MEMCPY:				// (void* dest, const void* src, size_t count)
     case G_STRNCPY:				// (char* strDest, const char* strSource, size_t count)
         qmm_syscall(cmd, VMPTR(0), VMPTR(1), VMARG(2));
+        // memcpy and strncpy should return the first arg. the engine does, but it will be the real dest pointer.
+        // instead of adjusting a return value, just manually return args[0]
         ret = args[0];
         break;
     case G_FS_READ:				// (void* buffer, int len, fileHandle_t f);
@@ -645,6 +642,8 @@ int JK2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
         break;
     case G_MEMSET:				// (void* dest, int c, size_t count)
         qmm_syscall(cmd, VMPTR(0), VMARG(1), VMARG(2));
+        // memset should return the first arg. the engine does, but it will be the real dest pointer.
+        // instead of adjusting a return value, just manually return args[0]
         ret = args[0];
         break;
     case G_ENTITY_CONTACT:			// (const vec3_t mins, const vec3_t maxs, const gentity_t* ent);

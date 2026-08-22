@@ -23,7 +23,7 @@ Created By:
 // QMM-specific SOF2MP header
 #include "game_sof2mp.h"
 #include "qmm.hpp"
-#include "main.hpp"     // qmm_syscall in GEN_IMPORT
+#include "main.hpp"     // qmm_syscall in QVMSyscall
 #include "mod.hpp"      // g_mod
 #include "util.hpp"
 
@@ -33,12 +33,12 @@ struct SOF2MP_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload();
+    virtual void ModUnload(APIType);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-    virtual intptr_t syscall(intptr_t, ...);
-    virtual intptr_t vmMain(intptr_t, ...);
+    virtual intptr_t syscall_args(intptr_t, intptr_t* args);
+    virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
 
     virtual const char* DefaultDLLName() { return "sof2mp_game" MOD_DLL; }
     virtual const char* DefaultQVMName() { return "vm/sof2mp_game.qvm"; }
@@ -79,9 +79,7 @@ bool SOF2MP_GameSupport::AutoDetect(APIType engineapi) {
 
 // wrapper syscall function that calls actual engine func in orig_syscall
 // this is how QMM and plugins will call into the engine
-intptr_t SOF2MP_GameSupport::syscall(intptr_t cmd, ...) {
-    QMM_GET_SYSCALL_ARGS();
-
+intptr_t SOF2MP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2MP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
@@ -123,9 +121,7 @@ intptr_t SOF2MP_GameSupport::syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func in orig_vmMain
 // this is how QMM and plugins will call into the mod
-intptr_t SOF2MP_GameSupport::vmMain(intptr_t cmd, ...) {
-    QMM_GET_VMMAIN_ARGS();
-
+intptr_t SOF2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2MP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_vmMain)
@@ -267,7 +263,7 @@ bool SOF2MP_GameSupport::ModLoad(void* entry, APIType mod_api) {
 }
 
 
-void SOF2MP_GameSupport::ModUnload() {
+void SOF2MP_GameSupport::ModUnload(APIType) {
     orig_vmMain = nullptr;
 }
 

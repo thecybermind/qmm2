@@ -79,7 +79,7 @@ BEGIN
         BEGIN
             VALUE "Comments", "Universal engine support including vmMain+GetGameAPI+QVM engines\0"
             VALUE "CompanyName", "QMM\0"
-            VALUE "FileDescription", "qmm2 " QMM_OS " " QMM_ARCH "\0"
+            VALUE "FileDescription", "qmm2 " QMM_OS " " QMM_ARCH " (" QMM_BUILD ")" "\0"
             VALUE "FileVersion", QMM_VERSION "\0"
             VALUE "InternalName", "qmm2\0"
             VALUE "LegalCopyright", "Copyright 2004-2026\0"
