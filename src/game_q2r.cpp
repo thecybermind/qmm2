@@ -843,6 +843,12 @@ game_export_t Q2R_GameSupport::qmm_export = {
 };
 
 
+// a copt of the original import struct that comes from the game engine
+cgame_import_t Q2R_GameSupport::orig_cgame_import;
+
+// a copy of the original cgame export struct pointer that comes from the mod
+cgame_export_t* Q2R_GameSupport::orig_cgame_export;
+
 // struct with lambdas that call original cgame functions. this is given to the game engine
 cgame_export_t Q2R_GameSupport::qmm_cgame_export = {
     0, // apiversion
@@ -863,7 +869,7 @@ cgame_export_t Q2R_GameSupport::qmm_cgame_export = {
     +[](int32_t isplit) { if (orig_cgame_export) orig_cgame_export->ClearCenterprint(isplit); },
     +[](int32_t isplit, const char* msg, bool is_chat) { if (orig_cgame_export) orig_cgame_export->NotifyMessage(isplit, msg, is_chat); },
     +[](monster_muzzleflash_id_t id, gvec3_ref_t offset) { if (orig_cgame_export) orig_cgame_export->GetMonsterFlashOffset(id, offset); },
-    +[](const char* name) -> void* { if (orig_cgame_export) orig_cgame_export->GetExtension(name); },
+    +[](const char* name) -> void* { if (orig_cgame_export) return orig_cgame_export->GetExtension(name); return nullptr; },
 };
 
 #endif // QMM_OS_WINDOWS && QMM_ARCH_64
