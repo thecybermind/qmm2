@@ -33,7 +33,7 @@ struct SOF2MP_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload();
+    virtual void ModUnload(APIType);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -263,7 +263,7 @@ bool SOF2MP_GameSupport::ModLoad(void* entry, APIType mod_api) {
 }
 
 
-void SOF2MP_GameSupport::ModUnload() {
+void SOF2MP_GameSupport::ModUnload(APIType) {
     orig_vmMain = nullptr;
 }
 

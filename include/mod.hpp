@@ -37,7 +37,7 @@ struct Mod {
     * @param file Path to mod file
     * @return true if mod load was successful, false otherwise
     */
-    bool Load(std::string file);
+    bool Load(std::string file, APIType mod_api = QMM_API_ERROR);
 
     /**
     * @brief Unload mod file

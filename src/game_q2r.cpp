@@ -36,7 +36,7 @@ struct Q2R_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload();
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -75,6 +75,15 @@ private:
     // struct with lambdas that call QMM's vmMain function. this is given to the game engine
     static game_export_t qmm_export;
 
+    // a copt of the original import struct that comes from the game engine
+    static cgame_import_t orig_cgame_import;
+
+    // a copy of the original cgame export struct pointer that comes from the mod
+    static cgame_export_t* orig_cgame_export;
+
+    // struct with lambdas that call the mod's cgame functions. this is given to the game engine
+    static cgame_export_t qmm_cgame_export;
+
     const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
     // GAME_PREINIT gets called first, which is when QMM has to perform mod/plugin loading, but we
     // don't want to make plugins have to use separate code to handle the actual GAME_INIT message
@@ -86,7 +95,7 @@ GEN_GAME_OBJ(Q2R);
 
 // auto-detection logic for Q2R
 bool Q2R_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_GETGAMEAPI)
+    if (engineapi != QMM_API_GETGAMEAPI && engineapi != QMM_API_GETCGAMEAPI)
         return false;
 
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
@@ -433,9 +442,15 @@ void* Q2R_GameSupport::Entry(void* import, void*, APIType engine_api) {
         ret = &qmm_export;
     }
     else if (engine_api == QMM_API_GETCGAMEAPI) {
-        // unused for now
+        // original import struct from engine
+        // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
+        cgame_import_t* gi = (cgame_import_t*)import;
+        orig_cgame_import = *gi;
 
-        ret = nullptr;
+        // struct full of export lambdas to call the original function in orig_cgame_export
+        // this gets returned to the game engine, but we haven't loaded the mod yet.
+        // the only thing in this struct the engine uses before calling Init is the apiversion
+        ret = &qmm_cgame_export;
     }
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2R_GameSupport::Entry(" << import << ", " << APIType_Name(engine_api) << ") returning " << ret << "\n";
@@ -451,16 +466,23 @@ bool Q2R_GameSupport::ModLoad(void* entry, APIType mod_api) {
         return !!orig_export;
     }
     else if (mod_api == QMM_API_GETCGAMEAPI) {
-        // unused for now
-        return false;
+        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)entry;
+        orig_cgame_export = (cgame_export_t*)pfnGCGA(&orig_cgame_import, nullptr);
+
+        return !!orig_cgame_export;
     }
 
     return false;
 }
 
 
-void Q2R_GameSupport::ModUnload() {
-    orig_export = nullptr;
+void Q2R_GameSupport::ModUnload(APIType mod_api) {
+    if (mod_api == QMM_API_GETGAMEAPI) {
+        orig_export = nullptr;
+    }
+    else if (mod_api == QMM_API_GETCGAMEAPI) {
+        orig_cgame_export = nullptr;
+    }
 }
 
 
@@ -819,4 +841,29 @@ game_export_t Q2R_GameSupport::qmm_export = {
     GEN_EXPORT(Entity_IsVisibleToPlayer, GAME_ENTITY_ISVISIBLETOPLAYER),
     GEN_EXPORT(GetShadowLightData, GAME_GETSHADOWLIGHTDATA),
 };
+
+
+// struct with lambdas that call original cgame functions. this is given to the game engine
+cgame_export_t Q2R_GameSupport::qmm_cgame_export = {
+    0, // apiversion
+    +[]() { if (orig_cgame_export) orig_cgame_export->Init(); /* cgame loaded */ },
+    +[]() { if (orig_cgame_export) orig_cgame_export->Shutdown(); /* cgame unloaded */ },
+    +[](int32_t isplit, const cg_server_data_t* data, vrect_t hud_vrect, vrect_t hud_safe, int32_t scale, int32_t playernum, const player_state_t* ps) { if (orig_cgame_export) orig_cgame_export->DrawHUD(isplit, data, hud_vrect, hud_safe, scale, playernum, ps);  },
+    +[]() { if (orig_cgame_export) orig_cgame_export->TouchPics(); },
+    +[](const player_state_t* ps) -> layout_flags_t { if (orig_cgame_export) return orig_cgame_export->LayoutFlags(ps); return LAYOUTS_LAYOUT; },
+    +[](const player_state_t* ps) -> int32_t { if (orig_cgame_export) return orig_cgame_export->GetActiveWeaponWheelWeapon(ps); return 0; },
+    +[](const player_state_t* ps) -> uint32_t { if (orig_cgame_export) return orig_cgame_export->GetOwnedWeaponWheelWeapons(ps); return 0; },
+    +[](const player_state_t* ps, int32_t ammo_id) -> int16_t { if (orig_cgame_export) return orig_cgame_export->GetWeaponWheelAmmoCount(ps, ammo_id); return 0; },
+    +[](const player_state_t* ps, int32_t powerup_id) -> int16_t { if (orig_cgame_export) return orig_cgame_export->GetPowerupWheelCount(ps, powerup_id); return 0; },
+    +[](const player_state_t* ps) -> int16_t { if (orig_cgame_export) return orig_cgame_export->GetHitMarkerDamage(ps); return 0; },
+    +[](pmove_t* pmove) { if (orig_cgame_export) orig_cgame_export->Pmove(pmove); },
+    +[](int32_t i, const char* s) { if (orig_cgame_export) orig_cgame_export->ParseConfigString(i, s); },
+    +[](const char* str, int isplit, bool instant) { if (orig_cgame_export) orig_cgame_export->ParseCenterPrint(str, isplit, instant); },
+    +[](int32_t isplit) { if (orig_cgame_export) orig_cgame_export->ClearNotify(isplit); },
+    +[](int32_t isplit) { if (orig_cgame_export) orig_cgame_export->ClearCenterprint(isplit); },
+    +[](int32_t isplit, const char* msg, bool is_chat) { if (orig_cgame_export) orig_cgame_export->NotifyMessage(isplit, msg, is_chat); },
+    +[](monster_muzzleflash_id_t id, gvec3_ref_t offset) { if (orig_cgame_export) orig_cgame_export->GetMonsterFlashOffset(id, offset); },
+    +[](const char* name) -> void* { if (orig_cgame_export) orig_cgame_export->GetExtension(name); },
+};
+
 #endif // QMM_OS_WINDOWS && QMM_ARCH_64

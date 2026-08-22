@@ -222,9 +222,12 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
         return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
     }
 
-    // client-side-only load. just load the default filename with "qmm_" in front
-    QMM::game = Q2R_gamesupport;
+    // client-side-only load. assume Q2R game (but still check with AutoDetect function), then just
+    // load the default filename with "qmm_" in front
     QMM::DetectEnv();
+    QMM::game = Q2R_gamesupport;
+    if (!QMM::game->AutoDetect(QMM_API_GETCGAMEAPI))
+        return nullptr;
 
     std::string modpath = fmt::format("{}/qmm_{}", QMM::qmm_dir, QMM::game->DefaultDLLName());
     void* dll = Util::dll_load(modpath.c_str());
@@ -232,9 +235,16 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
         return nullptr;
 
     mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(dll, "GetCGameAPI");
+    void* ret = QMM::game->Entry(import, nullptr, QMM_API_GETCGAMEAPI);
+    if (!ret)
+        return nullptr;
 
+    if (!QMM::game->ModLoad((void*)pfnGCGA, QMM_API_GETCGAMEAPI))
+        return nullptr;
+
+    return ret;
     // return CGame export from mod DLL
     // TODO: in game_q2r.cpp, hook actual structs and unload after cgame->Shutdown
-    return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
+    // return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
 }
 #endif // QMM_OS_WINDOWS && QMM_ARCH_64

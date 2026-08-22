@@ -197,16 +197,18 @@ struct GameSupport {
     /**
     * @brief Allow game support code to process mod entry point logic.
     *
-    * @param entry Entry point based on engine_api
-    * @param engine_api APIType for the method QMM was loaded by
+    * @param entry Entry point based on mod_api
+    * @param mod_api APIType for the method the mod was loaded by
     * @return true if the mod load was successful, false otherwise
     */
     virtual bool ModLoad(void* entry, APIType mod_api) = 0;
 
     /**
     * @brief Allow game support code to process mod unloading logic.
+    *
+    * @param mod_api APIType for the method the mod was loaded by
     */
-    virtual void ModUnload() = 0;
+    virtual void ModUnload(APIType mod_api) = 0;
 
     /**
     * @brief Gets game-specific engine message value (G_x) for a specific message that QMM uses internally.
