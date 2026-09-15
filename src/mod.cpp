@@ -214,26 +214,6 @@ bool Mod::LoadQVM(std::string file) {
 
 bool Mod::InitDLL(std::string file, void* handle, APIType dll_api) {
     switch (dll_api) {
-    case QMM_API_GETCGAMEAPI: {
-        // look for GetCGameAPI function
-        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(handle, APIType_Function(dll_api));
-        if (!pfnGCGA) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): Could not locate mod entry point \"" << APIType_Function(dll_api) << "\"\n";
-            return false;
-        }
-
-        // pass GCGA function to game-specific mod load handler
-        if (!QMM::game->ModLoad((void*)pfnGCGA, dll_api)) {
-            // if it failed, call ModUnload to allow game support code to reset
-            QMM::game->ModUnload(dll_api);
-
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): " << QMM::game->GameCode() << "_GameSupport::ModLoad returned false\n";
-
-            return false;
-        }
-
-        break;
-    }
     case QMM_API_GETGAMEAPI:
     case QMM_API_GETMODULEAPI: {
         // these are together because they work the same, just with a different function name

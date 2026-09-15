@@ -91,8 +91,6 @@ const char* APIType_Name(APIType api) {
 		GEN_CASE(QMM_API_DLLENTRY);
 		GEN_CASE(QMM_API_GETGAMEAPI);
 		GEN_CASE(QMM_API_GETMODULEAPI);
-
-		GEN_CASE(QMM_API_GETCGAMEAPI);
 	default:
 		return "unknown";
 	};
@@ -112,9 +110,6 @@ const char* APIType_Function(APIType api) {
 		return "GetGameAPI";
 	case QMM_API_GETMODULEAPI:
 		return "GetModuleAPI";
-
-	case QMM_API_GETCGAMEAPI:
-		return "GetCGameAPI";
 
 	default:
 		return "unknown";
