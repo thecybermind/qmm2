@@ -18,7 +18,6 @@ Created By:
 // QMM-specific JAMP header
 #include "game_jamp.h"
 #include "qmm.hpp"
-#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct JAMP_GameSupport : public GameSupport {
@@ -27,12 +26,12 @@ struct JAMP_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* arg0, void* arg1, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload();
+    virtual void ModUnload(APIType);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-    virtual intptr_t syscall(intptr_t, ...);
-    virtual intptr_t vmMain(intptr_t, ...);
+    virtual intptr_t syscall_args(intptr_t, intptr_t* args);
+    virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
 
     virtual const char* DefaultDLLName() { return "jampgame" MOD_DLL; }
     virtual const char* DefaultModDir() { return "base"; }
@@ -96,9 +95,7 @@ bool JAMP_GameSupport::AutoDetect(APIType engineapi) {
 
 // wrapper syscall function that calls actual engine func from orig_import or orig_syscall
 // this is how QMM and plugins will call into the engine
-intptr_t JAMP_GameSupport::syscall(intptr_t cmd, ...) {
-    QMM_GET_SYSCALL_ARGS();
-
+intptr_t JAMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
@@ -479,9 +476,7 @@ intptr_t JAMP_GameSupport::syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t JAMP_GameSupport::vmMain(intptr_t cmd, ...) {
-    QMM_GET_VMMAIN_ARGS();
-
+intptr_t JAMP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     // store return value since we do some stuff after the function call is over
@@ -599,7 +594,7 @@ bool JAMP_GameSupport::ModLoad(void* entry, APIType mod_api) {
 }
 
 
-void JAMP_GameSupport::ModUnload() {
+void JAMP_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
     orig_vmMain = nullptr;
 }

@@ -13,21 +13,19 @@ Created By:
 #include "osdef.h"
 #include <cctype>
 #include <cstring>
-#include <cstdint>
 #include <cstddef>      // size_t
 #include <vector>
 #include <string>
 #include <chrono>
 #include <filesystem>
 #include "qmm.hpp"
-#include "util.hpp"
+#include "util.hpp"     // str_striequal
 #include "format.hpp"
 
 #if defined(QMM_OS_WINDOWS)
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <direct.h>				// _mkdir
 #include <shellapi.h>			// CommandLineToArgvW
 
 #define PATH_MAX				MAX_PATH

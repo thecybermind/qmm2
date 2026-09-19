@@ -25,7 +25,6 @@ Created By:
 // QMM-specific STEF2 header
 #include "game_stef2.h"
 #include "qmm.hpp"
-#include "main.hpp"     // qmm_syscall in GEN_IMPORT
 #include "util.hpp"
 
 struct STEF2_GameSupport : public GameSupport {
@@ -34,12 +33,12 @@ struct STEF2_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload();
+    virtual void ModUnload(APIType);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
-    virtual intptr_t syscall(intptr_t, ...);
-    virtual intptr_t vmMain(intptr_t, ...);
+    virtual intptr_t syscall_args(intptr_t, intptr_t* args);
+    virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
 
     virtual const char* DefaultDLLName() { return "game" MOD_DLL; }
     virtual const char* DefaultModDir() { return "BASE"; }
@@ -91,9 +90,7 @@ bool STEF2_GameSupport::AutoDetect(APIType engineapi) {
 
 // wrapper syscall function that calls actual engine func from orig_import
 // this is how QMM and plugins will call into the engine
-intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
-    QMM_GET_SYSCALL_ARGS();
-
+intptr_t STEF2_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "STEF2_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
@@ -495,9 +492,7 @@ intptr_t STEF2_GameSupport::syscall(intptr_t cmd, ...) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t STEF2_GameSupport::vmMain(intptr_t cmd, ...) {
-    QMM_GET_VMMAIN_ARGS();
-
+intptr_t STEF2_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "STEF2_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (!orig_export)
@@ -591,7 +586,7 @@ bool STEF2_GameSupport::ModLoad(void* entry, APIType mod_api) {
     return !!orig_export;
 }
 
-void STEF2_GameSupport::ModUnload() {
+void STEF2_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
 }
 
@@ -1016,8 +1011,9 @@ void STEF2_GameSupport::update_exports() {
 
     if (changed) {
         // this will trigger this message to be fired to plugins, and then it will be handled
-        // by the empty "case G_LOCATE_GAME_DATA" in MOHAA_syscall
-        qmm_syscall(G_LOCATE_GAME_DATA, (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, nullptr, 0);
+        // by the empty "case G_LOCATE_GAME_DATA" in syscall
+        intptr_t args[] = { (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, (intptr_t)nullptr, 0 };
+        QMM::syscall_args(G_LOCATE_GAME_DATA, args);
     }
 }
 
@@ -1380,8 +1376,8 @@ void STEF2_GameSupport::SpawnEntities(const char* mapname, const char* entstring
         entity_tokens = Util::util_parse_entstring(entstring);
         token_counter = 0;
     }
-    QMM::CGame::is_from_QMM = true;
-    (void)::vmMain(GAME_SPAWN_ENTITIES, mapname, entstring, levelTime);
+    intptr_t args[] = { (intptr_t)mapname, (intptr_t)entstring, levelTime };
+    (void)QMM::vmMain_args(GAME_SPAWN_ENTITIES, args);
 }
 
 
