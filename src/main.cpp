@@ -13,12 +13,10 @@ Created By:
 #define _CRT_SECURE_NO_WARNINGS
 #include "version.h"
 #include "log.hpp"
-#include "format.hpp"
-#include "config.hpp"
+#include "format.hpp"   // used in 64-bit GetCGameAPI only
 #include "qmm.hpp"
-#include "plugin.hpp"   // g_plugins
 #include "mod.hpp"      // g_mod
-#include "util.hpp"
+#include "util.hpp"     // used in 64-bit GetCGameAPI only
 
 
 /* This file contains all the entry points for QMM.

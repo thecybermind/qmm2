@@ -10,14 +10,12 @@ Created By:
 */
 
 #include <cstdint>
-#include <vector>
 #include <string>
 #include "log.hpp"
 #include "qmmapi.h"
 #include "gameapi.hpp"
 #include "qmm.hpp"
 #include "config.hpp"
-#include "main.hpp"         // qmm_syscall
 #include "mod.hpp"          // g_mod
 #include "plugin.hpp"       // g_plugins
 #include "qvm.h"

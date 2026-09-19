@@ -19,7 +19,6 @@ Created By:
 #include <map>
 #include <vector>
 #include <string>
-#include <cstring>
 #include <cstdio>
 #include <q2r/rerelease/game.h>
 #include "gameapi.hpp"
