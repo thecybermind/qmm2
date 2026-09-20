@@ -132,10 +132,10 @@ namespace QMM {
         }
 
         // now that the game is detected, cache some dynamic message values that get evaluated a lot
-        msg_G_PRINT = game->QMMEngMsg(QMM_G_PRINT);
-        msg_GAME_INIT = game->QMMModMsg(QMM_GAME_INIT);
-        msg_GAME_CONSOLE_COMMAND = game->QMMModMsg(QMM_GAME_CONSOLE_COMMAND);
-        msg_GAME_SHUTDOWN = game->QMMModMsg(QMM_GAME_SHUTDOWN);
+        msg_G_PRINT = QMM_ENG_MSG(QMM_G_PRINT);
+        msg_GAME_INIT = QMM_MOD_MSG(QMM_GAME_INIT);
+        msg_GAME_CONSOLE_COMMAND = QMM_MOD_MSG(QMM_GAME_CONSOLE_COMMAND);
+        msg_GAME_SHUTDOWN = QMM_MOD_MSG(QMM_GAME_SHUTDOWN);
 
         // call the game-specific entry handler (e.g. Q3A_GameSupport::Entry) which will set up the internals to interact
         // the engine and the mod
@@ -441,8 +441,7 @@ namespace QMM {
         // void trap_Argv(int argn, char* buffer, int bufferSize);
         // some games don't return pointers because of QVM interaction, so if this returns anything but null
         // (or true?), we probably are in an api game, and need to get the arg from the return value instead
-        intptr_t args[] = { argn, (intptr_t)buf, buflen };
-        intptr_t ret = QMM::game->syscall_args(QMM::game->QMMEngMsg(QMM_G_ARGV), args);
+        intptr_t ret = ENG_SYSCALL(QMM::game->QMMEngMsg(QMM_G_ARGV), argn, buf, buflen);
         if (ret > 1)
             Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
@@ -464,7 +463,7 @@ namespace QMM {
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")] initializing\n";
 
             // get mod dir from engine
-            char moddir[256];
+            char moddir[256] = "";
             ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), QMM::game->ModCvar(), moddir, sizeof(moddir));
             moddir[sizeof(moddir) - 1] = '\0';
             QMM::mod_dir = moddir;
@@ -489,8 +488,9 @@ namespace QMM {
             if (!QMM::LoadMod(cfg_mod)) {
                 if (!QMM::is_shutdown) {
                     QMM::is_shutdown = true;
-                    QMMLOG(QMM_LOG_FATAL, "QMM") << "QMM was unable to load the mod file using \"" << cfg_mod << "\". Please set the \"mod\" option in qmm2.json. Refer to the documentation for more information.\n";
-                    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ERROR), "\nFatal QMM Error:\nQMM was unable to load the mod file.\nPlease set the \"mod\" option in qmm2.json.\nRefer to the documentation for more information.\n");
+                    std::string error_msg = fmt::format("QMM was unable to load the mod file using \"{}\". Please set the \"mod\" option in qmm2.json. Refer to the documentation for more information.\n", cfg_mod);
+                    QMMLOG(QMM_LOG_FATAL, "QMM") << error_msg;
+                    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ERROR), error_msg.c_str());
                 }
                 return 0;
             }
