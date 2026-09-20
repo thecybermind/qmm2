@@ -21,6 +21,9 @@ Created By:
 
 /* This file contains all the entry points for QMM.
  * This is how the engine loads QMM, and how the mod will call into QMM (thinking it's the engine).
+ *
+ *
+ * Initial entry points:
  * 
  * void dllEntry(eng_syscall syscall):
  * Called by some engines to give the mod the engine's syscall pointer. the engine will then call vmMain for all mod
@@ -39,6 +42,9 @@ Created By:
  * This is similar to GetGameAPI, but for the client side of the game. This is used only in Quake 2: Remastered
  * which puts the server- and client-side mod components in the same DLL. QMM does not do any hooking of this, and
  * attempts to simply pass the import pointer through to the actual mod DLL and return the mod's export pointer.
+ *
+ * 
+ * API entry points:
  *
  * intptr_t vmMain(intptr_t cmd, ...):
  * Primary entry point for actual game-related functions from engine->mod. Whenever the engine wants the mod to do
