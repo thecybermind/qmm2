@@ -193,7 +193,7 @@ namespace Util {
         Dl_info dli;
         memset(&dli, 0, sizeof(dli));
 
-        if (!dladdr(&dli, &dli))
+        if (!dladdr(path, &dli))
             path[0] = '\0';
         else
             strncpyz(path, dli.dli_fname, sizeof(path));
@@ -213,7 +213,7 @@ namespace Util {
         Dl_info dli;
         memset(&dli, 0, sizeof(dli));
 
-        if (!dladdr(&dli, &dli))
+        if (!dladdr(&module, &dli))
             return nullptr;
 
         module = dli.dli_fbase;
@@ -249,6 +249,8 @@ namespace Util {
 #if defined(QMM_OS_WINDOWS)
         return (void*)GetProcAddress((HMODULE)dll, symbol);
 #elif defined(QMM_OS_LINUX)
+        if (!dll || !symbol)
+            return nullptr;
         return dlsym(dll, symbol);
 #endif
     }
@@ -258,7 +260,9 @@ namespace Util {
 #if defined(QMM_OS_WINDOWS)
         return (bool)FreeLibrary((HMODULE)dll);
 #elif defined(QMM_OS_LINUX)
-        // returns 0 on success, non-zero otherwise
+        if (!dll)
+            return false;
+        // dlclose returns 0 on success, non-zero otherwise
         return !dlclose(dll);
 #endif
     }
