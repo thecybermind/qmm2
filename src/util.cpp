@@ -67,15 +67,21 @@ namespace Util {
             return true;
 
         path = path_normalize(path);
-        // get portions of the path that match the exe and QMM DLL paths
-        auto rel_qmm = std::filesystem::relative(path, QMM::qmm_dir);
-        auto rel_exe = std::filesystem::relative(path, QMM::exe_dir);
-        // if there is no relative path, the return is ""
-        // if the relative path requires going back up, it starts with ".."
-        // otherwise it should be the relative path from qmm_dir or exe_dir 
-        if ((!rel_qmm.empty() && rel_qmm.u8string()[0] != '.') || (!rel_exe.empty() && rel_exe.u8string()[0] != '.'))
-            return true;
-        return false;
+        try {
+            // get portions of the path that match the exe and QMM DLL paths
+            auto rel_qmm = std::filesystem::relative(path, QMM::qmm_dir);
+            auto rel_exe = std::filesystem::relative(path, QMM::exe_dir);
+            // if there is no relative path, the return is ""
+            // if the relative path requires going back up, it starts with ".."
+            // otherwise it should be the relative path from qmm_dir or exe_dir 
+            if ((!rel_qmm.empty() && rel_qmm.u8string()[0] != '.') || (!rel_exe.empty() && rel_exe.u8string()[0] != '.'))
+                return true;
+
+            return false;
+        }
+        catch (std::filesystem::filesystem_error&) {
+            return false;
+        }
     }
 
 
@@ -135,6 +141,7 @@ namespace Util {
             buf[sizeof(buf) - 1] = '\0';
             ret.push_back(buf);
         }
+        LocalFree(argv);
 #elif defined(QMM_OS_LINUX)
         // read null-terminated argv strings from /proc/self/cmdline
         std::ifstream in("/proc/self/cmdline");
@@ -149,6 +156,9 @@ namespace Util {
 
     std::string util_get_cmdline_arg(std::string arg, std::string def) {
         std::vector<std::string> argv = util_get_proc_cmdline();
+        if (argv.size() <= 1)
+            return def;
+
         // 1 to skip binary name
         // don't read last arg because it can't have a "next" arg
         for (size_t i = 1; i < argv.size() - 1; i++) {
@@ -193,7 +203,7 @@ namespace Util {
         Dl_info dli;
         memset(&dli, 0, sizeof(dli));
 
-        if (!dladdr(path, &dli))
+        if (!dladdr((void*)util_get_qmm_path, &dli))
             path[0] = '\0';
         else
             strncpyz(path, dli.dli_fname, sizeof(path));
@@ -213,7 +223,7 @@ namespace Util {
         Dl_info dli;
         memset(&dli, 0, sizeof(dli));
 
-        if (!dladdr(&module, &dli))
+        if (!dladdr((void*)util_get_qmm_handle, &dli))
             return nullptr;
 
         module = dli.dli_fbase;
