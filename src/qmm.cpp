@@ -280,9 +280,9 @@ namespace QMM {
 
 
     bool LoadPlugin(std::string plugin_path) {
-        Plugin p;
         // absolute path, just attempt to load it directly
         if (Util::path_is_absolute(plugin_path)) {
+            Plugin p;
             // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
             if (p.Load(plugin_path) > 0) {
                 g_plugins.push_back(std::move(p));
@@ -298,6 +298,7 @@ namespace QMM {
             fmt::format("{}/{}/{}", exe_dir, mod_dir, plugin_path),
         };
         for (std::string& try_path : try_paths) {
+            Plugin p;
             try_path = Util::path_normalize(try_path);
             if (try_path.empty() || !Util::path_is_allowed(try_path))
                 continue;
@@ -308,11 +309,13 @@ namespace QMM {
                 return true;
             }
             // file not found, bad DLL, or not a valid plugin DLL
-            else if (ret == 0)
+            else if (ret == 0) {
                 continue;
+            }
             // path was to a valid plugin DLL, but shouldn't be loaded
-            else if (ret < 0)
+            else if (ret < 0) {
                 return false;
+            }
         }
 
         return false;
