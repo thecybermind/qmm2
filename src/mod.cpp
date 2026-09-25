@@ -80,6 +80,7 @@ bool Mod::Load(std::string file, APIType mod_api) {
         // if this DLL is the same as QMM, cancel
         if (handle == QMM::qmm_module_ptr) {
             QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << Util::path_basename(file) << "\"): DLL is actually QMM?\n";
+            Util::dll_close(handle);
             return false;
         }
 
@@ -90,12 +91,17 @@ bool Mod::Load(std::string file, APIType mod_api) {
                 return true;
             if (this->InitDLL(file, handle, QMM_API_DLLENTRY))
                 return true;
+
+            Util::dll_close(handle);
+            return false;
         }
         else if (this->InitDLL(file, handle, mod_api))  {
             return true;
         }
 
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << Util::path_basename(file) << "\"): Unable to locate a valid mod entry point\n";
+        Util::dll_close(handle);
+        return false;
     }
     else {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << Util::path_basename(file) << "\"): Unknown mod file format\n";
