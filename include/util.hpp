@@ -247,6 +247,13 @@ namespace Util {
     std::vector<std::string> util_parse_entstring(std::string entstring);
 
     /**
+    * @brief Handles logging for multiple exception object types.
+    * 
+    * @param msg Extra message to append
+    */
+    void util_exception(std::string msg);
+
+    /**
     * @brief Returns whichever value is greater - a typical "max" function.
     *
     * This was created to avoid any overlap with a "max" function from stdlib or game SDKs.

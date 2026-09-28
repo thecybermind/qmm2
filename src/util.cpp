@@ -20,6 +20,7 @@ Created By:
 #include <filesystem>
 #include "qmm.hpp"
 #include "util.hpp"     // str_striequal
+#include "log.hpp"
 #include "format.hpp"
 
 #if defined(QMM_OS_WINDOWS)
@@ -385,6 +386,20 @@ namespace Util {
         }
 
         return ret;
+    }
+
+
+    void util_exception(std::string msg)
+    {
+        try {
+            throw;  // rethrow exception so we can figure out the type
+        }
+        catch (const std::exception& e) {
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "Exception caught: " << e.what() << " - " << msg << "\n";
+        }
+        catch (...) {
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "Exception caught: " << msg << "\n";
+        }
     }
 
 }   // namespace Util
