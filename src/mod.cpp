@@ -12,12 +12,14 @@ Created By:
 #include <cstdint>
 #include <string>
 #include "log.hpp"
+#include "format.hpp"
 #include "qmmapi.h"
 #include "gameapi.hpp"
 #include "qmm.hpp"
 #include "config.hpp"
 #include "mod.hpp"          // g_mod
 #include "plugin.hpp"       // g_plugins
+#include "main.hpp"         // qmm_syscall
 #include "qvm.h"
 #include "util.hpp"
 
@@ -80,6 +82,7 @@ bool Mod::Load(std::string file, APIType mod_api) {
         // if this DLL is the same as QMM, cancel
         if (handle == QMM::qmm_module_ptr) {
             QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << Util::path_basename(file) << "\"): DLL is actually QMM?\n";
+            Util::dll_close(handle);
             return false;
         }
 
@@ -90,12 +93,17 @@ bool Mod::Load(std::string file, APIType mod_api) {
                 return true;
             if (this->InitDLL(file, handle, QMM_API_DLLENTRY))
                 return true;
+
+            Util::dll_close(handle);
+            return false;
         }
         else if (this->InitDLL(file, handle, mod_api))  {
             return true;
         }
 
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << Util::path_basename(file) << "\"): Unable to locate a valid mod entry point\n";
+        Util::dll_close(handle);
+        return false;
     }
     else {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::Load(\"" << Util::path_basename(file) << "\"): Unknown mod file format\n";
@@ -153,20 +161,27 @@ intptr_t Mod::QVM_vmMain(intptr_t cmd, ...) {
 
 
 int Mod::QVM_syscall(uint8_t* membase, int cmd, int* args) {
-    // check for plugin qvm function registration
-    if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
-        Plugin* p = g_registered_qvm_funcs[cmd];
+    // don't let exceptions bubble up to the C QVM
+    try {
+        // check for plugin qvm function registration
+        if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
+            Plugin* p = g_registered_qvm_funcs[cmd];
 
-        // make sure plugin has the handler function (shouldn't have been registered, but check anyway)
-        if (!p->QMM_QVMHandler)
-            return 0;
+            // make sure plugin has the handler function (shouldn't have been registered, but check anyway)
+            if (!p->QMM_QVMHandler)
+                return 0;
 
-        // pass the negative-1 form since that's the number the plugin probably stored and expects
-        return p->QMM_QVMHandler(-cmd - 1, args);
+            // pass the negative-1 form since that's the number the plugin probably stored and expects
+            return p->QMM_QVMHandler(-cmd - 1, args);
+        }
+
+        // call the game-specific QVM syscall handler
+        return QMM::game->QVMSyscall(membase, cmd, args);
     }
-
-    // call the game-specific QVM syscall handler
-    return QMM::game->QVMSyscall(membase, cmd, args);
+    catch (...) {
+        Util::util_exception(fmt::format("Mod::QVM_syscall({})", cmd));
+        return 0;
+    }
 }
 
 
@@ -257,6 +272,9 @@ bool Mod::InitDLL(std::string file, void* handle, APIType dll_api) {
 
             return false;
         }
+
+        // we need to pass qmm_syscall to mod's dllEntry function
+        pfndllEntry(qmm_syscall);
 
         break;
     }
