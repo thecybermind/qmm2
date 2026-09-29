@@ -111,7 +111,7 @@ intptr_t STVOYHM_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     // do anything that needs to be done after function call here
 
     if (cmd != G_PRINT)
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "STVOYHM_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "STVOYHM_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }

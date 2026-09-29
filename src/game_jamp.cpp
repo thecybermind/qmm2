@@ -442,33 +442,33 @@ intptr_t JAMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
             ROUTE_IMPORT(G2API_OverrideServer, G_G2_OVERRIDESERVER);
             ROUTE_IMPORT(G2API_GetSurfaceName, G_G2_GETSURFACENAME);
 
-        // handle special cmds which QMM uses but JAMP doesn't have an analogue for
-        case G_ARGS: {
-            // quake2: char* (*args)(void);
-            static std::string s;
-            static char buf[MAX_STRING_CHARS];
-            s = "";
-            int i = 1;
-            while (i < orig_import.Argc()) {
-                orig_import.Argv(i, buf, sizeof(buf));
-                buf[sizeof(buf) - 1] = '\0';
-                if (i != 1)
-                    s += " ";
-                s += buf;
+            // handle special cmds which QMM uses but JAMP doesn't have an analogue for
+            case G_ARGS: {
+                // quake2: char* (*args)(void);
+                static std::string s;
+                static char buf[MAX_STRING_CHARS];
+                s = "";
+                int i = 1;
+                while (i < orig_import.Argc()) {
+                    orig_import.Argv(i, buf, sizeof(buf));
+                    buf[sizeof(buf) - 1] = '\0';
+                    if (i != 1)
+                        s += " ";
+                    s += buf;
+                }
+                ret = (intptr_t)s.c_str();
+                break;
             }
-            ret = (intptr_t)s.c_str();
-            break;
-        }
 
-        default:
-            break;
+            default:
+                break;
         };
     }
 
     // do anything that needs to be done after function call here
 
     if (cmd != G_PRINT)
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
