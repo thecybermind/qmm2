@@ -516,23 +516,25 @@ namespace QMM {
                 }
 
                 // load plugins
-                QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
-                for (std::string& plugin_path : Config::cfg_get_array_str(g_cfg, "plugins")) {
-                    QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
-                    if (QMM::LoadPlugin(plugin_path)) {
-                        QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" loaded\n";
+                if (game->HasPluginSupport()) {
+                    QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
+                    for (std::string& plugin_path : Config::cfg_get_array_str(g_cfg, "plugins")) {
+                        QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
+                        if (QMM::LoadPlugin(plugin_path)) {
+                            QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" loaded\n";
+                        }
+                        else {
+                            QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" not loaded\n";
+                        }
                     }
-                    else {
-                        QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" not loaded\n";
-                    }
-                }
-                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << g_plugins.size() << " plugin(s)\n";
+                    QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << g_plugins.size() << " plugin(s)\n";
 
-                // exec the qmmexec cfg
-                std::string cfg_execcfg = Config::cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
-                if (!cfg_execcfg.empty()) {
-                    QMMLOG(QMM_LOG_NOTICE, "QMM") << "Executing config file \"" << cfg_execcfg << "\"\n";
-                    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_SEND_CONSOLE_COMMAND), QMM_ENG_MSG(QMM_EXEC_APPEND), fmt::format("exec {}\n", cfg_execcfg).c_str());
+                    // exec the qmmexec cfg
+                    std::string cfg_execcfg = Config::cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
+                    if (!cfg_execcfg.empty()) {
+                        QMMLOG(QMM_LOG_NOTICE, "QMM") << "Executing config file \"" << cfg_execcfg << "\"\n";
+                        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_SEND_CONSOLE_COMMAND), QMM_ENG_MSG(QMM_EXEC_APPEND), fmt::format("exec {}\n", cfg_execcfg).c_str());
+                    }
                 }
 
                 // we're done!

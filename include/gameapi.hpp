@@ -98,6 +98,8 @@ enum APIType {
     QMM_API_DLLENTRY,       // dllEntry()
     QMM_API_GETGAMEAPI,     // GetGameAPI()
     QMM_API_GETMODULEAPI,   // GetModuleAPI()
+
+    QMM_API_GETCGAMEAPI,    // GetCGameAPI()
 };
 
 /**
@@ -301,6 +303,13 @@ struct GameSupport {
     * @return QMM short code for game engine
     */
     virtual const char* GameCode() = 0;
+    
+    /**
+    * @brief Should QMM load plugins for this game?
+    * 
+    * @return Bool if QMM should load plugins
+    */
+    virtual bool HasPluginSupport() { return true; }
 
     /**
     * @brief Handler for syscalls out of the QVM.

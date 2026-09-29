@@ -32,6 +32,7 @@ GEN_GAME_EXTS(MOHAA);
 GEN_GAME_EXTS(MOHSH);
 GEN_GAME_EXTS(MOHBT);
 GEN_GAME_EXTS(Q2R);
+GEN_GAME_EXTS(Q2RSP);
 GEN_GAME_EXTS(QUAKE2);
 GEN_GAME_EXTS(SIN);
 GEN_GAME_EXTS(SOF2SP);
@@ -78,6 +79,7 @@ std::vector<GameSupport*> api_supportedgames = {
 // Q2R only exists for 64-bit Windows
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
 	GET_GAME_OBJ(Q2R),
+	GET_GAME_OBJ(Q2RSP),
 #endif
 };
 
@@ -91,6 +93,8 @@ const char* APIType_Name(APIType api) {
 		GEN_CASE(QMM_API_DLLENTRY);
 		GEN_CASE(QMM_API_GETGAMEAPI);
 		GEN_CASE(QMM_API_GETMODULEAPI);
+
+		GEN_CASE(QMM_API_GETCGAMEAPI);
 	default:
 		return "unknown";
 	};
@@ -104,12 +108,16 @@ const char* APIType_Function(APIType api) {
 
 	case QMM_API_QVM:
 		return "QVM";
+
 	case QMM_API_DLLENTRY:
 		return "dllEntry";
 	case QMM_API_GETGAMEAPI:
 		return "GetGameAPI";
 	case QMM_API_GETMODULEAPI:
 		return "GetModuleAPI";
+
+	case QMM_API_GETCGAMEAPI:
+		return "GetCGameAPI";
 
 	default:
 		return "unknown";

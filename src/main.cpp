@@ -262,6 +262,8 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
             return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
         }
 
+        return QMM::HandleEntry(import, nullptr, QMM_API_GETCGAMEAPI);
+/*
         // client-side-only load. just get QMM file info and slap "qmm_" in front of the qmm filename
         QMM::DetectEnv();
 
@@ -271,10 +273,17 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
             return nullptr;
 
         mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(dll, "GetCGameAPI");
+        // if we couldn't find the GetCGameAPI function, unload the DLL
+        if (!pfnGCGA) {
+            Util::dll_close(dll);
+            return nullptr;
+        }
 
         // return CGame export from mod DLL
         // note we do not unload the DLL
-        return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
+        // TODO: add QMM_API_GETCGAMEAPI code again, along with a Q2RSP game code to load like any other game
+        return pfnGCGA(import, nullptr);
+        */
     }
     catch (...) {
         Util::util_exception(fmt::format("GetCGameAPI({})", fmt::ptr(import)));
