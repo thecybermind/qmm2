@@ -26,7 +26,7 @@ struct JAMP_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* arg0, void* arg1, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload(APIType);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -70,8 +70,8 @@ GEN_GAME_OBJ(JAMP);
 
 
 // auto-detection logic for JAMP
-bool JAMP_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_DLLENTRY && engineapi != QMM_API_GETMODULEAPI)
+bool JAMP_GameSupport::AutoDetect(APIType engine_api) {
+    if (engine_api != QMM_API_DLLENTRY && engine_api != QMM_API_GETMODULEAPI)
         return false;
 
     // QMM filename must match default or an OpenJK temp filename (if DLL was pulled from .pk3)

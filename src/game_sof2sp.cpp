@@ -28,7 +28,7 @@ struct SOF2SP_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload(APIType);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -67,8 +67,8 @@ GEN_GAME_OBJ(SOF2SP);
 
 
 // auto-detection logic for SOF2SP
-bool SOF2SP_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_GETGAMEAPI)
+bool SOF2SP_GameSupport::AutoDetect(APIType engine_api) {
+    if (engine_api != QMM_API_GETGAMEAPI)
         return false;
 
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
@@ -306,19 +306,22 @@ intptr_t SOF2SP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 }
 
 
-void* SOF2SP_GameSupport::Entry(void* apiversion, void* import, APIType) {
-    orig_apiversion = (intptr_t)apiversion;
-    QMMLOG(QMM_LOG_DEBUG, "QMM") << "SOF2SP_GameSupport::Entry(" << orig_apiversion << ", " << import << ") called\n";
+void* SOF2SP_GameSupport::Entry(void* apiversion, void* import, APIType engine_api) {
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "SOF2SP_GameSupport::Entry(" << apiversion << ", " << import << ") called\n";
 
-    // original import struct from engine
-    // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
-    game_import_t* gi = (game_import_t*)import;
-    orig_import = *gi;
+    if (engine_api == QMM_API_GETGAMEAPI) {
+        orig_apiversion = (intptr_t)apiversion;
 
-    // fill in variables of our hooked import struct to pass to the mod
-    // qmm_import.unknown = orig_import.unknown;
+        // original import struct from engine
+        // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
+        game_import_t* gi = (game_import_t*)import;
+        orig_import = *gi;
 
-    QMMLOG(QMM_LOG_DEBUG, "QMM") << "SOF2SP_GameSupport::Entry(" << orig_apiversion << ", " << import << ") returning " << &qmm_export << "\n";
+        // fill in variables of our hooked import struct to pass to the mod
+        // qmm_import.unknown = orig_import.unknown;
+    }
+
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "SOF2SP_GameSupport::Entry(" << apiversion << ", " << import << ") returning " << &qmm_export << "\n";
 
     // struct full of export lambdas to QMM's vmMain
     // this gets returned to the game engine, but we haven't loaded the mod yet.

@@ -33,9 +33,9 @@ struct Q2RSP_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
     virtual const char* ModMsgName(intptr_t msg);
     virtual bool AutoDetect(APIType engine_api);
-    virtual void* Entry(void* syscall, void*, APIType);
-    virtual bool ModLoad(void* entry, APIType);
-    virtual void ModUnload(APIType);
+    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual bool ModLoad(void* entry, APIType mod_api);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -67,8 +67,8 @@ GEN_GAME_OBJ(Q2RSP);
 
 
 // auto-detection logic for Q2RSP
-bool Q2RSP_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_GETCGAMEAPI)
+bool Q2RSP_GameSupport::AutoDetect(APIType engine_api) {
+    if (engine_api != QMM_API_GETCGAMEAPI)
         return false;
 
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))

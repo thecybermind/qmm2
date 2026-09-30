@@ -36,7 +36,7 @@ struct MOHSH_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload(APIType);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -77,8 +77,8 @@ GEN_GAME_OBJ(MOHSH);
 
 
 // auto-detection logic for MOHSH
-bool MOHSH_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_GETGAMEAPI)
+bool MOHSH_GameSupport::AutoDetect(APIType engine_api) {
+    if (engine_api != QMM_API_GETGAMEAPI)
         return false;
 
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
@@ -528,20 +528,22 @@ intptr_t MOHSH_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 }
 
 
-void* MOHSH_GameSupport::Entry(void* import, void*, APIType) {
+void* MOHSH_GameSupport::Entry(void* import, void*, APIType engine_api) {
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "MOHSH_GameSupport::Entry(" << import << ") called\n";
 
-    // original import struct from engine
-    // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
-    game_import_t* gi = (game_import_t*)import;
-    orig_import = *gi;
+    if (engine_api == QMM_API_GETGAMEAPI) {
+        // original import struct from engine
+        // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
+        game_import_t* gi = (game_import_t*)import;
+        orig_import = *gi;
 
-    // fill in variables of our hooked import struct to pass to the mod
-    qmm_import.DebugLines = orig_import.DebugLines;
-    qmm_import.numDebugLines = orig_import.numDebugLines;
-    qmm_import.DebugStrings = orig_import.DebugStrings;
-    qmm_import.numDebugStrings = orig_import.numDebugStrings;
-    qmm_import.fsDebug = orig_import.fsDebug;
+        // fill in variables of our hooked import struct to pass to the mod
+        qmm_import.DebugLines = orig_import.DebugLines;
+        qmm_import.numDebugLines = orig_import.numDebugLines;
+        qmm_import.DebugStrings = orig_import.DebugStrings;
+        qmm_import.numDebugStrings = orig_import.numDebugStrings;
+        qmm_import.fsDebug = orig_import.fsDebug;
+    }
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "MOHSH_GameSupport::Entry(" << import << ") returning " << &qmm_export << "\n";
 

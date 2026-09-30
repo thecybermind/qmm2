@@ -27,7 +27,7 @@ struct COD11MP_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload(APIType);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -120,11 +120,13 @@ intptr_t COD11MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 }
 
 
-void* COD11MP_GameSupport::Entry(void* syscall, void*, APIType) {
+void* COD11MP_GameSupport::Entry(void* syscall, void*, APIType engine_api) {
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "COD11MP_GameSupport::Entry(" << syscall << ") called\n";
 
-    // store original syscall from engine
-    orig_syscall = (eng_syscall)syscall;
+    if (engine_api == QMM_API_DLLENTRY) {
+        // store original syscall from engine
+        orig_syscall = (eng_syscall)syscall;
+    }
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "COD11MP_GameSupport::Entry(" << syscall << ") returning\n";
 

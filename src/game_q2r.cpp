@@ -33,9 +33,9 @@ struct Q2R_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
     virtual const char* ModMsgName(intptr_t msg);
     virtual bool AutoDetect(APIType engine_api);
-    virtual void* Entry(void* syscall, void*, APIType);
-    virtual bool ModLoad(void* entry, APIType);
-    virtual void ModUnload(APIType);
+    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual bool ModLoad(void* entry, APIType mod_api);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -84,8 +84,8 @@ GEN_GAME_OBJ(Q2R);
 
 
 // auto-detection logic for Q2R
-bool Q2R_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_GETGAMEAPI)
+bool Q2R_GameSupport::AutoDetect(APIType engine_api) {
+    if (engine_api != QMM_API_GETGAMEAPI)
         return false;
 
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
@@ -410,32 +410,37 @@ intptr_t Q2R_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 }
 
 
-void* Q2R_GameSupport::Entry(void* import, void*, APIType) {
+void* Q2R_GameSupport::Entry(void* import, void*, APIType engine_api) {
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2R_GameSupport::Entry(" << import << ") called\n";
 
     void* ret = nullptr;
 
-    // original import struct from engine
-    // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
-    game_import_t* gi = (game_import_t*)import;
-    orig_import = *gi;
+    if (engine_api == QMM_API_GETGAMEAPI) {
+        // original import struct from engine
+        // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
+        game_import_t* gi = (game_import_t*)import;
+        orig_import = *gi;
 
-    // fill in variables of our hooked import struct to pass to the mod
-    qmm_import.tick_rate = orig_import.tick_rate;
-    qmm_import.frame_time_s = orig_import.frame_time_s;
-    qmm_import.frame_time_ms = orig_import.frame_time_ms;
+        // fill in variables of our hooked import struct to pass to the mod
+        qmm_import.tick_rate = orig_import.tick_rate;
+        qmm_import.frame_time_s = orig_import.frame_time_s;
+        qmm_import.frame_time_ms = orig_import.frame_time_ms;
 
-    // struct full of export lambdas to QMM's vmMain
-    // this gets returned to the game engine, but we haven't loaded the mod yet.
-    // the only thing in this struct the engine uses before calling Init is the apiversion
-    ret = &qmm_export;
+        // struct full of export lambdas to QMM's vmMain
+        // this gets returned to the game engine, but we haven't loaded the mod yet.
+        // the only thing in this struct the engine uses before calling Init is the apiversion
+        ret = &qmm_export;
+    }
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2R_GameSupport::Entry(" << import << ") returning " << ret << "\n";
     return ret;
 }
 
 
-bool Q2R_GameSupport::ModLoad(void* entry, APIType) {
+bool Q2R_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_GETGAMEAPI)
+        return false;
+
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 

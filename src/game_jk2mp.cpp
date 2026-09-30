@@ -28,7 +28,7 @@ struct JK2MP_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload(APIType);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -58,8 +58,8 @@ GEN_GAME_OBJ(JK2MP);
 
 
 // auto-detection logic for JK2MP
-bool JK2MP_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_DLLENTRY)
+bool JK2MP_GameSupport::AutoDetect(APIType engine_api) {
+    if (engine_api != QMM_API_DLLENTRY)
         return false;
 
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
@@ -150,11 +150,13 @@ intptr_t JK2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 }
 
 
-void* JK2MP_GameSupport::Entry(void* syscall, void*, APIType) {
+void* JK2MP_GameSupport::Entry(void* syscall, void*, APIType engine_api) {
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "JK2MP_GameSupport::Entry(" << syscall << ") called\n";
 
-    // store original syscall from engine
-    orig_syscall = (eng_syscall)syscall;
+    if (engine_api == QMM_API_DLLENTRY) {
+        // store original syscall from engine
+        orig_syscall = (eng_syscall)syscall;
+    }
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "JK2MP_GameSupport::Entry(" << syscall << ") returning\n";
 
