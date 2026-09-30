@@ -95,6 +95,7 @@ intptr_t CODUOMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
             if (i != 1)
                 s += " ";
             s += buf;
+            i++;
         }
         ret = (intptr_t)s.c_str();
         break;

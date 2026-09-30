@@ -306,6 +306,7 @@ intptr_t JASP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
             if (i != 1)
                 s += " ";
             s += orig_import.argv(i);
+            i++;
         }
         ret = (intptr_t)s.c_str();
         break;
