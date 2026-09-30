@@ -239,8 +239,8 @@ cgame_import_t Q2RSP_GameSupport::orig_import;
 cgame_export_t* Q2RSP_GameSupport::orig_export = nullptr;
 
 
-// struct with lambdas that call QMM's vmMain function. this is given to the game engine
-// struct with lambdas that call QMM's vmMain function or route directly to the mod's export struct
+// struct with lambdas that call QMM's vmMain function or route directly to the mod's export struct.
+// this is given to the game engine
 cgame_export_t Q2RSP_GameSupport::qmm_export = {
     CGAME_API_VERSION,	                                    // apiversion
     +[]() { QMM::vmMain_args(CGAME_INIT, nullptr); },

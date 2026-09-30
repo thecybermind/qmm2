@@ -75,10 +75,10 @@ C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import);
 * grabs the function from g_mod.dll and gets the GetCGameAPI function easily.
 *
 * Since QMM does not care about CGame, we check if QMM has already loaded things. If it has, QMM has already loaded
-* the mod DLL so we can easily route to the mod's GetCGameAPI function. If not, we load the mod DLL and find GetCGameAPI,
-* pass the import pointer to it, and return the mod's export pointer. If QMM has not loaded things, then we have 2 situations:
+* the mod DLL so we can easily route to the mod's GetCGameAPI function. If QMM has not loaded things, then we have 2 situations:
 * this is the initial load at startup where just Init() and Shutdown() are called, or the player is joining a remote server to
-* play. Either way, QMM won't be loaded at all during this load so just do a quick DLL load, with no config, no logfile, etc.
+* play. Either way, QMM loads the Q2RSP game support which hooks only export->Init() and export->Shutdown() and does not allow
+* plugins to be loaded. All other game functions are passed through directly without hooking.
 *
 * @param import Pointer to engine's CGame import function table
 * @return Pointer to CGame export function table
