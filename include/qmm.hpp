@@ -124,7 +124,7 @@ namespace QMM {
     *
     * @param arg_start ArgV index of "qmm" argument (all other arguments are relative to this)
     */
-    void HandleQMMCommand(intptr_t arg_start);
+    void HandleQMMCommand(const char* cmd, intptr_t arg_start);
 
     extern intptr_t msg_G_PRINT;                // Value of G_PRINT for the detected game
     extern intptr_t msg_GAME_INIT;              // Value of GAME_INIT for the detected game

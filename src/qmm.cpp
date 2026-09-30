@@ -563,7 +563,7 @@ namespace QMM {
                     || Util::str_striequal("qmmcmd", arg_cmd)
                     || Util::str_striequal("/qmmcmd", arg_cmd)) {
                     // because of "sv", pass 0 or 1 which gets added to argn in the handler function
-                    HandleQMMCommand(argn);
+                    HandleQMMCommand(arg_cmd, argn);
                     return 1;
                 }
             }
@@ -634,7 +634,7 @@ namespace QMM {
 // Print formatted string to game console
 #define CONSOLE_PRINTF(str, ...)	ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
 
-    void HandleQMMCommand(intptr_t arg_start) {
+    void HandleQMMCommand(const char* cmd, intptr_t arg_start) {
         char arg1[10] = "", arg2[10] = "";
 
         int argc = (int)ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ARGC));
@@ -737,15 +737,15 @@ namespace QMM {
                 CONSOLE_PRINTF("(QMM) Unknown command: {}\n", arg1);
                 CONSOLE_PRINT("(QMM)\n");
             }
-            CONSOLE_PRINT("(QMM) Usage: qmm <command> [params]\n");
-            CONSOLE_PRINT("(QMM) Available commands:\n");
-            CONSOLE_PRINT("(QMM) qmm info - displays information about QMM\n");
-            CONSOLE_PRINT("(QMM) qmm list - displays list of loaded QMM plugins\n");
-            CONSOLE_PRINT("(QMM) qmm plugin <id> - outputs info on plugin with id\n");
-            CONSOLE_PRINT("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
-            CONSOLE_PRINT("(QMM) qmm reload - reloads the QMM configuration file\n");
-            CONSOLE_PRINT("(QMM) qmm credits - QMM credits\n");
-            CONSOLE_PRINT("(QMM) qmm help - displays this help\n");
+            CONSOLE_PRINTF("(QMM) Usage: {} <command> [params]\n", cmd);
+            CONSOLE_PRINT ("(QMM) Available commands:\n");
+            CONSOLE_PRINT ("(QMM) qmm info - displays information about QMM\n");
+            CONSOLE_PRINT ("(QMM) qmm list - displays list of loaded QMM plugins\n");
+            CONSOLE_PRINT ("(QMM) qmm plugin <id> - outputs info on plugin with id\n");
+            CONSOLE_PRINT ("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
+            CONSOLE_PRINT ("(QMM) qmm reload - reloads the QMM configuration file\n");
+            CONSOLE_PRINT ("(QMM) qmm credits - QMM credits\n");
+            CONSOLE_PRINT ("(QMM) qmm help - displays this help\n");
         }
     }
 
