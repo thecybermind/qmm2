@@ -100,7 +100,8 @@ namespace QMM {
 
         api = engine;
 
-        Log::log_init(fmt::format("{}/qmm2.log", qmm_dir));
+        bool append = false;
+        Log::log_init(fmt::format("{}/qmm2.log", qmm_dir), Log::DEFAULT_SEVERITY, append);
 
         QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")] (" << APIType_Function(engine) << ") loaded!\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "QMM path: \"" << qmm_path << "\"\n";
@@ -236,12 +237,17 @@ namespace QMM {
     bool LoadMod(std::string cfg_mod) {
         if (cfg_mod.empty())
             cfg_mod = "auto";
+        
+        // if QMM was loaded other than GetCGameAPI, try all APIs to load mod
+        APIType try_api = api;
+        if (try_api != QMM_API_GETCGAMEAPI)
+            try_api = QMM_API_ERROR;
 
         QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to find mod using \"" << cfg_mod << "\"\n";
         // if "mod" config setting is an absolute path, just attempt to load it directly
         if (!Util::str_striequal(cfg_mod, "auto") && Util::path_is_absolute(cfg_mod)) {
             QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << cfg_mod << "\"\n";
-            return g_mod.Load(cfg_mod);
+            return g_mod.Load(cfg_mod, try_api);
         }
         // if "mod" config setting is "auto", try the following locations in order:
         // "<qvmname>" (if the game engine supports it)
@@ -271,7 +277,7 @@ namespace QMM {
             if (try_path.empty() || !Util::path_is_allowed(try_path))
                 continue;
             QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << try_path << "\"\n";
-            if (g_mod.Load(try_path))
+            if (g_mod.Load(try_path, try_api))
                 return true;
         }
 
@@ -325,14 +331,13 @@ namespace QMM {
     intptr_t Route(bool is_syscall, intptr_t cmd, intptr_t* args) {
         const char* msg_name;
         const char* func_name;
-        GameSupport* gamesupport = game;
 
         if (is_syscall) {
-            msg_name = gamesupport->EngMsgName(cmd);
+            msg_name = game->EngMsgName(cmd);
             func_name = "syscall";
         }
         else {
-            msg_name = gamesupport->ModMsgName(cmd);
+            msg_name = game->ModMsgName(cmd);
             func_name = "vmMain";
         }
 
@@ -386,9 +391,9 @@ namespace QMM {
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) called\n";
 
             if (is_syscall)
-                real_ret = gamesupport->syscall_args(cmd, args);
+                real_ret = game->syscall_args(cmd, args);
             else
-                real_ret = gamesupport->vmMain_args(cmd, args);
+                real_ret = game->vmMain_args(cmd, args);
 
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) returning " << real_ret << "\n";
         }
@@ -580,12 +585,14 @@ namespace QMM {
                     g_mod.Unload();
                 }
 
-                // unload each plugin (call QMM_Detach, and then dlclose)
-                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
-                for (Plugin& p : g_plugins) {
-                    p.Unload();
+                if (game->HasPluginSupport()) {
+                    // unload each plugin (call QMM_Detach, and then dlclose)
+                    QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
+                    for (Plugin& p : g_plugins) {
+                        p.Unload();
+                    }
+                    g_plugins.clear();
                 }
-                g_plugins.clear();
 
                 QMMLOG(QMM_LOG_NOTICE, "QMM") << "Finished shutting down\n";
             }
