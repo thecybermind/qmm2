@@ -28,6 +28,8 @@ Created By:
 
 namespace QMM {
 
+    std::vector<std::string> qmm_commands = { "qmm", "/qmm", "qmmcmd", "/qmmcmd" };
+
     namespace CGame {
         /* About cgame passthrough hack (not Quake 2 Remaster (Q2R), see comments before GetCGameAPI() for that):
            Some single player games, like Star Trek Voyager: Elite Force (STVOYSP), Jedi Knight 2 (JK2SP) and Jedi
@@ -561,13 +563,12 @@ namespace QMM {
                     QMM::ArgV(argn, arg_cmd, sizeof(arg_cmd));
                 }
                 // check for "qmm" command
-                if (Util::str_striequal("qmm", arg_cmd)
-                    || Util::str_striequal("/qmm", arg_cmd)
-                    || Util::str_striequal("qmmcmd", arg_cmd)
-                    || Util::str_striequal("/qmmcmd", arg_cmd)) {
-                    // because of "sv", pass 0 or 1 which gets added to argn in the handler function
-                    HandleQMMCommand(arg_cmd, argn);
-                    return 1;
+                for (auto qmm_cmd : qmm_commands) {
+                    if (Util::str_striequal(qmm_cmd, arg_cmd)) {
+                        // because of "sv", pass 0 or 1 which gets added to argn in the handler function
+                        HandleQMMCommand(arg_cmd, argn);
+                        return 1;
+                    }
                 }
             }
 
@@ -647,7 +648,7 @@ namespace QMM {
 
         if (Util::str_striequal("status", arg1) || Util::str_striequal("info", arg1)) {
             CONSOLE_PRINT("(QMM) QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")]\n");
-            CONSOLE_PRINTF("(QMM) Game       : {}/\"{}\" ({}) (Source: {})\n", QMM::game->GameCode(), QMM::game->GameName(), APIType_Function(QMM::api), QMM::is_auto_detected ? "Auto-detected" : "Config file");
+            CONSOLE_PRINTF("(QMM) Game       : {}/\"{}\" ({}) (Source: {})\n", QMM::game->GameCode(), QMM::game->GameName(), APIType_Function(QMM::engine_api), QMM::is_auto_detected ? "Auto-detected" : "Config file");
             CONSOLE_PRINTF("(QMM) ModDir     : {}\n", QMM::mod_dir);
             CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", QMM::cfg_path, g_cfg.empty() ? "(error)" : "");
             CONSOLE_PRINT("(QMM) Built      : " QMM_COMPILE " by " QMM_BUILDER "\n");
