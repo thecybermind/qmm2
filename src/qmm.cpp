@@ -518,7 +518,8 @@ namespace QMM {
                     // pass original cgame syscall to dllEntry in mod
                     mod_dllEntry pfndllEntry = (mod_dllEntry)Util::dll_symbol(g_mod.dll, "dllEntry");
                     QMMLOG(QMM_LOG_DEBUG, "QMM") << "Passing cgame syscall to dllEntry = " << pfndllEntry << "\n";
-                    pfndllEntry(QMM::CGame::syscall);
+                    if (pfndllEntry)
+                        pfndllEntry(QMM::CGame::syscall);
                 }
 
                 // load plugins
