@@ -488,7 +488,9 @@ namespace QMM {
                 QMMLOG(QMM_LOG_INFO, "QMM") << "URL: " QMM_URL "\n";
 
                 // create qmm_version cvar
-                ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
+                if (game->HasPluginSupport()) {
+                    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
+                }
 
                 // load mod
                 std::string cfg_mod = Config::cfg_get_string(g_cfg, "mod", "auto");
