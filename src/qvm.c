@@ -238,7 +238,7 @@ int qvm_load(qvm* vm, const uint8_t* filemem, size_t filesize, qvm_syscall qvmsy
                 log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_load(): Invalid QVM file: can't read instruction %ud, reached end of file\n", i);
                 goto fail;
             }
-            vm->codesegment[i].param = *(int*)codeoffset;
+            memcpy(&vm->codesegment[i].param, codeoffset, 4);
             codeoffset += 4;
             break;
 
@@ -276,7 +276,7 @@ fail:
 void qvm_unload(qvm* vm) {
     if (!vm)
         return;
-    if (vm->memory)
+    if (vm->memory && vm->allocator && vm->allocator->free)
         vm->allocator->free(vm->memory, vm->memorysize, vm->allocator->ctx);
     vm->memory = NULL;
     qvm_init(vm);
@@ -607,77 +607,66 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
 
         // memory/pointer management
 
-        case QVM_OP_LOAD1: {
+        case QVM_OP_LOAD1:
             // get 1-byte value at address stored in opstack[0] and store back in opstack[0]
-            uint8_t* src = datasegment + (opstack[0] & datamask);
-            opstack[0] = (int)*src;
+            memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 4);
+            opstack[0] &= 0x000000FF;
             break;
-        }
 
-        case QVM_OP_LOAD2: {
+        case QVM_OP_LOAD2:
             // get 2-byte value at address stored in opstack[0] and store back in opstack[0]
-            uint16_t* src = (uint16_t*)(datasegment + (opstack[0] & datamask));
-            opstack[0] = (int)*src;
+            memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 4);
+            opstack[0] &= 0x0000FFFF;
             break;
-        }
 
-        case QVM_OP_LOAD4: {
+        case QVM_OP_LOAD4:
             // get 4-byte value at address stored in opstack[0] and store back in opstack[0]
-            int* src = (int*)(datasegment + (opstack[0] & datamask));
-            opstack[0] = *src;
+            memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 4);
             break;
-        }
 
-        case QVM_OP_STORE1: {
+        case QVM_OP_STORE1:
             // store 1-byte value from opstack[0] into address stored in opstack[1]
-            uint8_t* dst = datasegment + (opstack[1] & datamask);
-            *dst = (uint8_t)(opstack[0] & 0xFF);
+            opstack[0] &= 0x000000FF;
+            memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 4);
             QVM_POPN(2);
             break;
-        }
 
-        case QVM_OP_STORE2: {
+        case QVM_OP_STORE2:
             // store 2-byte value from opstack[0] into address stored in opstack[1] 
-            uint16_t* dst = (uint16_t*)(datasegment + (opstack[1] & datamask));
-            *dst = (uint16_t)(opstack[0] & 0xFFFF);
+            opstack[0] &= 0x0000FFFF;
+            memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 4);
             QVM_POPN(2);
             break;
-        }
 
-        case QVM_OP_STORE4: {
+        case QVM_OP_STORE4:
             // store 4-byte value from opstack[0] into address stored in opstack[1]
-            int* dst = (int*)(datasegment + (opstack[1] & datamask));
-            *dst = opstack[0];
+            memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 4);
             QVM_POPN(2);
             break;
-        }
 
         case QVM_OP_ARG:
             // set a function-call arg (offset = param) to the value on top of opstack
-            *(int*)((uint8_t*)programstack + param) = opstack[0];
+            memcpy((uint8_t*)programstack + param, &opstack[0], 4);
             QVM_POP();
             break;
 
         case QVM_OP_BLOCK_COPY: {
             // copy mem from address in opstack[0] to address in opstack[1] for 'param' number of bytes
-            int srci = (opstack[0] & datamask);
-            int dsti = (opstack[1] & datamask);
+            unsigned int src = (opstack[0] & datamask);
+            unsigned int dst = (opstack[1] & datamask);
 
             QVM_POPN(2);
 
             // skip if src/dst are the same
-            if (srci == dsti)
+            if (src == dst)
                 break;
 
             // make sure the src and dst ranges don't go out of memory bounds
-            int count = param;
-            count = ((srci + count) & datamask) - srci;
-            count = ((dsti + count) & datamask) - dsti;
-
-            uint8_t* src = datasegment + srci;
-            uint8_t* dst = datasegment + dsti;
+            unsigned int count = param;
+            count = ((src + count) & datamask) - src;
+            count = ((dst + count) & datamask) - dst;
             
-            memcpy(dst, src, count);
+            memcpy(datasegment + dst, datasegment + src, count);
 
             break;
         }
@@ -884,6 +873,12 @@ int qvm_hunk_alloc(qvm* vm, size_t size, const void* init) {
     // round up size for alignment
     size_t realsize = (size + (QVM_HUNK_ALIGNMENT-1)) & ~(QVM_HUNK_ALIGNMENT - 1);
 
+    // not enough space left for padded realsize
+    if (vm->hunkptr - (int)realsize < vm->hunklow) {
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_alloc(): Hunk allocation failed for realsize %zu\n", realsize);
+        return 0;
+    }
+
     vm->hunkptr -= (int)realsize;
 
     if (init)
@@ -911,8 +906,14 @@ void qvm_hunk_free(qvm* vm, int ptr, size_t size, void* out) {
     size_t realsize = (size + (QVM_HUNK_ALIGNMENT - 1)) & ~(QVM_HUNK_ALIGNMENT - 1);
 
     // size too big or 0
-    if (!size || (ptr + (int)realsize > vm->hunkhigh)) {
+    if (!size || (ptr + (int)size > vm->hunkhigh)) {
         log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free invalid size %zu\n", size);
+        return;
+    }
+
+    // realsize too big
+    if (ptr + (int)realsize > vm->hunkhigh) {
+        log_c(QMM_LOG_ERROR, QMM_LOGGING_TAG, "qvm_hunk_free(): Trying to free invalid realsize %zu\n", realsize);
         return;
     }
 
