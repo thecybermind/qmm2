@@ -548,7 +548,7 @@ namespace QMM {
                 QMMLOG(QMM_LOG_NOTICE, "QMM") << "Startup successful!\n";
             }
 
-            else if (cmd == QMM::msg_GAME_CONSOLE_COMMAND) {
+            else if (cmd == QMM::msg_GAME_CONSOLE_COMMAND && game->HasPluginSupport()) {
                 char arg_cmd[10];
                 int argn = 0;
                 // get command
