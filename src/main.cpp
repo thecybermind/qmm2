@@ -250,7 +250,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
     try {
         // Q2R cgame hack:
         // if the game is already detected, then this is the later GetCGameAPI load which takes place in the menus after QMM
-        // is loaded, so just get the return value from the mod's GetCGameAPI() function directly
+        // is loaded, or when hosting a listen server, so just get the return value from the mod's GetCGameAPI() function directly
         if (QMM::game) {
             // ??
             if (!g_mod.dll) {
@@ -263,27 +263,6 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
         }
 
         return QMM::HandleEntry(import, nullptr, QMM_API_GETCGAMEAPI);
-/*
-        // client-side-only load. just get QMM file info and slap "qmm_" in front of the qmm filename
-        QMM::DetectEnv();
-
-        std::string modpath = fmt::format("{}/qmm_{}", QMM::qmm_dir, QMM::qmm_file);
-        void* dll = Util::dll_load(modpath.c_str());
-        if (!dll)
-            return nullptr;
-
-        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(dll, "GetCGameAPI");
-        // if we couldn't find the GetCGameAPI function, unload the DLL
-        if (!pfnGCGA) {
-            Util::dll_close(dll);
-            return nullptr;
-        }
-
-        // return CGame export from mod DLL
-        // note we do not unload the DLL
-        // TODO: add QMM_API_GETCGAMEAPI code again, along with a Q2RSP game code to load like any other game
-        return pfnGCGA(import, nullptr);
-        */
     }
     catch (...) {
         Util::util_exception(fmt::format("GetCGameAPI({})", fmt::ptr(import)));
