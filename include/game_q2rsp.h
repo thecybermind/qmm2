@@ -17,7 +17,7 @@ enum {
 	CGAME_INIT,
 	CGAME_SHUTDOWN,
 
-	CGAME_CONSOLE_COMMAND = 99999,	// doesn't exist, but QMM needs a value to compare
+	CGAME_CONSOLE_COMMAND = -100,	// doesn't exist, but QMM needs a value to compare
 };
 
 // import ("syscall") cmds that QMM needs values for
