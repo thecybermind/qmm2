@@ -106,11 +106,11 @@ intptr_t Q2RSP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
             break;
         }
         case CG_CVAR_REGISTER: {
-            // q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
+            // q2r: cvar_t *(*cvar) (const char *var_name, const char *value, cvar_flags_t flags);
             // qmm: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
             // qmm always passes NULL for vmCvar so don't worry about it
-            char* var_name = (char*)(args[1]);
-            char* value = (char*)(args[2]);
+            const char* var_name = (char*)(args[1]);
+            const char* value = (char*)(args[2]);
             cvar_flags_t flags = (cvar_flags_t)args[3];
             (void)orig_import.cvar(var_name, value, flags);
             break;

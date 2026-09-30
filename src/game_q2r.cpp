@@ -188,11 +188,11 @@ intptr_t Q2R_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 
         // handle special cmds which QMM uses but Q2R doesn't have an analogue for
     case G_CVAR_REGISTER: {
-        // q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
+        // q2r: cvar_t *(*cvar) (const char *var_name, const char *value, cvar_flags_t flags);
         // qmm: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
         // qmm always passes NULL for vmCvar so don't worry about it
-        char* var_name = (char*)(args[1]);
-        char* value = (char*)(args[2]);
+        const char* var_name = (char*)(args[1]);
+        const char* value = (char*)(args[2]);
         cvar_flags_t flags = (cvar_flags_t)args[3];
         (void)orig_import.cvar(var_name, value, flags);
         break;
@@ -200,11 +200,11 @@ intptr_t Q2R_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     case G_CVAR_VARIABLE_STRING_BUFFER: {
         // q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
         // qmm: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
-        char* var_name = (char*)(args[0]);
+        const char* var_name = (char*)(args[0]);
         char* buffer = (char*)(args[1]);
         intptr_t bufsize = args[2];
         *buffer = '\0';
-        cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
+        cvar_t* cvar = orig_import.cvar(var_name, "", CVAR_NOFLAGS);
         if (cvar)
             Util::strncpyz(buffer, cvar->string, (size_t)bufsize);
         break;
