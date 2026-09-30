@@ -88,7 +88,8 @@ intptr_t Q3A_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
         char buf[MAX_STRING_CHARS];
         s = "";
         int i = 1;
-        while (i < orig_syscall(G_ARGC)) {
+        int argc = Util::util_min(orig_syscall(G_ARGC), 200);
+        while (i < argc) {
             orig_syscall(G_ARGV, i, buf, sizeof(buf));
             buf[sizeof(buf) - 1] = '\0';
             if (i != 1)
@@ -129,7 +130,7 @@ intptr_t Q3A_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 
     // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
     // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
-    if (cmd == GAME_CLIENT_CONNECT && ret && g_mod.vm.memory) {
+    if (cmd == GAME_CLIENT_CONNECT && ret > 0 && g_mod.vm.memory) {
         ret += (intptr_t)g_mod.vm.memory;
     }
 

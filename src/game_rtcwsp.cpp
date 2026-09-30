@@ -104,7 +104,8 @@ intptr_t RTCWSP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
         static char buf[MAX_STRING_CHARS];
         s = "";
         int i = 1;
-        while (i < orig_syscall(G_ARGC)) {
+        int argc = Util::util_min(orig_syscall(G_ARGC), 200);
+        while (i < argc) {
             orig_syscall(G_ARGV, i, buf, sizeof(buf));
             buf[sizeof(buf) - 1] = '\0';
             if (i != 1)

@@ -251,7 +251,8 @@ intptr_t JK2SP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
         static std::string s;
         s = "";
         int i = 1;
-        while (i < orig_import.argc()) {
+        int argc = Util::util_min(orig_import.argc(), 200);
+        while (i < argc) {
             if (i != 1)
                 s += " ";
             s += orig_import.argv(i);
