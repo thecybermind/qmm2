@@ -647,19 +647,19 @@ namespace QMM {
             QMM::ArgV(arg_start + 2, arg2, sizeof(arg2));
 
         if (Util::str_striequal("status", arg1) || Util::str_striequal("info", arg1)) {
-            CONSOLE_PRINT("(QMM) QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")]\n");
-            CONSOLE_PRINTF("(QMM) Game       : {}/\"{}\" ({}) (Source: {})\n", QMM::game->GameCode(), QMM::game->GameName(), APIType_Function(QMM::engine_api), QMM::is_auto_detected ? "Auto-detected" : "Config file");
+            CONSOLE_PRINT ("(QMM) QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")]\n");
+            CONSOLE_PRINTF("(QMM) Game       : {}/\"{}\" ({}) (Source: {})\n", QMM::game->GameCode(), QMM::game->GameName(), APIType_Function(QMM::api), QMM::is_auto_detected ? "Auto-detected" : "Config file");
             CONSOLE_PRINTF("(QMM) ModDir     : {}\n", QMM::mod_dir);
             CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", QMM::cfg_path, g_cfg.empty() ? "(error)" : "");
-            CONSOLE_PRINT("(QMM) Built      : " QMM_COMPILE " by " QMM_BUILDER "\n");
-            CONSOLE_PRINT("(QMM) URL        : " QMM_URL "\n");
-            CONSOLE_PRINT("(QMM) PIFV       : " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
+            CONSOLE_PRINT ("(QMM) Built      : " QMM_COMPILE " by " QMM_BUILDER "\n");
+            CONSOLE_PRINT ("(QMM) URL        : " QMM_URL "\n");
+            CONSOLE_PRINT ("(QMM) PIFV       : " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
             CONSOLE_PRINTF("(QMM) Plugins    : {}\n", g_plugins.size());
             CONSOLE_PRINTF("(QMM) Loaded mod : {} ({})\n", g_mod.path, APIType_Function(g_mod.api));
             if (g_mod.vm.memory) {
-                CONSOLE_PRINT("(QMM)\n");
-                CONSOLE_PRINT("(QMM) QVM mod information\n");
-                CONSOLE_PRINT("(QMM) -------------------\n");
+                CONSOLE_PRINT ("(QMM)\n");
+                CONSOLE_PRINT ("(QMM) QVM mod information\n");
+                CONSOLE_PRINT ("(QMM) -------------------\n");
                 CONSOLE_PRINTF("(QMM) QVM magic number   : {:x} ({})\n", g_mod.vm.magic, g_mod.vm.magic == QVM_MAGIC ? "QVM_MAGIC" : "QVM_MAGIC_VER2");
                 CONSOLE_PRINTF("(QMM) QVM file size      : {}\n", g_mod.vm.filesize);
                 CONSOLE_PRINTF("(QMM) QVM memory base    : {}\n", fmt::ptr(g_mod.vm.memory));
@@ -739,7 +739,7 @@ namespace QMM {
         else {
             if (!Util::str_striequal("help", arg1)) {
                 CONSOLE_PRINTF("(QMM) Unknown command: {}\n", arg1);
-                CONSOLE_PRINT("(QMM)\n");
+                CONSOLE_PRINT ("(QMM)\n");
             }
             CONSOLE_PRINTF("(QMM) Usage: {} <command> [params]\n", cmd);
             CONSOLE_PRINT ("(QMM) Available commands:\n");
