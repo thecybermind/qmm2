@@ -12,6 +12,8 @@ Created By:
 #ifndef QMM2_GAME_Q2R_H
 #define QMM2_GAME_Q2R_H
 
+#include <q2r/rerelease/game.h>
+
 // import ("syscall") cmds
 enum {
 	GV_TICK_RATE,

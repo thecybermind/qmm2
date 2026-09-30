@@ -12,6 +12,8 @@ Created By:
 #ifndef QMM2_GAME_Q2RSP_H
 #define QMM2_GAME_Q2RSP_H
 
+#include <q2r/rerelease/game.h>
+
 // export ("vmMain") cmds
 enum {
 	CGAME_INIT,
