@@ -42,9 +42,11 @@ namespace Log {
 #ifdef _DEBUG
     // Initial severity for log file
     constexpr AixLog::Severity DEFAULT_SEVERITY = AixLog::Severity::debug;
+    constexpr bool DEFAULT_APPEND = true;
 #else
     // Initial severity for log file
     constexpr AixLog::Severity DEFAULT_SEVERITY = AixLog::Severity::info;
+    constexpr bool DEFAULT_APPEND = false;
 #endif
 
     // Severity to log to game console
@@ -65,7 +67,7 @@ namespace Log {
     * @param severity Initial severity for log file
     * @param append true if the log file should be appended-to after opening (not truncated), false otherwise
     */
-    void log_init(std::string file, AixLog::Severity severity = DEFAULT_SEVERITY, bool append = false);
+    void log_init(std::string file, AixLog::Severity severity = DEFAULT_SEVERITY, bool append = DEFAULT_APPEND);
 
     /**
     * @brief Convert severity name to value

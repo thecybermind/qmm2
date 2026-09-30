@@ -100,8 +100,7 @@ namespace QMM {
 
         api = engine;
 
-        bool append = false;
-        Log::log_init(fmt::format("{}/qmm2.log", qmm_dir), Log::DEFAULT_SEVERITY, append);
+        Log::log_init(fmt::format("{}/qmm2.log", qmm_dir), Log::DEFAULT_SEVERITY, Log::DEFAULT_APPEND);
 
         QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")] (" << APIType_Function(engine) << ") loaded!\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "QMM path: \"" << qmm_path << "\"\n";
@@ -559,7 +558,10 @@ namespace QMM {
                     QMM::ArgV(argn, arg_cmd, sizeof(arg_cmd));
                 }
                 // check for "qmm" command
-                if (Util::str_striequal("qmm", arg_cmd) || Util::str_striequal("/qmm", arg_cmd)) {
+                if (Util::str_striequal("qmm", arg_cmd)
+                    || Util::str_striequal("/qmm", arg_cmd)
+                    || Util::str_striequal("qmmcmd", arg_cmd)
+                    || Util::str_striequal("/qmmcmd", arg_cmd)) {
                     // because of "sv", pass 0 or 1 which gets added to argn in the handler function
                     HandleQMMCommand(argn);
                     return 1;
