@@ -126,7 +126,7 @@
     <ClInclude Include="..\include\osdef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\game_q2rsp.h">
+    <ClInclude Include="..\include\game_q2rc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -224,7 +224,7 @@
     <ClCompile Include="..\src\gameapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game_q2rsp.cpp">
+    <ClCompile Include="..\src\game_q2rc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

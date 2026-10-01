@@ -24,12 +24,12 @@ Created By:
 #include "gameapi.hpp"
 #include "log.hpp"
 #include "format.hpp"
-// QMM-specific Q2RSP header
-#include "game_q2rsp.h"
+// QMM-specific Q2RC header
+#include "game_q2rc.h"
 #include "qmm.hpp"
 #include "util.hpp"
 
-struct Q2RSP_GameSupport : public GameSupport {
+struct Q2RC_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
     virtual const char* ModMsgName(intptr_t msg);
     virtual bool AutoDetect(APIType engine_api);
@@ -46,7 +46,7 @@ struct Q2RSP_GameSupport : public GameSupport {
     virtual const char* DefaultModDir() { return "baseq2"; }
     virtual const char* ModCvar() { return "game"; }
     virtual const char* GameName() { return "Quake 2 Remastered (SP)"; }
-    virtual const char* GameCode() { return "Q2RSP"; }
+    virtual const char* GameCode() { return "Q2RC"; }
     virtual bool HasPluginSupport() { return false; }
 
 private:
@@ -63,11 +63,11 @@ private:
     const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = { CGAME_INIT, CGAME_SHUTDOWN, CGAME_CONSOLE_COMMAND, };
 };
 
-GEN_GAME_OBJ(Q2RSP);
+GEN_GAME_OBJ(Q2RC);
 
 
-// auto-detection logic for Q2RSP
-bool Q2RSP_GameSupport::AutoDetect(APIType engine_api) {
+// auto-detection logic for Q2RC
+bool Q2RC_GameSupport::AutoDetect(APIType engine_api) {
     if (engine_api != QMM_API_GETCGAMEAPI)
         return false;
 
@@ -83,9 +83,9 @@ bool Q2RSP_GameSupport::AutoDetect(APIType engine_api) {
 
 // this syscall function is only used by QMM to call into the engine for basic functionality
 // we only need to implement what QMM actually calls: print, error, console command, cvar register
-intptr_t Q2RSP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
+intptr_t Q2RC_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != CG_PRINT)
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RSP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RC_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (orig_import.Com_Print) {
         switch (cmd) {
@@ -133,7 +133,7 @@ intptr_t Q2RSP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
         };
     }
     if (cmd != CG_PRINT)
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RSP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RC_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning\n";
 
     return 0;
 }
@@ -141,8 +141,8 @@ intptr_t Q2RSP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 
 // wrapper vmMain function that calls actual mod func from orig_export
 // this is how QMM and plugins will call into the mod
-intptr_t Q2RSP_GameSupport::vmMain_args(intptr_t cmd, intptr_t*) {
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RSP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
+intptr_t Q2RC_GameSupport::vmMain_args(intptr_t cmd, intptr_t*) {
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RC_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
     if (orig_export) {
         switch (cmd) {
@@ -157,14 +157,14 @@ intptr_t Q2RSP_GameSupport::vmMain_args(intptr_t cmd, intptr_t*) {
         };
     }
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RSP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RC_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning\n";
 
     return 0;
 }
 
 
-void* Q2RSP_GameSupport::Entry(void* import, void*, APIType engine_api) {
-    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2RSP_GameSupport::Entry(" << import << ") called\n";
+void* Q2RC_GameSupport::Entry(void* import, void*, APIType engine_api) {
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2RC_GameSupport::Entry(" << import << ") called\n";
 
     void* ret = nullptr;
 
@@ -180,12 +180,12 @@ void* Q2RSP_GameSupport::Entry(void* import, void*, APIType engine_api) {
         ret = &qmm_export;
     }
 
-    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2RSP_GameSupport::Entry(" << import << ") returning " << ret << "\n";
+    QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2RC_GameSupport::Entry(" << import << ") returning " << ret << "\n";
     return ret;
 }
 
 
-bool Q2RSP_GameSupport::ModLoad(void* entry, APIType mod_api) {
+bool Q2RC_GameSupport::ModLoad(void* entry, APIType mod_api) {
     if (mod_api != QMM_API_GETCGAMEAPI)
         return false;
 
@@ -196,12 +196,12 @@ bool Q2RSP_GameSupport::ModLoad(void* entry, APIType mod_api) {
 }
 
 
-void Q2RSP_GameSupport::ModUnload(APIType) {
+void Q2RC_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
 }
 
 
-const char* Q2RSP_GameSupport::EngMsgName(intptr_t cmd) {
+const char* Q2RC_GameSupport::EngMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(CG_PRINT);
         GEN_CASE(CG_ERROR);
@@ -217,32 +217,32 @@ const char* Q2RSP_GameSupport::EngMsgName(intptr_t cmd) {
         GEN_CASE(CG_FS_WRITE);
         GEN_CASE(CG_FS_FCLOSE_FILE);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
 
-const char* Q2RSP_GameSupport::ModMsgName(intptr_t cmd) {
+const char* Q2RC_GameSupport::ModMsgName(intptr_t cmd) {
     switch (cmd) {
         GEN_CASE(CGAME_INIT);
         GEN_CASE(CGAME_SHUTDOWN);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
 
-cgame_import_t Q2RSP_GameSupport::orig_import;
+cgame_import_t Q2RC_GameSupport::orig_import;
 
 
-cgame_export_t* Q2RSP_GameSupport::orig_export = nullptr;
+cgame_export_t* Q2RC_GameSupport::orig_export = nullptr;
 
 
 // struct with lambdas that call QMM's vmMain function or route directly to the mod's export struct.
 // this is given to the game engine
-cgame_export_t Q2RSP_GameSupport::qmm_export = {
+cgame_export_t Q2RC_GameSupport::qmm_export = {
     CGAME_API_VERSION,    // apiversion
     +[]() { QMM::vmMain_args(CGAME_INIT, nullptr); },
     +[]() { QMM::vmMain_args(CGAME_SHUTDOWN, nullptr); },

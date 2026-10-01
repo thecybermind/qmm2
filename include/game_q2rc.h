@@ -9,8 +9,8 @@ Created By:
 
 */
 
-#ifndef QMM2_GAME_Q2RSP_H
-#define QMM2_GAME_Q2RSP_H
+#ifndef QMM2_GAME_Q2RC_H
+#define QMM2_GAME_Q2RC_H
 
 #include <q2r/rerelease/game.h>
 
@@ -41,7 +41,7 @@ enum {
 
 // other values
 enum {
-    // not used with Q2RSP
+    // not used with Q2RC
     EXEC_APPEND,
     // file flags
     FS_READ,
@@ -52,4 +52,4 @@ enum {
     CVAR_ROM = CVAR_NOSET // 8
 };
 
-#endif // QMM2_GAME_Q2RSP_H
+#endif // QMM2_GAME_Q2RC_H
