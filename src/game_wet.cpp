@@ -383,8 +383,8 @@ const char* WET_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_ARGS);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -408,7 +408,8 @@ const char* WET_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_MESSAGERECEIVED);
         GEN_CASE(GAME_DEMOSTATECHANGED);
         GEN_CASE(GAME_SNAPSHOT_CALLBACK_EXT);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }

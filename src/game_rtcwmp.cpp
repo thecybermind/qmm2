@@ -410,8 +410,8 @@ const char* RTCWMP_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_ARGS);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -432,8 +432,9 @@ const char* RTCWMP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(AICAST_VISIBLEFROMPOS);
         GEN_CASE(AICAST_CHECKATTACKATPOS);
         GEN_CASE(GAME_RETRIEVE_MOVESPEEDS_FROM_CLIENT);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }
 

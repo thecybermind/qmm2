@@ -310,8 +310,8 @@ const char* CODMP_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_ARGS);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -343,8 +343,8 @@ const char* CODMP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_GET_CLIENTSCORE);
         GEN_CASE(GAME_GET_FOG_DISTANCE);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 

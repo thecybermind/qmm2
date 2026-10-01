@@ -552,8 +552,8 @@ const char* JASP_GameSupport::EngMsgName(intptr_t cmd) {
         GEN_CASE(G_LOCATE_GAME_DATA);
         GEN_CASE(G_GET_ENTITY_TOKEN);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -579,8 +579,9 @@ const char* JASP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAMEVP_GENTITIES);
         GEN_CASE(GAMEV_GENTITYSIZE);
         GEN_CASE(GAMEV_NUM_ENTITIES);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }
 

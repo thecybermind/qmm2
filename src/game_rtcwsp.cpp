@@ -402,8 +402,8 @@ const char* RTCWSP_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_ARGS);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -425,7 +425,8 @@ const char* RTCWSP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(AICAST_CHECKATTACKATPOS);
         GEN_CASE(GAME_RETRIEVE_MOVESPEEDS_FROM_CLIENT);
         GEN_CASE(GAME_GETMODELINFO);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }

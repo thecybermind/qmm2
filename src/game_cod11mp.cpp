@@ -292,8 +292,8 @@ const char* COD11MP_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_ARGS);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -322,8 +322,8 @@ const char* COD11MP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_SET_CLIENTARCHIVETIME);
         GEN_CASE(GAME_GET_CLIENTSCORE);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 

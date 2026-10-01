@@ -539,8 +539,8 @@ const char* SOF2MP_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_ARGS);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -562,8 +562,9 @@ const char* SOF2MP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(BOTAI_START_FRAME);
         GEN_CASE(GAME_SPAWN_RMG_ENTITY);
         GEN_CASE(GAME_GAMETYPE_COMMAND);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }
 

@@ -374,8 +374,8 @@ const char* Q3A_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_ARGS);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -393,8 +393,9 @@ const char* Q3A_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_RUN_FRAME);
         GEN_CASE(GAME_CONSOLE_COMMAND);
         GEN_CASE(BOTAI_START_FRAME);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }
 

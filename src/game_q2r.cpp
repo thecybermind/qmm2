@@ -544,8 +544,8 @@ const char* Q2R_GameSupport::EngMsgName(intptr_t cmd) {
         GEN_CASE(G_GET_USERINFO);
         GEN_CASE(G_GET_ENTITY_TOKEN);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -588,8 +588,8 @@ const char* Q2R_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_ENTITY_ISVISIBLETOPLAYER);
         GEN_CASE(GAME_GETSHADOWLIGHTDATA);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 

@@ -941,8 +941,8 @@ const char* STEF2_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_GET_ENTITY_TOKEN);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -986,8 +986,9 @@ const char* STEF2_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAMEV_NUM_ENTITIES);
         GEN_CASE(GAMEV_MAX_ENTITIES);
         GEN_CASE(GAMEVP_ERRORMESSAGE);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }
 

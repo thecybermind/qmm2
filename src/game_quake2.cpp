@@ -486,8 +486,8 @@ const char* QUAKE2_GameSupport::EngMsgName(intptr_t cmd) {
         GEN_CASE(G_GET_ENTITY_TOKEN);
         GEN_CASE(G_GET_CONFIGSTRING);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -515,8 +515,8 @@ const char* QUAKE2_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAMEV_NUM_EDICTS);
         GEN_CASE(GAMEV_MAX_EDICTS);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 

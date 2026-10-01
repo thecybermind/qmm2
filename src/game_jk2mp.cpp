@@ -416,8 +416,8 @@ const char* JK2MP_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_ARGS);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -436,8 +436,9 @@ const char* JK2MP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_CONSOLE_COMMAND);
         GEN_CASE(BOTAI_START_FRAME);
         GEN_CASE(GAME_ROFF_NOTETRACK_CALLBACK);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }
 

@@ -464,8 +464,8 @@ const char* SOF2SP_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_ERROR);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -499,8 +499,8 @@ const char* SOF2SP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_UNKNOWN24);
         GEN_CASE(GAME_UNKNOWN25);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 

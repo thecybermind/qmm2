@@ -58,7 +58,7 @@ C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import);
 * @brief Engine->Mod entrypoint for Quake 2 Remastered client logic.
 *
 * If Q2R loads the client, it will always be after the server has been loaded, or it won't load the server at all. So if this
-* is called while QMM has not already loaded the server-side, we let the Q2RSP game logic handle a very minor hooking of just
+* is called while QMM has not already loaded the server-side, we let the Q2RC game logic handle a very minor hooking of just
 * Init() and Shutdown(). All other export calls are passed through directly, and imports are not hooked at all (this import
 * pointer is passed directly to the mod's GetCGameAPI function).
 *

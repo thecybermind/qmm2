@@ -940,8 +940,9 @@ const char* JAMP_GameSupport::EngMsgName(intptr_t cmd) {
 
         // polyfills
         GEN_CASE(G_ARGS);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }
 
@@ -989,8 +990,8 @@ const char* JAMP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_NAV_FINDCOMBATPOINTWAYPOINTS);
         GEN_CASE(GAME_GETITEMINDEXBYTAG);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 

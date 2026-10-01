@@ -32,7 +32,7 @@ GEN_GAME_EXTS(MOHAA);
 GEN_GAME_EXTS(MOHSH);
 GEN_GAME_EXTS(MOHBT);
 GEN_GAME_EXTS(Q2R);
-GEN_GAME_EXTS(Q2RSP);
+GEN_GAME_EXTS(Q2RC);
 GEN_GAME_EXTS(QUAKE2);
 GEN_GAME_EXTS(SIN);
 GEN_GAME_EXTS(SOF2SP);
@@ -79,7 +79,7 @@ std::vector<GameSupport*> api_supportedgames = {
 // Q2R only exists for 64-bit Windows
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
     GET_GAME_OBJ(Q2R),
-    GET_GAME_OBJ(Q2RSP),
+    GET_GAME_OBJ(Q2RC),
 #endif
 };
 
