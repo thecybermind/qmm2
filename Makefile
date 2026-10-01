@@ -49,13 +49,13 @@ LDLIBS   :=
 REL_CPPFLAGS := $(CPPFLAGS) -DNDEBUG
 DBG_CPPFLAGS := $(CPPFLAGS) -D_DEBUG
 
-REL_CFLAGS_32 := $(CFLAGS) -m32 -O2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
-REL_CFLAGS_64 := $(CFLAGS) -O2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
+REL_CFLAGS_32 := $(CFLAGS) -m32 -O2 -falign-functions=16 -fno-strict-aliasing -fstrength-reduce -Werror
+REL_CFLAGS_64 := $(CFLAGS) -O2 -falign-functions=16 -fno-strict-aliasing -fstrength-reduce -Werror
 DBG_CFLAGS_32 := $(CFLAGS) -m32 -g -pg -fsanitize=undefined -fsanitize=address
 DBG_CFLAGS_64 := $(CFLAGS) -g -pg -fsanitize=undefined -fsanitize=address
 
-REL_CXXFLAGS_32 := $(CXXFLAGS) -m32 -O2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
-REL_CXXFLAGS_64 := $(CXXFLAGS) -O2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fstrength-reduce -Werror
+REL_CXXFLAGS_32 := $(CXXFLAGS) -m32 -O2 -falign-functions=16 -fno-strict-aliasing -fstrength-reduce -Werror
+REL_CXXFLAGS_64 := $(CXXFLAGS) -O2 -falign-functions=16 -fno-strict-aliasing -fstrength-reduce -Werror
 DBG_CXXFLAGS_32 := $(CXXFLAGS) -m32 -g -pg -fsanitize=undefined -fsanitize=address
 DBG_CXXFLAGS_64 := $(CXXFLAGS) -g -pg -fsanitize=undefined -fsanitize=address
 
