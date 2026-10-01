@@ -96,49 +96,48 @@ intptr_t RTCWSP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 
     intptr_t ret = 0;
 
-    switch (cmd) {
-    // handle special cmds which QMM uses but RTCWSP doesn't have an analogue for
-    case G_ARGS: {
-        // quake2: char* (*args)(void);
-        static std::string s;
-        static char buf[MAX_STRING_CHARS];
-        s = "";
-        int i = 1;
-        int argc = Util::util_min(orig_syscall(G_ARGC), 200);
-        while (i < argc) {
-            orig_syscall(G_ARGV, i, buf, sizeof(buf));
-            buf[sizeof(buf) - 1] = '\0';
-            if (i != 1)
-                s += " ";
-            s += buf;
-            i++;
-        }
-        ret = (intptr_t)s.c_str();
-        break;
-    }
-    case G_ALLOC: {
-        // if we are using the iortcw single player game dll but not the engine, we need to handle G_ALLOC
-        // ourselves just malloc and store the pointer in alloc_list (although, at this time, it doesn't
-        // look like the iortcw single player game dll actually uses trap_Alloc)
-        if (is_iortcw) {
-            ret = orig_syscall(G_ALLOC, args[0]);
-            break;
-        }
-        ret = (intptr_t)malloc((size_t)args[0]);
-        alloc_list.push_back((void*)ret);
-        break;
-    }
+    if (orig_syscall) {
+        switch (cmd) {
+            // handle special cmds which QMM uses but RTCWSP doesn't have an analogue for
+            case G_ARGS: {
+                // quake2: char* (*args)(void);
+                static std::string s;
+                static char buf[MAX_STRING_CHARS];
+                s = "";
+                int i = 1;
+                int argc = Util::util_min(orig_syscall(G_ARGC), 200);
+                while (i < argc) {
+                    orig_syscall(G_ARGV, i, buf, sizeof(buf));
+                    buf[sizeof(buf) - 1] = '\0';
+                    if (i != 1)
+                        s += " ";
+                    s += buf;
+                    i++;
+                }
+                ret = (intptr_t)s.c_str();
+                break;
+            }
+            case G_ALLOC:
+                // the iortcw engine provides G_ALLOC
+                if (is_iortcw) {
+                    ret = orig_syscall(G_ALLOC, args[0]);
+                    break;
+                }
+                // no iortcw, so just malloc and store the pointer in alloc_list for freeing in ModUnload
+                ret = (intptr_t)malloc((size_t)args[0]);
+                alloc_list.push_back((void*)ret);
+                break;
 
-    default:
-        // all normal engine functions go to syscall
-        ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
-    }
+            default:
+                // all normal engine functions go to syscall
+                ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+        }
 
-    // do anything that needs to be done after function call here
+	    // do anything that needs to be done after function call here
+    }
 
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "RTCWSP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
-
 
     return ret;
 }
@@ -149,14 +148,12 @@ intptr_t RTCWSP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 intptr_t RTCWSP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "RTCWSP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
-    if (!orig_vmMain)
-        return 0;
-
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
     // all normal mod functions go to vmMain
-    ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    if (orig_vmMain)
+        ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "RTCWSP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 

@@ -41,85 +41,85 @@ GEN_GAME_EXTS(STVOYSP);
 
 // Table of pointers to GameSupport objects
 std::vector<GameSupport*> api_supportedgames = {
-	// vmMain games
-	GET_GAME_OBJ(Q3A),
-	GET_GAME_OBJ(RTCWSP),
-	GET_GAME_OBJ(JK2MP),
-	GET_GAME_OBJ(JAMP),
-	GET_GAME_OBJ(WET),
-	GET_GAME_OBJ(RTCWMP),
+    // vmMain games
+    GET_GAME_OBJ(Q3A),
+    GET_GAME_OBJ(RTCWSP),
+    GET_GAME_OBJ(JK2MP),
+    GET_GAME_OBJ(JAMP),
+    GET_GAME_OBJ(WET),
+    GET_GAME_OBJ(RTCWMP),
 
 // these games don't appear to have an official 64-bit version or source port
 #if defined(QMM_ARCH_32)
-	GET_GAME_OBJ(STVOYHM),
-	GET_GAME_OBJ(SOF2MP),
-	GET_GAME_OBJ(CODMP),
-	GET_GAME_OBJ(CODUOMP),
-	// allow a user to choose "COD11MP" manually if they are playing an old version of CoD (no auto-detection)
-	GET_GAME_OBJ(COD11MP),
+    GET_GAME_OBJ(STVOYHM),
+    GET_GAME_OBJ(SOF2MP),
+    GET_GAME_OBJ(CODMP),
+    GET_GAME_OBJ(CODUOMP),
+    // allow a user to choose "COD11MP" manually if they are playing an old version of CoD (no auto-detection)
+    GET_GAME_OBJ(COD11MP),
 #endif
 
-	// GetGameAPI games
-	GET_GAME_OBJ(JK2SP),
-	GET_GAME_OBJ(JASP),
-	GET_GAME_OBJ(QUAKE2),
+    // GetGameAPI games
+    GET_GAME_OBJ(JK2SP),
+    GET_GAME_OBJ(JASP),
+    GET_GAME_OBJ(QUAKE2),
 
 // OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
 // the rest of the games don't appear to have an official 64-bit version or source port
 #if defined(QMM_ARCH_32)
-	GET_GAME_OBJ(MOHAA),
-	GET_GAME_OBJ(MOHSH),
-	GET_GAME_OBJ(MOHBT),
-	GET_GAME_OBJ(STEF2),
-	GET_GAME_OBJ(SOF2SP),
-	GET_GAME_OBJ(STVOYSP),
-	GET_GAME_OBJ(SIN),
+    GET_GAME_OBJ(MOHAA),
+    GET_GAME_OBJ(MOHSH),
+    GET_GAME_OBJ(MOHBT),
+    GET_GAME_OBJ(STEF2),
+    GET_GAME_OBJ(SOF2SP),
+    GET_GAME_OBJ(STVOYSP),
+    GET_GAME_OBJ(SIN),
 #endif
 
 // Q2R only exists for 64-bit Windows
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
-	GET_GAME_OBJ(Q2R),
-	GET_GAME_OBJ(Q2RSP),
+    GET_GAME_OBJ(Q2R),
+    GET_GAME_OBJ(Q2RSP),
 #endif
 };
 
 
 const char* APIType_Name(APIType api) {
-	switch (api) {
-		GEN_CASE(QMM_API_ERROR);
+    switch (api) {
+        GEN_CASE(QMM_API_ERROR);
 
-		GEN_CASE(QMM_API_QVM);
+        GEN_CASE(QMM_API_QVM);
 
-		GEN_CASE(QMM_API_DLLENTRY);
-		GEN_CASE(QMM_API_GETGAMEAPI);
-		GEN_CASE(QMM_API_GETMODULEAPI);
+        GEN_CASE(QMM_API_DLLENTRY);
+        GEN_CASE(QMM_API_GETGAMEAPI);
+        GEN_CASE(QMM_API_GETMODULEAPI);
 
-		GEN_CASE(QMM_API_GETCGAMEAPI);
-	default:
-		return "unknown";
-	};
+        GEN_CASE(QMM_API_GETCGAMEAPI);
+    default:
+        return "unknown";
+    };
 }
 
 
 const char* APIType_Function(APIType api) {
-	switch (api) {
-	case QMM_API_ERROR:
-		return "(error)";
+    switch (api) {
+    case QMM_API_ERROR:
+        return "(error)";
 
-	case QMM_API_QVM:
-		return "QVM";
+    case QMM_API_QVM:
+        return "QVM";
 
-	case QMM_API_DLLENTRY:
-		return "dllEntry";
-	case QMM_API_GETGAMEAPI:
-		return "GetGameAPI";
-	case QMM_API_GETMODULEAPI:
-		return "GetModuleAPI";
+    case QMM_API_DLLENTRY:
+        return "dllEntry";
+    case QMM_API_GETGAMEAPI:
+        return "GetGameAPI";
+    case QMM_API_GETMODULEAPI:
+        return "GetModuleAPI";
 
-	case QMM_API_GETCGAMEAPI:
-		return "GetCGameAPI";
+    case QMM_API_GETCGAMEAPI:
+        return "GetCGameAPI";
 
-	default:
-		return "unknown";
-	};
+    default:
+        return "unknown";
+    };
 }

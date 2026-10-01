@@ -88,185 +88,186 @@ intptr_t JK2SP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "JK2SP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
-
     // update export vars before calling into the engine
     update_exports();
 
     intptr_t ret = 0;
 
-    switch (cmd) {
-        ROUTE_IMPORT(Printf, G_PRINTF);
-        ROUTE_IMPORT(WriteCam, G_WRITECAM);
-        ROUTE_IMPORT(Error, G_ERROR);
-        ROUTE_IMPORT(Milliseconds, G_MILLISECONDS);
-        ROUTE_IMPORT(cvar, G_CVAR);
-        ROUTE_IMPORT(cvar_set, G_CVAR_SET);
-        ROUTE_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE);
-        ROUTE_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER);
-        ROUTE_IMPORT(argc, G_ARGC);
-        ROUTE_IMPORT(argv, G_ARGV);
-        ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
-        ROUTE_IMPORT(FS_Read, G_FS_READ);
-        ROUTE_IMPORT(FS_Write, G_FS_WRITE);
-        ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
-        ROUTE_IMPORT(FS_ReadFile, G_FS_READFILE);
-        ROUTE_IMPORT(FS_FreeFile, G_FS_FREEFILE);
-        ROUTE_IMPORT(FS_GetFileList, G_FS_GETFILELIST);
-        ROUTE_IMPORT(AppendToSaveGame, G_APPENDTOSAVEGAME);
-        ROUTE_IMPORT(ReadFromSaveGame, G_READFROMSAVEGAME);
-        ROUTE_IMPORT(ReadFromSaveGameOptional, G_READFROMSAVEGAMEOPTIONAL);
-        // handled below since we do special handling to deal with the "when" argument
-        // ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
-        ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
-        ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
-        ROUTE_IMPORT(SetConfigstring, G_SET_CONFIGSTRING);
-        ROUTE_IMPORT(GetConfigstring, G_GET_CONFIGSTRING);
-        ROUTE_IMPORT(GetUserinfo, G_GET_USERINFO);
-        ROUTE_IMPORT(SetUserinfo, G_SET_USERINFO);
-        ROUTE_IMPORT(GetServerinfo, G_GET_SERVERINFO);
-        ROUTE_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL);
-        ROUTE_IMPORT(trace, G_TRACE);
-        ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
-        ROUTE_IMPORT(inPVS, G_IN_PVS);
-        ROUTE_IMPORT(inPVSIgnorePortals, G_IN_PVS_IGNOREPORTALS);
-        ROUTE_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE);
-        ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
-        ROUTE_IMPORT(linkentity, G_LINKENTITY);
-        ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
-        ROUTE_IMPORT(EntitiesInBox, G_ENTITIES_IN_BOX);
-        ROUTE_IMPORT(EntityContact, G_ENTITY_CONTACT);
-        ROUTE_IMPORT(Malloc, G_MALLOC);	// see qcommon/tags.h for choices
-        ROUTE_IMPORT(Free, G_FREE);
-        ROUTE_IMPORT(G2API_PrecacheGhoul2Model, G_G2API_PRECACHEGHOUL2MODEL);
-        ROUTE_IMPORT(G2API_InitGhoul2Model, G_G2API_INITGHOUL2MODEL);
-        ROUTE_IMPORT(G2API_SetLodBias, G_G2API_SETLODBIAS);
-        ROUTE_IMPORT(G2API_SetSkin, G_G2API_SETSKIN);
-        ROUTE_IMPORT(G2API_SetShader, G_G2API_SETSHADER);
-        ROUTE_IMPORT(G2API_RemoveGhoul2Model, G_G2API_REMOVEGHOUL2MODEL);
-        ROUTE_IMPORT(G2API_SetSurfaceOnOff, G_G2API_SETSURFACEONOFF);
-        ROUTE_IMPORT(G2API_SetRootSurface, G_G2API_SETROOTSURFACE);
-        ROUTE_IMPORT(G2API_RemoveSurface, G_G2API_REMOVESURFACE);
-        ROUTE_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, CGhoul2Info*, int, int, FLOAT_CAST, FLOAT_CAST, int);
-        ROUTE_IMPORT_9(G2API_SetBoneAnim, G_G2API_SETBONEANIM, CGhoul2Info*, const char*, int, int, int, FLOAT_CAST, int, FLOAT_CAST, int);
-        ROUTE_IMPORT(G2API_GetBoneAnim, G_G2API_GETBONEANIM);
-        ROUTE_IMPORT(G2API_GetBoneAnimIndex, G_G2API_GETBONEANIMINDEX);
-        ROUTE_IMPORT(G2API_GetAnimRange, G_G2API_GETANIMRANGE);
-        ROUTE_IMPORT(G2API_GetAnimRangeIndex, G_G2API_GETANIMRANGEINDEX);
-        ROUTE_IMPORT(G2API_PauseBoneAnim, G_G2API_PAUSEBONEANIM);
-        ROUTE_IMPORT(G2API_PauseBoneAnimIndex, G_G2API_PAUSEBONEANIMINDEX);
-        ROUTE_IMPORT(G2API_IsPaused, G_G2API_ISPAUSED);
-        ROUTE_IMPORT(G2API_StopBoneAnim, G_G2API_STOPBONEANIM);
-        ROUTE_IMPORT(G2API_SetBoneAngles, G_G2API_SETBONEANGLES);
-        ROUTE_IMPORT(G2API_SetBoneAnglesMatrix, G_G2API_SETBONEANGLESMATRIX);
-        ROUTE_IMPORT(G2API_StopBoneAngles, G_G2API_STOPBONEANGLES);
-        ROUTE_IMPORT(G2API_RemoveBone, G_G2API_REMOVEBONE);
-        ROUTE_IMPORT(G2API_RemoveBolt, G_G2API_REMOVEBOLT);
-        ROUTE_IMPORT(G2API_AddBolt, G_G2API_ADDBOLT);
-        ROUTE_IMPORT(G2API_AddBoltSurfNum, G_G2API_ADDBOLTSURFNUM);
-        ROUTE_IMPORT(G2API_AttachG2Model, G_G2API_ATTACHG2MODEL);
-        ROUTE_IMPORT(G2API_DetachG2Model, G_G2API_DETACHG2MODEL);
-        ROUTE_IMPORT(G2API_AttachEnt, G_G2API_ATTACHENT);
-        ROUTE_IMPORT(G2API_DetachEnt, G_G2API_DETACHENT);
-        ROUTE_IMPORT(G2API_GetBoltMatrix, G_G2API_GETBOLTMATRIX);
-        ROUTE_IMPORT(G2API_ListSurfaces, G_G2API_LISTSURFACES);
-        ROUTE_IMPORT(G2API_ListBones, G_G2API_LISTBONES);
-        ROUTE_IMPORT(G2API_HaveWeGhoul2Models, G_G2API_HAVEWEGHOUL2MODELS);
-        ROUTE_IMPORT(G2API_SetGhoul2ModelFlags, G_G2API_SETGHOUL2MODELFLAGS);
-        ROUTE_IMPORT(G2API_GetGhoul2ModelFlags, G_G2API_GETGHOUL2MODELFLAGS);
-        ROUTE_IMPORT(G2API_GetAnimFileName, G_G2API_GETANIMFILENAME);
-        ROUTE_IMPORT(G2API_CollisionDetect, G_G2API_COLLISIONDETECT);
-        ROUTE_IMPORT(G2API_GiveMeVectorFromMatrix, G_G2API_GIVEMEVECTORFROMMATRIX);
-        ROUTE_IMPORT(G2API_CopyGhoul2Instance, G_G2API_COPYGHOUL2INSTANCE);
-        ROUTE_IMPORT(G2API_CleanGhoul2Models, G_G2API_CLEANGHOUL2MODELS);
-        ROUTE_IMPORT(TheGhoul2InfoArray, G_THEGHOUL2INFOARRAY);
-        ROUTE_IMPORT(G2API_GetParentSurface, G_G2API_GETPARENTSURFACE);
-        ROUTE_IMPORT(G2API_GetSurfaceIndex, G_G2API_GETSURFACEINDEX);
-        ROUTE_IMPORT(G2API_GetSurfaceName, G_G2API_GETSURFACENAME);
-        ROUTE_IMPORT(G2API_GetGLAName, G_G2API_GETGLANAME);
-        ROUTE_IMPORT(G2API_SetNewOrigin, G_G2API_SETNEWORIGIN);
-        ROUTE_IMPORT(G2API_GetBoneIndex, G_G2API_GETBONEINDEX);
-        ROUTE_IMPORT(G2API_StopBoneAnglesIndex, G_G2API_STOPBONEANGLESINDEX);
-        ROUTE_IMPORT(G2API_StopBoneAnimIndex, G_G2API_STOPBONEANIMINDEX);
-        ROUTE_IMPORT(G2API_SetBoneAnglesIndex, G_G2API_SETBONEANGLESINDEX);
-        ROUTE_IMPORT(G2API_SetBoneAnglesMatrixIndex, G_G2API_SETBONEANGLESMATRIXINDEX);
-        ROUTE_IMPORT_9(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, CGhoul2Info*, int, int, int, int, FLOAT_CAST, int, FLOAT_CAST, int);
-        ROUTE_IMPORT(G2API_SaveGhoul2Models, G_G2API_SAVEGHOUL2MODELS);
-        ROUTE_IMPORT(G2API_LoadGhoul2Models, G_G2API_LOADGHOUL2MODELS);
-        ROUTE_IMPORT(G2API_LoadSaveCodeDestructGhoul2Info, G_G2API_LOADSAVECODEDESTRUCTGHOUL2INFO);
-        ROUTE_IMPORT(G2API_FreeSaveBuffer, G_G2API_FREESAVEBUFFER);
-        ROUTE_IMPORT(G2API_GetAnimFileNameIndex, G_G2API_GETANIMFILENAMEINDEX);
-        ROUTE_IMPORT(G2API_GetSurfaceRenderStatus, G_G2API_GETSURFACERENDERSTATUS);
-        ROUTE_IMPORT(RE_RegisterSkin, G_RE_REGISTERSKIN);
-        ROUTE_IMPORT(RE_GetAnimationCFG, G_RE_GETANIMATIONCFG);
+    if (orig_import.Printf) {
+        switch (cmd) {
+            ROUTE_IMPORT(Printf, G_PRINTF);
+            ROUTE_IMPORT(WriteCam, G_WRITECAM);
+            ROUTE_IMPORT(Error, G_ERROR);
+            ROUTE_IMPORT(Milliseconds, G_MILLISECONDS);
+            ROUTE_IMPORT(cvar, G_CVAR);
+            ROUTE_IMPORT(cvar_set, G_CVAR_SET);
+            ROUTE_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE);
+            ROUTE_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER);
+            ROUTE_IMPORT(argc, G_ARGC);
+            ROUTE_IMPORT(argv, G_ARGV);
+            ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
+            ROUTE_IMPORT(FS_Read, G_FS_READ);
+            ROUTE_IMPORT(FS_Write, G_FS_WRITE);
+            ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
+            ROUTE_IMPORT(FS_ReadFile, G_FS_READFILE);
+            ROUTE_IMPORT(FS_FreeFile, G_FS_FREEFILE);
+            ROUTE_IMPORT(FS_GetFileList, G_FS_GETFILELIST);
+            ROUTE_IMPORT(AppendToSaveGame, G_APPENDTOSAVEGAME);
+            ROUTE_IMPORT(ReadFromSaveGame, G_READFROMSAVEGAME);
+            ROUTE_IMPORT(ReadFromSaveGameOptional, G_READFROMSAVEGAMEOPTIONAL);
+            // handled below since we do special handling to deal with the "when" argument
+            // ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
+            ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
+            ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
+            ROUTE_IMPORT(SetConfigstring, G_SET_CONFIGSTRING);
+            ROUTE_IMPORT(GetConfigstring, G_GET_CONFIGSTRING);
+            ROUTE_IMPORT(GetUserinfo, G_GET_USERINFO);
+            ROUTE_IMPORT(SetUserinfo, G_SET_USERINFO);
+            ROUTE_IMPORT(GetServerinfo, G_GET_SERVERINFO);
+            ROUTE_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL);
+            ROUTE_IMPORT(trace, G_TRACE);
+            ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
+            ROUTE_IMPORT(inPVS, G_IN_PVS);
+            ROUTE_IMPORT(inPVSIgnorePortals, G_IN_PVS_IGNOREPORTALS);
+            ROUTE_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE);
+            ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
+            ROUTE_IMPORT(linkentity, G_LINKENTITY);
+            ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
+            ROUTE_IMPORT(EntitiesInBox, G_ENTITIES_IN_BOX);
+            ROUTE_IMPORT(EntityContact, G_ENTITY_CONTACT);
+            ROUTE_IMPORT(Malloc, G_MALLOC);
+            ROUTE_IMPORT(Free, G_FREE);
+            ROUTE_IMPORT(G2API_PrecacheGhoul2Model, G_G2API_PRECACHEGHOUL2MODEL);
+            ROUTE_IMPORT(G2API_InitGhoul2Model, G_G2API_INITGHOUL2MODEL);
+            ROUTE_IMPORT(G2API_SetLodBias, G_G2API_SETLODBIAS);
+            ROUTE_IMPORT(G2API_SetSkin, G_G2API_SETSKIN);
+            ROUTE_IMPORT(G2API_SetShader, G_G2API_SETSHADER);
+            ROUTE_IMPORT(G2API_RemoveGhoul2Model, G_G2API_REMOVEGHOUL2MODEL);
+            ROUTE_IMPORT(G2API_SetSurfaceOnOff, G_G2API_SETSURFACEONOFF);
+            ROUTE_IMPORT(G2API_SetRootSurface, G_G2API_SETROOTSURFACE);
+            ROUTE_IMPORT(G2API_RemoveSurface, G_G2API_REMOVESURFACE);
+            ROUTE_IMPORT_6(G2API_AddSurface, G_G2API_ADDSURFACE, CGhoul2Info*, int, int, FLOAT_CAST, FLOAT_CAST, int);
+            ROUTE_IMPORT_9(G2API_SetBoneAnim, G_G2API_SETBONEANIM, CGhoul2Info*, const char*, int, int, int, FLOAT_CAST, int, FLOAT_CAST, int);
+            ROUTE_IMPORT(G2API_GetBoneAnim, G_G2API_GETBONEANIM);
+            ROUTE_IMPORT(G2API_GetBoneAnimIndex, G_G2API_GETBONEANIMINDEX);
+            ROUTE_IMPORT(G2API_GetAnimRange, G_G2API_GETANIMRANGE);
+            ROUTE_IMPORT(G2API_GetAnimRangeIndex, G_G2API_GETANIMRANGEINDEX);
+            ROUTE_IMPORT(G2API_PauseBoneAnim, G_G2API_PAUSEBONEANIM);
+            ROUTE_IMPORT(G2API_PauseBoneAnimIndex, G_G2API_PAUSEBONEANIMINDEX);
+            ROUTE_IMPORT(G2API_IsPaused, G_G2API_ISPAUSED);
+            ROUTE_IMPORT(G2API_StopBoneAnim, G_G2API_STOPBONEANIM);
+            ROUTE_IMPORT(G2API_SetBoneAngles, G_G2API_SETBONEANGLES);
+            ROUTE_IMPORT(G2API_SetBoneAnglesMatrix, G_G2API_SETBONEANGLESMATRIX);
+            ROUTE_IMPORT(G2API_StopBoneAngles, G_G2API_STOPBONEANGLES);
+            ROUTE_IMPORT(G2API_RemoveBone, G_G2API_REMOVEBONE);
+            ROUTE_IMPORT(G2API_RemoveBolt, G_G2API_REMOVEBOLT);
+            ROUTE_IMPORT(G2API_AddBolt, G_G2API_ADDBOLT);
+            ROUTE_IMPORT(G2API_AddBoltSurfNum, G_G2API_ADDBOLTSURFNUM);
+            ROUTE_IMPORT(G2API_AttachG2Model, G_G2API_ATTACHG2MODEL);
+            ROUTE_IMPORT(G2API_DetachG2Model, G_G2API_DETACHG2MODEL);
+            ROUTE_IMPORT(G2API_AttachEnt, G_G2API_ATTACHENT);
+            ROUTE_IMPORT(G2API_DetachEnt, G_G2API_DETACHENT);
+            ROUTE_IMPORT(G2API_GetBoltMatrix, G_G2API_GETBOLTMATRIX);
+            ROUTE_IMPORT(G2API_ListSurfaces, G_G2API_LISTSURFACES);
+            ROUTE_IMPORT(G2API_ListBones, G_G2API_LISTBONES);
+            ROUTE_IMPORT(G2API_HaveWeGhoul2Models, G_G2API_HAVEWEGHOUL2MODELS);
+            ROUTE_IMPORT(G2API_SetGhoul2ModelFlags, G_G2API_SETGHOUL2MODELFLAGS);
+            ROUTE_IMPORT(G2API_GetGhoul2ModelFlags, G_G2API_GETGHOUL2MODELFLAGS);
+            ROUTE_IMPORT(G2API_GetAnimFileName, G_G2API_GETANIMFILENAME);
+            ROUTE_IMPORT(G2API_CollisionDetect, G_G2API_COLLISIONDETECT);
+            ROUTE_IMPORT(G2API_GiveMeVectorFromMatrix, G_G2API_GIVEMEVECTORFROMMATRIX);
+            ROUTE_IMPORT(G2API_CopyGhoul2Instance, G_G2API_COPYGHOUL2INSTANCE);
+            ROUTE_IMPORT(G2API_CleanGhoul2Models, G_G2API_CLEANGHOUL2MODELS);
+            ROUTE_IMPORT(TheGhoul2InfoArray, G_THEGHOUL2INFOARRAY);
+            ROUTE_IMPORT(G2API_GetParentSurface, G_G2API_GETPARENTSURFACE);
+            ROUTE_IMPORT(G2API_GetSurfaceIndex, G_G2API_GETSURFACEINDEX);
+            ROUTE_IMPORT(G2API_GetSurfaceName, G_G2API_GETSURFACENAME);
+            ROUTE_IMPORT(G2API_GetGLAName, G_G2API_GETGLANAME);
+            ROUTE_IMPORT(G2API_SetNewOrigin, G_G2API_SETNEWORIGIN);
+            ROUTE_IMPORT(G2API_GetBoneIndex, G_G2API_GETBONEINDEX);
+            ROUTE_IMPORT(G2API_StopBoneAnglesIndex, G_G2API_STOPBONEANGLESINDEX);
+            ROUTE_IMPORT(G2API_StopBoneAnimIndex, G_G2API_STOPBONEANIMINDEX);
+            ROUTE_IMPORT(G2API_SetBoneAnglesIndex, G_G2API_SETBONEANGLESINDEX);
+            ROUTE_IMPORT(G2API_SetBoneAnglesMatrixIndex, G_G2API_SETBONEANGLESMATRIXINDEX);
+            ROUTE_IMPORT_9(G2API_SetBoneAnimIndex, G_G2API_SETBONEANIMINDEX, CGhoul2Info*, int, int, int, int, FLOAT_CAST, int, FLOAT_CAST, int);
+            ROUTE_IMPORT(G2API_SaveGhoul2Models, G_G2API_SAVEGHOUL2MODELS);
+            ROUTE_IMPORT(G2API_LoadGhoul2Models, G_G2API_LOADGHOUL2MODELS);
+            ROUTE_IMPORT(G2API_LoadSaveCodeDestructGhoul2Info, G_G2API_LOADSAVECODEDESTRUCTGHOUL2INFO);
+            ROUTE_IMPORT(G2API_FreeSaveBuffer, G_G2API_FREESAVEBUFFER);
+            ROUTE_IMPORT(G2API_GetAnimFileNameIndex, G_G2API_GETANIMFILENAMEINDEX);
+            ROUTE_IMPORT(G2API_GetSurfaceRenderStatus, G_G2API_GETSURFACERENDERSTATUS);
+            ROUTE_IMPORT(RE_RegisterSkin, G_RE_REGISTERSKIN);
+            ROUTE_IMPORT(RE_GetAnimationCFG, G_RE_GETANIMATIONCFG);
 
-        // handle cmds for variables, this is how a plugin would get these values if needed
-        ROUTE_IMPORT_VAR(VoiceVolume, GVP_VOICEVOLUME);
+            // handle cmds for variables, this is how a plugin would get these values if needed
+            ROUTE_IMPORT_VAR(VoiceVolume, GVP_VOICEVOLUME);
 
-    // handle special cmds which QMM uses but JK2SP doesn't have an analogue for
-    case G_CVAR_REGISTER: {
-        // jk2sp: cvar_t* (*cvar)(const char* varName, const char* varValue, int varFlags)
-        // q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
-        // qmm always passes NULL for vmCvar so don't worry about it
-        const char* varName = (const char*)(args[1]);
-        const char* defaultValue = (const char*)(args[2]);
-        int flags = args[3];
-        (void)orig_import.cvar(varName, defaultValue, flags);
-        break;
+            // handle special cmds which QMM uses but JK2SP doesn't have an analogue for
+            case G_CVAR_REGISTER: {
+                // jk2sp: cvar_t* (*cvar)(const char* varName, const char* varValue, int varFlags)
+                // q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
+                // qmm always passes NULL for vmCvar so don't worry about it
+                const char* varName = (const char*)(args[1]);
+                const char* defaultValue = (const char*)(args[2]);
+                int flags = args[3];
+                (void)orig_import.cvar(varName, defaultValue, flags);
+                break;
+            }
+            case G_SEND_CONSOLE_COMMAND_QMM:
+            case G_SEND_CONSOLE_COMMAND: {
+                // JK2SP: void (*SendConsoleCommand)(const char *text);
+                // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+                // first arg may be exec_when, like EXEC_APPEND
+                intptr_t when = args[0];
+                const char* text = (const char*)(args[1]);
+                // EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
+                if (when > 100)
+                    text = (const char*)when;
+                orig_import.SendConsoleCommand(text);
+                break;
+            }
+            case G_LOCATE_GAME_DATA: {
+                // help plugins not need separate logic for entity/client pointers
+                // void trap_LocateGameData(gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient);
+                // this is just to be hooked by plugins, so ignore everything
+                break;
+            }
+            case G_GET_ENTITY_TOKEN: {
+                // qboolean trap_GetEntityToken(char *buffer, int bufferSize);
+                if (token_counter >= entity_tokens.size()) {
+                    ret = qfalse;
+                    break;
+                }
+
+                char* buffer = (char*)args[0];
+                intptr_t bufferSize = args[1];
+
+                Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+                ret = qtrue;
+                break;
+            }
+            case G_ARGS: {
+                // quake2: char* (*args)(void);
+                static std::string s;
+                s = "";
+                int i = 1;
+                int argc = Util::util_min(orig_import.argc(), 200);
+                while (i < argc) {
+                    if (i != 1)
+                        s += " ";
+                    s += orig_import.argv(i);
+                    i++;
+                }
+                ret = (intptr_t)s.c_str();
+                break;
+            }
+
+            default:
+                break;
+        };
+
+	    // do anything that needs to be done after function call here
     }
-    case G_SEND_CONSOLE_COMMAND_QMM:
-    case G_SEND_CONSOLE_COMMAND: {
-        // JK2SP: void (*SendConsoleCommand)(const char *text);
-        // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
-        // first arg may be exec_when, like EXEC_APPEND
-        intptr_t when = args[0];
-        const char* text = (const char*)(args[1]);
-        // EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
-        if (when > 100)
-            text = (const char*)when;
-        orig_import.SendConsoleCommand(text);
-        break;
-    }
-    case G_LOCATE_GAME_DATA: {
-        // help plugins not need separate logic for entity/client pointers
-        // void trap_LocateGameData(gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient);
-        // this is just to be hooked by plugins, so ignore everything
-        break;
-    }
-    case G_GET_ENTITY_TOKEN: {
-        // qboolean trap_GetEntityToken(char *buffer, int bufferSize);
-        if (token_counter >= entity_tokens.size()) {
-            ret = qfalse;
-            break;
-        }
-
-        char* buffer = (char*)args[0];
-        intptr_t bufferSize = args[1];
-
-        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
-        ret = qtrue;
-        break;
-    }
-    case G_ARGS: {
-        // quake2: char* (*args)(void);
-        static std::string s;
-        s = "";
-        int i = 1;
-        int argc = Util::util_min(orig_import.argc(), 200);
-        while (i < argc) {
-            if (i != 1)
-                s += " ";
-            s += orig_import.argv(i);
-            i++;
-        }
-        ret = (intptr_t)s.c_str();
-        break;
-    }
-
-    default:
-        break;
-    };
-
-    // do anything that needs to be done after function call here
 
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "JK2SP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
@@ -280,41 +281,40 @@ intptr_t JK2SP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 intptr_t JK2SP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "JK2SP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
-    if (!orig_export)
-        return 0;
-
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
-    switch (cmd) {
-        ROUTE_EXPORT(Init, GAME_INIT);
-        ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
-        ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
-        ROUTE_EXPORT(ReadLevel, GAME_READ_LEVEL);
-        ROUTE_EXPORT(GameAllowedToSaveHere, GAME_GAMEALLOWEDTOSAVEHERE);
-        ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
-        ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
-        ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED);
-        ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
-        ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
-        ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
-        ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
-        ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
-        ROUTE_EXPORT(PrintEntClassname, GAME_PRINTENTCLASSNAME);
-        ROUTE_EXPORT_3(ValidateAnimRange, GAME_VALIDATEANIMRANGE, int, int, FLOAT_CAST);
+    if (orig_export) {
+        switch (cmd) {
+            ROUTE_EXPORT(Init, GAME_INIT);
+            ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
+            ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
+            ROUTE_EXPORT(ReadLevel, GAME_READ_LEVEL);
+            ROUTE_EXPORT(GameAllowedToSaveHere, GAME_GAMEALLOWEDTOSAVEHERE);
+            ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
+            ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
+            ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED);
+            ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
+            ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
+            ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
+            ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
+            ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
+            ROUTE_EXPORT(PrintEntClassname, GAME_PRINTENTCLASSNAME);
+            ROUTE_EXPORT_3(ValidateAnimRange, GAME_VALIDATEANIMRANGE, int, int, FLOAT_CAST);
 
-        // handle cmds for variables, this is how a plugin would get these values if needed
-        ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
-        ROUTE_EXPORT_VAR(gentities, GAMEVP_GENTITIES);
-        ROUTE_EXPORT_VAR(gentitySize, GAMEV_GENTITYSIZE);
-        ROUTE_EXPORT_VAR(num_entities, GAMEV_NUM_ENTITIES);
+            // handle cmds for variables, this is how a plugin would get these values if needed
+            ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
+            ROUTE_EXPORT_VAR(gentities, GAMEVP_GENTITIES);
+            ROUTE_EXPORT_VAR(gentitySize, GAMEV_GENTITYSIZE);
+            ROUTE_EXPORT_VAR(num_entities, GAMEV_NUM_ENTITIES);
 
-    default:
-        break;
-    };
+            default:
+                break;
+        };
 
-    // update export vars after returning from the mod
-    update_exports();
+        // update export vars after returning from the mod
+        update_exports();
+    }
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "JK2SP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
@@ -578,8 +578,8 @@ game_import_t JK2SP_GameSupport::qmm_import = {
     GEN_IMPORT(unlinkentity, G_UNLINKENTITY),
     GEN_IMPORT(EntitiesInBox, G_ENTITIES_IN_BOX),
     GEN_IMPORT(EntityContact, G_ENTITY_CONTACT),
-    nullptr, // int* VoiceVolume;
-    GEN_IMPORT(Malloc, G_MALLOC),	// see qcommon/tags.h for choices
+    nullptr,    // int* VoiceVolume;
+    GEN_IMPORT(Malloc, G_MALLOC),
     GEN_IMPORT(Free, G_FREE),
     GEN_IMPORT(G2API_PrecacheGhoul2Model, G_G2API_PRECACHEGHOUL2MODEL),
     GEN_IMPORT(G2API_InitGhoul2Model, G_G2API_INITGHOUL2MODEL),
@@ -659,7 +659,7 @@ void JK2SP_GameSupport::Init(const char* mapname, const char* spawntarget, int c
 
 
 game_export_t JK2SP_GameSupport::qmm_export = {
-    GAME_API_VERSION,	// apiversion
+    GAME_API_VERSION,    // apiversion
     JK2SP_GameSupport::Init,
     GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
     GEN_EXPORT(WriteLevel, GAME_WRITE_LEVEL),
@@ -677,7 +677,7 @@ game_export_t JK2SP_GameSupport::qmm_export = {
     GEN_EXPORT_3(ValidateAnimRange, GAME_VALIDATEANIMRANGE, int, int, int, float),
 
     // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
-    nullptr,	// gentities
-    0,			// gentitySize
-    0,			// num_entities
+    nullptr,    // gentities
+    0,          // gentitySize
+    0,          // num_entities
 };

@@ -27,9 +27,9 @@ Created By:
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <shellapi.h>			// CommandLineToArgvW
+#include <shellapi.h>    // CommandLineToArgvW
 
-#define PATH_MAX				MAX_PATH
+#define PATH_MAX    MAX_PATH
 
 
 // store module handle for util_get_qmm_path and util_get_qmm_handle
@@ -42,10 +42,10 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD, LPVOID) {
 #elif defined(QMM_OS_LINUX)
 
 #include <cstdlib>
-#include <fstream>			// getline for util_get_proc_cmdline
-#include <dlfcn.h>			// dlopen, dlclose, dlsym
-#include <unistd.h>			// readlink
-#include <limits.h>			// PATH_MAX
+#include <fstream>     // getline for util_get_proc_cmdline
+#include <dlfcn.h>     // dlopen, dlclose, dlsym
+#include <unistd.h>    // readlink
+#include <limits.h>    // PATH_MAX
 
 #endif
 

@@ -5,7 +5,7 @@ https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
 
 Created By:
-	Kevin Masterson < k.m.masterson@gmail.com >
+    Kevin Masterson < k.m.masterson@gmail.com >
 
 */
 
@@ -14,7 +14,7 @@ Created By:
 
 // import ("syscall") cmds
 enum {
-	G_PRINTF,
+    G_PRINTF,
     G_DPRINTF,
     G_DPRINTF2,
     G_SNPRINTF,
@@ -129,42 +129,42 @@ enum {
     G_SAVETERRAINIMAGETODISK,
 
     G_PRINT = G_PRINTF,
-	G_FS_GETFILELIST = G_FS_LISTFILES,
+    G_FS_GETFILELIST = G_FS_LISTFILES,
 };
 
 // export ("vmMain") cmds
 enum {
-	GAME_INIT,
-	GAME_SHUTDOWN,
-	GAME_CLIENT_CONNECT,
-	GAME_CLIENT_BEGIN,
-	GAME_CLIENT_DISCONNECT,
-	GAME_CLIENT_COMMAND,
-	GAME_CLIENT_THINK,
-	GAME_RUN_FRAME,
+    GAME_INIT,
+    GAME_SHUTDOWN,
+    GAME_CLIENT_CONNECT,
+    GAME_CLIENT_BEGIN,
+    GAME_CLIENT_DISCONNECT,
+    GAME_CLIENT_COMMAND,
+    GAME_CLIENT_THINK,
+    GAME_RUN_FRAME,
     GAME_IS_CLIENT_ACTIVE,
-	GAME_CONSOLE_COMMAND,
-	GAMEV_UNKNOWN10,
-	GAME_SPAWN_RMG_ENTITY,
-	GAME_ARIOCHE,
-	GAME_ENTITY_LIST,
-	GAME_WRITE_LEVEL,
-	GAMEV_UNKNOWN15,
-	GAME_UNKNOWN16,
-	GAME_SAVE,
-	GAME_GAMEALLOWEDTOSAVEHERE,
-	GAME_CAN_PLAY_CINEMATIC,
-	GAME_UNKNOWN20,
-	GAME_UNKNOWN21,
-	GAME_UNKNOWN22,
-	GAME_UNKNOWN23,
-	GAME_UNKNOWN24,
-	GAME_UNKNOWN25,
+    GAME_CONSOLE_COMMAND,
+    GAMEV_UNKNOWN10,
+    GAME_SPAWN_RMG_ENTITY,
+    GAME_ARIOCHE,
+    GAME_ENTITY_LIST,
+    GAME_WRITE_LEVEL,
+    GAMEV_UNKNOWN15,
+    GAME_UNKNOWN16,
+    GAME_SAVE,
+    GAME_GAMEALLOWEDTOSAVEHERE,
+    GAME_CAN_PLAY_CINEMATIC,
+    GAME_UNKNOWN20,
+    GAME_UNKNOWN21,
+    GAME_UNKNOWN22,
+    GAME_UNKNOWN23,
+    GAME_UNKNOWN24,
+    GAME_UNKNOWN25,
 };
 
 // these import messages do not have an exact analogue in SOF2SP (yet?)
 enum {
-    G_ERROR = -100,                     // void (const char* msg)
+    G_ERROR = -100,    // void (const char* msg)
 };
 
 #endif // QMM2_GAME_SOF2SP_H

@@ -87,51 +87,53 @@ intptr_t Q2RSP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != CG_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RSP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
-    switch (cmd) {
-        case CG_PRINT: {
-            const char* msg = (const char*)(args[0]);
-            orig_import.Com_Print(msg);
-            break;
-        }
-        case CG_ERROR: {
-            const char* msg = (const char*)(args[0]);
-            orig_import.Com_Error(msg);
-            break;
-        }
-        case CG_SEND_CONSOLE_COMMAND: {
-            // Q2R: void (*AddCommandString)(const char *text);
-            // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
-            const char* text = (const char*)(args[1]);
-            orig_import.AddCommandString(text);
-            break;
-        }
-        case CG_CVAR_REGISTER: {
-            // q2r: cvar_t *(*cvar) (const char *var_name, const char *value, cvar_flags_t flags);
-            // qmm: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
-            // qmm always passes NULL for vmCvar so don't worry about it
-            const char* var_name = (char*)(args[1]);
-            const char* value = (char*)(args[2]);
-            cvar_flags_t flags = (cvar_flags_t)args[3];
-            (void)orig_import.cvar(var_name, value, flags);
-            break;
-        }
-        case CG_ARGV:
-        case CG_ARGC:
-        case CG_CVAR_VARIABLE_STRING_BUFFER:
-        case CG_CVAR_VARIABLE_INTEGER_VALUE:
-        case CG_FS_FOPEN_FILE:
-        case CG_GET_CONFIGSTRING:
-        case CG_FS_READ:
-        case CG_FS_WRITE:
-        case CG_FS_FCLOSE_FILE:
-            break;
+    if (orig_import.Com_Print) {
+        switch (cmd) {
+            case CG_PRINT: {
+                const char* msg = (const char*)(args[0]);
+                orig_import.Com_Print(msg);
+                break;
+            }
+            case CG_ERROR: {
+                const char* msg = (const char*)(args[0]);
+                orig_import.Com_Error(msg);
+                break;
+            }
+            case CG_SEND_CONSOLE_COMMAND: {
+                // Q2R: void (*AddCommandString)(const char *text);
+                // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+                const char* text = (const char*)(args[1]);
+                orig_import.AddCommandString(text);
+                break;
+            }
+            case CG_CVAR_REGISTER: {
+                // q2r: cvar_t *(*cvar) (const char *var_name, const char *value, cvar_flags_t flags);
+                // qmm: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
+                // qmm always passes NULL for vmCvar so don't worry about it
+                const char* var_name = (char*)(args[1]);
+                const char* value = (char*)(args[2]);
+                cvar_flags_t flags = (cvar_flags_t)args[3];
+                (void)orig_import.cvar(var_name, value, flags);
+                break;
+            }
+            // including for completeness
+            case CG_ARGV:
+            case CG_ARGC:
+            case CG_CVAR_VARIABLE_STRING_BUFFER:
+            case CG_CVAR_VARIABLE_INTEGER_VALUE:
+            case CG_FS_FOPEN_FILE:
+            case CG_GET_CONFIGSTRING:
+            case CG_FS_READ:
+            case CG_FS_WRITE:
+            case CG_FS_FCLOSE_FILE:
+                break;
 
-    default:
-        break;
-    };
-
+            default:
+                break;
+        };
+    }
     if (cmd != CG_PRINT)
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RSP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << "))\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RSP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning\n";
 
     return 0;
 }
@@ -142,21 +144,20 @@ intptr_t Q2RSP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 intptr_t Q2RSP_GameSupport::vmMain_args(intptr_t cmd, intptr_t*) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RSP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
-    if (!orig_export)
-        return 0;
+    if (orig_export) {
+        switch (cmd) {
+            case CGAME_INIT:
+                orig_export->Init();
+                break;
+            case CGAME_SHUTDOWN:
+                orig_export->Shutdown();
+                break;
+            default:
+                break;
+        };
+    }
 
-    switch (cmd) {
-        case CGAME_INIT:
-            orig_export->Init();
-            break;
-        case CGAME_SHUTDOWN:
-            orig_export->Shutdown();
-            break;
-    default:
-        break;
-    };
-
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RSP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << "))\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RSP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning\n";
 
     return 0;
 }
@@ -242,7 +243,7 @@ cgame_export_t* Q2RSP_GameSupport::orig_export = nullptr;
 // struct with lambdas that call QMM's vmMain function or route directly to the mod's export struct.
 // this is given to the game engine
 cgame_export_t Q2RSP_GameSupport::qmm_export = {
-    CGAME_API_VERSION,	                                    // apiversion
+    CGAME_API_VERSION,    // apiversion
     +[]() { QMM::vmMain_args(CGAME_INIT, nullptr); },
     +[]() { QMM::vmMain_args(CGAME_SHUTDOWN, nullptr); },
     +[](int32_t isplit, const cg_server_data_t* data, vrect_t hud_vrect, vrect_t hud_safe, int32_t scale, int32_t playernum, const player_state_t* ps)

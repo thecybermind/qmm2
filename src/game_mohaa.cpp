@@ -105,322 +105,324 @@ intptr_t MOHAA_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 
     float fret; // used to get float return values
 
-    switch (cmd) {
-        ROUTE_IMPORT(Printf, G_PRINTF);
-        ROUTE_IMPORT(DPrintf, G_DPRINTF);
-        ROUTE_IMPORT(DPrintf2, G_DPRINTF2);
-        ROUTE_IMPORT(DebugPrintf, G_DEBUGPRINTF);
-        ROUTE_IMPORT(Error, G_ERROR);
-        ROUTE_IMPORT(Milliseconds, G_MILLISECONDS);
-        ROUTE_IMPORT(LV_ConvertString, G_LV_CONVERTSTRING);
-        ROUTE_IMPORT(Malloc, G_MALLOC);
-        ROUTE_IMPORT(Free, G_FREE);
-        ROUTE_IMPORT(Cvar_Get, G_CVAR_GET);
-        ROUTE_IMPORT(cvar_set, G_CVAR_SET);
-        ROUTE_IMPORT(cvar_set2, G_CVAR_SET2);
-        ROUTE_IMPORT(NextCvar, G_NEXTCVAR);
-        ROUTE_IMPORT(Argc, G_ARGC);
-        ROUTE_IMPORT(Argv, G_ARGV);
-        ROUTE_IMPORT(Args, G_ARGS);
-        ROUTE_IMPORT(AddCommand, G_ADDCOMMAND);
-        ROUTE_IMPORT(FS_ReadFile, G_FS_READFILE);
-        ROUTE_IMPORT(FS_FreeFile, G_FS_FREEFILE);
-        ROUTE_IMPORT(FS_WriteFile, G_FS_WRITEFILE);
-        ROUTE_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE);
-        ROUTE_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND);
-        ROUTE_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE);
-        ROUTE_IMPORT(FS_Write, G_FS_WRITE);
-        // handled below since we do special handling for these for FILE* access
-        // ROUTE_IMPORT(FS_Read, G_FS_READ);
-        // ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
-        ROUTE_IMPORT(FS_Tell, G_FS_TELL);
-        ROUTE_IMPORT(FS_Seek, G_FS_SEEK);
-        ROUTE_IMPORT(FS_Flush, G_FS_FLUSH);
-        ROUTE_IMPORT(FS_FileNewer, G_FS_FILENEWER);
-        ROUTE_IMPORT(FS_CanonicalFilename, G_FS_CANONICALFILENAME);
-        ROUTE_IMPORT(FS_ListFiles, G_FS_LISTFILES);
-        ROUTE_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST);
-        ROUTE_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME);
-        // handled below since we do special handling to deal with the "when" argument
-        // ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
-        ROUTE_IMPORT_1_V(DebugGraph, G_DEBUGGRAPH, FLOAT_CAST);
-        ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
-        ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
-        ROUTE_IMPORT(MSG_WriteBits, G_MSG_WRITEBITS);
-        ROUTE_IMPORT(MSG_WriteChar, G_MSG_WRITECHAR);
-        ROUTE_IMPORT(MSG_WriteByte, G_MSG_WRITEBYTE);
-        ROUTE_IMPORT(MSG_WriteSVC, G_MSG_WRITESVC);
-        ROUTE_IMPORT(MSG_WriteShort, G_MSG_WRITESHORT);
-        ROUTE_IMPORT(MSG_WriteLong, G_MSG_WRITELONG);
-        ROUTE_IMPORT_1_V(MSG_WriteFloat, G_MSG_WRITEFLOAT, FLOAT_CAST);
-        ROUTE_IMPORT(MSG_WriteString, G_MSG_WRITESTRING);
-        ROUTE_IMPORT_1_V(MSG_WriteAngle8, G_MSG_WRITEANGLE8, FLOAT_CAST);
-        ROUTE_IMPORT_1_V(MSG_WriteAngle16, G_MSG_WRITEANGLE16, FLOAT_CAST);
-        ROUTE_IMPORT_1_V(MSG_WriteCoord, G_MSG_WRITECOORD, FLOAT_CAST);
-        ROUTE_IMPORT(MSG_WriteDir, G_MSG_WRITEDIR);
-        ROUTE_IMPORT(MSG_StartCGM, G_MSG_STARTCGM);
-        ROUTE_IMPORT(MSG_EndCGM, G_MSG_ENDCGM);
-        ROUTE_IMPORT(MSG_SetClient, G_MSG_SETCLIENT);
-        ROUTE_IMPORT(SetBroadcastVisible, G_SETBROADCASTVISIBLE);
-        ROUTE_IMPORT(SetBroadcastHearable, G_SETBROADCASTHEARABLE);
-        ROUTE_IMPORT(SetBroadcastAll, G_SETBROADCASTALL);
-        ROUTE_IMPORT(setConfigstring, G_SET_CONFIGSTRING);
-        ROUTE_IMPORT(getConfigstring, G_GET_CONFIGSTRING);
-        ROUTE_IMPORT(SetUserinfo, G_SET_USERINFO);
-        ROUTE_IMPORT(GetUserinfo, G_GET_USERINFO);
-        ROUTE_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL);
-        ROUTE_IMPORT(ModelBoundsFromName, G_MODELBOUNDSFROMNAME);
-        ROUTE_IMPORT(SightTraceEntity, G_SIGHTTRACEENTITY);
-        ROUTE_IMPORT(SightTrace, G_SIGHTTRACE);
-        ROUTE_IMPORT(trace, G_TRACE);
-        ROUTE_IMPORT(GetShader, G_GETSHADER);
-        ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
-        ROUTE_IMPORT(PointBrushnum, G_POINTBRUSHNUM);
-        ROUTE_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE);
-        ROUTE_IMPORT(AreaForPoint, G_AREAFORPOINT);
-        ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
-        ROUTE_IMPORT(InPVS, G_IN_PVS);
-        ROUTE_IMPORT(linkentity, G_LINKENTITY);
-        ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
-        ROUTE_IMPORT(AreaEntities, G_AREAENTITIES);
-        ROUTE_IMPORT(ClipToEntity, G_CLIPTOENTITY);
-        ROUTE_IMPORT(imageindex, G_IMAGEINDEX);
-        ROUTE_IMPORT(itemindex, G_ITEMINDEX);
-        ROUTE_IMPORT(soundindex, G_SOUNDINDEX);
-        ROUTE_IMPORT(TIKI_RegisterModel, G_TIKI_REGISTERMODEL);
-        ROUTE_IMPORT(modeltiki, G_MODELTIKI);
-        ROUTE_IMPORT(modeltikianim, G_MODELTIKIANIM);
-        ROUTE_IMPORT(SetLightStyle, G_SETLIGHTSTYLE);
-        ROUTE_IMPORT(GameDir, G_GAMEDIR);
-        ROUTE_IMPORT(setmodel, G_SETMODEL);
-        ROUTE_IMPORT(clearmodel, G_CLEARMODEL);
-        ROUTE_IMPORT(TIKI_NumAnims, G_TIKI_NUMANIMS);
-        ROUTE_IMPORT(TIKI_NumSurfaces, G_TIKI_NUMSURFACES);
-        ROUTE_IMPORT(TIKI_NumTags, G_TIKI_NUMTAGS);
-        ROUTE_IMPORT_4_V(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS, dtiki_t*, FLOAT_CAST, float*, float*);
-        ROUTE_IMPORT(TIKI_GetSkeletor, G_TIKI_GETSKELETOR);
-        ROUTE_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM);
-        ROUTE_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME);
-        ROUTE_IMPORT(Anim_Random, G_ANIM_RANDOM);
-        ROUTE_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES);
-        ROUTE_IMPORT_2_F(Anim_Time, G_ANIM_TIME, dtiki_t*, int);
-        ROUTE_IMPORT_2_F(Anim_Frametime, G_ANIM_FRAMETIME, dtiki_t*, int);
-        ROUTE_IMPORT_2_F(Anim_CrossTime, G_ANIM_CROSSTIME, dtiki_t*, int);
-        ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
-        ROUTE_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA);
-        ROUTE_IMPORT_5_V(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME, dtiki_t*, int, FLOAT_CAST, FLOAT_CAST, float*);
-        ROUTE_IMPORT(Anim_Flags, G_ANIM_FLAGS);
-        ROUTE_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL);
-        ROUTE_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS);
-        ROUTE_IMPORT(NumHeadModels, G_NUMHEADMODELS);
-        ROUTE_IMPORT(GetHeadModel, G_GETHEADMODEL);
-        ROUTE_IMPORT(NumHeadSkins, G_NUMHEADSKINS);
-        ROUTE_IMPORT(GetHeadSkin, G_GETHEADSKIN);
-        ROUTE_IMPORT(Frame_Commands, G_FRAME_COMMANDS);
-        ROUTE_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM);
-        ROUTE_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME);
-        ROUTE_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME);
-        ROUTE_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM);
-        ROUTE_IMPORT_5(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL, orientation_t*, dtiki_t*, int, int, FLOAT_CAST);
-        ROUTE_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL);
-        ROUTE_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, dtiki_t*, int, int, FLOAT_CAST);
-        ROUTE_IMPORT_6_V(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, FLOAT_CAST);
-        ROUTE_IMPORT(CM_GetHitLocationInfo, G_CM_GETHITLOCATIONINFO);
-        ROUTE_IMPORT(CM_GetHitLocationInfoSecondary, G_CM_GETHITLOCATIONINFOSECONDARY);
-        ROUTE_IMPORT(Alias_Add, G_ALIAS_ADD);
-        ROUTE_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM);
-        ROUTE_IMPORT(Alias_Dump, G_ALIAS_DUMP);
-        ROUTE_IMPORT(Alias_Clear, G_ALIAS_CLEAR);
-        ROUTE_IMPORT(Alias_UpdateDialog, G_ALIAS_UPDATEDIALOG);
-        ROUTE_IMPORT(TIKI_NameForNum, G_TIKI_NAMEFORNUM);
-        ROUTE_IMPORT(GlobalAlias_Add, G_GLOBALALIAS_ADD);
-        ROUTE_IMPORT(GlobalAlias_FindRandom, G_GLOBALALIAS_FINDRANDOM);
-        ROUTE_IMPORT(GlobalAlias_Dump, G_GLOBALALIAS_DUMP);
-        ROUTE_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR);
-        ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
-        ROUTE_IMPORT(locationprintf, G_LOCATIONPRINTF);
-        ROUTE_IMPORT_9_V(Sound, G_SOUND, vec3_t*, int, int, const char*, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, int);
-        ROUTE_IMPORT(StopSound, G_STOPSOUND);
-        ROUTE_IMPORT_2_F(SoundLength, G_SOUNDLENGTH, int, const char*);
-        ROUTE_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES);
-        ROUTE_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING);
-        ROUTE_IMPORT(CalcCRC, G_CALCCRC);
-        ROUTE_IMPORT(LocateGameData, G_LOCATE_GAME_DATA);
-        ROUTE_IMPORT(SetFarPlane, G_SETFARPLANE);
-        ROUTE_IMPORT(SetSkyPortal, G_SETSKYPORTAL);
-        ROUTE_IMPORT(Popmenu, G_POPMENU);
-        ROUTE_IMPORT(Showmenu, G_SHOWMENU);
-        ROUTE_IMPORT(Hidemenu, G_HIDEMENU);
-        ROUTE_IMPORT(Pushmenu, G_PUSHMENU);
-        ROUTE_IMPORT(HideMouseCursor, G_HIDEMOUSECURSOR);
-        ROUTE_IMPORT(ShowMouseCursor, G_SHOWMOUSECURSOR);
-        ROUTE_IMPORT(MapTime, G_MAPTIME);
-        ROUTE_IMPORT(LoadResource, G_LOADRESOURCE);
-        ROUTE_IMPORT(ClearResource, G_CLEARRESOURCE);
-        ROUTE_IMPORT(Key_StringToKeynum, G_KEY_STRINGTOKEYNUM);
-        ROUTE_IMPORT(Key_KeynumToBindString, G_KEY_KEYNUMTOBINDSTRING);
-        ROUTE_IMPORT(Key_GetKeysForCommand, G_KEY_GETKEYSFORCOMMAND);
-        ROUTE_IMPORT(ArchiveLevel, G_ARCHIVELEVEL);
-        ROUTE_IMPORT(AddSvsTimeFixup, G_ADDSVSTIMEFIXUP);
-        ROUTE_IMPORT(HudDrawShader, G_HUDDRAWSHADER);
-        ROUTE_IMPORT(HudDrawAlign, G_HUDDRAWALIGN);
-        ROUTE_IMPORT(HudDrawRect, G_HUDDRAWRECT);
-        ROUTE_IMPORT(HudDrawVirtualSize, G_HUDDRAWVIRTUALSIZE);
-        ROUTE_IMPORT(HudDrawColor, G_HUDDRAWCOLOR);
-        ROUTE_IMPORT_2_V(HudDrawAlpha, G_HUDDRAWALPHA, int, FLOAT_CAST);
-        ROUTE_IMPORT(HudDrawString, G_HUDDRAWSTRING);
-        ROUTE_IMPORT(HudDrawFont, G_HUDDRAWFONT);
-        ROUTE_IMPORT(SanitizeName, G_SANITIZENAME);
+    if (orig_import.Printf) {
+        switch (cmd) {
+            ROUTE_IMPORT(Printf, G_PRINTF);
+            ROUTE_IMPORT(DPrintf, G_DPRINTF);
+            ROUTE_IMPORT(DPrintf2, G_DPRINTF2);
+            ROUTE_IMPORT(DebugPrintf, G_DEBUGPRINTF);
+            ROUTE_IMPORT(Error, G_ERROR);
+            ROUTE_IMPORT(Milliseconds, G_MILLISECONDS);
+            ROUTE_IMPORT(LV_ConvertString, G_LV_CONVERTSTRING);
+            ROUTE_IMPORT(Malloc, G_MALLOC);
+            ROUTE_IMPORT(Free, G_FREE);
+            ROUTE_IMPORT(Cvar_Get, G_CVAR_GET);
+            ROUTE_IMPORT(cvar_set, G_CVAR_SET);
+            ROUTE_IMPORT(cvar_set2, G_CVAR_SET2);
+            ROUTE_IMPORT(NextCvar, G_NEXTCVAR);
+            ROUTE_IMPORT(Argc, G_ARGC);
+            ROUTE_IMPORT(Argv, G_ARGV);
+            ROUTE_IMPORT(Args, G_ARGS);
+            ROUTE_IMPORT(AddCommand, G_ADDCOMMAND);
+            ROUTE_IMPORT(FS_ReadFile, G_FS_READFILE);
+            ROUTE_IMPORT(FS_FreeFile, G_FS_FREEFILE);
+            ROUTE_IMPORT(FS_WriteFile, G_FS_WRITEFILE);
+            ROUTE_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE);
+            ROUTE_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND);
+            ROUTE_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE);
+            ROUTE_IMPORT(FS_Write, G_FS_WRITE);
+            // handled below since we do special handling for these for FILE* access
+            // ROUTE_IMPORT(FS_Read, G_FS_READ);
+            // ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
+            ROUTE_IMPORT(FS_Tell, G_FS_TELL);
+            ROUTE_IMPORT(FS_Seek, G_FS_SEEK);
+            ROUTE_IMPORT(FS_Flush, G_FS_FLUSH);
+            ROUTE_IMPORT(FS_FileNewer, G_FS_FILENEWER);
+            ROUTE_IMPORT(FS_CanonicalFilename, G_FS_CANONICALFILENAME);
+            ROUTE_IMPORT(FS_ListFiles, G_FS_LISTFILES);
+            ROUTE_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST);
+            ROUTE_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME);
+            // handled below since we do special handling to deal with the "when" argument
+            // ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
+            ROUTE_IMPORT_1_V(DebugGraph, G_DEBUGGRAPH, FLOAT_CAST);
+            ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
+            ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
+            ROUTE_IMPORT(MSG_WriteBits, G_MSG_WRITEBITS);
+            ROUTE_IMPORT(MSG_WriteChar, G_MSG_WRITECHAR);
+            ROUTE_IMPORT(MSG_WriteByte, G_MSG_WRITEBYTE);
+            ROUTE_IMPORT(MSG_WriteSVC, G_MSG_WRITESVC);
+            ROUTE_IMPORT(MSG_WriteShort, G_MSG_WRITESHORT);
+            ROUTE_IMPORT(MSG_WriteLong, G_MSG_WRITELONG);
+            ROUTE_IMPORT_1_V(MSG_WriteFloat, G_MSG_WRITEFLOAT, FLOAT_CAST);
+            ROUTE_IMPORT(MSG_WriteString, G_MSG_WRITESTRING);
+            ROUTE_IMPORT_1_V(MSG_WriteAngle8, G_MSG_WRITEANGLE8, FLOAT_CAST);
+            ROUTE_IMPORT_1_V(MSG_WriteAngle16, G_MSG_WRITEANGLE16, FLOAT_CAST);
+            ROUTE_IMPORT_1_V(MSG_WriteCoord, G_MSG_WRITECOORD, FLOAT_CAST);
+            ROUTE_IMPORT(MSG_WriteDir, G_MSG_WRITEDIR);
+            ROUTE_IMPORT(MSG_StartCGM, G_MSG_STARTCGM);
+            ROUTE_IMPORT(MSG_EndCGM, G_MSG_ENDCGM);
+            ROUTE_IMPORT(MSG_SetClient, G_MSG_SETCLIENT);
+            ROUTE_IMPORT(SetBroadcastVisible, G_SETBROADCASTVISIBLE);
+            ROUTE_IMPORT(SetBroadcastHearable, G_SETBROADCASTHEARABLE);
+            ROUTE_IMPORT(SetBroadcastAll, G_SETBROADCASTALL);
+            ROUTE_IMPORT(setConfigstring, G_SET_CONFIGSTRING);
+            ROUTE_IMPORT(getConfigstring, G_GET_CONFIGSTRING);
+            ROUTE_IMPORT(SetUserinfo, G_SET_USERINFO);
+            ROUTE_IMPORT(GetUserinfo, G_GET_USERINFO);
+            ROUTE_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL);
+            ROUTE_IMPORT(ModelBoundsFromName, G_MODELBOUNDSFROMNAME);
+            ROUTE_IMPORT(SightTraceEntity, G_SIGHTTRACEENTITY);
+            ROUTE_IMPORT(SightTrace, G_SIGHTTRACE);
+            ROUTE_IMPORT(trace, G_TRACE);
+            ROUTE_IMPORT(GetShader, G_GETSHADER);
+            ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
+            ROUTE_IMPORT(PointBrushnum, G_POINTBRUSHNUM);
+            ROUTE_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE);
+            ROUTE_IMPORT(AreaForPoint, G_AREAFORPOINT);
+            ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
+            ROUTE_IMPORT(InPVS, G_IN_PVS);
+            ROUTE_IMPORT(linkentity, G_LINKENTITY);
+            ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
+            ROUTE_IMPORT(AreaEntities, G_AREAENTITIES);
+            ROUTE_IMPORT(ClipToEntity, G_CLIPTOENTITY);
+            ROUTE_IMPORT(imageindex, G_IMAGEINDEX);
+            ROUTE_IMPORT(itemindex, G_ITEMINDEX);
+            ROUTE_IMPORT(soundindex, G_SOUNDINDEX);
+            ROUTE_IMPORT(TIKI_RegisterModel, G_TIKI_REGISTERMODEL);
+            ROUTE_IMPORT(modeltiki, G_MODELTIKI);
+            ROUTE_IMPORT(modeltikianim, G_MODELTIKIANIM);
+            ROUTE_IMPORT(SetLightStyle, G_SETLIGHTSTYLE);
+            ROUTE_IMPORT(GameDir, G_GAMEDIR);
+            ROUTE_IMPORT(setmodel, G_SETMODEL);
+            ROUTE_IMPORT(clearmodel, G_CLEARMODEL);
+            ROUTE_IMPORT(TIKI_NumAnims, G_TIKI_NUMANIMS);
+            ROUTE_IMPORT(TIKI_NumSurfaces, G_TIKI_NUMSURFACES);
+            ROUTE_IMPORT(TIKI_NumTags, G_TIKI_NUMTAGS);
+            ROUTE_IMPORT_4_V(TIKI_CalculateBounds, G_TIKI_CALCULATEBOUNDS, dtiki_t*, FLOAT_CAST, float*, float*);
+            ROUTE_IMPORT(TIKI_GetSkeletor, G_TIKI_GETSKELETOR);
+            ROUTE_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM);
+            ROUTE_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME);
+            ROUTE_IMPORT(Anim_Random, G_ANIM_RANDOM);
+            ROUTE_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES);
+            ROUTE_IMPORT_2_F(Anim_Time, G_ANIM_TIME, dtiki_t*, int);
+            ROUTE_IMPORT_2_F(Anim_Frametime, G_ANIM_FRAMETIME, dtiki_t*, int);
+            ROUTE_IMPORT_2_F(Anim_CrossTime, G_ANIM_CROSSTIME, dtiki_t*, int);
+            ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
+            ROUTE_IMPORT(Anim_HasDelta, G_ANIM_HASDELTA);
+            ROUTE_IMPORT_5_V(Anim_DeltaOverTime, G_ANIM_DELTAOVERTIME, dtiki_t*, int, FLOAT_CAST, FLOAT_CAST, float*);
+            ROUTE_IMPORT(Anim_Flags, G_ANIM_FLAGS);
+            ROUTE_IMPORT(Anim_FlagsSkel, G_ANIM_FLAGSSKEL);
+            ROUTE_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS);
+            ROUTE_IMPORT(NumHeadModels, G_NUMHEADMODELS);
+            ROUTE_IMPORT(GetHeadModel, G_GETHEADMODEL);
+            ROUTE_IMPORT(NumHeadSkins, G_NUMHEADSKINS);
+            ROUTE_IMPORT(GetHeadSkin, G_GETHEADSKIN);
+            ROUTE_IMPORT(Frame_Commands, G_FRAME_COMMANDS);
+            ROUTE_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM);
+            ROUTE_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME);
+            ROUTE_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME);
+            ROUTE_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM);
+            ROUTE_IMPORT_5(TIKI_OrientationInternal, G_TIKI_ORIENTATIONINTERNAL, orientation_t*, dtiki_t*, int, int, FLOAT_CAST);
+            ROUTE_IMPORT(TIKI_TransformInternal, G_TIKI_TRANSFORMINTERNAL);
+            ROUTE_IMPORT_4(TIKI_IsOnGroundInternal, G_TIKI_ISONGROUNDINTERNAL, dtiki_t*, int, int, FLOAT_CAST);
+            ROUTE_IMPORT_6_V(TIKI_SetPoseInternal, G_TIKI_SETPOSEINTERNAL, dtiki_t*, int, const frameInfo_t*, int*, vec4_t*, FLOAT_CAST);
+            ROUTE_IMPORT(CM_GetHitLocationInfo, G_CM_GETHITLOCATIONINFO);
+            ROUTE_IMPORT(CM_GetHitLocationInfoSecondary, G_CM_GETHITLOCATIONINFOSECONDARY);
+            ROUTE_IMPORT(Alias_Add, G_ALIAS_ADD);
+            ROUTE_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM);
+            ROUTE_IMPORT(Alias_Dump, G_ALIAS_DUMP);
+            ROUTE_IMPORT(Alias_Clear, G_ALIAS_CLEAR);
+            ROUTE_IMPORT(Alias_UpdateDialog, G_ALIAS_UPDATEDIALOG);
+            ROUTE_IMPORT(TIKI_NameForNum, G_TIKI_NAMEFORNUM);
+            ROUTE_IMPORT(GlobalAlias_Add, G_GLOBALALIAS_ADD);
+            ROUTE_IMPORT(GlobalAlias_FindRandom, G_GLOBALALIAS_FINDRANDOM);
+            ROUTE_IMPORT(GlobalAlias_Dump, G_GLOBALALIAS_DUMP);
+            ROUTE_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR);
+            ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
+            ROUTE_IMPORT(locationprintf, G_LOCATIONPRINTF);
+            ROUTE_IMPORT_9_V(Sound, G_SOUND, vec3_t*, int, int, const char*, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, int);
+            ROUTE_IMPORT(StopSound, G_STOPSOUND);
+            ROUTE_IMPORT_2_F(SoundLength, G_SOUNDLENGTH, int, const char*);
+            ROUTE_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES);
+            ROUTE_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING);
+            ROUTE_IMPORT(CalcCRC, G_CALCCRC);
+            ROUTE_IMPORT(LocateGameData, G_LOCATE_GAME_DATA);
+            ROUTE_IMPORT(SetFarPlane, G_SETFARPLANE);
+            ROUTE_IMPORT(SetSkyPortal, G_SETSKYPORTAL);
+            ROUTE_IMPORT(Popmenu, G_POPMENU);
+            ROUTE_IMPORT(Showmenu, G_SHOWMENU);
+            ROUTE_IMPORT(Hidemenu, G_HIDEMENU);
+            ROUTE_IMPORT(Pushmenu, G_PUSHMENU);
+            ROUTE_IMPORT(HideMouseCursor, G_HIDEMOUSECURSOR);
+            ROUTE_IMPORT(ShowMouseCursor, G_SHOWMOUSECURSOR);
+            ROUTE_IMPORT(MapTime, G_MAPTIME);
+            ROUTE_IMPORT(LoadResource, G_LOADRESOURCE);
+            ROUTE_IMPORT(ClearResource, G_CLEARRESOURCE);
+            ROUTE_IMPORT(Key_StringToKeynum, G_KEY_STRINGTOKEYNUM);
+            ROUTE_IMPORT(Key_KeynumToBindString, G_KEY_KEYNUMTOBINDSTRING);
+            ROUTE_IMPORT(Key_GetKeysForCommand, G_KEY_GETKEYSFORCOMMAND);
+            ROUTE_IMPORT(ArchiveLevel, G_ARCHIVELEVEL);
+            ROUTE_IMPORT(AddSvsTimeFixup, G_ADDSVSTIMEFIXUP);
+            ROUTE_IMPORT(HudDrawShader, G_HUDDRAWSHADER);
+            ROUTE_IMPORT(HudDrawAlign, G_HUDDRAWALIGN);
+            ROUTE_IMPORT(HudDrawRect, G_HUDDRAWRECT);
+            ROUTE_IMPORT(HudDrawVirtualSize, G_HUDDRAWVIRTUALSIZE);
+            ROUTE_IMPORT(HudDrawColor, G_HUDDRAWCOLOR);
+            ROUTE_IMPORT_2_V(HudDrawAlpha, G_HUDDRAWALPHA, int, FLOAT_CAST);
+            ROUTE_IMPORT(HudDrawString, G_HUDDRAWSTRING);
+            ROUTE_IMPORT(HudDrawFont, G_HUDDRAWFONT);
+            ROUTE_IMPORT(SanitizeName, G_SANITIZENAME);
 
-        // handle cmds for variables, this is how a plugin would get these values if needed
-        ROUTE_IMPORT_VAR(DebugLines, GVP_DEBUGLINES);
-        ROUTE_IMPORT_VAR(numDebugLines, GVP_NUMDEBUGLINES);
-        ROUTE_IMPORT_VAR(DebugStrings, GVP_DEBUGSTRINGS);
-        ROUTE_IMPORT_VAR(numDebugStrings, GVP_NUMDEBUGSTRINGS);
+            // handle cmds for variables, this is how a plugin would get these values if needed
+            ROUTE_IMPORT_VAR(DebugLines, GVP_DEBUGLINES);
+            ROUTE_IMPORT_VAR(numDebugLines, GVP_NUMDEBUGLINES);
+            ROUTE_IMPORT_VAR(DebugStrings, GVP_DEBUGSTRINGS);
+            ROUTE_IMPORT_VAR(numDebugStrings, GVP_NUMDEBUGSTRINGS);
 
-    // handle special cmds which QMM uses but MOHAA doesn't have an analogue for
-    case G_CVAR_REGISTER: {
-        // mohaa: cvar_t* (*Cvar_Get)(const char* varName, const char* varValue, int varFlags)
-        // q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
-        // qmm always passes NULL for vmCvar so don't worry about it
-        const char* varName = (const char*)(args[1]);
-        const char* defaultValue = (const char*)(args[2]);
-        int flags = args[3];
-        (void)orig_import.Cvar_Get(varName, defaultValue, flags);
-        break;
-    }
-    case G_CVAR_VARIABLE_STRING_BUFFER: {
-        // mohaa: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
-        // q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
-        const char* varName = (const char*)(args[0]);
-        char* buffer = (char*)(args[1]);
-        intptr_t bufsize = args[2];
-        *buffer = '\0';
-        cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
-        if (cvar)
-            Util::strncpyz(buffer, cvar->string, (size_t)bufsize);
-        break;
-    }
-    case G_CVAR_VARIABLE_INTEGER_VALUE: {
-        // mohaa: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
-        // q3a: int trap_Cvar_VariableIntegerValue(const char* var_name)
-        const char* varName = (const char*)(args[0]);
-        cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
-        if (cvar)
-            ret = cvar->integer;
-        break;
-    }
-    case G_SEND_CONSOLE_COMMAND_QMM:
-    case G_SEND_CONSOLE_COMMAND: {
-        // MOHAA: void (*SendConsoleCommand)(const char *text);
-        // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
-        // first arg may be exec_when, like EXEC_APPEND
-        intptr_t when = args[0];
-        const char* text = (const char*)(args[1]);
-        // EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
-        if (when > 100)
-            text = (const char*)when;
-        orig_import.SendConsoleCommand(text);
-        break;
-    }
-    case G_FS_FOPEN_FILE: {
-        // MOHAA is only missing a FS_FOPEN_FILE equivalent for reading
-        // if mode == FS_WRITE, then just pass to FS_FOpenFileWrite.
-        // if mode == FS_APPEND(_SYNC), then just pass to FS_FOpenFileAppend.
-        // if mode == FS_READ, then return a FILE* that will get picked up by G_FS_READ and G_FS_FCLOSE_FILE handlers below
-
-        // MOHAA: fileHandle_t (*FS_FOpenFileAppend)(const char *fileName);
-        // MOHAA: fileHandle_t (*FS_FOpenFileWrite)(const char *fileName);
-        // q3a: int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
-        const char* qpath = (const char*)args[0];
-        fileHandle_t* f = (fileHandle_t*)args[1];
-        fsMode_t mode = (fsMode_t)args[2];
-        if (mode == FS_READ) {
-            std::string path = fmt::format("{}/{}", QMM::qmm_dir, qpath);
-            FILE* fp = fopen(path.c_str(), "rb");
-            if (!fp || fseek(fp, 0, SEEK_END) != 0) {
-                ret = -1;
+            // handle special cmds which QMM uses but MOHAA doesn't have an analogue for
+            case G_CVAR_REGISTER: {
+                // mohaa: cvar_t* (*Cvar_Get)(const char* varName, const char* varValue, int varFlags)
+                // q3a: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
+                // qmm always passes NULL for vmCvar so don't worry about it
+                const char* varName = (const char*)(args[1]);
+                const char* defaultValue = (const char*)(args[2]);
+                int flags = args[3];
+                (void)orig_import.Cvar_Get(varName, defaultValue, flags);
                 break;
             }
-            ret = ftell(fp);
-            fseek(fp, 0, SEEK_SET);
-            *f = (fileHandle_t)fp;
-        }
-        else if (mode == FS_WRITE) {
-            *f = orig_import.FS_FOpenFileWrite(qpath);
-            if (!*f) {
-                ret = -1;
+            case G_CVAR_VARIABLE_STRING_BUFFER: {
+                // mohaa: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
+                // q3a: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
+                const char* varName = (const char*)(args[0]);
+                char* buffer = (char*)(args[1]);
+                intptr_t bufsize = args[2];
+                *buffer = '\0';
+                cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
+                if (cvar)
+                    Util::strncpyz(buffer, cvar->string, (size_t)bufsize);
                 break;
             }
-            ret = 0;
-        }
-        else { // mode == FS_APPEND(_SYNC)
-            *f = orig_import.FS_FOpenFileAppend(qpath);
-            if (!*f) {
-                ret = -1;
+            case G_CVAR_VARIABLE_INTEGER_VALUE: {
+                // mohaa: cvar_t *(*Cvar_Get)(const char *varName, const char *varValue, int varFlags)
+                // q3a: int trap_Cvar_VariableIntegerValue(const char* var_name)
+                const char* varName = (const char*)(args[0]);
+                cvar_t* cvar = orig_import.Cvar_Get(varName, "", 0);
+                if (cvar)
+                    ret = cvar->integer;
                 break;
             }
-            orig_import.FS_Seek(*f, 0, FS_SEEK_END);
-            ret = orig_import.FS_Tell(*f);
-        }
-        break;
-    }
-    case G_FS_READ: {
-        // void trap_FS_Read( void *buffer, int len, fileHandle_t f );
-        // void orig_import.FS_Read(void* buffer, size_t len, fileHandle_t f);
-        char* buffer = (char*)args[0];
-        size_t len = (size_t)args[1];
-        fileHandle_t f = (fileHandle_t)args[2];
-        // if this is actually a fileHandle_t, pass to real G_FS_READ (even though there's no G_FS_FOPEN_FILE for reading)
-        if (f < MAX_FILE_HANDLES) {
-            ret = (intptr_t)orig_import.FS_Read(buffer, len, f);
-            break;
-        }
-        // this is a FILE*
-        size_t total = 0;
-        FILE* fp = (FILE*)f;
-        for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
-            total += fread(buffer + total, 1, len - total, fp);
-            if (total >= len || ferror(fp) || feof(fp))
+            case G_SEND_CONSOLE_COMMAND_QMM:
+            case G_SEND_CONSOLE_COMMAND: {
+                // MOHAA: void (*SendConsoleCommand)(const char *text);
+                // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+                // first arg may be exec_when, like EXEC_APPEND
+                intptr_t when = args[0];
+                const char* text = (const char*)(args[1]);
+                // EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
+                if (when > 100)
+                    text = (const char*)when;
+                orig_import.SendConsoleCommand(text);
                 break;
-        }
-        ret = (intptr_t)total;
-        break;
+            }
+            case G_FS_FOPEN_FILE: {
+                // MOHAA is only missing a FS_FOPEN_FILE equivalent for reading
+                // if mode == FS_WRITE, then just pass to FS_FOpenFileWrite.
+                // if mode == FS_APPEND(_SYNC), then just pass to FS_FOpenFileAppend.
+                // if mode == FS_READ, then return a FILE* that will get picked up by G_FS_READ and G_FS_FCLOSE_FILE handlers below
+
+                // MOHAA: fileHandle_t (*FS_FOpenFileAppend)(const char *fileName);
+                // MOHAA: fileHandle_t (*FS_FOpenFileWrite)(const char *fileName);
+                // q3a: int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
+                const char* qpath = (const char*)args[0];
+                fileHandle_t* f = (fileHandle_t*)args[1];
+                fsMode_t mode = (fsMode_t)args[2];
+                if (mode == FS_READ) {
+                    std::string path = fmt::format("{}/{}", QMM::qmm_dir, qpath);
+                    FILE* fp = fopen(path.c_str(), "rb");
+                    if (!fp || fseek(fp, 0, SEEK_END) != 0) {
+                        ret = -1;
+                        break;
+                    }
+                    ret = ftell(fp);
+                    fseek(fp, 0, SEEK_SET);
+                    *f = (fileHandle_t)fp;
+                }
+                else if (mode == FS_WRITE) {
+                    *f = orig_import.FS_FOpenFileWrite(qpath);
+                    if (!*f) {
+                        ret = -1;
+                        break;
+                    }
+                    ret = 0;
+                }
+                else { // mode == FS_APPEND(_SYNC)
+                    *f = orig_import.FS_FOpenFileAppend(qpath);
+                    if (!*f) {
+                        ret = -1;
+                        break;
+                    }
+                    orig_import.FS_Seek(*f, 0, FS_SEEK_END);
+                    ret = orig_import.FS_Tell(*f);
+                }
+                break;
+            }
+            case G_FS_READ: {
+                // void trap_FS_Read( void *buffer, int len, fileHandle_t f );
+                // void orig_import.FS_Read(void* buffer, size_t len, fileHandle_t f);
+                char* buffer = (char*)args[0];
+                size_t len = (size_t)args[1];
+                fileHandle_t f = (fileHandle_t)args[2];
+                // if this is actually a fileHandle_t, pass to real G_FS_READ (even though there's no G_FS_FOPEN_FILE for reading)
+                if (f < MAX_FILE_HANDLES) {
+                    ret = (intptr_t)orig_import.FS_Read(buffer, len, f);
+                    break;
+                }
+                // this is a FILE*
+                size_t total = 0;
+                FILE* fp = (FILE*)f;
+                for (int i = 0; i < 50; i++) {  // prevent infinite loops trying to read
+                    total += fread(buffer + total, 1, len - total, fp);
+                    if (total >= len || ferror(fp) || feof(fp))
+                        break;
+                }
+                ret = (intptr_t)total;
+                break;
+            }
+            case G_FS_FCLOSE_FILE: {
+                // void trap_FS_FCloseFile(fileHandle_t f);
+                // void orig_import.FS_FCloseFile(fileHandle_t fileHandle);
+                fileHandle_t f = (fileHandle_t)args[0];
+                // if this is actually a fileHandle_t, pass to real G_FS_FCLOSE_FILE
+                if (f < MAX_FILE_HANDLES) {
+                    orig_import.FS_FCloseFile(f);
+                    break;
+                }
+                // this is a FILE*
+                FILE* fp = (FILE*)f;
+                fclose(fp);
+                break;
+            }
+            case G_GET_ENTITY_TOKEN: {
+                // qboolean trap_GetEntityToken(char *buffer, int bufferSize);
+                if (token_counter >= entity_tokens.size()) {
+                    ret = qfalse;
+                    break;
+                }
+
+                char* buffer = (char*)args[0];
+                intptr_t bufferSize = args[1];
+
+                Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+                ret = qtrue;
+                break;
+            }
+
+            default:
+                break;
+        };
+
+	    // do anything that needs to be done after function call here
     }
-    case G_FS_FCLOSE_FILE: {
-        // void trap_FS_FCloseFile(fileHandle_t f);
-        // void orig_import.FS_FCloseFile(fileHandle_t fileHandle);
-        fileHandle_t f = (fileHandle_t)args[0];
-        // if this is actually a fileHandle_t, pass to real G_FS_FCLOSE_FILE
-        if (f < MAX_FILE_HANDLES) {
-            orig_import.FS_FCloseFile(f);
-            break;
-        }
-        // this is a FILE*
-        FILE* fp = (FILE*)f;
-        fclose(fp);
-        break;
-    }
-    case G_GET_ENTITY_TOKEN: {
-        // qboolean trap_GetEntityToken(char *buffer, int bufferSize);
-        if (token_counter >= entity_tokens.size()) {
-            ret = qfalse;
-            break;
-        }
-
-        char* buffer = (char*)args[0];
-        intptr_t bufferSize = args[1];
-
-        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
-        ret = qtrue;
-        break;
-    }
-
-    default:
-        break;
-    };
-
-    // do anything that needs to be done after function call here
 
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "MOHAA_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
@@ -434,63 +436,62 @@ intptr_t MOHAA_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 intptr_t MOHAA_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "MOHAA_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
-    if (!orig_export)
-        return 0;
-
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
-    switch (cmd) {
-        ROUTE_EXPORT(Init, GAME_INIT);
-        ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
-        ROUTE_EXPORT(Cleanup, GAME_CLEANUP);
-        ROUTE_EXPORT(Precache, GAME_PRECACHE);
-        ROUTE_EXPORT(SetMap, GAME_SETMAP);
-        ROUTE_EXPORT(Restart, GAME_RESTART);
-        ROUTE_EXPORT(SetTime, GAME_SETTIME);
-        ROUTE_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES);
-        ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
-        ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
-        ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED);
-        ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
-        ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
-        ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
-        ROUTE_EXPORT(BotBegin, GAME_BOTBEGIN);
-        ROUTE_EXPORT(BotThink, GAME_BOTTHINK);
-        ROUTE_EXPORT(PrepFrame, GAME_PREP_FRAME);
-        ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
-        ROUTE_EXPORT(ServerSpawned, GAME_SERVER_SPAWNED);
-        ROUTE_EXPORT(RegisterSounds, GAME_REGISTER_SOUNDS);
-        ROUTE_EXPORT(AllowPaused, GAME_ALLOW_PAUSED);
-        ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
-        ROUTE_EXPORT(ArchivePersistant, GAME_ARCHIVE_PERSISTANT);
-        ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
-        ROUTE_EXPORT(ReadLevel, GAME_READ_LEVEL);
-        ROUTE_EXPORT(LevelArchiveValid, GAME_LEVEL_ARCHIVE_VALID);
-        ROUTE_EXPORT(ArchiveInteger, GAME_ARCHIVE_INTEGER);
-        ROUTE_EXPORT(ArchiveFloat, GAME_ARCHIVE_FLOAT);
-        ROUTE_EXPORT(ArchiveString, GAME_ARCHIVE_STRING);
-        ROUTE_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME);
-        ROUTE_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION);
-        ROUTE_EXPORT_7_V(DebugCircle, GAME_DEBUG_CIRCLE, float*, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, qboolean);
-        ROUTE_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER);
-        ROUTE_EXPORT(SoundCallback, GAME_SOUND_CALLBACK);
+    if (orig_export) {
+        switch (cmd) {
+            ROUTE_EXPORT(Init, GAME_INIT);
+            ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
+            ROUTE_EXPORT(Cleanup, GAME_CLEANUP);
+            ROUTE_EXPORT(Precache, GAME_PRECACHE);
+            ROUTE_EXPORT(SetMap, GAME_SETMAP);
+            ROUTE_EXPORT(Restart, GAME_RESTART);
+            ROUTE_EXPORT(SetTime, GAME_SETTIME);
+            ROUTE_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES);
+            ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
+            ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
+            ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED);
+            ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
+            ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
+            ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
+            ROUTE_EXPORT(BotBegin, GAME_BOTBEGIN);
+            ROUTE_EXPORT(BotThink, GAME_BOTTHINK);
+            ROUTE_EXPORT(PrepFrame, GAME_PREP_FRAME);
+            ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
+            ROUTE_EXPORT(ServerSpawned, GAME_SERVER_SPAWNED);
+            ROUTE_EXPORT(RegisterSounds, GAME_REGISTER_SOUNDS);
+            ROUTE_EXPORT(AllowPaused, GAME_ALLOW_PAUSED);
+            ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
+            ROUTE_EXPORT(ArchivePersistant, GAME_ARCHIVE_PERSISTANT);
+            ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
+            ROUTE_EXPORT(ReadLevel, GAME_READ_LEVEL);
+            ROUTE_EXPORT(LevelArchiveValid, GAME_LEVEL_ARCHIVE_VALID);
+            ROUTE_EXPORT(ArchiveInteger, GAME_ARCHIVE_INTEGER);
+            ROUTE_EXPORT(ArchiveFloat, GAME_ARCHIVE_FLOAT);
+            ROUTE_EXPORT(ArchiveString, GAME_ARCHIVE_STRING);
+            ROUTE_EXPORT(ArchiveSvsTime, GAME_ARCHIVE_SVSTIME);
+            ROUTE_EXPORT(TIKI_Orientation, GAME_TIKI_ORIENTATION);
+            ROUTE_EXPORT_7_V(DebugCircle, GAME_DEBUG_CIRCLE, float*, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, qboolean);
+            ROUTE_EXPORT(SetFrameNumber, GAME_SET_FRAME_NUMBER);
+            ROUTE_EXPORT(SoundCallback, GAME_SOUND_CALLBACK);
 
-        // handle cmds for variables, this is how a plugin would get these values if needed
-        ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
-        ROUTE_EXPORT_VAR(profStruct, GAMEVP_PROFSTRUCT);
-        ROUTE_EXPORT_VAR(gentities, GAMEVP_GENTITIES);
-        ROUTE_EXPORT_VAR(gentitySize, GAMEV_GENTITYSIZE);
-        ROUTE_EXPORT_VAR(num_entities, GAMEV_NUM_ENTITIES);
-        ROUTE_EXPORT_VAR(max_entities, GAMEV_MAX_ENTITIES);
-        ROUTE_EXPORT_VAR(errorMessage, GAMEVP_ERRORMESSAGE);
+            // handle cmds for variables, this is how a plugin would get these values if needed
+            ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
+            ROUTE_EXPORT_VAR(profStruct, GAMEVP_PROFSTRUCT);
+            ROUTE_EXPORT_VAR(gentities, GAMEVP_GENTITIES);
+            ROUTE_EXPORT_VAR(gentitySize, GAMEV_GENTITYSIZE);
+            ROUTE_EXPORT_VAR(num_entities, GAMEV_NUM_ENTITIES);
+            ROUTE_EXPORT_VAR(max_entities, GAMEV_MAX_ENTITIES);
+            ROUTE_EXPORT_VAR(errorMessage, GAMEVP_ERRORMESSAGE);
 
-    default:
-        break;
-    };
+            default:
+                break;
+        };
 
-    // update export vars after returning from the mod
-    update_exports();
+        // update export vars after returning from the mod
+        update_exports();
+    }
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "MOHAA_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
@@ -945,10 +946,10 @@ game_import_t MOHAA_GameSupport::qmm_import = {
     GEN_IMPORT(SoundAmplitudes, G_SOUNDAMPLITUDES),
     GEN_IMPORT(S_IsSoundPlaying, G_S_ISSOUNDPLAYING),
     GEN_IMPORT(CalcCRC, G_CALCCRC),
-    nullptr,	// DebugLines
-    nullptr,	// numDebugLines
-    nullptr,	// DebugStrings
-    nullptr,	// numDebugStrings
+    nullptr,    // DebugLines
+    nullptr,    // numDebugLines
+    nullptr,    // DebugStrings
+    nullptr,    // numDebugStrings
     GEN_IMPORT(LocateGameData, G_LOCATE_GAME_DATA),
     GEN_IMPORT(SetFarPlane, G_SETFARPLANE),
     GEN_IMPORT(SetSkyPortal, G_SETSKYPORTAL),
@@ -975,7 +976,7 @@ game_import_t MOHAA_GameSupport::qmm_import = {
     GEN_IMPORT(HudDrawString, G_HUDDRAWSTRING),
     GEN_IMPORT(HudDrawFont, G_HUDDRAWFONT),
     GEN_IMPORT(SanitizeName, G_SANITIZENAME),
-    nullptr,	//fsDebug
+    nullptr,    //fsDebug
 };
 
 
@@ -993,7 +994,7 @@ void MOHAA_GameSupport::SpawnEntities(char* entstring, int levelTime) {
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 game_export_t MOHAA_GameSupport::qmm_export = {
-    GAME_API_VERSION,	// apiversion
+    GAME_API_VERSION,    // apiversion
     GEN_EXPORT(Init, GAME_INIT),
     GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
     GEN_EXPORT(Cleanup, GAME_CLEANUP),
@@ -1030,12 +1031,12 @@ game_export_t MOHAA_GameSupport::qmm_export = {
     GEN_EXPORT(SoundCallback, GAME_SOUND_CALLBACK),
 
     // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
-    nullptr,			// profStruct
-    nullptr,			// gentities
-    sizeof(gentity_t),	// gentitySize
-    0,					// num_entities
-    0,					// max_entities
-    nullptr,			// errorMessage
+    nullptr,            // profStruct
+    nullptr,            // gentities
+    sizeof(gentity_t),  // gentitySize
+    0,                  // num_entities
+    0,                  // max_entities
+    nullptr,            // errorMessage
 };
 
 #endif // QMM_ARCH_32

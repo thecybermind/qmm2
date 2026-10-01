@@ -106,30 +106,32 @@ intptr_t JAMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     // if QMM was loaded with the official JAMP or OpenJK "legacy" API
     if (orig_syscall) {
         switch (cmd) {
-        // handle special cmds which QMM uses but JAMP doesn't have an analogue for
-        case G_ARGS: {
-            // quake2: char* (*args)(void);
-            static std::string s;
-            static char buf[MAX_STRING_CHARS];
-            s = "";
-            int i = 1;
-            int argc = Util::util_min(orig_syscall(G_ARGC), 200);
-            while (i < argc) {
-                orig_syscall(G_ARGV, i, buf, sizeof(buf));
-                buf[sizeof(buf) - 1] = '\0';
-                if (i != 1)
-                    s += " ";
-                s += buf;
-                i++;
+            // handle special cmds which QMM uses but JAMP doesn't have an analogue for
+            case G_ARGS: {
+                // quake2: char* (*args)(void);
+                static std::string s;
+                static char buf[MAX_STRING_CHARS];
+                s = "";
+                int i = 1;
+                int argc = Util::util_min(orig_syscall(G_ARGC), 200);
+                while (i < argc) {
+                    orig_syscall(G_ARGV, i, buf, sizeof(buf));
+                    buf[sizeof(buf) - 1] = '\0';
+                    if (i != 1)
+                        s += " ";
+                    s += buf;
+                    i++;
+                }
+                ret = (intptr_t)s.c_str();
+                break;
             }
-            ret = (intptr_t)s.c_str();
-            break;
+
+            default:
+                // all normal engine functions go to syscall
+                ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
         }
 
-        default:
-            // all normal engine functions go to syscall
-            ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
-        }
+        // do anything that needs to be done after function call here
     }
     // if QMM was loaded with the OpenJK "new" API
     else if (orig_import.Print) {
@@ -466,9 +468,9 @@ intptr_t JAMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
             default:
                 break;
         };
-    }
 
-    // do anything that needs to be done after function call here
+        // do anything that needs to be done after function call here
+    }
 
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
@@ -534,8 +536,8 @@ intptr_t JAMP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
             ROUTE_EXPORT(NAV_FindCombatPointWaypoints, GAME_NAV_FINDCOMBATPOINTWAYPOINTS);
             ROUTE_EXPORT(BG_GetItemIndexByTag, GAME_GETITEMINDEXBYTAG);
 
-        default:
-            break;
+            default:
+                break;
         };
     }
 

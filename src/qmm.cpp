@@ -634,9 +634,9 @@ namespace QMM {
 
 
     // Print string to game console
-#define CONSOLE_PRINT(str)			ENG_SYSCALL(msg_G_PRINT, str)
+#define CONSOLE_PRINT(str)          ENG_SYSCALL(msg_G_PRINT, str)
 // Print formatted string to game console
-#define CONSOLE_PRINTF(str, ...)	ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
+#define CONSOLE_PRINTF(str, ...)    ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
 
     void HandleQMMCommand(const char* cmd, intptr_t arg_start) {
         char arg1[10] = "", arg2[10] = "";

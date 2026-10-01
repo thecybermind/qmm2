@@ -81,33 +81,35 @@ intptr_t CODUOMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 
     intptr_t ret = 0;
 
-    switch (cmd) {
-    // handle special cmds which QMM uses but CODUOMP doesn't have an analogue for
-    case G_ARGS: {
-        // quake2: char* (*args)(void);
-        static std::string s;
-        static char buf[MAX_STRING_CHARS];
-        s = "";
-        int i = 1;
-        int argc = Util::util_min(orig_syscall(G_ARGC), 200);
-        while (i < argc) {
-            orig_syscall(G_ARGV, i, buf, sizeof(buf));
-            buf[sizeof(buf) - 1] = '\0';
-            if (i != 1)
-                s += " ";
-            s += buf;
-            i++;
+    if (orig_syscall) {
+        switch (cmd) {
+            // handle special cmds which QMM uses but CODUOMP doesn't have an analogue for
+            case G_ARGS: {
+                // quake2: char* (*args)(void);
+                static std::string s;
+                static char buf[MAX_STRING_CHARS];
+                s = "";
+                int i = 1;
+                int argc = Util::util_min(orig_syscall(G_ARGC), 200);
+                while (i < argc) {
+                    orig_syscall(G_ARGV, i, buf, sizeof(buf));
+                    buf[sizeof(buf) - 1] = '\0';
+                    if (i != 1)
+                        s += " ";
+                    s += buf;
+                    i++;
+                }
+                ret = (intptr_t)s.c_str();
+                break;
+            }
+
+            default:
+                // all normal engine functions go to syscall
+                ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
         }
-        ret = (intptr_t)s.c_str();
-        break;
-    }
 
-    default:
-        // all normal engine functions go to syscall
-        ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+	    // do anything that needs to be done after function call here
     }
-
-    // do anything that needs to be done after function call here
 
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "CODUOMP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
@@ -121,14 +123,12 @@ intptr_t CODUOMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 intptr_t CODUOMP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "CODUOMP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
-    if (!orig_vmMain)
-        return 0;
-
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
     // all normal mod functions go to vmMain
-    ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    if (orig_vmMain)
+        ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "CODUOMP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 

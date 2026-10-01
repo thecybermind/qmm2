@@ -71,7 +71,7 @@ constexpr int QMM_MAX_VMMAIN_ARGS = 9;
                                     args[i] = va_arg(arglist, intptr_t); \
                                 va_end(arglist)
 // Generate list of all vmMain args for callsites
-#define QMM_PUT_VMMAIN_ARGS()	args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]
+#define QMM_PUT_VMMAIN_ARGS()   args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]
 
 // Max amount of syscall args in any game
 constexpr int QMM_MAX_SYSCALL_ARGS = 18;
@@ -83,7 +83,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
                                     args[i] = va_arg(arglist, intptr_t); \
                                 va_end(arglist)
 // Generate list of all syscall args for callsites
-#define QMM_PUT_SYSCALL_ARGS()	args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17]
+#define QMM_PUT_SYSCALL_ARGS()  args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17]
 
 // ------------------------------
 // ----- Game support stuff -----
@@ -93,7 +93,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 enum APIType {
     QMM_API_ERROR,          // Error/unknown
 
-    QMM_API_QVM,			// Mod-only
+    QMM_API_QVM,            // Mod-only
 
     QMM_API_DLLENTRY,       // dllEntry()
     QMM_API_GETGAMEAPI,     // GetGameAPI()
@@ -141,17 +141,17 @@ enum {
 
 // Output game-specific message values to match the QMM engine messages.
 #define GEN_GAME_QMM_ENG_MSGS() \
-	{ \
-		G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING, \
-		G_CVAR_REGISTER, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, \
-		G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, \
-	}
+    { \
+        G_PRINT, G_ERROR, G_ARGV, G_ARGC, G_SEND_CONSOLE_COMMAND, G_GET_CONFIGSTRING, \
+        G_CVAR_REGISTER, G_CVAR_VARIABLE_STRING_BUFFER, G_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, \
+        G_FS_FOPEN_FILE, G_FS_READ, G_FS_WRITE, G_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, \
+    }
 
 // Output game-specific message values to match the QMM mod messages.
 #define GEN_GAME_QMM_MOD_MSGS() \
-	{ \
-		GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
-	}
+    { \
+        GAME_INIT, GAME_SHUTDOWN, GAME_CONSOLE_COMMAND, \
+    }
 
 // Pure virtual base class for game support.
 // Derived classes need to implement all functions except:
@@ -328,7 +328,7 @@ struct GameSupport {
 extern std::vector<GameSupport*> api_supportedgames;
 
 // Generate extern for each game's support object (used at the top of gameapi.cpp)
-#define GEN_GAME_EXTS(game)	extern GameSupport* game##_gamesupport
+#define GEN_GAME_EXTS(game) extern GameSupport* game##_gamesupport
 
 // Generate game support object (used at the top of game_XYZ.cpp)
 #define GEN_GAME_OBJ(game) static game##_GameSupport gamesupport; GameSupport* game##_gamesupport = &gamesupport
@@ -337,7 +337,7 @@ extern std::vector<GameSupport*> api_supportedgames;
 #define GET_GAME_OBJ(game) game##_gamesupport
 
 // Generate a case/string line for use in the *MsgNames functions
-#define GEN_CASE(x)		case x: return #x
+#define GEN_CASE(x)    case x: return #x
 
 // ----------------------------
 // ----- GetGameAPI stuff -----
@@ -345,7 +345,7 @@ extern std::vector<GameSupport*> api_supportedgames;
 
 // Cast a ROUTE_IMPORT/ROUTE_EXPORT argument from intptr_t to float.
 // TODO: Eventually this should be replaced by dynamic argument grabbing based on the cmd enum.
-#define FLOAT_CAST	horrible_cast<float>
+#define FLOAT_CAST  horrible_cast<float>
 
 // Handle calls from QMM and plugins into the engine
 #define ROUTE_IMPORT(field, cmd) case cmd: ret = ((eng_syscall)(orig_import. field))(QMM_PUT_SYSCALL_ARGS()); break
@@ -431,7 +431,7 @@ extern std::vector<GameSupport*> api_supportedgames;
 #define GEN_IMPORT_4_F(field, cmd, type0, type1, type2, type3) +[](type0 arg0, type1 arg1, type2 arg2, type3 arg3) -> float { intptr_t args[] = { INT_CAST(arg0), INT_CAST(arg1), INT_CAST(arg2), INT_CAST(arg3) }; intptr_t ret = QMM::syscall_args(cmd, args); return *(float*)&ret; }
 
 // Handle calls from engine into QMM
-#define  GEN_EXPORT(field, cmd)	(decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { intptr_t args[] = { arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 }; return QMM::vmMain_args(cmd, args); }
+#define  GEN_EXPORT(field, cmd) (decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { intptr_t args[] = { arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 }; return QMM::vmMain_args(cmd, args); }
 // Handle specific arg types (for passing float args in the right registers)
 #define  GEN_EXPORT_0(field, cmd, typeret) +[]() -> typeret { intptr_t args[] = { 0 }; return (typeret)QMM::vmMain_args(cmd, nullptr); }
 #define  GEN_EXPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { intptr_t args[] = { INT_CAST(arg0) }; return (typeret)::vmMain(cmd, args); }
@@ -451,12 +451,12 @@ extern std::vector<GameSupport*> api_supportedgames;
 // These macros handle qvm syscall arguments in GAME_QVMSyscall functions in game_*.cpp
 
 // This gets the n'th argument value (evaluate to an intptr_t)
-#define VMARG(n)	(intptr_t)args[n]
+#define VMARG(n)    (intptr_t)args[n]
 
 // This adds the base VM address pointer to the n'th argument value (evaluate to a pointer)
-#define VMPTR(n)	(args[n] ? membase + args[n] : nullptr)
+#define VMPTR(n)    (args[n] ? membase + args[n] : nullptr)
 
 // This subtracts the base VM address pointer from given pointer value (for returning a pointer from syscall, evaluate to an int)
-#define VMRET(ptr)	(int)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
+#define VMRET(ptr)  (int)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
 
 #endif // QMM2_GAMEAPI_HPP

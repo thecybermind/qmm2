@@ -91,162 +91,161 @@ intptr_t SOF2SP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     update_exports();
 
     intptr_t ret = 0;
+    if (orig_import.Printf) {
+        switch (cmd) {
+            ROUTE_IMPORT(Printf, G_PRINTF);
+            ROUTE_IMPORT(DPrintf, G_DPRINTF);
+            ROUTE_IMPORT(DPrintf2, G_DPRINTF2);
+            ROUTE_IMPORT(snprintf, G_SNPRINTF);
+            ROUTE_IMPORT(ErrorF, G_ERRORF);
+            ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
+            ROUTE_IMPORT(FS_Read, G_FS_READ);
+            ROUTE_IMPORT(FS_Write, G_FS_WRITE);
+            ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
+            ROUTE_IMPORT(FS_ReadFile, G_FS_READFILE);
+            ROUTE_IMPORT(FS_FreeFile, G_FS_FREEFILE);
+            ROUTE_IMPORT(FS_FileAvailable, G_FS_FILEAVAILABLE);
+            ROUTE_IMPORT(FS_ListFiles, G_FS_LISTFILES);
+            ROUTE_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST);
+            ROUTE_IMPORT(unknown14, G_UNKNOWN14);
+            ROUTE_IMPORT(Milliseconds, G_MILLISECONDS);
+            ROUTE_IMPORT(unknown16, G_UNKNOWN16);
+            ROUTE_IMPORT(unknown17, G_UNKNOWN17);
+            // handled below since we do special handling to deal with the "when" argument
+            //ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
+            //ROUTE_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND);
+            ROUTE_IMPORT(Argc, G_ARGC);
+            ROUTE_IMPORT(Argv, G_ARGV);
+            ROUTE_IMPORT(Args, G_ARGS);
+            ROUTE_IMPORT(Cvar_IsModified, G_CVAR_ISMODIFIED);
+            ROUTE_IMPORT(Cvar_Register, G_CVAR_REGISTER);
+            ROUTE_IMPORT(Cvar_Update, G_CVAR_UPDATE);
+            ROUTE_IMPORT(Cvar_Set, G_CVAR_SET);
+            ROUTE_IMPORT(Cvar_Get, G_CVAR_GET);
+            ROUTE_IMPORT_3_V(Cvar_SetValue, G_CVAR_SETVALUE, const char*, FLOAT_CAST, int);
+            ROUTE_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE);
+            ROUTE_IMPORT(Cvar_VariableFloatValue, G_CVAR_VARIABLE_FLOAT_VALUE);
+            ROUTE_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER);
+            ROUTE_IMPORT(Malloc, G_MALLOC);
+            ROUTE_IMPORT(Free, G_FREE);
+            ROUTE_IMPORT(unknown34, G_UNKNOWN34);
+            ROUTE_IMPORT(CM_RegisterTerrain, G_CM_REGISTERTERRAIN);
+            ROUTE_IMPORT(unknown36, G_UNKNOWN36);
+            ROUTE_IMPORT(unknown37, G_UNKNOWN37);
+            ROUTE_IMPORT(unknown38, G_UNKNOWN38);
+            ROUTE_IMPORT(unknown39, G_UNKNOWN39);
+            ROUTE_IMPORT(unknown40, G_UNKNOWN40);
+            ROUTE_IMPORT(unknown41, G_UNKNOWN41);
+            ROUTE_IMPORT(unknown42, G_UNKNOWN42);
+            ROUTE_IMPORT(unknown43, G_UNKNOWN43);
+            ROUTE_IMPORT(unknown44, G_UNKNOWN44);
+            ROUTE_IMPORT(unknown45, G_UNKNOWN45);
+            ROUTE_IMPORT(unknown46, G_UNKNOWN46);
+            ROUTE_IMPORT(unknown47, G_UNKNOWN47);
+            ROUTE_IMPORT(unknown48, G_UNKNOWN48);
+            ROUTE_IMPORT(unknown49, G_UNKNOWN49);
+            ROUTE_IMPORT(unknown50, G_UNKNOWN50);
+            ROUTE_IMPORT(Trace, G_TRACE);
+            ROUTE_IMPORT(unknown52, G_UNKNOWN52);
+            ROUTE_IMPORT(unknown53, G_UNKNOWN53);
+            ROUTE_IMPORT(LocateGameData, G_LOCATE_GAME_DATA);
+            ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
+            ROUTE_IMPORT(unknown56, G_UNKNOWN56);
+            ROUTE_IMPORT(unknown57, G_UNKNOWN57);
+            ROUTE_IMPORT(unknown58, G_UNKNOWN58);
+            ROUTE_IMPORT(unknown59, G_UNKNOWN59);
+            ROUTE_IMPORT(unknown60, G_UNKNOWN60);
+            ROUTE_IMPORT(unknown61, G_UNKNOWN61);
+            ROUTE_IMPORT(unknown62, G_UNKNOWN62);
+            ROUTE_IMPORT(unknown63, G_UNKNOWN63);
+            ROUTE_IMPORT(unknown64, G_UNKNOWN64);
+            ROUTE_IMPORT(unknown65, G_UNKNOWN65);
+            ROUTE_IMPORT(unknown66, G_UNKNOWN66);
+            ROUTE_IMPORT(unknown69, G_UNKNOWN69);
+            ROUTE_IMPORT(unknown70, G_UNKNOWN70);
+            ROUTE_IMPORT(PointContents, G_POINT_CONTENTS);
+            ROUTE_IMPORT(unknown72, G_UNKNOWN72);
+            ROUTE_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL);
+            ROUTE_IMPORT(SetActiveSubBSP, G_SET_ACTIVE_SUBBSP);
+            ROUTE_IMPORT(unknown75, G_UNKNOWN75);
+            ROUTE_IMPORT(unknown76, G_UNKNOWN76);
+            ROUTE_IMPORT(SetConfigstring, G_SET_CONFIGSTRING);
+            ROUTE_IMPORT(GetConfigstring, G_GET_CONFIGSTRING);
+            ROUTE_IMPORT(GetServerInfo, G_GET_SERVERINFO);
+            ROUTE_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE);
+            ROUTE_IMPORT(unknown81, G_UNKNOWN81);
+            ROUTE_IMPORT(unknown82, G_UNKNOWN82);
+            ROUTE_IMPORT(unknown83, G_UNKNOWN83);
+            ROUTE_IMPORT(unknown84, G_UNKNOWN84);
+            ROUTE_IMPORT(TIKI_RegisterModel, G_TIKI_REGISTERMODEL);
+            ROUTE_IMPORT(unknown86, G_UNKNOWN86);
+            ROUTE_IMPORT(unknown87, G_UNKNOWN87);
+            ROUTE_IMPORT(unknown88, G_UNKNOWN88);
+            ROUTE_IMPORT(unknown89, G_UNKNOWN89);
+            ROUTE_IMPORT(unknown90, G_UNKNOWN90);
+            ROUTE_IMPORT(unknown91, G_UNKNOWN91);
+            ROUTE_IMPORT(unknown92, G_UNKNOWN92);
+            ROUTE_IMPORT(unknown93, G_UNKNOWN93);
+            ROUTE_IMPORT(unknown94, G_UNKNOWN94);
+            ROUTE_IMPORT(unknown95, G_UNKNOWN95);
+            ROUTE_IMPORT(GetEntityToken, G_GET_ENTITY_TOKEN);
+            ROUTE_IMPORT(unknown97, G_UNKNOWN97);
+            ROUTE_IMPORT(unknown98, G_UNKNOWN98);
+            ROUTE_IMPORT(unknown99, G_UNKNOWN99);
+            ROUTE_IMPORT(unknown100, G_UNKNOWN100);
+            ROUTE_IMPORT(unknown101, G_UNKNOWN101);
+            ROUTE_IMPORT(unknown102, G_UNKNOWN102);
+            ROUTE_IMPORT(unknown103, G_UNKNOWN103);
+            ROUTE_IMPORT(unknown104, G_UNKNOWN104);
+            ROUTE_IMPORT(unknown105, G_UNKNOWN105);
+            ROUTE_IMPORT(unknown106, G_UNKNOWN106);
+            ROUTE_IMPORT(unknown107, G_UNKNOWN107);
+            ROUTE_IMPORT(unknown108, G_UNKNOWN108);
+            ROUTE_IMPORT(unknown109, G_UNKNOWN109);
+            ROUTE_IMPORT(unknown110, G_UNKNOWN110);
+            ROUTE_IMPORT(CM_TM_Upload, G_CM_TM_UPLOAD);
+            ROUTE_IMPORT(SaveTerrainImageToDisk, G_SAVETERRAINIMAGETODISK);
 
-    switch (cmd) {
-        ROUTE_IMPORT(Printf, G_PRINTF);
-        ROUTE_IMPORT(DPrintf, G_DPRINTF);
-        ROUTE_IMPORT(DPrintf2, G_DPRINTF2);
-        ROUTE_IMPORT(snprintf, G_SNPRINTF);
-        ROUTE_IMPORT(ErrorF, G_ERRORF);
-        ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
-        ROUTE_IMPORT(FS_Read, G_FS_READ);
-        ROUTE_IMPORT(FS_Write, G_FS_WRITE);
-        ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
-        ROUTE_IMPORT(FS_ReadFile, G_FS_READFILE);
-        ROUTE_IMPORT(FS_FreeFile, G_FS_FREEFILE);
-        ROUTE_IMPORT(FS_FileAvailable, G_FS_FILEAVAILABLE);
-        ROUTE_IMPORT(FS_ListFiles, G_FS_LISTFILES);
-        ROUTE_IMPORT(FS_FreeFileList, G_FS_FREEFILELIST);
-        ROUTE_IMPORT(unknown14, G_UNKNOWN14);
-        ROUTE_IMPORT(Milliseconds, G_MILLISECONDS);
-        ROUTE_IMPORT(unknown16, G_UNKNOWN16);
-        ROUTE_IMPORT(unknown17, G_UNKNOWN17);
-        // handled below since we do special handling to deal with the "when" argument
-        //ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
-        //ROUTE_IMPORT(ExecuteConsoleCommand, G_EXECUTE_CONSOLE_COMMAND);
-        ROUTE_IMPORT(Argc, G_ARGC);
-        ROUTE_IMPORT(Argv, G_ARGV);
-        ROUTE_IMPORT(Args, G_ARGS);
-        ROUTE_IMPORT(Cvar_IsModified, G_CVAR_ISMODIFIED);
-        ROUTE_IMPORT(Cvar_Register, G_CVAR_REGISTER);
-        ROUTE_IMPORT(Cvar_Update, G_CVAR_UPDATE);
-        ROUTE_IMPORT(Cvar_Set, G_CVAR_SET);
-        ROUTE_IMPORT(Cvar_Get, G_CVAR_GET);
-        ROUTE_IMPORT_3_V(Cvar_SetValue, G_CVAR_SETVALUE, const char*, FLOAT_CAST, int);
-        ROUTE_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE);
-        ROUTE_IMPORT(Cvar_VariableFloatValue, G_CVAR_VARIABLE_FLOAT_VALUE);
-        ROUTE_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER);
-        ROUTE_IMPORT(Malloc, G_MALLOC);
-        ROUTE_IMPORT(Free, G_FREE);
-        ROUTE_IMPORT(unknown34, G_UNKNOWN34);
-        ROUTE_IMPORT(CM_RegisterTerrain, G_CM_REGISTERTERRAIN);
-        ROUTE_IMPORT(unknown36, G_UNKNOWN36);
-        ROUTE_IMPORT(unknown37, G_UNKNOWN37);
-        ROUTE_IMPORT(unknown38, G_UNKNOWN38);
-        ROUTE_IMPORT(unknown39, G_UNKNOWN39);
-        ROUTE_IMPORT(unknown40, G_UNKNOWN40);
-        ROUTE_IMPORT(unknown41, G_UNKNOWN41);
-        ROUTE_IMPORT(unknown42, G_UNKNOWN42);
-        ROUTE_IMPORT(unknown43, G_UNKNOWN43);
-        ROUTE_IMPORT(unknown44, G_UNKNOWN44);
-        ROUTE_IMPORT(unknown45, G_UNKNOWN45);
-        ROUTE_IMPORT(unknown46, G_UNKNOWN46);
-        ROUTE_IMPORT(unknown47, G_UNKNOWN47);
-        ROUTE_IMPORT(unknown48, G_UNKNOWN48);
-        ROUTE_IMPORT(unknown49, G_UNKNOWN49);
-        ROUTE_IMPORT(unknown50, G_UNKNOWN50);
-        ROUTE_IMPORT(Trace, G_TRACE);
-        ROUTE_IMPORT(unknown52, G_UNKNOWN52);
-        ROUTE_IMPORT(unknown53, G_UNKNOWN53);
-        ROUTE_IMPORT(LocateGameData, G_LOCATE_GAME_DATA);
-        ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
-        ROUTE_IMPORT(unknown56, G_UNKNOWN56);
-        ROUTE_IMPORT(unknown57, G_UNKNOWN57);
-        ROUTE_IMPORT(unknown58, G_UNKNOWN58);
-        ROUTE_IMPORT(unknown59, G_UNKNOWN59);
-        ROUTE_IMPORT(unknown60, G_UNKNOWN60);
-        ROUTE_IMPORT(unknown61, G_UNKNOWN61);
-        ROUTE_IMPORT(unknown62, G_UNKNOWN62);
-        ROUTE_IMPORT(unknown63, G_UNKNOWN63);
-        ROUTE_IMPORT(unknown64, G_UNKNOWN64);
-        ROUTE_IMPORT(unknown65, G_UNKNOWN65);
-        ROUTE_IMPORT(unknown66, G_UNKNOWN66);
-        ROUTE_IMPORT(unknown69, G_UNKNOWN69);
-        ROUTE_IMPORT(unknown70, G_UNKNOWN70);
-        ROUTE_IMPORT(PointContents, G_POINT_CONTENTS);
-        ROUTE_IMPORT(unknown72, G_UNKNOWN72);
-        ROUTE_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL);
-        ROUTE_IMPORT(SetActiveSubBSP, G_SET_ACTIVE_SUBBSP);
-        ROUTE_IMPORT(unknown75, G_UNKNOWN75);
-        ROUTE_IMPORT(unknown76, G_UNKNOWN76);
-        ROUTE_IMPORT(SetConfigstring, G_SET_CONFIGSTRING);
-        ROUTE_IMPORT(GetConfigstring, G_GET_CONFIGSTRING);
-        ROUTE_IMPORT(GetServerInfo, G_GET_SERVERINFO);
-        ROUTE_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE);
-        ROUTE_IMPORT(unknown81, G_UNKNOWN81);
-        ROUTE_IMPORT(unknown82, G_UNKNOWN82);
-        ROUTE_IMPORT(unknown83, G_UNKNOWN83);
-        ROUTE_IMPORT(unknown84, G_UNKNOWN84);
-        ROUTE_IMPORT(TIKI_RegisterModel, G_TIKI_REGISTERMODEL);
-        ROUTE_IMPORT(unknown86, G_UNKNOWN86);
-        ROUTE_IMPORT(unknown87, G_UNKNOWN87);
-        ROUTE_IMPORT(unknown88, G_UNKNOWN88);
-        ROUTE_IMPORT(unknown89, G_UNKNOWN89);
-        ROUTE_IMPORT(unknown90, G_UNKNOWN90);
-        ROUTE_IMPORT(unknown91, G_UNKNOWN91);
-        ROUTE_IMPORT(unknown92, G_UNKNOWN92);
-        ROUTE_IMPORT(unknown93, G_UNKNOWN93);
-        ROUTE_IMPORT(unknown94, G_UNKNOWN94);
-        ROUTE_IMPORT(unknown95, G_UNKNOWN95);
-        ROUTE_IMPORT(GetEntityToken, G_GET_ENTITY_TOKEN);
-        ROUTE_IMPORT(unknown97, G_UNKNOWN97);
-        ROUTE_IMPORT(unknown98, G_UNKNOWN98);
-        ROUTE_IMPORT(unknown99, G_UNKNOWN99);
-        ROUTE_IMPORT(unknown100, G_UNKNOWN100);
-        ROUTE_IMPORT(unknown101, G_UNKNOWN101);
-        ROUTE_IMPORT(unknown102, G_UNKNOWN102);
-        ROUTE_IMPORT(unknown103, G_UNKNOWN103);
-        ROUTE_IMPORT(unknown104, G_UNKNOWN104);
-        ROUTE_IMPORT(unknown105, G_UNKNOWN105);
-        ROUTE_IMPORT(unknown106, G_UNKNOWN106);
-        ROUTE_IMPORT(unknown107, G_UNKNOWN107);
-        ROUTE_IMPORT(unknown108, G_UNKNOWN108);
-        ROUTE_IMPORT(unknown109, G_UNKNOWN109);
-        ROUTE_IMPORT(unknown110, G_UNKNOWN110);
-        ROUTE_IMPORT(CM_TM_Upload, G_CM_TM_UPLOAD);
-        ROUTE_IMPORT(SaveTerrainImageToDisk, G_SAVETERRAINIMAGETODISK);
+            // handle cmds for variables, this is how a plugin would get these values if needed
+            ROUTE_IMPORT_VAR(unknown67, GV_UNKNOWN67);
+            ROUTE_IMPORT_VAR(unknown68, GV_UNKNOWN68);
 
-        // handle cmds for variables, this is how a plugin would get these values if needed
-        ROUTE_IMPORT_VAR(unknown67, GV_UNKNOWN67);
-        ROUTE_IMPORT_VAR(unknown68, GV_UNKNOWN68);
+            // handle special cmds which QMM uses but SOF2SP doesn't have an analogue for
+            case G_ERROR: {
+                // sof2sp: void(*ErrorF)(int code, const char* fmt, ...);
+                // q3a: void trap_Error(const char* fmt);
+                const char* fmt = (const char*)(args[1]);
+                (void)orig_import.ErrorF(0, fmt);
+                break;
+            }
+            case G_EXECUTE_CONSOLE_COMMAND:
+            case G_SEND_CONSOLE_COMMAND: {
+                // SOF2SP: void (*SendConsoleCommand)(const char *text);
+                // SOF2SP: void (*ExecuteConsoleCommand)(int exec_when, const char *text);
+                // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+                // first arg may be exec_when, like EXEC_APPEND
+                intptr_t when = args[0];
+                const char* text = (const char*)(args[1]);
+                // EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
+                if (when > 100) {
+                    text = (const char*)when;
+                    orig_import.SendConsoleCommand(text);
+                    break;
+                }
+                orig_import.ExecuteConsoleCommand((int)when, text);
+                break;
+            }
 
-    // handle special cmds which QMM uses but SOF2SP doesn't have an analogue for
-    case G_ERROR: {
-        // sof2sp: void(*ErrorF)(int code, const char* fmt, ...);
-        // q3a: void trap_Error(const char* fmt);
-        const char* fmt = (const char*)(args[1]);
-        (void)orig_import.ErrorF(0, fmt);
-        break;
+            default:
+                break;
+
+        };
+
+	    // do anything that needs to be done after function call here
     }
-    case G_EXECUTE_CONSOLE_COMMAND:
-    case G_SEND_CONSOLE_COMMAND: {
-        // SOF2SP: void (*SendConsoleCommand)(const char *text);
-        // SOF2SP: void (*ExecuteConsoleCommand)(int exec_when, const char *text);
-        // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
-        // first arg may be exec_when, like EXEC_APPEND
-        intptr_t when = args[0];
-        const char* text = (const char*)(args[1]);
-        // EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
-        if (when > 100) {
-            text = (const char*)when;
-            orig_import.SendConsoleCommand(text);
-            break;
-        }
-        orig_import.ExecuteConsoleCommand((int)when, text);
-        break;
-    }
-
-    default: {
-        break;
-    }
-
-    };
-
-    // do anything that needs to be done after function call here
 
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2SP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
-
 
     return ret;
 }
@@ -257,48 +256,47 @@ intptr_t SOF2SP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 intptr_t SOF2SP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2SP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
-
-    if (!orig_export)
-        return 0;
-
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
-    switch (cmd) {
-        ROUTE_EXPORT(Init, GAME_INIT);
-        ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
-        ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
-        ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
-        ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
-        ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
-        ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
-        ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
-        ROUTE_EXPORT(IsClientActive, GAME_IS_CLIENT_ACTIVE);
-        ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
-        ROUTE_EXPORT(SpawnRMGEntity, GAME_SPAWN_RMG_ENTITY);
-        ROUTE_EXPORT(arioche, GAME_ARIOCHE);
-        ROUTE_EXPORT(EntityList, GAME_ENTITY_LIST);
-        ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
-        ROUTE_EXPORT(unknown16, GAME_UNKNOWN16);
-        ROUTE_EXPORT(Save, GAME_SAVE);
-        ROUTE_EXPORT(GameAllowedToSaveHere, GAME_GAMEALLOWEDTOSAVEHERE);
-        ROUTE_EXPORT(CanPlayCinematic, GAME_CAN_PLAY_CINEMATIC);
-        ROUTE_EXPORT(unknown20, GAME_UNKNOWN20);
-        ROUTE_EXPORT(unknown21, GAME_UNKNOWN21);
-        ROUTE_EXPORT(unknown22, GAME_UNKNOWN22);
-        ROUTE_EXPORT(unknown23, GAME_UNKNOWN23);
-        ROUTE_EXPORT(unknown24, GAME_UNKNOWN24);
-        ROUTE_EXPORT(unknown25, GAME_UNKNOWN25);
+    if (orig_export) {
+        switch (cmd) {
+            ROUTE_EXPORT(Init, GAME_INIT);
+            ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
+            ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
+            ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
+            ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
+            ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
+            ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
+            ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
+            ROUTE_EXPORT(IsClientActive, GAME_IS_CLIENT_ACTIVE);
+            ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
+            ROUTE_EXPORT(SpawnRMGEntity, GAME_SPAWN_RMG_ENTITY);
+            ROUTE_EXPORT(arioche, GAME_ARIOCHE);
+            ROUTE_EXPORT(EntityList, GAME_ENTITY_LIST);
+            ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
+            ROUTE_EXPORT(unknown16, GAME_UNKNOWN16);
+            ROUTE_EXPORT(Save, GAME_SAVE);
+            ROUTE_EXPORT(GameAllowedToSaveHere, GAME_GAMEALLOWEDTOSAVEHERE);
+            ROUTE_EXPORT(CanPlayCinematic, GAME_CAN_PLAY_CINEMATIC);
+            ROUTE_EXPORT(unknown20, GAME_UNKNOWN20);
+            ROUTE_EXPORT(unknown21, GAME_UNKNOWN21);
+            ROUTE_EXPORT(unknown22, GAME_UNKNOWN22);
+            ROUTE_EXPORT(unknown23, GAME_UNKNOWN23);
+            ROUTE_EXPORT(unknown24, GAME_UNKNOWN24);
+            ROUTE_EXPORT(unknown25, GAME_UNKNOWN25);
 
-        // handle cmds for variables, this is how a plugin would get these values if needed
-        ROUTE_EXPORT_VAR(unknown10, GAMEV_UNKNOWN10);
-        ROUTE_EXPORT_VAR(unknown15, GAMEV_UNKNOWN15);
-    default:
-        break;
-    };
+            // handle cmds for variables, this is how a plugin would get these values if needed
+            ROUTE_EXPORT_VAR(unknown10, GAMEV_UNKNOWN10);
+            ROUTE_EXPORT_VAR(unknown15, GAMEV_UNKNOWN15);
 
-    // update export vars after returning from the mod
-    update_exports();
+            default:
+                break;
+        };
+
+        // update export vars after returning from the mod
+        update_exports();
+    }
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2SP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
