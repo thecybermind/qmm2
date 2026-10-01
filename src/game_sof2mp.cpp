@@ -580,7 +580,6 @@ const char* SOF2MP_GameSupport::ModMsgName(intptr_t cmd) {
 int SOF2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF2MP_GameSupport::QVMSyscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
-
     int ret = 0;
 
     switch (cmd) {
