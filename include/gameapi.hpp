@@ -305,11 +305,13 @@ struct GameSupport {
     virtual const char* GameCode() = 0;
     
     /**
-    * @brief Should QMM load plugins for this game?
+    * @brief Is this a "hidden" game?
     * 
-    * @return Bool if QMM should load plugins
+    * A hidden game cannot be chosen in the config file, will not load plugins, register cvars, or listen for commands.
+    * 
+    * @return Bool if the game is hidden
     */
-    virtual bool HasPluginSupport() { return true; }
+    virtual bool IsHidden() { return false; }
 
     /**
     * @brief Handler for syscalls out of the QVM.

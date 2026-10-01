@@ -14,6 +14,9 @@ Created By:
 #include "gameapi.hpp"
 
 // externs for each game's support objects
+
+// by not using includes for this, we avoid accidentally including a game's SDK
+// outside of the game logic source file
 GEN_GAME_EXTS(COD11MP);
 GEN_GAME_EXTS(CODMP);
 GEN_GAME_EXTS(CODUOMP);

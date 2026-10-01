@@ -214,7 +214,7 @@ namespace QMM {
 
         for (GameSupport* gamesupport : api_supportedgames) {
             // if short name matches config option, we found it!
-            if (!is_auto && Util::str_striequal(cfg_game, gamesupport->GameCode())) {
+            if (!is_auto && Util::str_striequal(cfg_game, gamesupport->GameCode()) && !gamesupport->IsHidden()) {
                 QMMLOG(QMM_LOG_INFO, "QMM") << "Found game match for config option \"" << cfg_game << "\"\n";
                 game = gamesupport;
                 is_auto_detected = false;
@@ -490,7 +490,7 @@ namespace QMM {
                 QMMLOG(QMM_LOG_INFO, "QMM") << "URL: " QMM_URL "\n";
 
                 // create qmm_version cvar
-                if (game->HasPluginSupport()) {
+                if (!game->IsHidden()) {
                     ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
                 }
 
@@ -525,7 +525,7 @@ namespace QMM {
                 }
 
                 // load plugins
-                if (game->HasPluginSupport()) {
+                if (!game->IsHidden()) {
                     QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
                     for (std::string& plugin_path : Config::cfg_get_array_str(g_cfg, "plugins")) {
                         QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
@@ -550,7 +550,8 @@ namespace QMM {
                 QMMLOG(QMM_LOG_NOTICE, "QMM") << "Startup successful!\n";
             }
 
-            else if (cmd == QMM::msg_GAME_CONSOLE_COMMAND && game->HasPluginSupport()) {
+            // listen for "qmm" console command
+            else if (cmd == QMM::msg_GAME_CONSOLE_COMMAND && !game->IsHidden()) {
                 char arg_cmd[10];
                 int argn = 0;
                 // get command
@@ -591,7 +592,7 @@ namespace QMM {
                     g_mod.Unload();
                 }
 
-                if (game->HasPluginSupport()) {
+                if (!game->IsHidden()) {
                     // unload each plugin (call QMM_Detach, and then dlclose)
                     QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
                     for (Plugin& p : g_plugins) {

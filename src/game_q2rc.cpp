@@ -47,7 +47,7 @@ struct Q2RC_GameSupport : public GameSupport {
     virtual const char* ModCvar() { return "game"; }
     virtual const char* GameName() { return "Quake 2 Remastered (SP)"; }
     virtual const char* GameCode() { return "Q2RC"; }
-    virtual bool HasPluginSupport() { return false; }
+    virtual bool IsHidden() { return true; }
 
 private:
     // a copy of the original import struct that comes from the game engine
