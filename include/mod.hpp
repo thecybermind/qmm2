@@ -48,7 +48,7 @@ private:
     static intptr_t QVM_vmMain(intptr_t cmd, ...);
 
     // Exit point from QVM mods. Handle syscalls from the QVM.
-    static int QVM_syscall(uint8_t* membase, int cmd, int* args) noexcept;
+    static int QVM_syscall(uint8_t* membase, int cmd, int* args);
 
     /**
     * @brief Attempt to load a QVM mod

@@ -108,7 +108,7 @@ namespace QMM {
     * @param args Array of cmd-specific arguments
     * @return Return value of mod call
     */
-    intptr_t vmMain_args(intptr_t cmd, intptr_t* args) noexcept;
+    intptr_t vmMain_args(intptr_t cmd, intptr_t* args);
 
     /**
     * @brief Handle syscall call using intptr_t* args
@@ -117,7 +117,7 @@ namespace QMM {
     * @param args Array of cmd-specific arguments
     * @return Return value of engine call
     */
-    intptr_t syscall_args(intptr_t cmd, intptr_t* args) noexcept;
+    intptr_t syscall_args(intptr_t cmd, intptr_t* args);
 
     /**
     * @brief Handle parsing of "qmm" command in vmMain(GAME_CONSOLE_COMMAND)

@@ -12,7 +12,6 @@ Created By:
 #include <cstdint>
 #include <string>
 #include "log.hpp"
-#include "format.hpp"
 #include "qmmapi.h"
 #include "gameapi.hpp"
 #include "qmm.hpp"
@@ -160,28 +159,21 @@ intptr_t Mod::QVM_vmMain(intptr_t cmd, ...) {
 }
 
 
-int Mod::QVM_syscall(uint8_t* membase, int cmd, int* args) noexcept {
-    // don't let exceptions bubble up to the C QVM
-    try {
-        // check for plugin qvm function registration
-        if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
-            Plugin* p = g_registered_qvm_funcs[cmd];
+int Mod::QVM_syscall(uint8_t* membase, int cmd, int* args) {
+	// check for plugin qvm function registration
+	if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
+		Plugin* p = g_registered_qvm_funcs[cmd];
 
-            // make sure plugin has the handler function (shouldn't have been registered, but check anyway)
-            if (!p->QMM_QVMHandler)
-                return 0;
+		// make sure plugin has the handler function (shouldn't have been registered, but check anyway)
+		if (!p->QMM_QVMHandler)
+			return 0;
 
-            // pass the negative-1 form since that's the number the plugin probably stored and expects
-            return p->QMM_QVMHandler(-cmd - 1, args);
-        }
+		// pass the negative-1 form since that's the number the plugin probably stored and expects
+		return p->QMM_QVMHandler(-cmd - 1, args);
+	}
 
-        // call the game-specific QVM syscall handler
-        return QMM::game->QVMSyscall(membase, cmd, args);
-    }
-    catch (...) {
-        Util::util_exception(fmt::format("Mod::QVM_syscall({})", cmd));
-        return 0;
-    }
+	// call the game-specific QVM syscall handler
+	return QMM::game->QVMSyscall(membase, cmd, args);
 }
 
 
@@ -276,7 +268,6 @@ bool Mod::InitDLL(std::string file, void* handle, APIType dll_api) {
 
         // we need to pass qmm_syscall to mod's dllEntry function
         pfndllEntry(qmm_syscall);
-
         break;
     }
     default:

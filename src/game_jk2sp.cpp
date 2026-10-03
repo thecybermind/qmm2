@@ -266,7 +266,7 @@ intptr_t JK2SP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
                 break;
         };
 
-	    // do anything that needs to be done after function call here
+        // do anything that needs to be done after function call here
     }
 
     if (cmd != G_PRINT)

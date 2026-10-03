@@ -247,13 +247,6 @@ namespace Util {
     std::vector<std::string> util_parse_entstring(std::string entstring);
 
     /**
-    * @brief Handles logging for multiple exception object types.
-    * 
-    * @param msg Extra message to append
-    */
-    void util_exception(std::string msg) noexcept;
-
-    /**
     * @brief Returns whichever value is lesser - a typical "min" function.
     *
     * This was created to avoid any overlap with a "min" function from stdlib or game SDKs.

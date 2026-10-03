@@ -388,17 +388,4 @@ namespace Util {
         return ret;
     }
 
-
-    void util_exception(std::string msg) noexcept {
-        try {
-            throw;  // rethrow exception so we can figure out the type
-        }
-        catch (const std::exception& e) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Exception caught: " << e.what() << " - " << msg << "\n";
-        }
-        catch (...) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Exception caught: " << msg << "\n";
-        }
-    }
-
 }   // namespace Util

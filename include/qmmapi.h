@@ -42,7 +42,7 @@ typedef void* (*mod_GetGameAPI)(void*, void*);
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, plugin_func, or plugin_info
 #define QMM_PIFV_MAJOR  4
 // minor interface version increases with trailing addition to plugin_func or plugin_info structs
-#define QMM_PIFV_MINOR  3
+#define QMM_PIFV_MINOR  4
 // 2:0
 // - removed canpause, loadcmd, unloadcmd from plugininfo_t
 // - renamed old pause/cmd args to QMM_ functions (iscmd, etc) to "reserved"
@@ -73,6 +73,7 @@ typedef void* (*mod_GetGameAPI)(void*, void*);
 // - added QMM_MODDIR
 // 4:4
 // - swapped order of severity and text in QMM_WRITEQMMLOG and also made it vararg. string construction is ignored if log won't write
+// - changed QMM_VARARGS return to const char*. this will require change to code, but existing compiled plugins will continue to work with no issue
 
 // holds plugin info to pass back to QMM
 typedef struct {
@@ -123,7 +124,7 @@ typedef enum {
 // prototype struct for QMM plugin util funcs
 typedef struct {
     void (*pfnWriteQMMLog)(plugin_id plid, int severity, const char* fmt, ...);                               // write to the QMM log
-    char* (*pfnVarArgs)(plugin_id plid, const char* fmt, ...);                                                // simple vsprintf helper with rotating buffer
+    const char* (*pfnVarArgs)(plugin_id plid, const char* fmt, ...);                                          // simple vsprintf helper with rotating buffer
     int (*pfnIsQVM)(plugin_id plid);                                                                          // returns 1 if the mod is QVM
     const char* (*pfnEngMsgName)(plugin_id plid, intptr_t msg);                                               // get the string name of a syscall code
     const char* (*pfnModMsgName)(plugin_id plid, intptr_t msg);                                               // get the string name of a vmMain code
