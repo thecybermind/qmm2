@@ -19,7 +19,7 @@ Created By:
 #include "util.hpp"     // used in 64-bit GetCGameAPI only
 
 
-C_DLLEXPORT void dllEntry(eng_syscall syscall) {
+C_DLLEXPORT void dllEntry(eng_syscall syscall) noexcept {
     // don't let exceptions bubble up to the engine
     try {
         // cgame passthrough hack:
@@ -45,7 +45,7 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall) {
 }
 
 
-C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
+C_DLLEXPORT void* GetGameAPI(void* import, void* extra) noexcept {
     // don't let exceptions bubble up to the engine
     try {
         return QMM::HandleEntry(import, extra, QMM_API_GETGAMEAPI);
@@ -57,7 +57,7 @@ C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
 }
 
 
-C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import) {
+C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import) noexcept {
     // don't let exceptions bubble up to the engine
     try {
         return QMM::HandleEntry((void*)(intptr_t)apiversion, import, QMM_API_GETMODULEAPI);
@@ -70,7 +70,7 @@ C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import) {
 
 
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
-C_DLLEXPORT void* GetCGameAPI(void* import) {
+C_DLLEXPORT void* GetCGameAPI(void* import) noexcept {
     // don't let exceptions bubble up to the engine
     try {
         // Q2R cgame hack:
@@ -97,7 +97,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 #endif // QMM_OS_WINDOWS && QMM_ARCH_64
 
 
-C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
+C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) noexcept {
     // don't let exceptions bubble up to the engine
     try {
         QMM_GET_VMMAIN_ARGS();
@@ -149,7 +149,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 }
 
 
-intptr_t qmm_syscall(intptr_t cmd, ...) {
+intptr_t qmm_syscall(intptr_t cmd, ...) noexcept {
     // don't let exceptions bubble up to the mod
     try {
         QMM_GET_SYSCALL_ARGS();

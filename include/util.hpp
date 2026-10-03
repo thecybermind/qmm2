@@ -251,7 +251,7 @@ namespace Util {
     * 
     * @param msg Extra message to append
     */
-    void util_exception(std::string msg);
+    void util_exception(std::string msg) noexcept;
 
     /**
     * @brief Returns whichever value is lesser - a typical "min" function.

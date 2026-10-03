@@ -24,7 +24,7 @@ Created By:
 *
 * @param syscall Pointer to engine's syscall function
 */
-C_DLLEXPORT void dllEntry(eng_syscall syscall);
+C_DLLEXPORT void dllEntry(eng_syscall syscall) noexcept;
 
 /**
 * @brief Engine->Mod entrypoint for GetGameAPI games.
@@ -40,7 +40,7 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall);
 * @param extra Optional argument in some engines
 * @return Pointer to hooked export function table
 */
-C_DLLEXPORT void* GetGameAPI(void* import, void* extra);
+C_DLLEXPORT void* GetGameAPI(void* import, void* extra) noexcept;
 
 /**
 * @brief Engine->Mod entrypoint for OpenJK engine.
@@ -51,7 +51,7 @@ C_DLLEXPORT void* GetGameAPI(void* import, void* extra);
 * @param import Pointer to engine's import function table
 * @return Pointer to hooked export function table
 */
-C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import);
+C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import) noexcept;
 
 #if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
 /**
@@ -65,7 +65,7 @@ C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import);
 * @param import Pointer to engine's CGame import function table
 * @return Pointer to CGame export function table
 */
-C_DLLEXPORT void* GetCGameAPI(void* import);
+C_DLLEXPORT void* GetCGameAPI(void* import) noexcept;
 #endif // QMM_OS_WINDOWS && QMM_ARCH_64
 
 /**
@@ -78,7 +78,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import);
 * @param ... cmd-specific arguments
 * @return Return value of mod call
 */
-C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
+C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) noexcept;
 
 /**
 * @brief Mod->Engine callback for dllEntry/vmMain games.
@@ -91,6 +91,6 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
 * @param ... cmd-specific arguments
 * @return Return value of engine call
 */
-intptr_t qmm_syscall(intptr_t cmd, ...);
+intptr_t qmm_syscall(intptr_t cmd, ...) noexcept;
 
 #endif // QMM2_MAIN_HPP

@@ -389,8 +389,7 @@ namespace Util {
     }
 
 
-    void util_exception(std::string msg)
-    {
+    void util_exception(std::string msg) noexcept {
         try {
             throw;  // rethrow exception so we can figure out the type
         }

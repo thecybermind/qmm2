@@ -160,7 +160,7 @@ intptr_t Mod::QVM_vmMain(intptr_t cmd, ...) {
 }
 
 
-int Mod::QVM_syscall(uint8_t* membase, int cmd, int* args) {
+int Mod::QVM_syscall(uint8_t* membase, int cmd, int* args) noexcept {
     // don't let exceptions bubble up to the C QVM
     try {
         // check for plugin qvm function registration

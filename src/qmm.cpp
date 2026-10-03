@@ -456,7 +456,7 @@ namespace QMM {
     }
 
 
-    intptr_t vmMain_args(intptr_t cmd, intptr_t* args) {
+    intptr_t vmMain_args(intptr_t cmd, intptr_t* args) noexcept {
         // don't let exceptions bubble up to the engine (GetGameAPI hooks call this directly, bypassing vmMain)
         try {
             QMMLOG(QMM_LOG_DEBUG, "QMM") << "vmMain(" << QMM::game->ModMsgName(cmd) << "(" << cmd << ")) called\n";
@@ -615,7 +615,7 @@ namespace QMM {
     }
 
 
-    intptr_t syscall_args(intptr_t cmd, intptr_t* args) {
+    intptr_t syscall_args(intptr_t cmd, intptr_t* args) noexcept {
         // don't let exceptions bubble up to the mod (GetGameAPI hooks call this directly, bypassing qmm_syscall)
         try {
             QMMLOG(QMM_LOG_DEBUG, "QMM") << "syscall(" << QMM::game->EngMsgName(cmd) << "(" << cmd << ")) called\n";
