@@ -18,10 +18,10 @@ Created By:
 
 // A game mod
 struct Mod {
-    qvm vm = {};					// QVM object
-    void* dll = nullptr;			// OS DLL handle
-    std::string path;				// Mod file path
-    APIType api = QMM_API_ERROR;	// API the mod DLL was loaded with
+    qvm vm = {};                    // QVM object
+    void* dll = nullptr;            // OS DLL handle
+    std::string path;               // Mod file path
+    APIType api = QMM_API_ERROR;    // API the mod DLL was loaded with
 
     Mod();
     ~Mod();

@@ -83,10 +83,10 @@ static plugin_funcs s_pluginfuncs = {
 
 // This holds global variables that are available to plugins via helper functions.
 plugin_globals g_plugin_globals = {
-    0,			// final_return
-    0,			// orig_return
-    QMM_UNUSED,	// high_result
-    QMM_UNUSED,	// plugin_result
+    0,            // final_return
+    0,            // orig_return
+    QMM_UNUSED,   // high_result
+    QMM_UNUSED,   // plugin_result
 };
 
 // List of QMM plugins
@@ -101,7 +101,7 @@ static int s_next_qvm_func = QMM_QVM_FUNC_STARTING_ID;
 
 // Struct of variables to pass to plugins' QMM_Attach
 static plugin_vars s_pluginvars = {
-    0,				// vmbase, set in plugin_load
+    0,    // vmbase, set in plugin_load
     &g_plugin_globals.final_return,
     &g_plugin_globals.orig_return,
     &g_plugin_globals.high_result,
@@ -345,7 +345,7 @@ static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char
     if (!logtag || !*logtag)
         logtag = plinfo->name;
 
-    va_list	argptr;
+    va_list argptr;
     static char buf[1024];
 
     va_start(argptr, fmt);
@@ -366,7 +366,7 @@ static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char
 * @return Pointer to the constructed string
 */
 static char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* fmt, ...) {
-    va_list	argptr;
+    va_list argptr;
     static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
 
@@ -529,11 +529,11 @@ static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused
         // so search for "\key\" and then get everything up to the next "\"
         std::string fkey = "\\" + std::string(key) + "\\";
         size_t keypos = s.find(fkey);
-        if (keypos != std::string::npos) {	// key found
+        if (keypos != std::string::npos) {    // key found
             // find next "\"
             size_t valpos = keypos + fkey.size();
             size_t valend = s.find('\\', valpos);
-            if (valend == std::string::npos)	// handle case(?) where final value does not end with a "\"
+            if (valend == std::string::npos)    // handle case(?) where final value does not end with a "\"
                 valend = s.size();
 
             // get everything between "\key\" and "\"
@@ -654,7 +654,7 @@ static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unu
     for (std::string& s : value[index]) {
         valuep[index].push_back(s.c_str());
     }
-    valuep[index].push_back(nullptr);	// null-terminate the array
+    valuep[index].push_back(nullptr);    // null-terminate the array
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetArrayStr(\"" << key << "\") = [" << value[index].size() << " items]\n";
 

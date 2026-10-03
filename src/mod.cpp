@@ -228,10 +228,11 @@ bool Mod::LoadQVM(std::string file) {
 bool Mod::InitDLL(std::string file, void* handle, APIType dll_api) {
     switch (dll_api) {
     case QMM_API_GETGAMEAPI:
-    case QMM_API_GETMODULEAPI: {
+    case QMM_API_GETMODULEAPI:
+    case QMM_API_GETCGAMEAPI: {
         // these are together because they work the same, just with a different function name
 
-        // look for GetGameAPI/GetModuleAPI function
+        // look for GetGameAPI/GetModuleAPI/GetCGameAPI function
         mod_GetGameAPI pfnGGA = (mod_GetGameAPI)Util::dll_symbol(handle, APIType_Function(dll_api));
         if (!pfnGGA) {
             QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): Could not locate mod entry point \"" << APIType_Function(dll_api) << "\"\n";

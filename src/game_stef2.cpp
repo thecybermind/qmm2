@@ -33,7 +33,7 @@ struct STEF2_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload(APIType);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -74,8 +74,8 @@ GEN_GAME_OBJ(STEF2);
 
 
 // auto-detection logic for STEF2
-bool STEF2_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_GETGAMEAPI)
+bool STEF2_GameSupport::AutoDetect(APIType engine_api) {
+    if (engine_api != QMM_API_GETGAMEAPI)
         return false;
 
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
@@ -101,389 +101,391 @@ intptr_t STEF2_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 
     float fret; // used to get float return values
 
-    switch (cmd) {
-        ROUTE_IMPORT(Printf, G_PRINTF);
-        ROUTE_IMPORT(DPrintf, G_DPRINTF);
-        ROUTE_IMPORT(WPrintf, G_WPRINTF);
-        ROUTE_IMPORT(WDPrintf, G_WDPRINTF);
-        ROUTE_IMPORT(DebugPrintf, G_DEBUGPRINTF);
-        ROUTE_IMPORT(LocalizeFilePath, G_LOCALIZEFILEPATH);
-        ROUTE_IMPORT(Error, G_ERROR);
-        ROUTE_IMPORT(Milliseconds, G_MILLISECONDS);
-        ROUTE_IMPORT(Malloc, G_MALLOC);
-        ROUTE_IMPORT(Free, G_FREE);
-        ROUTE_IMPORT(cvar, G_CVAR);
-        ROUTE_IMPORT(cvar_get, G_CVAR_GET);
-        ROUTE_IMPORT(cvar_set, G_CVAR_SET);
-        ROUTE_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER);
-        ROUTE_IMPORT(Cvar_Register, G_CVAR_REGISTER);
-        ROUTE_IMPORT_1_F(Cvar_VariableValue, G_CVAR_VARIABLEVALUE, const char*);
-        ROUTE_IMPORT(Cvar_Update, G_CVAR_UPDATE);
-        ROUTE_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE);
-        ROUTE_IMPORT(argc, G_ARGC);
-        ROUTE_IMPORT(argv, G_ARGV);
-        ROUTE_IMPORT(args, G_ARGS);
-        ROUTE_IMPORT(AddCommand, G_ADDCOMMAND);
-        ROUTE_IMPORT(FS_ReadFile, G_FS_READFILE);
-        ROUTE_IMPORT(FS_Exists, G_FS_EXISTS);
-        ROUTE_IMPORT(FS_FreeFile, G_FS_FREEFILE);
-        ROUTE_IMPORT(FS_WriteFile, G_FS_WRITEFILE);
-        ROUTE_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE);
-        ROUTE_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND);
-        ROUTE_IMPORT(FS_ListFiles, G_FS_LISTFILES);
-        ROUTE_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE);
-        ROUTE_IMPORT(FS_Write, G_FS_WRITE);
-        ROUTE_IMPORT(FS_Read, G_FS_READ);
-        ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
-        ROUTE_IMPORT(FS_FTell, G_FS_FTELL);
-        ROUTE_IMPORT(FS_FSeek, G_FS_FSEEK);
-        ROUTE_IMPORT(FS_Flush, G_FS_FLUSH);
-        ROUTE_IMPORT(FS_DeleteFile, G_FS_DELETEFILE);
-        ROUTE_IMPORT(FS_GetFileList, G_FS_GETFILELIST);
-        ROUTE_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME);
-        // handled below since we do special handling to deal with the "when" argument
-        // ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
-        ROUTE_IMPORT_2_V(DebugGraph, G_DEBUGGRAPH, FLOAT_CAST, int);
-        ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
-        ROUTE_IMPORT(GetNumFreeReliableServerCommands, G_GETNUMFREERELIABLESERVERCOMMANDS);
-        ROUTE_IMPORT(setConfigstring, G_SET_CONFIGSTRING);
-        ROUTE_IMPORT(getConfigstring, G_GET_CONFIGSTRING);
-        ROUTE_IMPORT(setUserinfo, G_SET_USERINFO);
-        ROUTE_IMPORT(getUserinfo, G_GET_USERINFO);
-        ROUTE_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL);
-        ROUTE_IMPORT(trace, G_TRACE);
-        ROUTE_IMPORT(fulltrace, G_FULLTRACE);
-        ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
-        ROUTE_IMPORT(pointbrushnum, G_POINTBRUSHNUM);
-        ROUTE_IMPORT(inPVS, G_IN_PVS);
-        ROUTE_IMPORT(inPVSIgnorePortals, G_IN_PVS_IGNOREPORTALS);
-        ROUTE_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE);
-        ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
-        ROUTE_IMPORT(GetLightingGroup, G_GETLIGHTINGGROUP);
-        ROUTE_IMPORT_2_V(SetDynamicLight, G_SETDYNAMICLIGHT, int, FLOAT_CAST);
-        ROUTE_IMPORT_2_V(SetDynamicLightDefault, G_SETDYNAMICLIGHTDEFAULT, int, FLOAT_CAST);
-        ROUTE_IMPORT(SetWindDirection, G_SETWINDDIRECTION);
-        ROUTE_IMPORT_1_V(SetWindIntensity, G_SETWINDINTENSITY, FLOAT_CAST);
-        ROUTE_IMPORT(SetWeatherInfo, G_SETWEATHERINFO);
-        ROUTE_IMPORT_1_V(SetTimeScale, G_SETTIMESCALE, FLOAT_CAST);
-        ROUTE_IMPORT(linkentity, G_LINKENTITY);
-        ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
-        ROUTE_IMPORT(AreaEntities, G_AREAENTITIES);
-        ROUTE_IMPORT(ClipToEntity, G_CLIPTOENTITY);
-        ROUTE_IMPORT(objectivenameindex, G_OBJECTIVENAMEINDEX);
-        ROUTE_IMPORT(archetypeindex, G_ARCHETYPEINDEX);
-        ROUTE_IMPORT(imageindex, G_IMAGEINDEX);
-        ROUTE_IMPORT(failedcondition, G_FAILEDCONDITION);
-        ROUTE_IMPORT(itemindex, G_ITEMINDEX);
-        ROUTE_IMPORT(soundindex, G_SOUNDINDEX);
-        ROUTE_IMPORT(modelindex, G_MODELINDEX);
-        ROUTE_IMPORT(SetLightStyle, G_SETLIGHTSTYLE);
-        ROUTE_IMPORT(GameDir, G_GAMEDIR);
-        ROUTE_IMPORT(IsModel, G_ISMODEL);
-        ROUTE_IMPORT(setmodel, G_SETMODEL);
-        ROUTE_IMPORT(setviewmodel, G_SETVIEWMODEL);
-        ROUTE_IMPORT(NumAnims, G_NUMANIMS);
-        ROUTE_IMPORT(NumSkins, G_NUMSKINS);
-        ROUTE_IMPORT(NumSurfaces, G_NUMSURFACES);
-        ROUTE_IMPORT(NumTags, G_NUMTAGS);
-        ROUTE_IMPORT(NumMorphs, G_NUMMORPHS);
-        ROUTE_IMPORT(InitCommands, G_INITCOMMANDS);
-        ROUTE_IMPORT_4_V(CalculateBounds, G_CALCULATEBOUNDS, int, FLOAT_CAST, float*, float*);
-        ROUTE_IMPORT(TIKI_CacheAnim, G_TIKI_CACHEANIM);
-        ROUTE_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM);
-        ROUTE_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME);
-        ROUTE_IMPORT(Anim_Random, G_ANIM_RANDOM);
-        ROUTE_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES);
-        ROUTE_IMPORT_2_F(Anim_Time, G_ANIM_TIME, int, int);
-        ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
-        ROUTE_IMPORT(Anim_AbsoluteDelta, G_ANIM_ABSOLUTEDELTA);
-        ROUTE_IMPORT(Anim_Flags, G_ANIM_FLAGS);
-        ROUTE_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS);
-        ROUTE_IMPORT(Frame_Commands, G_FRAME_COMMANDS);
-        ROUTE_IMPORT(Frame_Delta, G_FRAME_DELTA);
-        ROUTE_IMPORT_3_F(Frame_Time, G_FRAME_TIME, int, int, int);
-        ROUTE_IMPORT_6_V(Frame_Bounds, G_FRAME_BOUNDS, int, int, int, FLOAT_CAST, float*, float*);
-        ROUTE_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM);
-        ROUTE_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME);
-        ROUTE_IMPORT(Surface_Flags, G_SURFACE_FLAGS);
-        ROUTE_IMPORT(Surface_NumSkins, G_SURFACE_NUMSKINS);
-        ROUTE_IMPORT(Morph_NumForName, G_MORPH_NUMFORNAME);
-        ROUTE_IMPORT(Morph_NameForNum, G_MORPH_NAMEFORNUM);
-        ROUTE_IMPORT(GetExpression, G_GETEXPRESSION);
-        ROUTE_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME);
-        ROUTE_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM);
-        ROUTE_IMPORT_8(Tag_Orientation, G_TAG_ORIENTATION, orientation_t*, int, int, int, int, FLOAT_CAST, int*, vec4_t*);
-        ROUTE_IMPORT_18(Tag_OrientationEx, G_TAG_ORIENTATIONEX, orientation_t*, int, int, int, int, FLOAT_CAST, int*, vec4_t*, int, int, FLOAT_CAST, qboolean, qboolean, int, int, int, int, FLOAT_CAST);
-        ROUTE_IMPORT(Bone_GetParentNum, G_BONE_GETPARENTNUM);
-        ROUTE_IMPORT(Alias_Add, G_ALIAS_ADD);
-        ROUTE_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM);
-        ROUTE_IMPORT(Alias_Find, G_ALIAS_FIND);
-        ROUTE_IMPORT(Alias_Dump, G_ALIAS_DUMP);
-        ROUTE_IMPORT(Alias_Clear, G_ALIAS_CLEAR);
-        ROUTE_IMPORT(Alias_FindDialog, G_ALIAS_FINDDIALOG);
-        ROUTE_IMPORT(Alias_FindSpecificAnim, G_ALIAS_FINDSPECIFICANIM);
-        ROUTE_IMPORT(Alias_CheckLoopAnim, G_ALIAS_CHECKLOOPANIM);
-        ROUTE_IMPORT(Alias_GetList, G_ALIAS_GETLIST);
-        ROUTE_IMPORT(Alias_UpdateDialog, G_ALIAS_UPDATEDIALOG);
-        ROUTE_IMPORT(Alias_AddActorDialog, G_ALIAS_ADDACTORDIALOG);
-        ROUTE_IMPORT(NameForNum, G_NAMEFORNUM);
-        ROUTE_IMPORT(GlobalAlias_Add, G_GLOBALALIAS_ADD);
-        ROUTE_IMPORT(GlobalAlias_FindRandom, G_GLOBALALIAS_FINDRANDOM);
-        ROUTE_IMPORT(GlobalAlias_Find, G_GLOBALALIAS_FIND);
-        ROUTE_IMPORT(GlobalAlias_Dump, G_GLOBALALIAS_DUMP);
-        ROUTE_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR);
-        ROUTE_IMPORT(isClientActive, G_ISCLIENTACTIVE);
-        ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
-        ROUTE_IMPORT(locationprintf, G_LOCATIONPRINTF);
-        ROUTE_IMPORT_8_V(Sound, G_SOUND, vec3_t*, int, int, const char*, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, qboolean);
-        ROUTE_IMPORT(StopSound, G_STOPSOUND);
-        ROUTE_IMPORT_1_F(SoundLength, G_SOUNDLENGTH, const char*);
-        ROUTE_IMPORT(GetNextMorphTarget, G_GETNEXTMORPHTARGET);
-        ROUTE_IMPORT(CalcCRC, G_CALCCRC);
-        ROUTE_IMPORT(LocateGameData, G_LOCATE_GAME_DATA);
-        ROUTE_IMPORT(SetFarPlane, G_SETFARPLANE);
-        ROUTE_IMPORT(TikiReload, G_TIKIRELOAD);
-        ROUTE_IMPORT(TikiLoadFromTS, G_TIKILOADFROMTS);
-        ROUTE_IMPORT(ToolServerGetData, G_TOOLSERVERGETDATA);
-        ROUTE_IMPORT(SetSkyPortal, G_SETSKYPORTAL);
-        ROUTE_IMPORT(WidgetPrintf, G_WIDGETPRINTF);
-        ROUTE_IMPORT(ProcessLoadingScreen, G_PROCESSLOADINGSCREEN);
-        ROUTE_IMPORT(MObjective_GetDescription, G_MOBJECTIVE_GETDESCRIPTION);
-        ROUTE_IMPORT(MObjective_SetDescription, G_MOBJECTIVE_SETDESCRIPTION);
-        ROUTE_IMPORT(MObjective_GetShowObjective, G_MOBJECTIVE_GETSHOWOBJECTIVE);
-        ROUTE_IMPORT(MObjective_SetShowObjective, G_MOBJECTIVE_SETSHOWOBJECTIVE);
-        ROUTE_IMPORT(MObjective_GetObjectiveComplete, G_MOBJECTIVE_GETOBJECTIVECOMPLETE);
-        ROUTE_IMPORT(MObjective_SetObjectiveComplete, G_MOBJECTIVE_SETOBJECTIVECOMPLETE);
-        ROUTE_IMPORT(MObjective_GetObjectiveFailed, G_MOBJECTIVE_GETOBJECTIVEFAILED);
-        ROUTE_IMPORT(MObjective_SetObjectiveFailed, G_MOBJECTIVE_SETOBJECTIVEFAILED);
-        ROUTE_IMPORT(MObjective_GetNameFromIndex, G_MOBJECTIVE_GETNAMEFROMINDEX);
-        ROUTE_IMPORT(MObjective_GetIndexFromName, G_MOBJECTIVE_GETINDEXFROMNAME);
-        ROUTE_IMPORT(MObjective_NewObjective, G_MOBJECTIVE_NEWOBJECTIVE);
-        ROUTE_IMPORT(MObjective_ClearObjectiveList, G_MOBJECTIVE_CLEAROBJECTIVELIST);
-        ROUTE_IMPORT(MObjective_ParseObjectiveFile, G_MOBJECTIVE_PARSEOBJECTIVEFILE);
-        ROUTE_IMPORT(MObjective_Update, G_MOBJECTIVE_UPDATE);
-        ROUTE_IMPORT(MObjective_GetNumObjectives, G_MOBJECTIVE_GETNUMOBJECTIVES);
-        ROUTE_IMPORT(MObjective_GetNumActiveObjectives, G_MOBJECTIVE_GETNUMACTIVEOBJECTIVES);
-        ROUTE_IMPORT(MObjective_GetNumCompleteObjectives, G_MOBJECTIVE_GETNUMCOMPLETEOBJECTIVES);
-        ROUTE_IMPORT(MObjective_GetNumFailedObjectives, G_MOBJECTIVE_GETNUMFAILEDOBJECTIVES);
-        ROUTE_IMPORT(MObjective_GetNumIncompleteObjectives, G_MOBJECTIVE_GETNUMINCOMPLETEOBJECTIVES);
-        ROUTE_IMPORT(MI_GetShader, G_MI_GETSHADER);
-        ROUTE_IMPORT(MI_SetShader, G_MI_SETSHADER);
-        ROUTE_IMPORT(MI_GetInformationData, G_MI_GETINFORMATIONDATA);
-        ROUTE_IMPORT(MI_SetInformationData, G_MI_SETINFORMATIONDATA);
-        ROUTE_IMPORT(MI_GetNameFromIndex, G_MI_GETNAMEFROMINDEX);
-        ROUTE_IMPORT(MI_GetIndexFromName, G_MI_GETINDEXFROMNAME);
-        ROUTE_IMPORT(MI_NewInformation, G_MI_NEWINFORMATION);
-        ROUTE_IMPORT(MI_ClearInformationList, G_MI_CLEARINFORMATIONLIST);
-        ROUTE_IMPORT(MI_SetShowInformation, G_MI_SETSHOWINFORMATION);
-        ROUTE_IMPORT(MI_GetShowInformation, G_MI_GETSHOWINFORMATION);
-        ROUTE_IMPORT(SR_InitializeStringResource, G_SR_INITIALIZESTRINGRESOURCE);
-        ROUTE_IMPORT(SR_UninitializeStringResource, G_SR_UNINITIALIZESTRINGRESOURCE);
-        ROUTE_IMPORT(SR_LoadLevelStrings, G_SR_LOADLEVELSTRINGS);
-        ROUTE_IMPORT(GetViewModeMask, G_GETVIEWMODEMASK);
-        ROUTE_IMPORT(GetViewModeClassMask, G_GETVIEWMODECLASSMASK);
-        ROUTE_IMPORT(GetViewModeSendInMode, G_GETVIEWMODESENDINMODE);
-        ROUTE_IMPORT(GetViewModeSendNotInMode, G_GETVIEWMODESENDNOTINMODE);
-        ROUTE_IMPORT(GetViewModeScreenBlend, G_GETVIEWMODESCREENBLEND);
-        ROUTE_IMPORT(GetLevelDefs, G_GETLEVELDEFS);
-        ROUTE_IMPORT(areSublevels, G_ARESUBLEVELS);
-        ROUTE_IMPORT(SurfaceTypeToName, G_SURFACETYPETONAME);
-        ROUTE_IMPORT(AAS_EntityInfo, G_AAS_ENTITYINFO);
-        ROUTE_IMPORT(AAS_Initialized, G_AAS_INITIALIZED);
-        ROUTE_IMPORT(AAS_PresenceTypeBoundingBox, G_AAS_PRESENCETYPEBOUNDINGBOX);
-        ROUTE_IMPORT_0_F(AAS_Time, G_AAS_TIME);
-        ROUTE_IMPORT(AAS_PointAreaNum, G_AAS_POINTAREANUM);
-        ROUTE_IMPORT(AAS_PointReachabilityAreaIndex, G_AAS_POINTREACHABILITYAREAINDEX);
-        ROUTE_IMPORT(AAS_TraceAreas, G_AAS_TRACEAREAS);
-        ROUTE_IMPORT(AAS_BBoxAreas, G_AAS_BBOXAREAS);
-        ROUTE_IMPORT(AAS_AreaInfo, G_AAS_AREAINFO);
-        ROUTE_IMPORT(AAS_PointContents, G_AAS_POINTCONTENTS);
-        ROUTE_IMPORT(AAS_NextBSPEntity, G_AAS_NEXTBSPENTITY);
-        ROUTE_IMPORT(AAS_ValueForBSPEpairKey, G_AAS_VALUEFORBSPEPAIRKEY);
-        ROUTE_IMPORT(AAS_VectorForBSPEpairKey, G_AAS_VECTORFORBSPEPAIRKEY);
-        ROUTE_IMPORT(AAS_FloatForBSPEpairKey, G_AAS_FLOATFORBSPEPAIRKEY);
-        ROUTE_IMPORT(AAS_IntForBSPEpairKey, G_AAS_INTFORBSPEPAIRKEY);
-        ROUTE_IMPORT(AAS_AreaReachability, G_AAS_AREAREACHABILITY);
-        ROUTE_IMPORT(AAS_AreaTravelTimeToGoalArea, G_AAS_AREATRAVELTIMETOGOALAREA);
-        ROUTE_IMPORT(AAS_EnableRoutingArea, G_AAS_ENABLEROUTINGAREA);
-        ROUTE_IMPORT(AAS_PredictRoute, G_AAS_PREDICTROUTE);
-        ROUTE_IMPORT(AAS_AlternativeRouteGoals, G_AAS_ALTERNATIVEROUTEGOALS);
-        ROUTE_IMPORT(AAS_Swimming, G_AAS_SWIMMING);
-        ROUTE_IMPORT(AAS_PredictClientMovement, G_AAS_PREDICTCLIENTMOVEMENT);
-        ROUTE_IMPORT(EA_Command, G_EA_COMMAND);
-        ROUTE_IMPORT(EA_Say, G_EA_SAY);
-        ROUTE_IMPORT(EA_SayTeam, G_EA_SAYTEAM);
-        ROUTE_IMPORT(EA_Action, G_EA_ACTION);
-        ROUTE_IMPORT(EA_Gesture, G_EA_GESTURE);
-        ROUTE_IMPORT(EA_Talk, G_EA_TALK);
-        ROUTE_IMPORT(EA_ToggleFireState, G_EA_TOGGLEFIRESTATE);
-        ROUTE_IMPORT(EA_Attack, G_EA_ATTACK);
-        ROUTE_IMPORT(EA_Use, G_EA_USE);
-        ROUTE_IMPORT(EA_Respawn, G_EA_RESPAWN);
-        ROUTE_IMPORT(EA_MoveUp, G_EA_MOVEUP);
-        ROUTE_IMPORT(EA_MoveDown, G_EA_MOVEDOWN);
-        ROUTE_IMPORT(EA_MoveForward, G_EA_MOVEFORWARD);
-        ROUTE_IMPORT(EA_MoveBack, G_EA_MOVEBACK);
-        ROUTE_IMPORT(EA_MoveLeft, G_EA_MOVELEFT);
-        ROUTE_IMPORT(EA_MoveRight, G_EA_MOVERIGHT);
-        ROUTE_IMPORT(EA_Crouch, G_EA_CROUCH);
-        ROUTE_IMPORT(EA_SelectWeapon, G_EA_SELECTWEAPON);
-        ROUTE_IMPORT(EA_Jump, G_EA_JUMP);
-        ROUTE_IMPORT(EA_DelayedJump, G_EA_DELAYEDJUMP);
-        ROUTE_IMPORT_3_V(EA_Move, G_EA_MOVE, int, float*, FLOAT_CAST);
-        ROUTE_IMPORT(EA_View, G_EA_VIEW);
-        ROUTE_IMPORT_2_V(EA_EndRegular, G_EA_ENDREGULAR, int, FLOAT_CAST);
-        ROUTE_IMPORT_3_V(EA_GetInput, G_EA_GETINPUT, int, FLOAT_CAST, bot_input_t*);
-        ROUTE_IMPORT(EA_ResetInput, G_EA_RESETINPUT);
-        ROUTE_IMPORT_2(BotLoadCharacter, G_BOTLOADCHARACTER, char*, FLOAT_CAST);
-        ROUTE_IMPORT(BotFreeCharacter, G_BOTFREECHARACTER);
-        ROUTE_IMPORT(Characteristic_Float, G_CHARACTERISTIC_FLOAT);
-        ROUTE_IMPORT_4_F(Characteristic_BFloat, G_CHARACTERISTIC_BFLOAT, int, int, FLOAT_CAST, FLOAT_CAST);
-        ROUTE_IMPORT(Characteristic_Integer, G_CHARACTERISTIC_INTEGER);
-        ROUTE_IMPORT(Characteristic_BInteger, G_CHARACTERISTIC_BINTEGER);
-        ROUTE_IMPORT(Characteristic_String, G_CHARACTERISTIC_STRING);
-        ROUTE_IMPORT(BotAllocChatState, G_BOTALLOCCHATSTATE);
-        ROUTE_IMPORT(BotFreeChatState, G_BOTFREECHATSTATE);
-        ROUTE_IMPORT(BotQueueConsoleMessage, G_BOTQUEUECONSOLEMESSAGE);
-        ROUTE_IMPORT(BotRemoveConsoleMessage, G_BOTREMOVECONSOLEMESSAGE);
-        ROUTE_IMPORT(BotNextConsoleMessage, G_BOTNEXTCONSOLEMESSAGE);
-        ROUTE_IMPORT(BotNumConsoleMessages, G_BOTNUMCONSOLEMESSAGES);
-        ROUTE_IMPORT(BotInitialChat, G_BOTINITIALCHAT);
-        ROUTE_IMPORT(BotNumInitialChats, G_BOTNUMINITIALCHATS);
-        ROUTE_IMPORT(BotReplyChat, G_BOTREPLYCHAT);
-        ROUTE_IMPORT(BotChatLength, G_BOTCHATLENGTH);
-        ROUTE_IMPORT(BotEnterChat, G_BOTENTERCHAT);
-        ROUTE_IMPORT(BotGetChatMessage, G_BOTGETCHATMESSAGE);
-        ROUTE_IMPORT(StringContains, G_STRINGCONTAINS);
-        ROUTE_IMPORT(BotFindMatch, G_BOTFINDMATCH);
-        ROUTE_IMPORT(BotMatchVariable, G_BOTMATCHVARIABLE);
-        ROUTE_IMPORT(UnifyWhiteSpaces, G_UNIFYWHITESPACES);
-        ROUTE_IMPORT(BotReplaceSynonyms, G_BOTREPLACESYNONYMS);
-        ROUTE_IMPORT(BotLoadChatFile, G_BOTLOADCHATFILE);
-        ROUTE_IMPORT(BotSetChatGender, G_BOTSETCHATGENDER);
-        ROUTE_IMPORT(BotSetChatName, G_BOTSETCHATNAME);
-        ROUTE_IMPORT(BotResetGoalState, G_BOTRESETGOALSTATE);
-        ROUTE_IMPORT(BotResetAvoidGoals, G_BOTRESETAVOIDGOALS);
-        ROUTE_IMPORT(BotRemoveFromAvoidGoals, G_BOTREMOVEFROMAVOIDGOALS);
-        ROUTE_IMPORT(BotPushGoal, G_BOTPUSHGOAL);
-        ROUTE_IMPORT(BotPopGoal, G_BOTPOPGOAL);
-        ROUTE_IMPORT(BotEmptyGoalStack, G_BOTEMPTYGOALSTACK);
-        ROUTE_IMPORT(BotDumpAvoidGoals, G_BOTDUMPAVOIDGOALS);
-        ROUTE_IMPORT(BotDumpGoalStack, G_BOTDUMPGOALSTACK);
-        ROUTE_IMPORT(BotGoalName, G_BOTGOALNAME);
-        ROUTE_IMPORT(BotGetTopGoal, G_BOTGETTOPGOAL);
-        ROUTE_IMPORT(BotGetSecondGoal, G_BOTGETSECONDGOAL);
-        ROUTE_IMPORT(BotChooseLTGItem, G_BOTCHOOSELTGITEM);
-        ROUTE_IMPORT_6(BotChooseNBGItem, G_BOTCHOOSENBGITEM, int, float*, int*, int, struct bot_goal_s*, FLOAT_CAST);
-        ROUTE_IMPORT(BotTouchingGoal, G_BOTTOUCHINGGOAL);
-        ROUTE_IMPORT(BotItemGoalInVisButNotVisible, G_BOTITEMGOALINVISBUTNOTVISIBLE);
-        ROUTE_IMPORT(BotGetLevelItemGoal, G_BOTGETLEVELITEMGOAL);
-        ROUTE_IMPORT(BotGetNextCampSpotGoal, G_BOTGETNEXTCAMPSPOTGOAL);
-        ROUTE_IMPORT(BotGetMapLocationGoal, G_BOTGETMAPLOCATIONGOAL);
-        ROUTE_IMPORT_2_F(BotAvoidGoalTime, G_BOTAVOIDGOALTIME, int, int);
-        ROUTE_IMPORT_3_V(BotSetAvoidGoalTime, G_BOTSETAVOIDGOALTIME, int, int, FLOAT_CAST);
-        ROUTE_IMPORT(BotInitLevelItems, G_BOTINITLEVELITEMS);
-        ROUTE_IMPORT(BotUpdateEntityItems, G_BOTUPDATEENTITYITEMS);
-        ROUTE_IMPORT(BotLoadItemWeights, G_BOTLOADITEMWEIGHTS);
-        ROUTE_IMPORT(BotFreeItemWeights, G_BOTFREEITEMWEIGHTS);
-        ROUTE_IMPORT(BotInterbreedGoalFuzzyLogic, G_BOTINTERBREEDGOALFUZZYLOGIC);
-        ROUTE_IMPORT(BotSaveGoalFuzzyLogic, G_BOTSAVEGOALFUZZYLOGIC);
-        ROUTE_IMPORT_2_V(BotMutateGoalFuzzyLogic, G_BOTMUTATEGOALFUZZYLOGIC, int, FLOAT_CAST);
-        ROUTE_IMPORT(BotAllocGoalState, G_BOTALLOCGOALSTATE);
-        ROUTE_IMPORT(BotFreeGoalState, G_BOTFREEGOALSTATE);
-        ROUTE_IMPORT(BotResetMoveState, G_BOTRESETMOVESTATE);
-        ROUTE_IMPORT(BotMoveToGoal, G_BOTMOVETOGOAL);
-        ROUTE_IMPORT_4(BotMoveInDirection, G_BOTMOVEINDIRECTION, int, float*, FLOAT_CAST, int);
-        ROUTE_IMPORT(BotResetAvoidReach, G_BOTRESETAVOIDREACH);
-        ROUTE_IMPORT(BotResetLastAvoidReach, G_BOTRESETLASTAVOIDREACH);
-        ROUTE_IMPORT(BotReachabilityArea, G_BOTREACHABILITYAREA);
-        ROUTE_IMPORT_5(BotMovementViewTarget, G_BOTMOVEMENTVIEWTARGET, int, struct bot_goal_s*, int, FLOAT_CAST, float*);
-        ROUTE_IMPORT(BotPredictVisiblePosition, G_BOTPREDICTVISIBLEPOSITION);
-        ROUTE_IMPORT(BotAllocMoveState, G_BOTALLOCMOVESTATE);
-        ROUTE_IMPORT(BotFreeMoveState, G_BOTFREEMOVESTATE);
-        ROUTE_IMPORT(BotInitMoveState, G_BOTINITMOVESTATE);
-        ROUTE_IMPORT_4_V(BotAddAvoidSpot, G_BOTADDAVOIDSPOT, int, float*, FLOAT_CAST, int);
-        ROUTE_IMPORT(BotChooseBestFightWeapon, G_BOTCHOOSEBESTFIGHTWEAPON);
-        ROUTE_IMPORT(BotGetWeaponInfo, G_BOTGETWEAPONINFO);
-        ROUTE_IMPORT(BotLoadWeaponWeights, G_BOTLOADWEAPONWEIGHTS);
-        ROUTE_IMPORT(BotAllocWeaponState, G_BOTALLOCWEAPONSTATE);
-        ROUTE_IMPORT(BotFreeWeaponState, G_BOTFREEWEAPONSTATE);
-        ROUTE_IMPORT(BotResetWeaponState, G_BOTRESETWEAPONSTATE);
-        ROUTE_IMPORT(GeneticParentsAndChildSelection, G_GENETICPARENTSANDCHILDSELECTION);
-        ROUTE_IMPORT(Print, G_BOTPRINT);
-        ROUTE_IMPORT(PointContents, G_BOTPOINTCONTENTS);
-        ROUTE_IMPORT(BSPEntityData, G_BSPENTITYDATA);
-        ROUTE_IMPORT(BSPModelMinsMaxsOrigin, G_BSPMODELMINSMAXSORIGIN);
-        ROUTE_IMPORT(BotClientCommand, G_BOTCLIENTCOMMAND);
-        ROUTE_IMPORT(AvailableMemory, G_AVAILABLEMEMORY);
-        ROUTE_IMPORT(HunkAlloc, G_HUNKALLOC);
-        ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
-        ROUTE_IMPORT(FS_Seek, G_FS_SEEK);
-        ROUTE_IMPORT(DebugLineCreate, G_DEBUGLINECREATE);
-        ROUTE_IMPORT(DebugLineDelete, G_DEBUGLINEDELETE);
-        ROUTE_IMPORT(DebugLineShow, G_DEBUGLINESHOW);
-        ROUTE_IMPORT(DebugPolygonCreate, G_DEBUGPOLYGONCREATE);
-        ROUTE_IMPORT(DebugPolygonDelete, G_DEBUGPOLYGONDELETE);
-        ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
-        ROUTE_IMPORT(SV_GetServerinfo, G_SV_GETSERVERINFO);
-        ROUTE_IMPORT(BotAllocateClient, G_BOTALLOCATECLIENT);
-        ROUTE_IMPORT(BotGetSnapshotEntity, G_BOTGETSNAPSHOTENTITY);
-        ROUTE_IMPORT(BotGetConsoleMessage, G_BOTGETCONSOLEMESSAGE);
-        ROUTE_IMPORT(BotLibSetup, G_BOTLIBSETUP);
-        ROUTE_IMPORT(BotLibShutdown, G_BOTLIBSHUTDOWN);
-        ROUTE_IMPORT(BotLibVarSet, G_BOTLIBVARSET);
-        ROUTE_IMPORT(BotLibVarGet, G_BOTLIBVARGET);
-        ROUTE_IMPORT(PC_AddGlobalDefine, G_PC_ADDGLOBALDEFINE);
-        ROUTE_IMPORT(PC_LoadSourceHandle, G_PC_LOADSOURCEHANDLE);
-        ROUTE_IMPORT(PC_FreeSourceHandle, G_PC_FREESOURCEHANDLE);
-        ROUTE_IMPORT(PC_SourceFileAndLine, G_PC_SOURCEFILEANDLINE);
-        ROUTE_IMPORT_1(BotLibStartFrame, G_BOTLIBSTARTFRAME, FLOAT_CAST);
-        ROUTE_IMPORT(BotLibLoadMap, G_BOTLIBLOADMAP);
-        ROUTE_IMPORT(BotLibUpdateEntity, G_BOTLIBUPDATEENTITY);
-        ROUTE_IMPORT(Test, G_TEST);
-        ROUTE_IMPORT(BotUserCommand, G_BOTUSERCOMMAND);
+    if (orig_import.Printf) {
+        switch (cmd) {
+            ROUTE_IMPORT(Printf, G_PRINTF);
+            ROUTE_IMPORT(DPrintf, G_DPRINTF);
+            ROUTE_IMPORT(WPrintf, G_WPRINTF);
+            ROUTE_IMPORT(WDPrintf, G_WDPRINTF);
+            ROUTE_IMPORT(DebugPrintf, G_DEBUGPRINTF);
+            ROUTE_IMPORT(LocalizeFilePath, G_LOCALIZEFILEPATH);
+            ROUTE_IMPORT(Error, G_ERROR);
+            ROUTE_IMPORT(Milliseconds, G_MILLISECONDS);
+            ROUTE_IMPORT(Malloc, G_MALLOC);
+            ROUTE_IMPORT(Free, G_FREE);
+            ROUTE_IMPORT(cvar, G_CVAR);
+            ROUTE_IMPORT(cvar_get, G_CVAR_GET);
+            ROUTE_IMPORT(cvar_set, G_CVAR_SET);
+            ROUTE_IMPORT(Cvar_VariableStringBuffer, G_CVAR_VARIABLE_STRING_BUFFER);
+            ROUTE_IMPORT(Cvar_Register, G_CVAR_REGISTER);
+            ROUTE_IMPORT_1_F(Cvar_VariableValue, G_CVAR_VARIABLEVALUE, const char*);
+            ROUTE_IMPORT(Cvar_Update, G_CVAR_UPDATE);
+            ROUTE_IMPORT(Cvar_VariableIntegerValue, G_CVAR_VARIABLE_INTEGER_VALUE);
+            ROUTE_IMPORT(argc, G_ARGC);
+            ROUTE_IMPORT(argv, G_ARGV);
+            ROUTE_IMPORT(args, G_ARGS);
+            ROUTE_IMPORT(AddCommand, G_ADDCOMMAND);
+            ROUTE_IMPORT(FS_ReadFile, G_FS_READFILE);
+            ROUTE_IMPORT(FS_Exists, G_FS_EXISTS);
+            ROUTE_IMPORT(FS_FreeFile, G_FS_FREEFILE);
+            ROUTE_IMPORT(FS_WriteFile, G_FS_WRITEFILE);
+            ROUTE_IMPORT(FS_FOpenFileWrite, G_FS_FOPEN_FILE_WRITE);
+            ROUTE_IMPORT(FS_FOpenFileAppend, G_FS_FOPEN_FILE_APPEND);
+            ROUTE_IMPORT(FS_ListFiles, G_FS_LISTFILES);
+            ROUTE_IMPORT(FS_PrepFileWrite, G_FS_PREPFILEWRITE);
+            ROUTE_IMPORT(FS_Write, G_FS_WRITE);
+            ROUTE_IMPORT(FS_Read, G_FS_READ);
+            ROUTE_IMPORT(FS_FCloseFile, G_FS_FCLOSE_FILE);
+            ROUTE_IMPORT(FS_FTell, G_FS_FTELL);
+            ROUTE_IMPORT(FS_FSeek, G_FS_FSEEK);
+            ROUTE_IMPORT(FS_Flush, G_FS_FLUSH);
+            ROUTE_IMPORT(FS_DeleteFile, G_FS_DELETEFILE);
+            ROUTE_IMPORT(FS_GetFileList, G_FS_GETFILELIST);
+            ROUTE_IMPORT(GetArchiveFileName, G_GETARCHIVEFILENAME);
+            // handled below since we do special handling to deal with the "when" argument
+            // ROUTE_IMPORT(SendConsoleCommand, G_SEND_CONSOLE_COMMAND);
+            ROUTE_IMPORT_2_V(DebugGraph, G_DEBUGGRAPH, FLOAT_CAST, int);
+            ROUTE_IMPORT(SendServerCommand, G_SEND_SERVER_COMMAND);
+            ROUTE_IMPORT(GetNumFreeReliableServerCommands, G_GETNUMFREERELIABLESERVERCOMMANDS);
+            ROUTE_IMPORT(setConfigstring, G_SET_CONFIGSTRING);
+            ROUTE_IMPORT(getConfigstring, G_GET_CONFIGSTRING);
+            ROUTE_IMPORT(setUserinfo, G_SET_USERINFO);
+            ROUTE_IMPORT(getUserinfo, G_GET_USERINFO);
+            ROUTE_IMPORT(SetBrushModel, G_SET_BRUSH_MODEL);
+            ROUTE_IMPORT(trace, G_TRACE);
+            ROUTE_IMPORT(fulltrace, G_FULLTRACE);
+            ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
+            ROUTE_IMPORT(pointbrushnum, G_POINTBRUSHNUM);
+            ROUTE_IMPORT(inPVS, G_IN_PVS);
+            ROUTE_IMPORT(inPVSIgnorePortals, G_IN_PVS_IGNOREPORTALS);
+            ROUTE_IMPORT(AdjustAreaPortalState, G_ADJUSTAREAPORTALSTATE);
+            ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
+            ROUTE_IMPORT(GetLightingGroup, G_GETLIGHTINGGROUP);
+            ROUTE_IMPORT_2_V(SetDynamicLight, G_SETDYNAMICLIGHT, int, FLOAT_CAST);
+            ROUTE_IMPORT_2_V(SetDynamicLightDefault, G_SETDYNAMICLIGHTDEFAULT, int, FLOAT_CAST);
+            ROUTE_IMPORT(SetWindDirection, G_SETWINDDIRECTION);
+            ROUTE_IMPORT_1_V(SetWindIntensity, G_SETWINDINTENSITY, FLOAT_CAST);
+            ROUTE_IMPORT(SetWeatherInfo, G_SETWEATHERINFO);
+            ROUTE_IMPORT_1_V(SetTimeScale, G_SETTIMESCALE, FLOAT_CAST);
+            ROUTE_IMPORT(linkentity, G_LINKENTITY);
+            ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
+            ROUTE_IMPORT(AreaEntities, G_AREAENTITIES);
+            ROUTE_IMPORT(ClipToEntity, G_CLIPTOENTITY);
+            ROUTE_IMPORT(objectivenameindex, G_OBJECTIVENAMEINDEX);
+            ROUTE_IMPORT(archetypeindex, G_ARCHETYPEINDEX);
+            ROUTE_IMPORT(imageindex, G_IMAGEINDEX);
+            ROUTE_IMPORT(failedcondition, G_FAILEDCONDITION);
+            ROUTE_IMPORT(itemindex, G_ITEMINDEX);
+            ROUTE_IMPORT(soundindex, G_SOUNDINDEX);
+            ROUTE_IMPORT(modelindex, G_MODELINDEX);
+            ROUTE_IMPORT(SetLightStyle, G_SETLIGHTSTYLE);
+            ROUTE_IMPORT(GameDir, G_GAMEDIR);
+            ROUTE_IMPORT(IsModel, G_ISMODEL);
+            ROUTE_IMPORT(setmodel, G_SETMODEL);
+            ROUTE_IMPORT(setviewmodel, G_SETVIEWMODEL);
+            ROUTE_IMPORT(NumAnims, G_NUMANIMS);
+            ROUTE_IMPORT(NumSkins, G_NUMSKINS);
+            ROUTE_IMPORT(NumSurfaces, G_NUMSURFACES);
+            ROUTE_IMPORT(NumTags, G_NUMTAGS);
+            ROUTE_IMPORT(NumMorphs, G_NUMMORPHS);
+            ROUTE_IMPORT(InitCommands, G_INITCOMMANDS);
+            ROUTE_IMPORT_4_V(CalculateBounds, G_CALCULATEBOUNDS, int, FLOAT_CAST, float*, float*);
+            ROUTE_IMPORT(TIKI_CacheAnim, G_TIKI_CACHEANIM);
+            ROUTE_IMPORT(Anim_NameForNum, G_ANIM_NAMEFORNUM);
+            ROUTE_IMPORT(Anim_NumForName, G_ANIM_NUMFORNAME);
+            ROUTE_IMPORT(Anim_Random, G_ANIM_RANDOM);
+            ROUTE_IMPORT(Anim_NumFrames, G_ANIM_NUMFRAMES);
+            ROUTE_IMPORT_2_F(Anim_Time, G_ANIM_TIME, int, int);
+            ROUTE_IMPORT(Anim_Delta, G_ANIM_DELTA);
+            ROUTE_IMPORT(Anim_AbsoluteDelta, G_ANIM_ABSOLUTEDELTA);
+            ROUTE_IMPORT(Anim_Flags, G_ANIM_FLAGS);
+            ROUTE_IMPORT(Anim_HasCommands, G_ANIM_HASCOMMANDS);
+            ROUTE_IMPORT(Frame_Commands, G_FRAME_COMMANDS);
+            ROUTE_IMPORT(Frame_Delta, G_FRAME_DELTA);
+            ROUTE_IMPORT_3_F(Frame_Time, G_FRAME_TIME, int, int, int);
+            ROUTE_IMPORT_6_V(Frame_Bounds, G_FRAME_BOUNDS, int, int, int, FLOAT_CAST, float*, float*);
+            ROUTE_IMPORT(Surface_NameToNum, G_SURFACE_NAMETONUM);
+            ROUTE_IMPORT(Surface_NumToName, G_SURFACE_NUMTONAME);
+            ROUTE_IMPORT(Surface_Flags, G_SURFACE_FLAGS);
+            ROUTE_IMPORT(Surface_NumSkins, G_SURFACE_NUMSKINS);
+            ROUTE_IMPORT(Morph_NumForName, G_MORPH_NUMFORNAME);
+            ROUTE_IMPORT(Morph_NameForNum, G_MORPH_NAMEFORNUM);
+            ROUTE_IMPORT(GetExpression, G_GETEXPRESSION);
+            ROUTE_IMPORT(Tag_NumForName, G_TAG_NUMFORNAME);
+            ROUTE_IMPORT(Tag_NameForNum, G_TAG_NAMEFORNUM);
+            ROUTE_IMPORT_8(Tag_Orientation, G_TAG_ORIENTATION, orientation_t*, int, int, int, int, FLOAT_CAST, int*, vec4_t*);
+            ROUTE_IMPORT_18(Tag_OrientationEx, G_TAG_ORIENTATIONEX, orientation_t*, int, int, int, int, FLOAT_CAST, int*, vec4_t*, int, int, FLOAT_CAST, qboolean, qboolean, int, int, int, int, FLOAT_CAST);
+            ROUTE_IMPORT(Bone_GetParentNum, G_BONE_GETPARENTNUM);
+            ROUTE_IMPORT(Alias_Add, G_ALIAS_ADD);
+            ROUTE_IMPORT(Alias_FindRandom, G_ALIAS_FINDRANDOM);
+            ROUTE_IMPORT(Alias_Find, G_ALIAS_FIND);
+            ROUTE_IMPORT(Alias_Dump, G_ALIAS_DUMP);
+            ROUTE_IMPORT(Alias_Clear, G_ALIAS_CLEAR);
+            ROUTE_IMPORT(Alias_FindDialog, G_ALIAS_FINDDIALOG);
+            ROUTE_IMPORT(Alias_FindSpecificAnim, G_ALIAS_FINDSPECIFICANIM);
+            ROUTE_IMPORT(Alias_CheckLoopAnim, G_ALIAS_CHECKLOOPANIM);
+            ROUTE_IMPORT(Alias_GetList, G_ALIAS_GETLIST);
+            ROUTE_IMPORT(Alias_UpdateDialog, G_ALIAS_UPDATEDIALOG);
+            ROUTE_IMPORT(Alias_AddActorDialog, G_ALIAS_ADDACTORDIALOG);
+            ROUTE_IMPORT(NameForNum, G_NAMEFORNUM);
+            ROUTE_IMPORT(GlobalAlias_Add, G_GLOBALALIAS_ADD);
+            ROUTE_IMPORT(GlobalAlias_FindRandom, G_GLOBALALIAS_FINDRANDOM);
+            ROUTE_IMPORT(GlobalAlias_Find, G_GLOBALALIAS_FIND);
+            ROUTE_IMPORT(GlobalAlias_Dump, G_GLOBALALIAS_DUMP);
+            ROUTE_IMPORT(GlobalAlias_Clear, G_GLOBALALIAS_CLEAR);
+            ROUTE_IMPORT(isClientActive, G_ISCLIENTACTIVE);
+            ROUTE_IMPORT(centerprintf, G_CENTERPRINTF);
+            ROUTE_IMPORT(locationprintf, G_LOCATIONPRINTF);
+            ROUTE_IMPORT_8_V(Sound, G_SOUND, vec3_t*, int, int, const char*, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, qboolean);
+            ROUTE_IMPORT(StopSound, G_STOPSOUND);
+            ROUTE_IMPORT_1_F(SoundLength, G_SOUNDLENGTH, const char*);
+            ROUTE_IMPORT(GetNextMorphTarget, G_GETNEXTMORPHTARGET);
+            ROUTE_IMPORT(CalcCRC, G_CALCCRC);
+            ROUTE_IMPORT(LocateGameData, G_LOCATE_GAME_DATA);
+            ROUTE_IMPORT(SetFarPlane, G_SETFARPLANE);
+            ROUTE_IMPORT(TikiReload, G_TIKIRELOAD);
+            ROUTE_IMPORT(TikiLoadFromTS, G_TIKILOADFROMTS);
+            ROUTE_IMPORT(ToolServerGetData, G_TOOLSERVERGETDATA);
+            ROUTE_IMPORT(SetSkyPortal, G_SETSKYPORTAL);
+            ROUTE_IMPORT(WidgetPrintf, G_WIDGETPRINTF);
+            ROUTE_IMPORT(ProcessLoadingScreen, G_PROCESSLOADINGSCREEN);
+            ROUTE_IMPORT(MObjective_GetDescription, G_MOBJECTIVE_GETDESCRIPTION);
+            ROUTE_IMPORT(MObjective_SetDescription, G_MOBJECTIVE_SETDESCRIPTION);
+            ROUTE_IMPORT(MObjective_GetShowObjective, G_MOBJECTIVE_GETSHOWOBJECTIVE);
+            ROUTE_IMPORT(MObjective_SetShowObjective, G_MOBJECTIVE_SETSHOWOBJECTIVE);
+            ROUTE_IMPORT(MObjective_GetObjectiveComplete, G_MOBJECTIVE_GETOBJECTIVECOMPLETE);
+            ROUTE_IMPORT(MObjective_SetObjectiveComplete, G_MOBJECTIVE_SETOBJECTIVECOMPLETE);
+            ROUTE_IMPORT(MObjective_GetObjectiveFailed, G_MOBJECTIVE_GETOBJECTIVEFAILED);
+            ROUTE_IMPORT(MObjective_SetObjectiveFailed, G_MOBJECTIVE_SETOBJECTIVEFAILED);
+            ROUTE_IMPORT(MObjective_GetNameFromIndex, G_MOBJECTIVE_GETNAMEFROMINDEX);
+            ROUTE_IMPORT(MObjective_GetIndexFromName, G_MOBJECTIVE_GETINDEXFROMNAME);
+            ROUTE_IMPORT(MObjective_NewObjective, G_MOBJECTIVE_NEWOBJECTIVE);
+            ROUTE_IMPORT(MObjective_ClearObjectiveList, G_MOBJECTIVE_CLEAROBJECTIVELIST);
+            ROUTE_IMPORT(MObjective_ParseObjectiveFile, G_MOBJECTIVE_PARSEOBJECTIVEFILE);
+            ROUTE_IMPORT(MObjective_Update, G_MOBJECTIVE_UPDATE);
+            ROUTE_IMPORT(MObjective_GetNumObjectives, G_MOBJECTIVE_GETNUMOBJECTIVES);
+            ROUTE_IMPORT(MObjective_GetNumActiveObjectives, G_MOBJECTIVE_GETNUMACTIVEOBJECTIVES);
+            ROUTE_IMPORT(MObjective_GetNumCompleteObjectives, G_MOBJECTIVE_GETNUMCOMPLETEOBJECTIVES);
+            ROUTE_IMPORT(MObjective_GetNumFailedObjectives, G_MOBJECTIVE_GETNUMFAILEDOBJECTIVES);
+            ROUTE_IMPORT(MObjective_GetNumIncompleteObjectives, G_MOBJECTIVE_GETNUMINCOMPLETEOBJECTIVES);
+            ROUTE_IMPORT(MI_GetShader, G_MI_GETSHADER);
+            ROUTE_IMPORT(MI_SetShader, G_MI_SETSHADER);
+            ROUTE_IMPORT(MI_GetInformationData, G_MI_GETINFORMATIONDATA);
+            ROUTE_IMPORT(MI_SetInformationData, G_MI_SETINFORMATIONDATA);
+            ROUTE_IMPORT(MI_GetNameFromIndex, G_MI_GETNAMEFROMINDEX);
+            ROUTE_IMPORT(MI_GetIndexFromName, G_MI_GETINDEXFROMNAME);
+            ROUTE_IMPORT(MI_NewInformation, G_MI_NEWINFORMATION);
+            ROUTE_IMPORT(MI_ClearInformationList, G_MI_CLEARINFORMATIONLIST);
+            ROUTE_IMPORT(MI_SetShowInformation, G_MI_SETSHOWINFORMATION);
+            ROUTE_IMPORT(MI_GetShowInformation, G_MI_GETSHOWINFORMATION);
+            ROUTE_IMPORT(SR_InitializeStringResource, G_SR_INITIALIZESTRINGRESOURCE);
+            ROUTE_IMPORT(SR_UninitializeStringResource, G_SR_UNINITIALIZESTRINGRESOURCE);
+            ROUTE_IMPORT(SR_LoadLevelStrings, G_SR_LOADLEVELSTRINGS);
+            ROUTE_IMPORT(GetViewModeMask, G_GETVIEWMODEMASK);
+            ROUTE_IMPORT(GetViewModeClassMask, G_GETVIEWMODECLASSMASK);
+            ROUTE_IMPORT(GetViewModeSendInMode, G_GETVIEWMODESENDINMODE);
+            ROUTE_IMPORT(GetViewModeSendNotInMode, G_GETVIEWMODESENDNOTINMODE);
+            ROUTE_IMPORT(GetViewModeScreenBlend, G_GETVIEWMODESCREENBLEND);
+            ROUTE_IMPORT(GetLevelDefs, G_GETLEVELDEFS);
+            ROUTE_IMPORT(areSublevels, G_ARESUBLEVELS);
+            ROUTE_IMPORT(SurfaceTypeToName, G_SURFACETYPETONAME);
+            ROUTE_IMPORT(AAS_EntityInfo, G_AAS_ENTITYINFO);
+            ROUTE_IMPORT(AAS_Initialized, G_AAS_INITIALIZED);
+            ROUTE_IMPORT(AAS_PresenceTypeBoundingBox, G_AAS_PRESENCETYPEBOUNDINGBOX);
+            ROUTE_IMPORT_0_F(AAS_Time, G_AAS_TIME);
+            ROUTE_IMPORT(AAS_PointAreaNum, G_AAS_POINTAREANUM);
+            ROUTE_IMPORT(AAS_PointReachabilityAreaIndex, G_AAS_POINTREACHABILITYAREAINDEX);
+            ROUTE_IMPORT(AAS_TraceAreas, G_AAS_TRACEAREAS);
+            ROUTE_IMPORT(AAS_BBoxAreas, G_AAS_BBOXAREAS);
+            ROUTE_IMPORT(AAS_AreaInfo, G_AAS_AREAINFO);
+            ROUTE_IMPORT(AAS_PointContents, G_AAS_POINTCONTENTS);
+            ROUTE_IMPORT(AAS_NextBSPEntity, G_AAS_NEXTBSPENTITY);
+            ROUTE_IMPORT(AAS_ValueForBSPEpairKey, G_AAS_VALUEFORBSPEPAIRKEY);
+            ROUTE_IMPORT(AAS_VectorForBSPEpairKey, G_AAS_VECTORFORBSPEPAIRKEY);
+            ROUTE_IMPORT(AAS_FloatForBSPEpairKey, G_AAS_FLOATFORBSPEPAIRKEY);
+            ROUTE_IMPORT(AAS_IntForBSPEpairKey, G_AAS_INTFORBSPEPAIRKEY);
+            ROUTE_IMPORT(AAS_AreaReachability, G_AAS_AREAREACHABILITY);
+            ROUTE_IMPORT(AAS_AreaTravelTimeToGoalArea, G_AAS_AREATRAVELTIMETOGOALAREA);
+            ROUTE_IMPORT(AAS_EnableRoutingArea, G_AAS_ENABLEROUTINGAREA);
+            ROUTE_IMPORT(AAS_PredictRoute, G_AAS_PREDICTROUTE);
+            ROUTE_IMPORT(AAS_AlternativeRouteGoals, G_AAS_ALTERNATIVEROUTEGOALS);
+            ROUTE_IMPORT(AAS_Swimming, G_AAS_SWIMMING);
+            ROUTE_IMPORT(AAS_PredictClientMovement, G_AAS_PREDICTCLIENTMOVEMENT);
+            ROUTE_IMPORT(EA_Command, G_EA_COMMAND);
+            ROUTE_IMPORT(EA_Say, G_EA_SAY);
+            ROUTE_IMPORT(EA_SayTeam, G_EA_SAYTEAM);
+            ROUTE_IMPORT(EA_Action, G_EA_ACTION);
+            ROUTE_IMPORT(EA_Gesture, G_EA_GESTURE);
+            ROUTE_IMPORT(EA_Talk, G_EA_TALK);
+            ROUTE_IMPORT(EA_ToggleFireState, G_EA_TOGGLEFIRESTATE);
+            ROUTE_IMPORT(EA_Attack, G_EA_ATTACK);
+            ROUTE_IMPORT(EA_Use, G_EA_USE);
+            ROUTE_IMPORT(EA_Respawn, G_EA_RESPAWN);
+            ROUTE_IMPORT(EA_MoveUp, G_EA_MOVEUP);
+            ROUTE_IMPORT(EA_MoveDown, G_EA_MOVEDOWN);
+            ROUTE_IMPORT(EA_MoveForward, G_EA_MOVEFORWARD);
+            ROUTE_IMPORT(EA_MoveBack, G_EA_MOVEBACK);
+            ROUTE_IMPORT(EA_MoveLeft, G_EA_MOVELEFT);
+            ROUTE_IMPORT(EA_MoveRight, G_EA_MOVERIGHT);
+            ROUTE_IMPORT(EA_Crouch, G_EA_CROUCH);
+            ROUTE_IMPORT(EA_SelectWeapon, G_EA_SELECTWEAPON);
+            ROUTE_IMPORT(EA_Jump, G_EA_JUMP);
+            ROUTE_IMPORT(EA_DelayedJump, G_EA_DELAYEDJUMP);
+            ROUTE_IMPORT_3_V(EA_Move, G_EA_MOVE, int, float*, FLOAT_CAST);
+            ROUTE_IMPORT(EA_View, G_EA_VIEW);
+            ROUTE_IMPORT_2_V(EA_EndRegular, G_EA_ENDREGULAR, int, FLOAT_CAST);
+            ROUTE_IMPORT_3_V(EA_GetInput, G_EA_GETINPUT, int, FLOAT_CAST, bot_input_t*);
+            ROUTE_IMPORT(EA_ResetInput, G_EA_RESETINPUT);
+            ROUTE_IMPORT_2(BotLoadCharacter, G_BOTLOADCHARACTER, char*, FLOAT_CAST);
+            ROUTE_IMPORT(BotFreeCharacter, G_BOTFREECHARACTER);
+            ROUTE_IMPORT(Characteristic_Float, G_CHARACTERISTIC_FLOAT);
+            ROUTE_IMPORT_4_F(Characteristic_BFloat, G_CHARACTERISTIC_BFLOAT, int, int, FLOAT_CAST, FLOAT_CAST);
+            ROUTE_IMPORT(Characteristic_Integer, G_CHARACTERISTIC_INTEGER);
+            ROUTE_IMPORT(Characteristic_BInteger, G_CHARACTERISTIC_BINTEGER);
+            ROUTE_IMPORT(Characteristic_String, G_CHARACTERISTIC_STRING);
+            ROUTE_IMPORT(BotAllocChatState, G_BOTALLOCCHATSTATE);
+            ROUTE_IMPORT(BotFreeChatState, G_BOTFREECHATSTATE);
+            ROUTE_IMPORT(BotQueueConsoleMessage, G_BOTQUEUECONSOLEMESSAGE);
+            ROUTE_IMPORT(BotRemoveConsoleMessage, G_BOTREMOVECONSOLEMESSAGE);
+            ROUTE_IMPORT(BotNextConsoleMessage, G_BOTNEXTCONSOLEMESSAGE);
+            ROUTE_IMPORT(BotNumConsoleMessages, G_BOTNUMCONSOLEMESSAGES);
+            ROUTE_IMPORT(BotInitialChat, G_BOTINITIALCHAT);
+            ROUTE_IMPORT(BotNumInitialChats, G_BOTNUMINITIALCHATS);
+            ROUTE_IMPORT(BotReplyChat, G_BOTREPLYCHAT);
+            ROUTE_IMPORT(BotChatLength, G_BOTCHATLENGTH);
+            ROUTE_IMPORT(BotEnterChat, G_BOTENTERCHAT);
+            ROUTE_IMPORT(BotGetChatMessage, G_BOTGETCHATMESSAGE);
+            ROUTE_IMPORT(StringContains, G_STRINGCONTAINS);
+            ROUTE_IMPORT(BotFindMatch, G_BOTFINDMATCH);
+            ROUTE_IMPORT(BotMatchVariable, G_BOTMATCHVARIABLE);
+            ROUTE_IMPORT(UnifyWhiteSpaces, G_UNIFYWHITESPACES);
+            ROUTE_IMPORT(BotReplaceSynonyms, G_BOTREPLACESYNONYMS);
+            ROUTE_IMPORT(BotLoadChatFile, G_BOTLOADCHATFILE);
+            ROUTE_IMPORT(BotSetChatGender, G_BOTSETCHATGENDER);
+            ROUTE_IMPORT(BotSetChatName, G_BOTSETCHATNAME);
+            ROUTE_IMPORT(BotResetGoalState, G_BOTRESETGOALSTATE);
+            ROUTE_IMPORT(BotResetAvoidGoals, G_BOTRESETAVOIDGOALS);
+            ROUTE_IMPORT(BotRemoveFromAvoidGoals, G_BOTREMOVEFROMAVOIDGOALS);
+            ROUTE_IMPORT(BotPushGoal, G_BOTPUSHGOAL);
+            ROUTE_IMPORT(BotPopGoal, G_BOTPOPGOAL);
+            ROUTE_IMPORT(BotEmptyGoalStack, G_BOTEMPTYGOALSTACK);
+            ROUTE_IMPORT(BotDumpAvoidGoals, G_BOTDUMPAVOIDGOALS);
+            ROUTE_IMPORT(BotDumpGoalStack, G_BOTDUMPGOALSTACK);
+            ROUTE_IMPORT(BotGoalName, G_BOTGOALNAME);
+            ROUTE_IMPORT(BotGetTopGoal, G_BOTGETTOPGOAL);
+            ROUTE_IMPORT(BotGetSecondGoal, G_BOTGETSECONDGOAL);
+            ROUTE_IMPORT(BotChooseLTGItem, G_BOTCHOOSELTGITEM);
+            ROUTE_IMPORT_6(BotChooseNBGItem, G_BOTCHOOSENBGITEM, int, float*, int*, int, struct bot_goal_s*, FLOAT_CAST);
+            ROUTE_IMPORT(BotTouchingGoal, G_BOTTOUCHINGGOAL);
+            ROUTE_IMPORT(BotItemGoalInVisButNotVisible, G_BOTITEMGOALINVISBUTNOTVISIBLE);
+            ROUTE_IMPORT(BotGetLevelItemGoal, G_BOTGETLEVELITEMGOAL);
+            ROUTE_IMPORT(BotGetNextCampSpotGoal, G_BOTGETNEXTCAMPSPOTGOAL);
+            ROUTE_IMPORT(BotGetMapLocationGoal, G_BOTGETMAPLOCATIONGOAL);
+            ROUTE_IMPORT_2_F(BotAvoidGoalTime, G_BOTAVOIDGOALTIME, int, int);
+            ROUTE_IMPORT_3_V(BotSetAvoidGoalTime, G_BOTSETAVOIDGOALTIME, int, int, FLOAT_CAST);
+            ROUTE_IMPORT(BotInitLevelItems, G_BOTINITLEVELITEMS);
+            ROUTE_IMPORT(BotUpdateEntityItems, G_BOTUPDATEENTITYITEMS);
+            ROUTE_IMPORT(BotLoadItemWeights, G_BOTLOADITEMWEIGHTS);
+            ROUTE_IMPORT(BotFreeItemWeights, G_BOTFREEITEMWEIGHTS);
+            ROUTE_IMPORT(BotInterbreedGoalFuzzyLogic, G_BOTINTERBREEDGOALFUZZYLOGIC);
+            ROUTE_IMPORT(BotSaveGoalFuzzyLogic, G_BOTSAVEGOALFUZZYLOGIC);
+            ROUTE_IMPORT_2_V(BotMutateGoalFuzzyLogic, G_BOTMUTATEGOALFUZZYLOGIC, int, FLOAT_CAST);
+            ROUTE_IMPORT(BotAllocGoalState, G_BOTALLOCGOALSTATE);
+            ROUTE_IMPORT(BotFreeGoalState, G_BOTFREEGOALSTATE);
+            ROUTE_IMPORT(BotResetMoveState, G_BOTRESETMOVESTATE);
+            ROUTE_IMPORT(BotMoveToGoal, G_BOTMOVETOGOAL);
+            ROUTE_IMPORT_4(BotMoveInDirection, G_BOTMOVEINDIRECTION, int, float*, FLOAT_CAST, int);
+            ROUTE_IMPORT(BotResetAvoidReach, G_BOTRESETAVOIDREACH);
+            ROUTE_IMPORT(BotResetLastAvoidReach, G_BOTRESETLASTAVOIDREACH);
+            ROUTE_IMPORT(BotReachabilityArea, G_BOTREACHABILITYAREA);
+            ROUTE_IMPORT_5(BotMovementViewTarget, G_BOTMOVEMENTVIEWTARGET, int, struct bot_goal_s*, int, FLOAT_CAST, float*);
+            ROUTE_IMPORT(BotPredictVisiblePosition, G_BOTPREDICTVISIBLEPOSITION);
+            ROUTE_IMPORT(BotAllocMoveState, G_BOTALLOCMOVESTATE);
+            ROUTE_IMPORT(BotFreeMoveState, G_BOTFREEMOVESTATE);
+            ROUTE_IMPORT(BotInitMoveState, G_BOTINITMOVESTATE);
+            ROUTE_IMPORT_4_V(BotAddAvoidSpot, G_BOTADDAVOIDSPOT, int, float*, FLOAT_CAST, int);
+            ROUTE_IMPORT(BotChooseBestFightWeapon, G_BOTCHOOSEBESTFIGHTWEAPON);
+            ROUTE_IMPORT(BotGetWeaponInfo, G_BOTGETWEAPONINFO);
+            ROUTE_IMPORT(BotLoadWeaponWeights, G_BOTLOADWEAPONWEIGHTS);
+            ROUTE_IMPORT(BotAllocWeaponState, G_BOTALLOCWEAPONSTATE);
+            ROUTE_IMPORT(BotFreeWeaponState, G_BOTFREEWEAPONSTATE);
+            ROUTE_IMPORT(BotResetWeaponState, G_BOTRESETWEAPONSTATE);
+            ROUTE_IMPORT(GeneticParentsAndChildSelection, G_GENETICPARENTSANDCHILDSELECTION);
+            ROUTE_IMPORT(Print, G_BOTPRINT);
+            ROUTE_IMPORT(PointContents, G_BOTPOINTCONTENTS);
+            ROUTE_IMPORT(BSPEntityData, G_BSPENTITYDATA);
+            ROUTE_IMPORT(BSPModelMinsMaxsOrigin, G_BSPMODELMINSMAXSORIGIN);
+            ROUTE_IMPORT(BotClientCommand, G_BOTCLIENTCOMMAND);
+            ROUTE_IMPORT(AvailableMemory, G_AVAILABLEMEMORY);
+            ROUTE_IMPORT(HunkAlloc, G_HUNKALLOC);
+            ROUTE_IMPORT(FS_FOpenFile, G_FS_FOPEN_FILE);
+            ROUTE_IMPORT(FS_Seek, G_FS_SEEK);
+            ROUTE_IMPORT(DebugLineCreate, G_DEBUGLINECREATE);
+            ROUTE_IMPORT(DebugLineDelete, G_DEBUGLINEDELETE);
+            ROUTE_IMPORT(DebugLineShow, G_DEBUGLINESHOW);
+            ROUTE_IMPORT(DebugPolygonCreate, G_DEBUGPOLYGONCREATE);
+            ROUTE_IMPORT(DebugPolygonDelete, G_DEBUGPOLYGONDELETE);
+            ROUTE_IMPORT(DropClient, G_DROP_CLIENT);
+            ROUTE_IMPORT(SV_GetServerinfo, G_SV_GETSERVERINFO);
+            ROUTE_IMPORT(BotAllocateClient, G_BOTALLOCATECLIENT);
+            ROUTE_IMPORT(BotGetSnapshotEntity, G_BOTGETSNAPSHOTENTITY);
+            ROUTE_IMPORT(BotGetConsoleMessage, G_BOTGETCONSOLEMESSAGE);
+            ROUTE_IMPORT(BotLibSetup, G_BOTLIBSETUP);
+            ROUTE_IMPORT(BotLibShutdown, G_BOTLIBSHUTDOWN);
+            ROUTE_IMPORT(BotLibVarSet, G_BOTLIBVARSET);
+            ROUTE_IMPORT(BotLibVarGet, G_BOTLIBVARGET);
+            ROUTE_IMPORT(PC_AddGlobalDefine, G_PC_ADDGLOBALDEFINE);
+            ROUTE_IMPORT(PC_LoadSourceHandle, G_PC_LOADSOURCEHANDLE);
+            ROUTE_IMPORT(PC_FreeSourceHandle, G_PC_FREESOURCEHANDLE);
+            ROUTE_IMPORT(PC_SourceFileAndLine, G_PC_SOURCEFILEANDLINE);
+            ROUTE_IMPORT_1(BotLibStartFrame, G_BOTLIBSTARTFRAME, FLOAT_CAST);
+            ROUTE_IMPORT(BotLibLoadMap, G_BOTLIBLOADMAP);
+            ROUTE_IMPORT(BotLibUpdateEntity, G_BOTLIBUPDATEENTITY);
+            ROUTE_IMPORT(Test, G_TEST);
+            ROUTE_IMPORT(BotUserCommand, G_BOTUSERCOMMAND);
 
-        // handle cmds for variables, this is how a plugin would get these values if needed
-        ROUTE_IMPORT_VAR(DebugLines, GVP_DEBUGLINES);
-        ROUTE_IMPORT_VAR(numDebugLines, GVP_NUMDEBUGLINES);
+            // handle cmds for variables, this is how a plugin would get these values if needed
+            ROUTE_IMPORT_VAR(DebugLines, GVP_DEBUGLINES);
+            ROUTE_IMPORT_VAR(numDebugLines, GVP_NUMDEBUGLINES);
 
-    // handle special cmds which QMM uses but STEF2 doesn't have an analogue for
-    case G_SEND_CONSOLE_COMMAND_QMM:
-    case G_SEND_CONSOLE_COMMAND: {
-        // STEF2: void (*SendConsoleCommand)(const char *text);
-        // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
-        // first arg may be exec_when, like EXEC_APPEND
-        intptr_t when = args[0];
-        const char* text = (const char*)(args[1]);
-        // EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
-        if (when > 100)
-            text = (const char*)when;
-        orig_import.SendConsoleCommand(text);
-        break;
+            // handle special cmds which QMM uses but STEF2 doesn't have an analogue for
+            case G_SEND_CONSOLE_COMMAND_QMM:
+            case G_SEND_CONSOLE_COMMAND: {
+                // STEF2: void (*SendConsoleCommand)(const char *text);
+                // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+                // first arg may be exec_when, like EXEC_APPEND
+                intptr_t when = args[0];
+                const char* text = (const char*)(args[1]);
+                // EXEC_APPEND is the highest flag in all known games at 2, but go with 100 to be safe
+                if (when > 100)
+                    text = (const char*)when;
+                orig_import.SendConsoleCommand(text);
+                break;
+            }
+            case G_GET_ENTITY_TOKEN: {
+                // qboolean trap_GetEntityToken(char *buffer, int bufferSize);
+                if (token_counter >= entity_tokens.size()) {
+                    ret = qfalse;
+                    break;
+                }
+
+                char* buffer = (char*)args[0];
+                intptr_t bufferSize = args[1];
+
+                Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+                ret = qtrue;
+                break;
+            }
+
+            default:
+                break;
+        };
+
+	    // do anything that needs to be done after function call here
     }
-    case G_GET_ENTITY_TOKEN: {
-        // qboolean trap_GetEntityToken(char *buffer, int bufferSize);
-        if (token_counter >= entity_tokens.size()) {
-            ret = qfalse;
-            break;
-        }
-
-        char* buffer = (char*)args[0];
-        intptr_t bufferSize = args[1];
-
-        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
-        ret = qtrue;
-        break;
-    }
-
-    default:
-        break;
-    };
-
-    // do anything that needs to be done after function call here
 
     if (cmd != G_PRINT)
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "STEF2_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "STEF2_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
 
     return ret;
@@ -495,59 +497,58 @@ intptr_t STEF2_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 intptr_t STEF2_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "STEF2_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
-    if (!orig_export)
-        return 0;
-
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
-    switch (cmd) {
-        ROUTE_EXPORT(Init, GAME_INIT);
-        ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
-        ROUTE_EXPORT(Cleanup, GAME_CLEANUP);
-        ROUTE_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES);
-        ROUTE_EXPORT(PostLoad, GAME_POSTLOAD);
-        ROUTE_EXPORT(PostSublevelLoad, GAME_POSTSUBLEVELLOAD);
-        ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
-        ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
-        ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED);
-        ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
-        ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
-        ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
-        ROUTE_EXPORT(PrepFrame, GAME_PREP_FRAME);
-        ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
-        ROUTE_EXPORT(SendEntity, GAME_SEND_ENTITY);
-        ROUTE_EXPORT(UpdateEntityStateForClient, GAME_UPDATE_ENTITYSTATE_FOR_CLIENT);
-        ROUTE_EXPORT(UpdatePlayerStateForClient, GAME_UPDATE_PLAYERSTATE_FOR_CLIENT);
-        ROUTE_EXPORT(ExtraEntitiesToSend, GAME_EXTRA_ENTITIES_TO_SEND);
-        ROUTE_EXPORT(GetEntityCurrentAnimFrame, GAME_GETENTITY_CURRENT_ANIMFRAME);
-        ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
-        ROUTE_EXPORT(WritePersistant, GAME_WRITE_PERSISTANT);
-        ROUTE_EXPORT(ReadPersistant, GAME_READ_PERSISTANT);
-        ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
-        ROUTE_EXPORT(ReadLevel, GAME_READ_LEVEL);
-        ROUTE_EXPORT(LevelArchiveValid, GAME_LEVEL_ARCHIVE_VALID);
-        ROUTE_EXPORT(inMultiplayerGame, GAME_IN_MULTIPLAYER_GAME);
-        ROUTE_EXPORT(isDefined, GAME_IS_DEFINED);
-        ROUTE_EXPORT(getDefine, GAME_GET_DEFINE);
-        ROUTE_EXPORT(BotAIStartFrame, BOTAI_START_FRAME);
-        ROUTE_EXPORT(AddBot_f, GAME_ADDBOT_F);
-        ROUTE_EXPORT(GetTotalGameFrames, GAME_GETTOTALGAMEFRAMES);
+    if (orig_export) {
+        switch (cmd) {
+            ROUTE_EXPORT(Init, GAME_INIT);
+            ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
+            ROUTE_EXPORT(Cleanup, GAME_CLEANUP);
+            ROUTE_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES);
+            ROUTE_EXPORT(PostLoad, GAME_POSTLOAD);
+            ROUTE_EXPORT(PostSublevelLoad, GAME_POSTSUBLEVELLOAD);
+            ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
+            ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
+            ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED);
+            ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
+            ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
+            ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
+            ROUTE_EXPORT(PrepFrame, GAME_PREP_FRAME);
+            ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
+            ROUTE_EXPORT(SendEntity, GAME_SEND_ENTITY);
+            ROUTE_EXPORT(UpdateEntityStateForClient, GAME_UPDATE_ENTITYSTATE_FOR_CLIENT);
+            ROUTE_EXPORT(UpdatePlayerStateForClient, GAME_UPDATE_PLAYERSTATE_FOR_CLIENT);
+            ROUTE_EXPORT(ExtraEntitiesToSend, GAME_EXTRA_ENTITIES_TO_SEND);
+            ROUTE_EXPORT(GetEntityCurrentAnimFrame, GAME_GETENTITY_CURRENT_ANIMFRAME);
+            ROUTE_EXPORT(ConsoleCommand, GAME_CONSOLE_COMMAND);
+            ROUTE_EXPORT(WritePersistant, GAME_WRITE_PERSISTANT);
+            ROUTE_EXPORT(ReadPersistant, GAME_READ_PERSISTANT);
+            ROUTE_EXPORT(WriteLevel, GAME_WRITE_LEVEL);
+            ROUTE_EXPORT(ReadLevel, GAME_READ_LEVEL);
+            ROUTE_EXPORT(LevelArchiveValid, GAME_LEVEL_ARCHIVE_VALID);
+            ROUTE_EXPORT(inMultiplayerGame, GAME_IN_MULTIPLAYER_GAME);
+            ROUTE_EXPORT(isDefined, GAME_IS_DEFINED);
+            ROUTE_EXPORT(getDefine, GAME_GET_DEFINE);
+            ROUTE_EXPORT(BotAIStartFrame, BOTAI_START_FRAME);
+            ROUTE_EXPORT(AddBot_f, GAME_ADDBOT_F);
+            ROUTE_EXPORT(GetTotalGameFrames, GAME_GETTOTALGAMEFRAMES);
 
-        // handle cmds for variables, this is how a plugin would get these values if needed
-        ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
-        ROUTE_EXPORT_VAR(gentities, GAMEVP_GENTITIES);
-        ROUTE_EXPORT_VAR(gentitySize, GAMEV_GENTITYSIZE);
-        ROUTE_EXPORT_VAR(num_entities, GAMEV_NUM_ENTITIES);
-        ROUTE_EXPORT_VAR(max_entities, GAMEV_MAX_ENTITIES);
-        ROUTE_EXPORT_VAR(error_message, GAMEVP_ERRORMESSAGE);
+            // handle cmds for variables, this is how a plugin would get these values if needed
+            ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
+            ROUTE_EXPORT_VAR(gentities, GAMEVP_GENTITIES);
+            ROUTE_EXPORT_VAR(gentitySize, GAMEV_GENTITYSIZE);
+            ROUTE_EXPORT_VAR(num_entities, GAMEV_NUM_ENTITIES);
+            ROUTE_EXPORT_VAR(max_entities, GAMEV_MAX_ENTITIES);
+            ROUTE_EXPORT_VAR(error_message, GAMEVP_ERRORMESSAGE);
 
-    default:
-        break;
-    };
+            default:
+                break;
+        };
 
-    // update export vars after returning from the mod
-    update_exports();
+        // update export vars after returning from the mod
+        update_exports();
+    }
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "STEF2_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
@@ -555,17 +556,19 @@ intptr_t STEF2_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 }
 
 
-void* STEF2_GameSupport::Entry(void* import, void*, APIType) {
+void* STEF2_GameSupport::Entry(void* import, void*, APIType engine_api) {
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "STEF2_GameSupport::Entry(" << import << ") called\n";
 
-    // original import struct from engine
-    // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
-    game_import_t* gi = (game_import_t*)import;
-    orig_import = *gi;
+    if (engine_api == QMM_API_GETGAMEAPI) {
+        // original import struct from engine
+        // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
+        game_import_t* gi = (game_import_t*)import;
+        orig_import = *gi;
 
-    // fill in variables of our hooked import struct to pass to the mod
-    qmm_import.DebugLines = orig_import.DebugLines;
-    qmm_import.numDebugLines = orig_import.numDebugLines;
+        // fill in variables of our hooked import struct to pass to the mod
+        qmm_import.DebugLines = orig_import.DebugLines;
+        qmm_import.numDebugLines = orig_import.numDebugLines;
+    }
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "STEF2_GameSupport::Entry(" << import << ") returning " << &qmm_export << "\n";
 
@@ -938,8 +941,8 @@ const char* STEF2_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_GET_ENTITY_TOKEN);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -983,8 +986,9 @@ const char* STEF2_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAMEV_NUM_ENTITIES);
         GEN_CASE(GAMEV_MAX_ENTITIES);
         GEN_CASE(GAMEVP_ERRORMESSAGE);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }
 
@@ -1162,8 +1166,8 @@ game_import_t STEF2_GameSupport::qmm_import = {
     GEN_IMPORT_1_F(SoundLength, G_SOUNDLENGTH, const char*),
     GEN_IMPORT(GetNextMorphTarget, G_GETNEXTMORPHTARGET),
     GEN_IMPORT(CalcCRC, G_CALCCRC),
-    nullptr,	// DebugLines
-    nullptr,	// numDebugLines
+    nullptr,    // DebugLines
+    nullptr,    // numDebugLines
     GEN_IMPORT(LocateGameData, G_LOCATE_GAME_DATA),
     GEN_IMPORT(SetFarPlane, G_SETFARPLANE),
     GEN_IMPORT(TikiReload, G_TIKIRELOAD),
@@ -1382,7 +1386,7 @@ void STEF2_GameSupport::SpawnEntities(const char* mapname, const char* entstring
 
 
 game_export_t STEF2_GameSupport::qmm_export = {
-    GAME_API_VERSION,	// apiversion
+    GAME_API_VERSION,    // apiversion
     GEN_EXPORT(Init, GAME_INIT),
     GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
     GEN_EXPORT(Cleanup, GAME_CLEANUP),
@@ -1415,11 +1419,11 @@ game_export_t STEF2_GameSupport::qmm_export = {
     GEN_EXPORT(AddBot_f, GAME_ADDBOT_F),
     GEN_EXPORT(GetTotalGameFrames, GAME_GETTOTALGAMEFRAMES),
     // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
-    nullptr,	// gentities
-    0,			// gentitySize
-    0,			// num_entities
-    0,			// max_entities
-    nullptr,	// errorMessage
+    nullptr,    // gentities
+    0,          // gentitySize
+    0,          // num_entities
+    0,          // max_entities
+    nullptr,    // errorMessage
 };
 
 #endif // QMM_ARCH_32

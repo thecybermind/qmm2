@@ -76,16 +76,16 @@ typedef void* (*mod_GetGameAPI)(void*, void*);
 
 // holds plugin info to pass back to QMM
 typedef struct {
-    intptr_t pifv_major;	// major plugin interface version
-    intptr_t pifv_minor;	// minor plugin interface version
-    const char* name;		// name of plugin
-    const char* version;	// version of plugin
-    const char* desc;		// description of plugin
-    const char* author;		// author of plugin
-    const char* url;		// website of plugin
+    intptr_t pifv_major;    // major plugin interface version
+    intptr_t pifv_minor;    // minor plugin interface version
+    const char* name;       // name of plugin
+    const char* version;    // version of plugin
+    const char* desc;       // description of plugin
+    const char* author;     // author of plugin
+    const char* url;        // website of plugin
     const char* logtag;     // log tag
-    intptr_t reserved1;		// reserved
-    intptr_t reserved2;		// reserved
+    intptr_t reserved1;     // reserved
+    intptr_t reserved2;     // reserved
 } plugin_info;
 
 // "opaque" plugin info pointer to use as an identifier for plugin funcs
@@ -113,12 +113,12 @@ typedef enum {
 } plugin_res;
 
 // macros to help set the plugin result value
-#define QMM_SET_RESULT(res)		*g_result = (plugin_res)(res)           // set result flag to "res"
-#define QMM_RETURN(res, ret)	return (QMM_SET_RESULT(res), (ret))     // set result flag to "res" and return "ret"
-#define QMM_RET_ERROR(ret)		QMM_RETURN(QMM_ERROR, (ret))            // output an error message in logs, but otherwise functions like QMM_IGNORED, and return "ret"
-#define QMM_RET_IGNORED(ret)	QMM_RETURN(QMM_IGNORED, (ret))          // this plugin doesn't need special handling, and return "ret"
-#define QMM_RET_OVERRIDE(ret)	QMM_RETURN(QMM_OVERRIDE, (ret))         // this plugin has overridden the return value, and return "ret"
-#define QMM_RET_SUPERCEDE(ret)	QMM_RETURN(QMM_SUPERCEDE, (ret))        // this plugin has overridden the return value AND wants the original function to not be called, and return "ret"
+#define QMM_SET_RESULT(res)     *g_result = (plugin_res)(res)           // set result flag to "res"
+#define QMM_RETURN(res, ret)    return (QMM_SET_RESULT(res), (ret))     // set result flag to "res" and return "ret"
+#define QMM_RET_ERROR(ret)      QMM_RETURN(QMM_ERROR, (ret))            // output an error message in logs, but otherwise functions like QMM_IGNORED, and return "ret"
+#define QMM_RET_IGNORED(ret)    QMM_RETURN(QMM_IGNORED, (ret))          // this plugin doesn't need special handling, and return "ret"
+#define QMM_RET_OVERRIDE(ret)   QMM_RETURN(QMM_OVERRIDE, (ret))         // this plugin has overridden the return value, and return "ret"
+#define QMM_RET_SUPERCEDE(ret)  QMM_RETURN(QMM_SUPERCEDE, (ret))        // this plugin has overridden the return value AND wants the original function to not be called, and return "ret"
 
 // prototype struct for QMM plugin util funcs
 typedef struct {

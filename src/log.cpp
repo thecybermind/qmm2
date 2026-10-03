@@ -85,7 +85,7 @@ extern "C" void log_c(int severity, const char* tag, const char* fmt, ...) {
     if (!Log::log_level_match(severity))
         return;
 
-    va_list	argptr;
+    va_list argptr;
     static char buf[1024];
 
     va_start(argptr, fmt);

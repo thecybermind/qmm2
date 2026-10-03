@@ -27,7 +27,7 @@ struct COD11MP_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload(APIType);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -67,34 +67,38 @@ intptr_t COD11MP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 
     intptr_t ret = 0;
 
-    switch (cmd) {
-    // handle special cmds which QMM uses but COD11MP doesn't have an analogue for
-    case G_ARGS: {
-        // quake2: char* (*args)(void);
-        static std::string s;
-        static char buf[MAX_STRING_CHARS];
-        s = "";
-        int i = 1;
-        while (i < orig_syscall(G_ARGC)) {
-            orig_syscall(G_ARGV, i, buf, sizeof(buf));
-            buf[sizeof(buf) - 1] = '\0';
-            if (i != 1)
-                s += " ";
-            s += buf;
+    if (orig_syscall) {
+        switch (cmd) {
+            // handle special cmds which QMM uses but COD11MP doesn't have an analogue for
+            case G_ARGS: {
+                // quake2: char* (*args)(void);
+                static std::string s;
+                static char buf[MAX_STRING_CHARS];
+                s = "";
+                int i = 1;
+                int argc = Util::util_min(orig_syscall(G_ARGC), 200);
+                while (i < argc) {
+                    orig_syscall(G_ARGV, i, buf, sizeof(buf));
+                    buf[sizeof(buf) - 1] = '\0';
+                    if (i != 1)
+                        s += " ";
+                    s += buf;
+                    i++;
+                }
+                ret = (intptr_t)s.c_str();
+                break;
+            }
+
+            default:
+                // all normal engine functions go to syscall
+                ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
         }
-        ret = (intptr_t)s.c_str();
-        break;
-    }
 
-    default:
-        // all normal engine functions go to syscall
-        ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
+	    // do anything that needs to be done after function call here
     }
-
-    // do anything that needs to be done after function call here
 
     if (cmd != G_PRINT)
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "COD11MP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "COD11MP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
@@ -105,14 +109,12 @@ intptr_t COD11MP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 intptr_t COD11MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "COD11MP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
-    if (!orig_vmMain)
-        return 0;
-
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
     // all normal mod functions go to vmMain
-    ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
+    if (orig_vmMain)
+        ret = orig_vmMain(cmd, QMM_PUT_VMMAIN_ARGS());
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "COD11MP_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
@@ -120,11 +122,13 @@ intptr_t COD11MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 }
 
 
-void* COD11MP_GameSupport::Entry(void* syscall, void*, APIType) {
+void* COD11MP_GameSupport::Entry(void* syscall, void*, APIType engine_api) {
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "COD11MP_GameSupport::Entry(" << syscall << ") called\n";
 
-    // store original syscall from engine
-    orig_syscall = (eng_syscall)syscall;
+    if (engine_api == QMM_API_DLLENTRY) {
+        // store original syscall from engine
+        orig_syscall = (eng_syscall)syscall;
+    }
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "COD11MP_GameSupport::Entry(" << syscall << ") returning\n";
 
@@ -288,8 +292,8 @@ const char* COD11MP_GameSupport::EngMsgName(intptr_t cmd) {
         // polyfills
         GEN_CASE(G_ARGS);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -318,8 +322,8 @@ const char* COD11MP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_SET_CLIENTARCHIVETIME);
         GEN_CASE(GAME_GET_CLIENTSCORE);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 

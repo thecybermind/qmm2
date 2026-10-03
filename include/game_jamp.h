@@ -5,7 +5,7 @@ https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
 
 Created By:
-	Kevin Masterson < k.m.masterson@gmail.com >
+    Kevin Masterson < k.m.masterson@gmail.com >
 
 */
 
@@ -14,12 +14,12 @@ Created By:
 
 // meh
 enum {
-	G_FS_LISTFILES = G_FS_GETFILELIST,
+    G_FS_LISTFILES = G_FS_GETFILELIST,
 };
 
 // these import messages do not have an exact analogue in JAMP
 enum {
-	G_ARGS = -100,					// char* (void)
+    G_ARGS = -100,    // char* (void)
 };
 
 #endif // QMM2_GAME_JAMP_H

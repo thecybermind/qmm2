@@ -26,7 +26,7 @@ struct JAMP_GameSupport : public GameSupport {
     virtual bool AutoDetect(APIType engine_api);
     virtual void* Entry(void* arg0, void* arg1, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
-    virtual void ModUnload(APIType);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -70,8 +70,8 @@ GEN_GAME_OBJ(JAMP);
 
 
 // auto-detection logic for JAMP
-bool JAMP_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_DLLENTRY && engineapi != QMM_API_GETMODULEAPI)
+bool JAMP_GameSupport::AutoDetect(APIType engine_api) {
+    if (engine_api != QMM_API_DLLENTRY && engine_api != QMM_API_GETMODULEAPI)
         return false;
 
     // QMM filename must match default or an OpenJK temp filename (if DLL was pulled from .pk3)
@@ -106,28 +106,32 @@ intptr_t JAMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     // if QMM was loaded with the official JAMP or OpenJK "legacy" API
     if (orig_syscall) {
         switch (cmd) {
-        // handle special cmds which QMM uses but JAMP doesn't have an analogue for
-        case G_ARGS: {
-            // quake2: char* (*args)(void);
-            static std::string s;
-            static char buf[MAX_STRING_CHARS];
-            s = "";
-            int i = 1;
-            while (i < orig_syscall(G_ARGC)) {
-                orig_syscall(G_ARGV, i, buf, sizeof(buf));
-                buf[sizeof(buf) - 1] = '\0';
-                if (i != 1)
-                    s += " ";
-                s += buf;
+            // handle special cmds which QMM uses but JAMP doesn't have an analogue for
+            case G_ARGS: {
+                // quake2: char* (*args)(void);
+                static std::string s;
+                static char buf[MAX_STRING_CHARS];
+                s = "";
+                int i = 1;
+                int argc = Util::util_min(orig_syscall(G_ARGC), 200);
+                while (i < argc) {
+                    orig_syscall(G_ARGV, i, buf, sizeof(buf));
+                    buf[sizeof(buf) - 1] = '\0';
+                    if (i != 1)
+                        s += " ";
+                    s += buf;
+                    i++;
+                }
+                ret = (intptr_t)s.c_str();
+                break;
             }
-            ret = (intptr_t)s.c_str();
-            break;
+
+            default:
+                // all normal engine functions go to syscall
+                ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
         }
 
-        default:
-            // all normal engine functions go to syscall
-            ret = orig_syscall(cmd, QMM_PUT_SYSCALL_ARGS());
-        }
+        // do anything that needs to be done after function call here
     }
     // if QMM was loaded with the OpenJK "new" API
     else if (orig_import.Print) {
@@ -442,33 +446,34 @@ intptr_t JAMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
             ROUTE_IMPORT(G2API_OverrideServer, G_G2_OVERRIDESERVER);
             ROUTE_IMPORT(G2API_GetSurfaceName, G_G2_GETSURFACENAME);
 
-        // handle special cmds which QMM uses but JAMP doesn't have an analogue for
-        case G_ARGS: {
-            // quake2: char* (*args)(void);
-            static std::string s;
-            static char buf[MAX_STRING_CHARS];
-            s = "";
-            int i = 1;
-            while (i < orig_import.Argc()) {
-                orig_import.Argv(i, buf, sizeof(buf));
-                buf[sizeof(buf) - 1] = '\0';
-                if (i != 1)
-                    s += " ";
-                s += buf;
+            // handle special cmds which QMM uses but JAMP doesn't have an analogue for
+            case G_ARGS: {
+                // quake2: char* (*args)(void);
+                static std::string s;
+                static char buf[MAX_STRING_CHARS];
+                s = "";
+                int i = 1;
+                int argc = Util::util_min(orig_import.Argc(), 200);
+                while (i < argc) {
+                    orig_import.Argv(i, buf, sizeof(buf));
+                    buf[sizeof(buf) - 1] = '\0';
+                    if (i != 1)
+                        s += " ";
+                    s += buf;
+                }
+                ret = (intptr_t)s.c_str();
+                break;
             }
-            ret = (intptr_t)s.c_str();
-            break;
-        }
 
-        default:
-            break;
+            default:
+                break;
         };
+
+        // do anything that needs to be done after function call here
     }
 
-    // do anything that needs to be done after function call here
-
     if (cmd != G_PRINT)
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
@@ -531,8 +536,8 @@ intptr_t JAMP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
             ROUTE_EXPORT(NAV_FindCombatPointWaypoints, GAME_NAV_FINDCOMBATPOINTWAYPOINTS);
             ROUTE_EXPORT(BG_GetItemIndexByTag, GAME_GETITEMINDEXBYTAG);
 
-        default:
-            break;
+            default:
+                break;
         };
     }
 
@@ -935,8 +940,9 @@ const char* JAMP_GameSupport::EngMsgName(intptr_t cmd) {
 
         // polyfills
         GEN_CASE(G_ARGS);
-    default:
-        return "unknown";
+
+        default:
+            return "unknown";
     }
 }
 
@@ -984,8 +990,8 @@ const char* JAMP_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_NAV_FINDCOMBATPOINTWAYPOINTS);
         GEN_CASE(GAME_GETITEMINDEXBYTAG);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 

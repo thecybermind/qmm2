@@ -33,9 +33,9 @@ struct Q2R_GameSupport : public GameSupport {
     virtual const char* EngMsgName(intptr_t msg);
     virtual const char* ModMsgName(intptr_t msg);
     virtual bool AutoDetect(APIType engine_api);
-    virtual void* Entry(void* syscall, void*, APIType);
-    virtual bool ModLoad(void* entry, APIType);
-    virtual void ModUnload(APIType);
+    virtual void* Entry(void* syscall, void*, APIType engine_api);
+    virtual bool ModLoad(void* entry, APIType mod_api);
+    virtual void ModUnload(APIType mod_api);
     virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
     virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
 
@@ -84,8 +84,8 @@ GEN_GAME_OBJ(Q2R);
 
 
 // auto-detection logic for Q2R
-bool Q2R_GameSupport::AutoDetect(APIType engineapi) {
-    if (engineapi != QMM_API_GETGAMEAPI)
+bool Q2R_GameSupport::AutoDetect(APIType engine_api) {
+    if (engine_api != QMM_API_GETGAMEAPI)
         return false;
 
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
@@ -108,241 +108,243 @@ intptr_t Q2R_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     update_exports();
 
     intptr_t ret = 0;
+    
+    if (orig_import.Com_Print) {
+        switch (cmd) {
+            ROUTE_IMPORT(Broadcast_Print, G_BROADCAST_PRINT);
+            ROUTE_IMPORT(Com_Print, G_COM_PRINT);
+            ROUTE_IMPORT(Client_Print, G_CLIENT_PRINT);
+            ROUTE_IMPORT(Center_Print, G_CENTERPRINT);
+            ROUTE_IMPORT_6_V(sound, G_SOUND, edict_t*, soundchan_t, int, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST);
+            ROUTE_IMPORT_7_V(positioned_sound, G_POSITIONED_SOUND, float*, edict_t*, soundchan_t, int, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST);
+            ROUTE_IMPORT_9_V(local_sound, G_LOCAL_SOUND, edict_t*, float*, edict_t*, soundchan_t, int, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, uint32_t);
+            ROUTE_IMPORT(configstring, G_CONFIGSTRING);
+            ROUTE_IMPORT(get_configstring, G_GET_CONFIGSTRING);
+            ROUTE_IMPORT(Com_Error, G_COM_ERROR);
+            ROUTE_IMPORT(modelindex, G_MODELINDEX);
+            ROUTE_IMPORT(soundindex, G_SOUNDINDEX);
+            ROUTE_IMPORT(imageindex, G_IMAGEINDEX);
+            ROUTE_IMPORT(setmodel, G_SETMODEL);
+            ROUTE_IMPORT(trace, G_TRACE);
+            ROUTE_IMPORT(clip, G_CLIP);
+            ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
+            ROUTE_IMPORT(inPVS, G_IN_PVS);
+            ROUTE_IMPORT(inPHS, G_IN_PHS);
+            ROUTE_IMPORT(SetAreaPortalState, G_SETAREAPORTALSTATE);
+            ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
+            ROUTE_IMPORT(linkentity, G_LINKENTITY);
+            ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
+            ROUTE_IMPORT(BoxEdicts, G_BOXEDICTS);
+            ROUTE_IMPORT(multicast, G_MULTICAST);
+            ROUTE_IMPORT(unicast, G_UNICAST);
+            ROUTE_IMPORT(WriteChar, G_MSG_WRITECHAR);
+            ROUTE_IMPORT(WriteByte, G_MSG_WRITEBYTE);
+            ROUTE_IMPORT(WriteShort, G_MSG_WRITESHORT);
+            ROUTE_IMPORT(WriteLong, G_MSG_WRITELONG);
+            ROUTE_IMPORT_1_V(WriteFloat, G_MSG_WRITEFLOAT, FLOAT_CAST);
+            ROUTE_IMPORT(WriteString, G_MSG_WRITESTRING);
+            ROUTE_IMPORT(WritePosition, G_MSG_WRITEPOSITION);
+            ROUTE_IMPORT(WriteDir, G_MSG_WRITEDIR);
+            ROUTE_IMPORT_1_V(WriteAngle, G_MSG_WRITEANGLE, FLOAT_CAST);
+            ROUTE_IMPORT(WriteEntity, G_MSG_WRITEENTITY);
+            ROUTE_IMPORT(TagMalloc, G_TAGMALLOC);
+            ROUTE_IMPORT(TagFree, G_TAGFREE);
+            ROUTE_IMPORT(FreeTags, G_FREETAGS);
+            ROUTE_IMPORT(cvar, G_CVAR);
+            ROUTE_IMPORT(cvar_set, G_CVAR_SET);
+            ROUTE_IMPORT(cvar_forceset, G_CVAR_FORCESET);
+            ROUTE_IMPORT(argc, G_ARGC);
+            ROUTE_IMPORT(argv, G_ARGV);
+            ROUTE_IMPORT(args, G_ARGS);
+            ROUTE_IMPORT(AddCommandString, G_ADDCOMMANDSTRING);
+            ROUTE_IMPORT_2_V(DebugGraph, G_DEBUGGRAPH, FLOAT_CAST, int);
+            ROUTE_IMPORT(GetExtension, G_GET_EXTENSION);
+            ROUTE_IMPORT(Bot_RegisterEdict, G_BOT_REGISTEREDICT);
+            ROUTE_IMPORT(Bot_UnRegisterEdict, G_BOT_UNREGISTEREDICT);
+            ROUTE_IMPORT_3(Bot_MoveToPoint, G_BOT_MOVETOPOINT, const edict_t*, float*, FLOAT_CAST);
+            ROUTE_IMPORT(Bot_FollowActor, G_BOT_FOLLOWACTOR);
+            ROUTE_IMPORT(GetPathToGoal, G_GETPATHTOGOAL);
+            ROUTE_IMPORT(Loc_Print, G_LOC_PRINT);
+            ROUTE_IMPORT_5_V(Draw_Line, G_DRAW_LINE, float*, float*, const rgba_t&, FLOAT_CAST, bool);
+            ROUTE_IMPORT_5_V(Draw_Point, G_DRAW_POINT, float*, FLOAT_CAST, const rgba_t&, FLOAT_CAST, bool);
+            ROUTE_IMPORT_5_V(Draw_Circle, G_DRAW_CIRCLE, float*, FLOAT_CAST, const rgba_t&, FLOAT_CAST, bool);
+            ROUTE_IMPORT_5_V(Draw_Bounds, G_DRAW_BOUNDS, float*, float*, const rgba_t&, FLOAT_CAST, bool);
+            ROUTE_IMPORT_5_V(Draw_Sphere, G_DRAW_SPHERE, float*, FLOAT_CAST, const rgba_t&, FLOAT_CAST, bool);
+            ROUTE_IMPORT_6_V(Draw_OrientedWorldText, G_DRAW_ORIENTEDWORLDTEXT, float*, const char*, const rgba_t&, FLOAT_CAST, FLOAT_CAST, bool);
+            ROUTE_IMPORT_7_V(Draw_StaticWorldText, G_DRAW_STATICWORLDTEXT, float*, float*, const char*, const rgba_t&, FLOAT_CAST, FLOAT_CAST, bool);
+            ROUTE_IMPORT_6_V(Draw_Cylinder, G_DRAW_CYLINDER, float*, FLOAT_CAST, FLOAT_CAST, const rgba_t&, FLOAT_CAST, bool);
+            ROUTE_IMPORT_7_V(Draw_Ray, G_DRAW_RAY, float*, float*, FLOAT_CAST, FLOAT_CAST, const rgba_t&, FLOAT_CAST, bool);
+            ROUTE_IMPORT_7_V(Draw_Arrow, G_DRAW_ARROW, float*, float*, FLOAT_CAST, const rgba_t&, const rgba_t&, FLOAT_CAST, bool);
+            ROUTE_IMPORT(ReportMatchDetails_Multicast, G_REPORTMATCHDETAILS_MULTICAST);
+            ROUTE_IMPORT(ServerFrame, G_SERVER_FRAME);
+            ROUTE_IMPORT(SendToClipBoard, G_SENDTOCLIPBOARD);
+            ROUTE_IMPORT(Info_ValueForKey, G_INFO_VALUEFORKEY);
+            ROUTE_IMPORT(Info_RemoveKey, G_INFO_REMOVEKEY);
+            ROUTE_IMPORT(Info_SetValueForKey, G_INFO_SETVALUEFORKEY);
 
-    switch (cmd) {
-        ROUTE_IMPORT(Broadcast_Print, G_BROADCAST_PRINT);
-        ROUTE_IMPORT(Com_Print, G_COM_PRINT);
-        ROUTE_IMPORT(Client_Print, G_CLIENT_PRINT);
-        ROUTE_IMPORT(Center_Print, G_CENTERPRINT);
-        ROUTE_IMPORT_6_V(sound, G_SOUND, edict_t*, soundchan_t, int, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST);
-        ROUTE_IMPORT_7_V(positioned_sound, G_POSITIONED_SOUND, float*, edict_t*, soundchan_t, int, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST);
-        ROUTE_IMPORT_9_V(local_sound, G_LOCAL_SOUND, edict_t*, float*, edict_t*, soundchan_t, int, FLOAT_CAST, FLOAT_CAST, FLOAT_CAST, uint32_t);
-        ROUTE_IMPORT(configstring, G_CONFIGSTRING);
-        ROUTE_IMPORT(get_configstring, G_GET_CONFIGSTRING);
-        ROUTE_IMPORT(Com_Error, G_COM_ERROR);
-        ROUTE_IMPORT(modelindex, G_MODELINDEX);
-        ROUTE_IMPORT(soundindex, G_SOUNDINDEX);
-        ROUTE_IMPORT(imageindex, G_IMAGEINDEX);
-        ROUTE_IMPORT(setmodel, G_SETMODEL);
-        ROUTE_IMPORT(trace, G_TRACE);
-        ROUTE_IMPORT(clip, G_CLIP);
-        ROUTE_IMPORT(pointcontents, G_POINT_CONTENTS);
-        ROUTE_IMPORT(inPVS, G_IN_PVS);
-        ROUTE_IMPORT(inPHS, G_IN_PHS);
-        ROUTE_IMPORT(SetAreaPortalState, G_SETAREAPORTALSTATE);
-        ROUTE_IMPORT(AreasConnected, G_AREAS_CONNECTED);
-        ROUTE_IMPORT(linkentity, G_LINKENTITY);
-        ROUTE_IMPORT(unlinkentity, G_UNLINKENTITY);
-        ROUTE_IMPORT(BoxEdicts, G_BOXEDICTS);
-        ROUTE_IMPORT(multicast, G_MULTICAST);
-        ROUTE_IMPORT(unicast, G_UNICAST);
-        ROUTE_IMPORT(WriteChar, G_MSG_WRITECHAR);
-        ROUTE_IMPORT(WriteByte, G_MSG_WRITEBYTE);
-        ROUTE_IMPORT(WriteShort, G_MSG_WRITESHORT);
-        ROUTE_IMPORT(WriteLong, G_MSG_WRITELONG);
-        ROUTE_IMPORT_1_V(WriteFloat, G_MSG_WRITEFLOAT, FLOAT_CAST);
-        ROUTE_IMPORT(WriteString, G_MSG_WRITESTRING);
-        ROUTE_IMPORT(WritePosition, G_MSG_WRITEPOSITION);
-        ROUTE_IMPORT(WriteDir, G_MSG_WRITEDIR);
-        ROUTE_IMPORT_1_V(WriteAngle, G_MSG_WRITEANGLE, FLOAT_CAST);
-        ROUTE_IMPORT(WriteEntity, G_MSG_WRITEENTITY);
-        ROUTE_IMPORT(TagMalloc, G_TAGMALLOC);
-        ROUTE_IMPORT(TagFree, G_TAGFREE);
-        ROUTE_IMPORT(FreeTags, G_FREETAGS);
-        ROUTE_IMPORT(cvar, G_CVAR);
-        ROUTE_IMPORT(cvar_set, G_CVAR_SET);
-        ROUTE_IMPORT(cvar_forceset, G_CVAR_FORCESET);
-        ROUTE_IMPORT(argc, G_ARGC);
-        ROUTE_IMPORT(argv, G_ARGV);
-        ROUTE_IMPORT(args, G_ARGS);
-        ROUTE_IMPORT(AddCommandString, G_ADDCOMMANDSTRING);
-        ROUTE_IMPORT_2_V(DebugGraph, G_DEBUGGRAPH, FLOAT_CAST, int);
-        ROUTE_IMPORT(GetExtension, G_GET_EXTENSION);
-        ROUTE_IMPORT(Bot_RegisterEdict, G_BOT_REGISTEREDICT);
-        ROUTE_IMPORT(Bot_UnRegisterEdict, G_BOT_UNREGISTEREDICT);
-        ROUTE_IMPORT_3(Bot_MoveToPoint, G_BOT_MOVETOPOINT, const edict_t*, float*, FLOAT_CAST);
-        ROUTE_IMPORT(Bot_FollowActor, G_BOT_FOLLOWACTOR);
-        ROUTE_IMPORT(GetPathToGoal, G_GETPATHTOGOAL);
-        ROUTE_IMPORT(Loc_Print, G_LOC_PRINT);
-        ROUTE_IMPORT_5_V(Draw_Line, G_DRAW_LINE, float*, float*, const rgba_t&, FLOAT_CAST, bool);
-        ROUTE_IMPORT_5_V(Draw_Point, G_DRAW_POINT, float*, FLOAT_CAST, const rgba_t&, FLOAT_CAST, bool);
-        ROUTE_IMPORT_5_V(Draw_Circle, G_DRAW_CIRCLE, float*, FLOAT_CAST, const rgba_t&, FLOAT_CAST, bool);
-        ROUTE_IMPORT_5_V(Draw_Bounds, G_DRAW_BOUNDS, float*, float*, const rgba_t&, FLOAT_CAST, bool);
-        ROUTE_IMPORT_5_V(Draw_Sphere, G_DRAW_SPHERE, float*, FLOAT_CAST, const rgba_t&, FLOAT_CAST, bool);
-        ROUTE_IMPORT_6_V(Draw_OrientedWorldText, G_DRAW_ORIENTEDWORLDTEXT, float*, const char*, const rgba_t&, FLOAT_CAST, FLOAT_CAST, bool);
-        ROUTE_IMPORT_7_V(Draw_StaticWorldText, G_DRAW_STATICWORLDTEXT, float*, float*, const char*, const rgba_t&, FLOAT_CAST, FLOAT_CAST, bool);
-        ROUTE_IMPORT_6_V(Draw_Cylinder, G_DRAW_CYLINDER, float*, FLOAT_CAST, FLOAT_CAST, const rgba_t&, FLOAT_CAST, bool);
-        ROUTE_IMPORT_7_V(Draw_Ray, G_DRAW_RAY, float*, float*, FLOAT_CAST, FLOAT_CAST, const rgba_t&, FLOAT_CAST, bool);
-        ROUTE_IMPORT_7_V(Draw_Arrow, G_DRAW_ARROW, float*, float*, FLOAT_CAST, const rgba_t&, const rgba_t&, FLOAT_CAST, bool);
-        ROUTE_IMPORT(ReportMatchDetails_Multicast, G_REPORTMATCHDETAILS_MULTICAST);
-        ROUTE_IMPORT(ServerFrame, G_SERVER_FRAME);
-        ROUTE_IMPORT(SendToClipBoard, G_SENDTOCLIPBOARD);
-        ROUTE_IMPORT(Info_ValueForKey, G_INFO_VALUEFORKEY);
-        ROUTE_IMPORT(Info_RemoveKey, G_INFO_REMOVEKEY);
-        ROUTE_IMPORT(Info_SetValueForKey, G_INFO_SETVALUEFORKEY);
+            // handle cmds for variables, this is how a plugin would get these values if needed
+            ROUTE_IMPORT_VAR(tick_rate, GV_TICK_RATE);
+            ROUTE_IMPORT_VAR(frame_time_s, GV_FRAME_TIME_S);
+            ROUTE_IMPORT_VAR(frame_time_ms, GV_FRAME_TIME_MS);
 
-        // handle cmds for variables, this is how a plugin would get these values if needed
-        ROUTE_IMPORT_VAR(tick_rate, GV_TICK_RATE);
-        ROUTE_IMPORT_VAR(frame_time_s, GV_FRAME_TIME_S);
-        ROUTE_IMPORT_VAR(frame_time_ms, GV_FRAME_TIME_MS);
-
-        // handle special cmds which QMM uses but Q2R doesn't have an analogue for
-    case G_CVAR_REGISTER: {
-        // q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
-        // qmm: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
-        // qmm always passes NULL for vmCvar so don't worry about it
-        char* var_name = (char*)(args[1]);
-        char* value = (char*)(args[2]);
-        cvar_flags_t flags = (cvar_flags_t)args[3];
-        (void)orig_import.cvar(var_name, value, flags);
-        break;
-    }
-    case G_CVAR_VARIABLE_STRING_BUFFER: {
-        // q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
-        // qmm: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
-        char* var_name = (char*)(args[0]);
-        char* buffer = (char*)(args[1]);
-        intptr_t bufsize = args[2];
-        *buffer = '\0';
-        cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
-        if (cvar)
-            Util::strncpyz(buffer, cvar->string, (size_t)bufsize);
-        break;
-    }
-    case G_CVAR_VARIABLE_INTEGER_VALUE: {
-        // q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
-        // qmm: int trap_Cvar_VariableIntegerValue(const char* var_name)
-        char* var_name = (char*)(args[0]);
-        cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
-        if (cvar)
-            ret = cvar->integer;
-        break;
-    }
-    case G_SEND_CONSOLE_COMMAND: {
-        // Q2R: void (*AddCommandString)(const char *text);
-        // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
-        const char* text = (const char*)(args[1]);
-        orig_import.AddCommandString(text);
-        break;
-    }
-    // provide these to plugins just so the most basic file functions all work. use FILE* for these
-    case G_FS_FOPEN_FILE: {
-        // int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
-        const char* qpath = (const char*)args[0];
-        fileHandle_t* f = (fileHandle_t*)args[1];
-        intptr_t mode = args[2];
-
-        const char* str_mode = "rb";
-        if (mode == FS_WRITE)
-            str_mode = "wb";
-        else if (mode == FS_APPEND)
-            str_mode = "ab";
-        std::string path = fmt::format("{}/{}", QMM::qmm_dir, qpath);
-        if (mode != FS_READ)
-            Util::path_mkdir(Util::path_dirname(path));
-        FILE* fp = fopen(path.c_str(), str_mode);
-        if (!fp) {
-            ret = -1;
-            break;
-        }
-        if (mode == FS_WRITE)
-            ret = 0;
-        else if (mode == FS_APPEND)
-            ret = ftell(fp);
-        else {
-            if (fseek(fp, 0, SEEK_END) != 0) {
-                ret = -1;
+            // handle special cmds which QMM uses but Q2R doesn't have an analogue for
+            case G_CVAR_REGISTER: {
+                // q2r: cvar_t *(*cvar) (const char *var_name, const char *value, cvar_flags_t flags);
+                // qmm: void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
+                // qmm always passes NULL for vmCvar so don't worry about it
+                const char* var_name = (char*)(args[1]);
+                const char* value = (char*)(args[2]);
+                cvar_flags_t flags = (cvar_flags_t)args[3];
+                (void)orig_import.cvar(var_name, value, flags);
                 break;
             }
-            ret = ftell(fp);
-            fseek(fp, 0, SEEK_SET);
-        }
-        *f = (fileHandle_t)fp;
-        break;
-    }
-    case G_FS_READ: {
-        // void trap_FS_Read(void* buffer, int len, fileHandle_t f);
-        char* buffer = (char*)args[0];
-        size_t len = (size_t)args[1];
-        fileHandle_t f = (fileHandle_t)args[2];
-        size_t total = 0;
-        FILE* fp = (FILE*)f;
-        for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to read
-            total += fread(buffer + total, 1, len - total, fp);
-            if (total >= len || ferror(fp) || feof(fp))
+            case G_CVAR_VARIABLE_STRING_BUFFER: {
+                // q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
+                // qmm: void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize)
+                const char* var_name = (char*)(args[0]);
+                char* buffer = (char*)(args[1]);
+                intptr_t bufsize = args[2];
+                *buffer = '\0';
+                cvar_t* cvar = orig_import.cvar(var_name, "", CVAR_NOFLAGS);
+                if (cvar)
+                    Util::strncpyz(buffer, cvar->string, (size_t)bufsize);
                 break;
-        }
-        break;
-    }
-    case G_FS_WRITE: {
-        // void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
-        char* buffer = (char*)args[0];
-        size_t len = (size_t)args[1];
-        fileHandle_t f = (fileHandle_t)args[2];
-        size_t total = 0;
-        FILE* fp = (FILE*)f;
-        for (int i = 0; i < 50; i++) {	// prevent infinite loops trying to write
-            total += fwrite(buffer + total, 1, len - total, fp);
-            if (total >= len || ferror(fp))
+            }
+            case G_CVAR_VARIABLE_INTEGER_VALUE: {
+                // q2r: cvar_t *(*cvar) (char *var_name, char *value, int flags);
+                // qmm: int trap_Cvar_VariableIntegerValue(const char* var_name)
+                char* var_name = (char*)(args[0]);
+                cvar_t* cvar = orig_import.cvar(var_name, (char*)"", CVAR_NOFLAGS);
+                if (cvar)
+                    ret = cvar->integer;
                 break;
-        }
-        break;
-    }
-    case G_FS_FCLOSE_FILE: {
-        // void trap_FS_FCloseFile(fileHandle_t f);
-        fileHandle_t f = (fileHandle_t)args[0];
-        FILE* fp = (FILE*)f;
-        fclose(fp);
-        break;
-    }
-    // help plugins not need separate logic for entity/client pointers
-    case G_LOCATE_GAME_DATA: {
-        // void trap_LocateGameData(gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient);
-        // this is just to be hooked by plugins, so ignore everything
-        break;
-    }
-    case G_DROP_CLIENT: {
-        // void trap_DropClient(int clientNum, const char *reason);
-        intptr_t clientnum = args[0];
-        orig_import.AddCommandString(fmt::format("kick {}\n", clientnum).c_str());
-        break;
-    }
-    case G_GET_USERINFO: {
-        // void trap_GetUserinfo(int num, char *buffer, int bufferSize);
-        intptr_t num = args[0];
-        char* buffer = (char*)args[1];
-        intptr_t bufferSize = args[2];
-        *buffer = '\0';
-        if (userinfos.count(num))
-            Util::strncpyz(buffer, userinfos[num].c_str(), (size_t)bufferSize);
-        break;
-    }
-    case G_GET_ENTITY_TOKEN: {
-        // bool trap_GetEntityToken(char *buffer, int bufferSize);
-        if (token_counter >= entity_tokens.size()) {
-            ret = false;
-            break;
-        }
+            }
+            case G_SEND_CONSOLE_COMMAND: {
+                // Q2R: void (*AddCommandString)(const char *text);
+                // qmm: void trap_SendConsoleCommand( int exec_when, const char *text );
+                const char* text = (const char*)(args[1]);
+                orig_import.AddCommandString(text);
+                break;
+            }
+                                       // provide these to plugins just so the most basic file functions all work. use FILE* for these
+            case G_FS_FOPEN_FILE: {
+                // int trap_FS_FOpenFile(const char *qpath, fileHandle_t *f, fsMode_t mode);
+                const char* qpath = (const char*)args[0];
+                fileHandle_t* f = (fileHandle_t*)args[1];
+                intptr_t mode = args[2];
 
-        char* buffer = (char*)args[0];
-        intptr_t bufferSize = args[1];
+                const char* str_mode = "rb";
+                if (mode == FS_WRITE)
+                    str_mode = "wb";
+                else if (mode == FS_APPEND)
+                    str_mode = "ab";
+                std::string path = fmt::format("{}/{}", QMM::qmm_dir, qpath);
+                if (mode != FS_READ)
+                    Util::path_mkdir(Util::path_dirname(path));
+                FILE* fp = fopen(path.c_str(), str_mode);
+                if (!fp) {
+                    ret = -1;
+                    break;
+                }
+                if (mode == FS_WRITE)
+                    ret = 0;
+                else if (mode == FS_APPEND)
+                    ret = ftell(fp);
+                else {
+                    if (fseek(fp, 0, SEEK_END) != 0) {
+                        ret = -1;
+                        break;
+                    }
+                    ret = ftell(fp);
+                    fseek(fp, 0, SEEK_SET);
+                }
+                *f = (fileHandle_t)fp;
+                break;
+            }
+            case G_FS_READ: {
+                // void trap_FS_Read(void* buffer, int len, fileHandle_t f);
+                char* buffer = (char*)args[0];
+                size_t len = (size_t)args[1];
+                fileHandle_t f = (fileHandle_t)args[2];
+                size_t total = 0;
+                FILE* fp = (FILE*)f;
+                for (int i = 0; i < 50; i++) {  // prevent infinite loops trying to read
+                    total += fread(buffer + total, 1, len - total, fp);
+                    if (total >= len || ferror(fp) || feof(fp))
+                        break;
+                }
+                break;
+            }
+            case G_FS_WRITE: {
+                // void trap_FS_Write(const void* buffer, int len, fileHandle_t f);
+                char* buffer = (char*)args[0];
+                size_t len = (size_t)args[1];
+                fileHandle_t f = (fileHandle_t)args[2];
+                size_t total = 0;
+                FILE* fp = (FILE*)f;
+                for (int i = 0; i < 50; i++) {  // prevent infinite loops trying to write
+                    total += fwrite(buffer + total, 1, len - total, fp);
+                    if (total >= len || ferror(fp))
+                        break;
+                }
+                break;
+            }
+            case G_FS_FCLOSE_FILE: {
+                // void trap_FS_FCloseFile(fileHandle_t f);
+                fileHandle_t f = (fileHandle_t)args[0];
+                FILE* fp = (FILE*)f;
+                fclose(fp);
+                break;
+            }
+                                 // help plugins not need separate logic for entity/client pointers
+            case G_LOCATE_GAME_DATA: {
+                // void trap_LocateGameData(gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *clients, int sizeofGameClient);
+                // this is just to be hooked by plugins, so ignore everything
+                break;
+            }
+            case G_DROP_CLIENT: {
+                // void trap_DropClient(int clientNum, const char *reason);
+                intptr_t clientnum = args[0];
+                orig_import.AddCommandString(fmt::format("kick {}\n", clientnum).c_str());
+                break;
+            }
+            case G_GET_USERINFO: {
+                // void trap_GetUserinfo(int num, char *buffer, int bufferSize);
+                intptr_t num = args[0];
+                char* buffer = (char*)args[1];
+                intptr_t bufferSize = args[2];
+                *buffer = '\0';
+                if (userinfos.count(num))
+                    Util::strncpyz(buffer, userinfos[num].c_str(), (size_t)bufferSize);
+                break;
+            }
+            case G_GET_ENTITY_TOKEN: {
+                // bool trap_GetEntityToken(char *buffer, int bufferSize);
+                if (token_counter >= entity_tokens.size()) {
+                    ret = false;
+                    break;
+                }
 
-        Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
-        ret = true;
-        break;
+                char* buffer = (char*)args[0];
+                intptr_t bufferSize = args[1];
+
+                Util::strncpyz(buffer, entity_tokens[token_counter++].c_str(), (size_t)bufferSize);
+                ret = true;
+                break;
+            }
+            case G_MILLISECONDS:
+                ret = Util::util_get_milliseconds();
+                break;
+
+            default:
+                break;
+        };
+
+        // do anything that needs to be done after function call here
     }
-    case G_MILLISECONDS:
-        ret = Util::util_get_milliseconds();
-        break;
-
-    default:
-        break;
-    };
-
-    // do anything that needs to be done after function call here
 
     if (cmd != G_PRINT)
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2R_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) reutrning " << ret << "\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2R_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
     return ret;
 }
@@ -353,56 +355,56 @@ intptr_t Q2R_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 intptr_t Q2R_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2R_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
-    if (!orig_export)
-        return 0;
-
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
-    switch (cmd) {
-        ROUTE_EXPORT(PreInit, GAME_PREINIT);
-        ROUTE_EXPORT(Init, GAME_INIT);
-        ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
-        ROUTE_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES);
-        ROUTE_EXPORT(WriteGameJson, GAME_WRITE_GAME);
-        ROUTE_EXPORT(ReadGameJson, GAME_READ_GAME);
-        ROUTE_EXPORT(WriteLevelJson, GAME_WRITE_LEVEL);
-        ROUTE_EXPORT(ReadLevelJson, GAME_READ_LEVEL);
-        ROUTE_EXPORT(CanSave, GAME_CAN_SAVE);
-        ROUTE_EXPORT(ClientChooseSlot, GAME_CLIENT_CHOOSESLOT);
-        ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
-        ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
-        ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED);
-        ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
-        ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
-        ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
-        ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
-        ROUTE_EXPORT(PrepFrame, GAME_PREP_FRAME);
-        ROUTE_EXPORT(ServerCommand, GAME_SERVER_COMMAND);
-        ROUTE_EXPORT(Pmove, GAME_PMOVE);
-        ROUTE_EXPORT(GetExtension, GAME_GET_EXTENSION);
-        ROUTE_EXPORT(Bot_SetWeapon, GAME_BOT_SETWEAPON);
-        ROUTE_EXPORT(Bot_TriggerEdict, GAME_BOT_TRIGGEREDICT);
-        ROUTE_EXPORT(Bot_UseItem, GAME_BOT_USEITEM);
-        ROUTE_EXPORT(Bot_GetItemID, GAME_BOT_GETITEMID);
-        ROUTE_EXPORT(Edict_ForceLookAtPoint, GAME_EDICT_FORCELOOKATPOINT);
-        ROUTE_EXPORT(Bot_PickedUpItem, GAME_BOT_PICKEDUPITEM);
-        ROUTE_EXPORT(Entity_IsVisibleToPlayer, GAME_ENTITY_ISVISIBLETOPLAYER);
-        ROUTE_EXPORT(GetShadowLightData, GAME_GETSHADOWLIGHTDATA);
 
-        // handle cmds for variables, this is how a plugin would get these values if needed
-        ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
-        ROUTE_EXPORT_VAR(edicts, GAMEVP_EDICTS);
-        ROUTE_EXPORT_VAR(edict_size, GAMEV_EDICT_SIZE);
-        ROUTE_EXPORT_VAR(num_edicts, GAMEV_NUM_EDICTS);
-        ROUTE_EXPORT_VAR(max_edicts, GAMEV_MAX_EDICTS);
-        ROUTE_EXPORT_VAR(server_flags, GAMEV_SERVER_FLAGS);
+    if (orig_export) {
+        switch (cmd) {
+            ROUTE_EXPORT(PreInit, GAME_PREINIT);
+            ROUTE_EXPORT(Init, GAME_INIT);
+            ROUTE_EXPORT(Shutdown, GAME_SHUTDOWN);
+            ROUTE_EXPORT(SpawnEntities, GAME_SPAWN_ENTITIES);
+            ROUTE_EXPORT(WriteGameJson, GAME_WRITE_GAME);
+            ROUTE_EXPORT(ReadGameJson, GAME_READ_GAME);
+            ROUTE_EXPORT(WriteLevelJson, GAME_WRITE_LEVEL);
+            ROUTE_EXPORT(ReadLevelJson, GAME_READ_LEVEL);
+            ROUTE_EXPORT(CanSave, GAME_CAN_SAVE);
+            ROUTE_EXPORT(ClientChooseSlot, GAME_CLIENT_CHOOSESLOT);
+            ROUTE_EXPORT(ClientConnect, GAME_CLIENT_CONNECT);
+            ROUTE_EXPORT(ClientBegin, GAME_CLIENT_BEGIN);
+            ROUTE_EXPORT(ClientUserinfoChanged, GAME_CLIENT_USERINFO_CHANGED);
+            ROUTE_EXPORT(ClientDisconnect, GAME_CLIENT_DISCONNECT);
+            ROUTE_EXPORT(ClientCommand, GAME_CLIENT_COMMAND);
+            ROUTE_EXPORT(ClientThink, GAME_CLIENT_THINK);
+            ROUTE_EXPORT(RunFrame, GAME_RUN_FRAME);
+            ROUTE_EXPORT(PrepFrame, GAME_PREP_FRAME);
+            ROUTE_EXPORT(ServerCommand, GAME_SERVER_COMMAND);
+            ROUTE_EXPORT(Pmove, GAME_PMOVE);
+            ROUTE_EXPORT(GetExtension, GAME_GET_EXTENSION);
+            ROUTE_EXPORT(Bot_SetWeapon, GAME_BOT_SETWEAPON);
+            ROUTE_EXPORT(Bot_TriggerEdict, GAME_BOT_TRIGGEREDICT);
+            ROUTE_EXPORT(Bot_UseItem, GAME_BOT_USEITEM);
+            ROUTE_EXPORT(Bot_GetItemID, GAME_BOT_GETITEMID);
+            ROUTE_EXPORT(Edict_ForceLookAtPoint, GAME_EDICT_FORCELOOKATPOINT);
+            ROUTE_EXPORT(Bot_PickedUpItem, GAME_BOT_PICKEDUPITEM);
+            ROUTE_EXPORT(Entity_IsVisibleToPlayer, GAME_ENTITY_ISVISIBLETOPLAYER);
+            ROUTE_EXPORT(GetShadowLightData, GAME_GETSHADOWLIGHTDATA);
 
-    default:
-        break;
-    };
+            // handle cmds for variables, this is how a plugin would get these values if needed
+            ROUTE_EXPORT_VAR(apiversion, GAMEV_APIVERSION);
+            ROUTE_EXPORT_VAR(edicts, GAMEVP_EDICTS);
+            ROUTE_EXPORT_VAR(edict_size, GAMEV_EDICT_SIZE);
+            ROUTE_EXPORT_VAR(num_edicts, GAMEV_NUM_EDICTS);
+            ROUTE_EXPORT_VAR(max_edicts, GAMEV_MAX_EDICTS);
+            ROUTE_EXPORT_VAR(server_flags, GAMEV_SERVER_FLAGS);
 
-    // update export vars after returning from the mod
-    update_exports();
+        default:
+            break;
+        };
+
+        // update export vars after returning from the mod
+        update_exports();
+    }
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2R_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
@@ -410,32 +412,37 @@ intptr_t Q2R_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 }
 
 
-void* Q2R_GameSupport::Entry(void* import, void*, APIType) {
+void* Q2R_GameSupport::Entry(void* import, void*, APIType engine_api) {
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2R_GameSupport::Entry(" << import << ") called\n";
 
     void* ret = nullptr;
 
-    // original import struct from engine
-    // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
-    game_import_t* gi = (game_import_t*)import;
-    orig_import = *gi;
+    if (engine_api == QMM_API_GETGAMEAPI) {
+        // original import struct from engine
+        // the struct given by the engine goes out of scope after this returns so we have to copy the whole thing
+        game_import_t* gi = (game_import_t*)import;
+        orig_import = *gi;
 
-    // fill in variables of our hooked import struct to pass to the mod
-    qmm_import.tick_rate = orig_import.tick_rate;
-    qmm_import.frame_time_s = orig_import.frame_time_s;
-    qmm_import.frame_time_ms = orig_import.frame_time_ms;
+        // fill in variables of our hooked import struct to pass to the mod
+        qmm_import.tick_rate = orig_import.tick_rate;
+        qmm_import.frame_time_s = orig_import.frame_time_s;
+        qmm_import.frame_time_ms = orig_import.frame_time_ms;
 
-    // struct full of export lambdas to QMM's vmMain
-    // this gets returned to the game engine, but we haven't loaded the mod yet.
-    // the only thing in this struct the engine uses before calling Init is the apiversion
-    ret = &qmm_export;
+        // struct full of export lambdas to QMM's vmMain
+        // this gets returned to the game engine, but we haven't loaded the mod yet.
+        // the only thing in this struct the engine uses before calling Init is the apiversion
+        ret = &qmm_export;
+    }
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "Q2R_GameSupport::Entry(" << import << ") returning " << ret << "\n";
     return ret;
 }
 
 
-bool Q2R_GameSupport::ModLoad(void* entry, APIType) {
+bool Q2R_GameSupport::ModLoad(void* entry, APIType mod_api) {
+    if (mod_api != QMM_API_GETGAMEAPI)
+        return false;
+
     mod_GetGameAPI pfnGGA = (mod_GetGameAPI)entry;
     orig_export = (game_export_t*)pfnGGA(&qmm_import, nullptr);
 
@@ -537,8 +544,8 @@ const char* Q2R_GameSupport::EngMsgName(intptr_t cmd) {
         GEN_CASE(G_GET_USERINFO);
         GEN_CASE(G_GET_ENTITY_TOKEN);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -581,8 +588,8 @@ const char* Q2R_GameSupport::ModMsgName(intptr_t cmd) {
         GEN_CASE(GAME_ENTITY_ISVISIBLETOPLAYER);
         GEN_CASE(GAME_GETSHADOWLIGHTDATA);
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -766,7 +773,7 @@ void Q2R_GameSupport::ClientUserinfoChanged(edict_t* ent, const char* userinfo) 
 
 // struct with lambdas that call QMM's vmMain function. this is given to the game engine
 game_export_t Q2R_GameSupport::qmm_export = {
-    GAME_API_VERSION,	// apiversion
+    GAME_API_VERSION,    // apiversion
     GEN_EXPORT(PreInit, GAME_PREINIT),
     GEN_EXPORT(Init, GAME_INIT),
     GEN_EXPORT(Shutdown, GAME_SHUTDOWN),
@@ -787,11 +794,11 @@ game_export_t Q2R_GameSupport::qmm_export = {
     GEN_EXPORT(PrepFrame, GAME_PREP_FRAME),
     GEN_EXPORT(ServerCommand, GAME_SERVER_COMMAND),
     // the engine won't use these until after Init, so we can fill these in after each call into the mod's export functions ("vmMain")
-    nullptr,			// edicts
-    0,					// edict_size
-    0,					// num_edicts
-    0,					// max_edicts
-    SERVER_FLAGS_NONE,	// server_flags (0)
+    nullptr,            // edicts
+    0,                  // edict_size
+    0,                  // num_edicts
+    0,                  // max_edicts
+    SERVER_FLAGS_NONE,  // server_flags (0)
     GEN_EXPORT(Pmove, GAME_PMOVE),
     GEN_EXPORT(GetExtension, GAME_GET_EXTENSION),
     GEN_EXPORT(Bot_SetWeapon, GAME_BOT_SETWEAPON),

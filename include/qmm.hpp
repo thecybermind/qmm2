@@ -18,20 +18,20 @@ Created By:
 
 // Currently-loaded game & game engine info.
 namespace QMM {
-    extern std::string exe_path;			// Full path of running server binary
-    extern std::string exe_dir;				// Directory of running server binary
-    extern std::string exe_file;			// Filename of running server binary
-    extern std::string qmm_path;			// Full path of QMM dll
-    extern std::string qmm_dir;				// Directory of QMM dll
-    extern std::string qmm_file;			// Filename of QMM dll
-    extern std::string mod_dir;				// Active mod dir
-    extern std::string cfg_path;			// QMM config file path
-    extern GameSupport* game;			    // loaded engine from supported games table from game_api.cpp
-    extern eng_syscall syscall;			    // syscall from dllEntry (if applicable) to call G_ERROR if needed
-    extern void* qmm_module_ptr;			// QMM module pointer
+    extern std::string exe_path;            // Full path of running server binary
+    extern std::string exe_dir;             // Directory of running server binary
+    extern std::string exe_file;            // Filename of running server binary
+    extern std::string qmm_path;            // Full path of QMM dll
+    extern std::string qmm_dir;             // Directory of QMM dll
+    extern std::string qmm_file;            // Filename of QMM dll
+    extern std::string mod_dir;             // Active mod dir
+    extern std::string cfg_path;            // QMM config file path
+    extern GameSupport* game;               // loaded engine from supported games table from game_api.cpp
+    extern eng_syscall syscall;             // syscall from dllEntry (if applicable) to call G_ERROR if needed
+    extern void* qmm_module_ptr;            // QMM module pointer
     extern bool is_auto_detected;           // Was this engine auto-detected?
     extern bool is_shutdown;                // Is the game shutting down due to G_ERROR? Used to avoid calling G_ERROR again from GAME_SHUTDOWN
-    extern APIType api;			            // Engine api that QMM was loaded with
+    extern APIType api;                     // Engine api that QMM was loaded with
 
     /**
     * @brief Shared code for QMM initialization from all API entry points.
@@ -124,16 +124,17 @@ namespace QMM {
     *
     * @param arg_start ArgV index of "qmm" argument (all other arguments are relative to this)
     */
-    void HandleQMMCommand(intptr_t arg_start);
+    void HandleQMMCommand(const char* cmd, intptr_t arg_start);
 
     extern intptr_t msg_G_PRINT;                // Value of G_PRINT for the detected game
     extern intptr_t msg_GAME_INIT;              // Value of GAME_INIT for the detected game
     extern intptr_t msg_GAME_CONSOLE_COMMAND;   // Value of GAME_CONSOLE_COMMAND for the detected game
     extern intptr_t msg_GAME_SHUTDOWN;          // Value of GAME_SHUTDOWN for the detected game
 
-    // This is used if we couldn't determine a game engine and we have to fail.
-    // G_ERROR appears to be 1 in all supported dllEntry games.
-    // They are different in some GetGameAPI games, but for those we just return nullptr from GetGameAPI.
+    /* This is used if we couldn't determine a game engine and we have to fail.
+     * G_ERROR appears to be 1 in all supported dllEntry games.
+     * They are different in some GetGameAPI games, but for those we just return nullptr from GetGameAPI.
+     */
     constexpr int FAIL_G_ERROR = 1;
 
     // Store cgame passthrough stuff
@@ -179,11 +180,11 @@ namespace QMM {
 
 
 // Convert from QMM_G_ message to actual G_ message
-#define QMM_ENG_MSG					(QMM::game->QMMEngMsg)
+#define QMM_ENG_MSG    (QMM::game->QMMEngMsg)
 // Convert from QMM_GAME_ message to actual GAME_ message
-#define QMM_MOD_MSG					(QMM::game->QMMModMsg)
+#define QMM_MOD_MSG    (QMM::game->QMMModMsg)
 
 // Call game-specific syscall handler
-#define ENG_SYSCALL					(QMM::game->syscall)
+#define ENG_SYSCALL    (QMM::game->syscall)
 
 #endif // QMM2_QMM_HPP

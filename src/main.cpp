@@ -19,80 +19,6 @@ Created By:
 #include "util.hpp"     // used in 64-bit GetCGameAPI only
 
 
-/* This file contains all the entry points for QMM.
- * This is how the engine loads QMM, and how the mod will call into QMM (thinking it's the engine).
- *
- *
- * Initial entry points:
- * 
- * void dllEntry(eng_syscall syscall):
- * Called by some engines to give the mod the engine's syscall pointer. the engine will then call vmMain for all mod
- * entries
- * 
- * void* GetGameAPI(void* import, void* extra):
- * Called by some engines to give the mod the engine's game_import_t struct pointer. sometimes there is an apiversion
- * argument as well depending on the game engine. this function should return a game_export_t struct pointer back to
- * the engine. the engine will then call one of the game_export_t functions for all further mod entries.
- * 
- * void* GetModuleAPI(void* import, void* extra):
- * This is the same as GetGameAPI, and was added for the OpenJK engine.
- * 
- * 64-bit Windows only:
- * void* GetCGameAPI(void* import):
- * This is similar to GetGameAPI, but for the client side of the game. This is used only in Quake 2: Remastered
- * which puts the server- and client-side mod components in the same DLL. QMM does not do any hooking of this, and
- * attempts to simply pass the import pointer through to the actual mod DLL and return the mod's export pointer.
- *
- * 
- * API entry points:
- *
- * intptr_t vmMain(intptr_t cmd, ...):
- * Primary entry point for actual game-related functions from engine->mod. Whenever the engine wants the mod to do
- * something or know something, this is called with a particular "cmd" value and associated arguments.
- *
- * intptr_t qmm_syscall(intptr_t cmd, ...):
- * Primary entry point for actual game-related functions from mod->engine. Whenever the mod wants the engine to do
- * something or know something, this is called with a particular "cmd" value and associated arguments.
- */
-
-/* =====================================================
-   About overall control flow for dllEntry/vmMain games:
-   dllEntry (engine->mod) call flow:
-   1. engine calls QMM's dllEntry and passes syscall pointer
-   2. get environment info
-   3. load config file
-   4. open logfile
-   5. detect game engine
-   6. call game-specific dllEntry function to store syscall
-   7. return to engine
-
-   vmMain (engine->mod) call flow:
-   1. call is handled by vmMain()
-   2. call is passed to plugins' QMM_vmMain functions
-   3. if at least one plugin sets the result to QMM_SUPERCEDE, skip to step 6
-   4. call is passed to game-specific GAME_vmMain function
-   5. call is passed to actual mod vmMain function (or the QVM system is executed)
-   6. call is passed to plugins' QMM_vmMain_Post functions
-   7. mod vmMain return value (or a value given by last plugin which uses result QMM_SUPERCEDE or QMM_OVERRIDE)
-      is returned to engine
-
-   syscall (mod->engine) call flow for QVM mods only:
-   1. QVM system calls <GAME>_QVMSyscall function
-   2. pointer arguments are converted: if not NULL, the QVM data segment base address is added
-   3. call qmm_syscall with converted arguments (continue with next section as if it were a DLL mod)
-
-   syscall (mod->engine) call flow:
-   1. call is handled by qmm_syscall()
-   2. call is passed to plugins' QMM_syscall functions
-   3. if at least one plugin sets the result to QMM_SUPERCEDE, skip to step 6
-   4. call is passed to game-specific GAME_syscall function
-   5. call is passed to actual engine syscall function
-   6. call is passed to plugins' QMM_syscall_Post functions
-   7. engine syscall return value (or a value given by last plugin which uses result QMM_SUPERCEDE or QMM_OVERRIDE)
-      is returned to mod
-   =====================================================
-*/
-
 C_DLLEXPORT void dllEntry(eng_syscall syscall) {
     // don't let exceptions bubble up to the engine
     try {
@@ -119,42 +45,6 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall) {
 }
 
 
-/* =====================================================
-   About overall control flow for GetGameAPI games:
-   GetGameAPI (engine->mod) call flow:
-   1. engine calls QMM's GetGameAPI and passes game_import_t pointer
-   2. get environment info
-   3. load config file
-   4. open logfile
-   5. detect game engine
-   6. call game-specific GetGameAPI function to store game_import_t pointer and generate game_export_t pointer
-   7. create a game-specific game_export_t struct ("qmm_export") with hooks, and return a pointer to engine
-   8. engine stores qmm_export pointer, checks qmm_export->apiversion to match GAME_API_VERSION
-
-   export (engine->mod) call flow
-   1. call is handled by lambda inside qmm_export struct that was returned to engine
-   2. call is passed to vmMain with function-specific enum
-   3. call is passed to plugins' QMM_vmMain functions
-   4. if at least one plugin sets the result to QMM_SUPERCEDE, skip to step 7
-   5. call is passed to game-specific GAME_vmMain function
-   6. call is passed to actual mod game_export_t function
-   7. call is passed to plugins' QMM_vmMain_Post functions
-   8. mod game_export_t function return value (or a value given by last plugin which uses result QMM_SUPERCEDE or
-      QMM_OVERRIDE) is returned to engine
-
-   import (mod->engine) call flow
-   1. call is handled by lambda inside game_import_t struct that was given to QMM
-   2. call is passed to qmm_syscall with function-specific enum
-   3. call is passed to plugins' QMM_syscall functions
-   4. if at least one plugin sets the result to QMM_SUPERCEDE, skip to step 7
-   5. call is passed to game-specific GAME_syscall function
-   6. call is passed to actual engine game_import_t function
-   7. call is passed to plugins' QMM_syscall_Post functions
-   8. engine game_import_t function return value (or a value given by last plugin which uses result QMM_SUPERCEDE or
-      QMM_OVERRIDE) is returned to mod
-   =====================================================
-*/
-
 C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
     // don't let exceptions bubble up to the engine
     try {
@@ -177,6 +67,34 @@ C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import) {
         return nullptr;
     }
 }
+
+
+#if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
+C_DLLEXPORT void* GetCGameAPI(void* import) {
+    // don't let exceptions bubble up to the engine
+    try {
+        // Q2R cgame hack:
+        // if the game is already detected, then this is the later GetCGameAPI load which takes place in the menus after QMM
+        // is loaded, or when hosting a listen server, so just get the return value from the mod's GetCGameAPI() function directly
+        if (QMM::game) {
+            // ??
+            if (!g_mod.dll) {
+                QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Mod DLL not loaded?\n";
+                return nullptr;
+            }
+            QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Passing on call to mod DLL.\n";
+            mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(g_mod.dll, "GetCGameAPI");
+            return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
+        }
+
+        return QMM::HandleEntry(import, nullptr, QMM_API_GETCGAMEAPI);
+    }
+    catch (...) {
+        Util::util_exception(fmt::format("GetCGameAPI({})", fmt::ptr(import)));
+        return nullptr;
+    }
+}
+#endif // QMM_OS_WINDOWS && QMM_ARCH_64
 
 
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
@@ -213,7 +131,8 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
                 QMMLOG(QMM_LOG_FATAL, "QMM") << "QMM was unable to determine the game engine. Please set the \"game\" option in qmm2.json. Refer to the documentation for more information.\n";
                 // if syscall passed to dllEntry was null, revert to std::exit because *shrug*
                 if (!QMM::syscall) {
-                    printf("\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
+                    puts("\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
+                    fputs("\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n", stderr);
                     std::exit(-1);
                 }
                 QMM::syscall(QMM::FAIL_G_ERROR, "\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
@@ -242,43 +161,3 @@ intptr_t qmm_syscall(intptr_t cmd, ...) {
         return 0;
     }
 }
-
-
-#if defined(QMM_OS_WINDOWS) && defined(QMM_ARCH_64)
-C_DLLEXPORT void* GetCGameAPI(void* import) {
-    // don't let exceptions bubble up to the engine
-    try {
-        // Q2R cgame hack:
-        // if the game is already detected, then this is the later GetCGameAPI load which takes place in the menus after QMM
-        // is loaded, so just get the return value from the mod's GetCGameAPI() function directly
-        if (QMM::game) {
-            // ??
-            if (!g_mod.dll) {
-                QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Mod DLL not loaded?\n";
-                return nullptr;
-            }
-            QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Passing on call to mod DLL.\n";
-            mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(g_mod.dll, "GetCGameAPI");
-            return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
-        }
-
-        // client-side-only load. just get QMM file info and slap "qmm_" in front of the qmm filename
-        QMM::DetectEnv();
-
-        std::string modpath = fmt::format("{}/qmm_{}", QMM::qmm_dir, QMM::qmm_file);
-        void* dll = Util::dll_load(modpath.c_str());
-        if (!dll)
-            return nullptr;
-
-        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(dll, "GetCGameAPI");
-
-        // return CGame export from mod DLL
-        // note we do not unload the DLL
-        return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
-    }
-    catch (...) {
-        Util::util_exception(fmt::format("GetCGameAPI({})", fmt::ptr(import)));
-        return nullptr;
-    }
-}
-#endif // QMM_OS_WINDOWS && QMM_ARCH_64

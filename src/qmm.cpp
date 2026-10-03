@@ -28,6 +28,8 @@ Created By:
 
 namespace QMM {
 
+    std::vector<std::string> qmm_commands = { "qmm", "/qmm", "qmmcmd", "/qmmcmd" };
+
     namespace CGame {
         /* About cgame passthrough hack (not Quake 2 Remaster (Q2R), see comments before GetCGameAPI() for that):
            Some single player games, like Star Trek Voyager: Elite Force (STVOYSP), Jedi Knight 2 (JK2SP) and Jedi
@@ -100,7 +102,7 @@ namespace QMM {
 
         api = engine;
 
-        Log::log_init(fmt::format("{}/qmm2.log", qmm_dir));
+        Log::log_init(fmt::format("{}/qmm2.log", qmm_dir), Log::DEFAULT_SEVERITY, Log::DEFAULT_APPEND);
 
         QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")] (" << APIType_Function(engine) << ") loaded!\n";
         QMMLOG(QMM_LOG_INFO, "QMM") << "QMM path: \"" << qmm_path << "\"\n";
@@ -212,7 +214,7 @@ namespace QMM {
 
         for (GameSupport* gamesupport : api_supportedgames) {
             // if short name matches config option, we found it!
-            if (!is_auto && Util::str_striequal(cfg_game, gamesupport->GameCode())) {
+            if (!is_auto && Util::str_striequal(cfg_game, gamesupport->GameCode()) && !gamesupport->IsHidden()) {
                 QMMLOG(QMM_LOG_INFO, "QMM") << "Found game match for config option \"" << cfg_game << "\"\n";
                 game = gamesupport;
                 is_auto_detected = false;
@@ -236,12 +238,17 @@ namespace QMM {
     bool LoadMod(std::string cfg_mod) {
         if (cfg_mod.empty())
             cfg_mod = "auto";
+        
+        // if QMM was loaded other than GetCGameAPI, try all APIs to load mod
+        APIType try_api = api;
+        if (try_api != QMM_API_GETCGAMEAPI)
+            try_api = QMM_API_ERROR;
 
         QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to find mod using \"" << cfg_mod << "\"\n";
         // if "mod" config setting is an absolute path, just attempt to load it directly
         if (!Util::str_striequal(cfg_mod, "auto") && Util::path_is_absolute(cfg_mod)) {
             QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << cfg_mod << "\"\n";
-            return g_mod.Load(cfg_mod);
+            return g_mod.Load(cfg_mod, try_api);
         }
         // if "mod" config setting is "auto", try the following locations in order:
         // "<qvmname>" (if the game engine supports it)
@@ -271,7 +278,7 @@ namespace QMM {
             if (try_path.empty() || !Util::path_is_allowed(try_path))
                 continue;
             QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << try_path << "\"\n";
-            if (g_mod.Load(try_path))
+            if (g_mod.Load(try_path, try_api))
                 return true;
         }
 
@@ -325,14 +332,13 @@ namespace QMM {
     intptr_t Route(bool is_syscall, intptr_t cmd, intptr_t* args) {
         const char* msg_name;
         const char* func_name;
-        GameSupport* gamesupport = game;
 
         if (is_syscall) {
-            msg_name = gamesupport->EngMsgName(cmd);
+            msg_name = game->EngMsgName(cmd);
             func_name = "syscall";
         }
         else {
-            msg_name = gamesupport->ModMsgName(cmd);
+            msg_name = game->ModMsgName(cmd);
             func_name = "vmMain";
         }
 
@@ -386,9 +392,9 @@ namespace QMM {
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) called\n";
 
             if (is_syscall)
-                real_ret = gamesupport->syscall_args(cmd, args);
+                real_ret = game->syscall_args(cmd, args);
             else
-                real_ret = gamesupport->vmMain_args(cmd, args);
+                real_ret = game->vmMain_args(cmd, args);
 
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) returning " << real_ret << "\n";
         }
@@ -484,7 +490,9 @@ namespace QMM {
                 QMMLOG(QMM_LOG_INFO, "QMM") << "URL: " QMM_URL "\n";
 
                 // create qmm_version cvar
-                ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
+                if (!game->IsHidden()) {
+                    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
+                }
 
                 // load mod
                 std::string cfg_mod = Config::cfg_get_string(g_cfg, "mod", "auto");
@@ -512,34 +520,38 @@ namespace QMM {
                     // pass original cgame syscall to dllEntry in mod
                     mod_dllEntry pfndllEntry = (mod_dllEntry)Util::dll_symbol(g_mod.dll, "dllEntry");
                     QMMLOG(QMM_LOG_DEBUG, "QMM") << "Passing cgame syscall to dllEntry = " << pfndllEntry << "\n";
-                    pfndllEntry(QMM::CGame::syscall);
+                    if (pfndllEntry)
+                        pfndllEntry(QMM::CGame::syscall);
                 }
 
                 // load plugins
-                QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
-                for (std::string& plugin_path : Config::cfg_get_array_str(g_cfg, "plugins")) {
-                    QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
-                    if (QMM::LoadPlugin(plugin_path)) {
-                        QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" loaded\n";
+                if (!game->IsHidden()) {
+                    QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
+                    for (std::string& plugin_path : Config::cfg_get_array_str(g_cfg, "plugins")) {
+                        QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
+                        if (QMM::LoadPlugin(plugin_path)) {
+                            QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" loaded\n";
+                        }
+                        else {
+                            QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" not loaded\n";
+                        }
                     }
-                    else {
-                        QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" not loaded\n";
-                    }
-                }
-                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << g_plugins.size() << " plugin(s)\n";
+                    QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << g_plugins.size() << " plugin(s)\n";
 
-                // exec the qmmexec cfg
-                std::string cfg_execcfg = Config::cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
-                if (!cfg_execcfg.empty()) {
-                    QMMLOG(QMM_LOG_NOTICE, "QMM") << "Executing config file \"" << cfg_execcfg << "\"\n";
-                    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_SEND_CONSOLE_COMMAND), QMM_ENG_MSG(QMM_EXEC_APPEND), fmt::format("exec {}\n", cfg_execcfg).c_str());
+                    // exec the qmmexec cfg
+                    std::string cfg_execcfg = Config::cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
+                    if (!cfg_execcfg.empty()) {
+                        QMMLOG(QMM_LOG_NOTICE, "QMM") << "Executing config file \"" << cfg_execcfg << "\"\n";
+                        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_SEND_CONSOLE_COMMAND), QMM_ENG_MSG(QMM_EXEC_APPEND), fmt::format("exec {}\n", cfg_execcfg).c_str());
+                    }
                 }
 
                 // we're done!
                 QMMLOG(QMM_LOG_NOTICE, "QMM") << "Startup successful!\n";
             }
 
-            else if (cmd == QMM::msg_GAME_CONSOLE_COMMAND) {
+            // listen for "qmm" console command
+            else if (cmd == QMM::msg_GAME_CONSOLE_COMMAND && !game->IsHidden()) {
                 char arg_cmd[10];
                 int argn = 0;
                 // get command
@@ -552,10 +564,12 @@ namespace QMM {
                     QMM::ArgV(argn, arg_cmd, sizeof(arg_cmd));
                 }
                 // check for "qmm" command
-                if (Util::str_striequal("qmm", arg_cmd) || Util::str_striequal("/qmm", arg_cmd)) {
-                    // because of "sv", pass 0 or 1 which gets added to argn in the handler function
-                    HandleQMMCommand(argn);
-                    return 1;
+                for (auto qmm_cmd : qmm_commands) {
+                    if (Util::str_striequal(qmm_cmd, arg_cmd)) {
+                        // because of "sv", pass 0 or 1 which gets added to argn in the handler function
+                        HandleQMMCommand(arg_cmd, argn);
+                        return 1;
+                    }
                 }
             }
 
@@ -578,12 +592,14 @@ namespace QMM {
                     g_mod.Unload();
                 }
 
-                // unload each plugin (call QMM_Detach, and then dlclose)
-                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
-                for (Plugin& p : g_plugins) {
-                    p.Unload();
+                if (!game->IsHidden()) {
+                    // unload each plugin (call QMM_Detach, and then dlclose)
+                    QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
+                    for (Plugin& p : g_plugins) {
+                        p.Unload();
+                    }
+                    g_plugins.clear();
                 }
-                g_plugins.clear();
 
                 QMMLOG(QMM_LOG_NOTICE, "QMM") << "Finished shutting down\n";
             }
@@ -619,11 +635,11 @@ namespace QMM {
 
 
     // Print string to game console
-#define CONSOLE_PRINT(str)			ENG_SYSCALL(msg_G_PRINT, str)
+#define CONSOLE_PRINT(str)          ENG_SYSCALL(msg_G_PRINT, str)
 // Print formatted string to game console
-#define CONSOLE_PRINTF(str, ...)	ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
+#define CONSOLE_PRINTF(str, ...)    ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())
 
-    void HandleQMMCommand(intptr_t arg_start) {
+    void HandleQMMCommand(const char* cmd, intptr_t arg_start) {
         char arg1[10] = "", arg2[10] = "";
 
         int argc = (int)ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ARGC));
@@ -632,19 +648,19 @@ namespace QMM {
             QMM::ArgV(arg_start + 2, arg2, sizeof(arg2));
 
         if (Util::str_striequal("status", arg1) || Util::str_striequal("info", arg1)) {
-            CONSOLE_PRINT("(QMM) QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")]\n");
+            CONSOLE_PRINT ("(QMM) QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")]\n");
             CONSOLE_PRINTF("(QMM) Game       : {}/\"{}\" ({}) (Source: {})\n", QMM::game->GameCode(), QMM::game->GameName(), APIType_Function(QMM::api), QMM::is_auto_detected ? "Auto-detected" : "Config file");
             CONSOLE_PRINTF("(QMM) ModDir     : {}\n", QMM::mod_dir);
             CONSOLE_PRINTF("(QMM) Config file: \"{}\" {}\n", QMM::cfg_path, g_cfg.empty() ? "(error)" : "");
-            CONSOLE_PRINT("(QMM) Built      : " QMM_COMPILE " by " QMM_BUILDER "\n");
-            CONSOLE_PRINT("(QMM) URL        : " QMM_URL "\n");
-            CONSOLE_PRINT("(QMM) PIFV       : " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
+            CONSOLE_PRINT ("(QMM) Built      : " QMM_COMPILE " by " QMM_BUILDER "\n");
+            CONSOLE_PRINT ("(QMM) URL        : " QMM_URL "\n");
+            CONSOLE_PRINT ("(QMM) PIFV       : " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
             CONSOLE_PRINTF("(QMM) Plugins    : {}\n", g_plugins.size());
             CONSOLE_PRINTF("(QMM) Loaded mod : {} ({})\n", g_mod.path, APIType_Function(g_mod.api));
             if (g_mod.vm.memory) {
-                CONSOLE_PRINT("(QMM)\n");
-                CONSOLE_PRINT("(QMM) QVM mod information\n");
-                CONSOLE_PRINT("(QMM) -------------------\n");
+                CONSOLE_PRINT ("(QMM)\n");
+                CONSOLE_PRINT ("(QMM) QVM mod information\n");
+                CONSOLE_PRINT ("(QMM) -------------------\n");
                 CONSOLE_PRINTF("(QMM) QVM magic number   : {:x} ({})\n", g_mod.vm.magic, g_mod.vm.magic == QVM_MAGIC ? "QVM_MAGIC" : "QVM_MAGIC_VER2");
                 CONSOLE_PRINTF("(QMM) QVM file size      : {}\n", g_mod.vm.filesize);
                 CONSOLE_PRINTF("(QMM) QVM memory base    : {}\n", fmt::ptr(g_mod.vm.memory));
@@ -724,17 +740,17 @@ namespace QMM {
         else {
             if (!Util::str_striequal("help", arg1)) {
                 CONSOLE_PRINTF("(QMM) Unknown command: {}\n", arg1);
-                CONSOLE_PRINT("(QMM)\n");
+                CONSOLE_PRINT ("(QMM)\n");
             }
-            CONSOLE_PRINT("(QMM) Usage: qmm <command> [params]\n");
-            CONSOLE_PRINT("(QMM) Available commands:\n");
-            CONSOLE_PRINT("(QMM) qmm info - displays information about QMM\n");
-            CONSOLE_PRINT("(QMM) qmm list - displays list of loaded QMM plugins\n");
-            CONSOLE_PRINT("(QMM) qmm plugin <id> - outputs info on plugin with id\n");
-            CONSOLE_PRINT("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
-            CONSOLE_PRINT("(QMM) qmm reload - reloads the QMM configuration file\n");
-            CONSOLE_PRINT("(QMM) qmm credits - QMM credits\n");
-            CONSOLE_PRINT("(QMM) qmm help - displays this help\n");
+            CONSOLE_PRINTF("(QMM) Usage: {} <command> [params]\n", cmd);
+            CONSOLE_PRINT ("(QMM) Available commands:\n");
+            CONSOLE_PRINT ("(QMM) qmm info - displays information about QMM\n");
+            CONSOLE_PRINT ("(QMM) qmm list - displays list of loaded QMM plugins\n");
+            CONSOLE_PRINT ("(QMM) qmm plugin <id> - outputs info on plugin with id\n");
+            CONSOLE_PRINT ("(QMM) qmm loglevel <level> - changes QMM log level: TRACE, DEBUG, INFO, NOTICE, WARNING, ERROR, FATAL\n");
+            CONSOLE_PRINT ("(QMM) qmm reload - reloads the QMM configuration file\n");
+            CONSOLE_PRINT ("(QMM) qmm credits - QMM credits\n");
+            CONSOLE_PRINT ("(QMM) qmm help - displays this help\n");
         }
     }
 

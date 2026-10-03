@@ -19,19 +19,19 @@ Created By:
 #define STRINGIFY2(x) #x
 
 // Major semver component
-#define QMM_VERSION_MAJOR	2
+#define QMM_VERSION_MAJOR   2
 // Minor semver component
-#define QMM_VERSION_MINOR	6
+#define QMM_VERSION_MINOR   6
 // Revision semver component
-#define QMM_VERSION_REV		2
+#define QMM_VERSION_REV     2
 
 // String of dotted version number
-#define QMM_VERSION		STRINGIFY(QMM_VERSION_MAJOR) "." STRINGIFY(QMM_VERSION_MINOR) "." STRINGIFY(QMM_VERSION_REV)
+#define QMM_VERSION     STRINGIFY(QMM_VERSION_MAJOR) "." STRINGIFY(QMM_VERSION_MINOR) "." STRINGIFY(QMM_VERSION_REV)
 
 // When was the DLL built? Uses __TIME__ and __DATE__
-#define QMM_COMPILE		__TIME__ " " __DATE__
+#define QMM_COMPILE     __TIME__ " " __DATE__
 // Name of the builder
-#define QMM_BUILDER		"Kevin Masterson"
+#define QMM_BUILDER     "Kevin Masterson"
 // QMM URL
 #define QMM_URL         "https://github.com/thecybermind/qmm2/"
 
@@ -60,6 +60,6 @@ Created By:
 #endif
 
 // Comma-separated DWORD form of version for qmm2.rc
-#define QMM_VERSION_DWORD	QMM_VERSION_MAJOR , QMM_VERSION_MINOR , QMM_VERSION_REV , 0
+#define QMM_VERSION_DWORD   QMM_VERSION_MAJOR , QMM_VERSION_MINOR , QMM_VERSION_REV , 0
 
 #endif // QMM2_VERSION_H

@@ -5,7 +5,7 @@ https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
 
 Created By:
-	Kevin Masterson < k.m.masterson@gmail.com >
+    Kevin Masterson < k.m.masterson@gmail.com >
 
 */
 
@@ -14,6 +14,6 @@ Created By:
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
-#include <fmt/std.h>		// handle std:: types
+#include <fmt/std.h>        // handle std:: types
 
 #endif // QMM2_FORMAT_HPP
