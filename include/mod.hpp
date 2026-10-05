@@ -21,7 +21,7 @@ struct Mod {
     qvm vm = {};                    // QVM object
     void* dll = nullptr;            // OS DLL handle
     std::string path;               // Mod file path
-    APIType api = QMM_API_ERROR;    // API the mod DLL was loaded with
+    APIType api = QMM_API_UNKNOWN;  // API the mod DLL was loaded with
 
     Mod();
     ~Mod();
@@ -37,7 +37,7 @@ struct Mod {
     * @param file Path to mod file
     * @return true if mod load was successful, false otherwise
     */
-    bool Load(std::string file, APIType mod_api = QMM_API_ERROR);
+    bool Load(std::string file, APIType mod_api = QMM_API_UNKNOWN);
 
     /**
     * @brief Unload mod file

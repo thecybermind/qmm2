@@ -26,7 +26,7 @@ Created By:
 Mod g_mod;
 
 
-Mod::Mod() : vm({}), dll(nullptr), api(QMM_API_ERROR) {
+Mod::Mod() : vm({}), dll(nullptr), api(QMM_API_UNKNOWN) {
 }
 
 
@@ -85,7 +85,7 @@ bool Mod::Load(std::string file, APIType mod_api) {
             return false;
         }
 
-        if (mod_api == QMM_API_ERROR) {
+        if (mod_api == QMM_API_UNKNOWN) {
             if (this->InitDLL(file, handle, QMM_API_GETGAMEAPI))
                 return true;
             if (this->InitDLL(file, handle, QMM_API_GETMODULEAPI))
@@ -120,7 +120,7 @@ void Mod::Unload() {
     this->dll = nullptr;
     qvm_unload(&this->vm);
     qvm_init(&this->vm);
-    this->api = QMM_API_ERROR;
+    this->api = QMM_API_UNKNOWN;
 }
 
 
@@ -160,20 +160,20 @@ intptr_t Mod::QVM_vmMain(intptr_t cmd, ...) {
 
 
 int Mod::QVM_syscall(uint8_t* membase, int cmd, int* args) {
-	// check for plugin qvm function registration
-	if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
-		Plugin* p = g_registered_qvm_funcs[cmd];
+    // check for plugin qvm function registration
+    if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
+        Plugin* p = g_registered_qvm_funcs[cmd];
 
-		// make sure plugin has the handler function (shouldn't have been registered, but check anyway)
-		if (!p->QMM_QVMHandler)
-			return 0;
+        // make sure plugin has the handler function (shouldn't have been registered, but check anyway)
+        if (!p->QMM_QVMHandler)
+            return 0;
 
-		// pass the negative-1 form since that's the number the plugin probably stored and expects
-		return p->QMM_QVMHandler(-cmd - 1, args);
-	}
+        // pass the negative-1 form since that's the number the plugin probably stored and expects
+        return p->QMM_QVMHandler(-cmd - 1, args);
+    }
 
-	// call the game-specific QVM syscall handler
-	return QMM::game->QVMSyscall(membase, cmd, args);
+    // call the game-specific QVM syscall handler
+    return QMM::game->QVMSyscall(membase, cmd, args);
 }
 
 

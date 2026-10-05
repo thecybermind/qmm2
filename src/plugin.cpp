@@ -328,33 +328,33 @@ const char* Plugin::plugin_result_to_str(plugin_res res) {
 * @param ... Format arguments
 */
 static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char* fmt, ...) {
-	if (!fmt) {
-		QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called WriteQMMLog() with null fmt\n";
-		return;
-	}
+    if (!fmt) {
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called WriteQMMLog() with null fmt\n";
+        return;
+    }
 
-	if (severity < QMM_LOG_TRACE || severity > QMM_LOG_FATAL)
-		severity = QMM_LOG_INFO;
+    if (severity < QMM_LOG_TRACE || severity > QMM_LOG_FATAL)
+        severity = QMM_LOG_INFO;
 
-	// if log severity is below thresholds, don't log
-	if (!Log::log_level_match(severity))
-		return;
+    // if log severity is below thresholds, don't log
+    if (!Log::log_level_match(severity))
+        return;
 
-	// get log tag from plugin
-	plugin_info* plinfo = (plugin_info*)plid;
-	const char* logtag = plinfo->logtag;
-	if (!logtag || !*logtag)
-		logtag = plinfo->name;
+    // get log tag from plugin
+    plugin_info* plinfo = (plugin_info*)plid;
+    const char* logtag = plinfo->logtag;
+    if (!logtag || !*logtag)
+        logtag = plinfo->name;
 
-	va_list argptr;
-	static char buf[1024];
+    va_list argptr;
+    static char buf[1024];
 
-	va_start(argptr, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, argptr);
-	va_end(argptr);
+    va_start(argptr, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, argptr);
+    va_end(argptr);
 
-	// not QMMLOG since we already checked log_level_match()
-	LOG(severity, Util::str_toupper(logtag)) << buf;
+    // not QMMLOG since we already checked log_level_match()
+    LOG(severity, Util::str_toupper(logtag)) << buf;
 }
 
 
@@ -367,21 +367,21 @@ static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char
 * @return Pointer to the constructed string
 */
 static const char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* fmt, ...) {
-	va_list argptr;
-	static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
-	static int index = 0;
+    va_list argptr;
+    static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
+    static int index = 0;
 
-	// cycle rotating buffer and store string
-	index = (index + 1) & ROTATING_BUFFER_MASK;
+    // cycle rotating buffer and store string
+    index = (index + 1) & ROTATING_BUFFER_MASK;
 
-	va_start(argptr, fmt);
-	vsnprintf(str[index], sizeof(str[index]), fmt, argptr);
-	va_end(argptr);
+    va_start(argptr, fmt);
+    vsnprintf(str[index], sizeof(str[index]), fmt, argptr);
+    va_end(argptr);
 
-	char* ret = str[index];
+    char* ret = str[index];
 
-	// QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called VarArgs(\"" << format << "\") = \"" << ret << "\"\n";
-	return ret;
+    // QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called VarArgs(\"" << format << "\") = \"" << ret << "\"\n";
+    return ret;
 }
 
 /**
@@ -391,11 +391,11 @@ static const char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], cons
 * @return 0 if the mod is not a QVM, !0 otherwise
 */
 static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]] ) {
-	int ret = !!g_mod.vm.memory;
+    int ret = !!g_mod.vm.memory;
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called IsQVM() = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called IsQVM() = " << ret << "\n";
 
-	return ret;
+    return ret;
 }
 
 
@@ -407,11 +407,11 @@ static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]] ) {
 * @return String name of engine message
 */
 static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
-	const char* ret = QMM::game->EngMsgName(msg);
+    const char* ret = QMM::game->EngMsgName(msg);
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called EngMsgName(" << msg << ") = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called EngMsgName(" << msg << ") = \"" << ret << "\"\n";
 
-	return ret;
+    return ret;
 }
 
 /**
@@ -422,11 +422,11 @@ static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], i
 * @return String name of mod message
 */
 static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
-	const char* ret = QMM::game->ModMsgName(msg);
+    const char* ret = QMM::game->ModMsgName(msg);
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ModMsgName(" << msg << ") = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ModMsgName(" << msg << ") = \"" << ret << "\"\n";
 
-	return ret;
+    return ret;
 }
 
 /**
@@ -437,13 +437,13 @@ static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], i
 * @return Integer value of cvar
 */
 static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], const char* cvar) {
-	intptr_t ret = 0;
-	if (cvar && *cvar)
-		ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_INTEGER_VALUE), cvar);
+    intptr_t ret = 0;
+    if (cvar && *cvar)
+        ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_INTEGER_VALUE), cvar);
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetIntCvar(\"" << cvar << "\") = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetIntCvar(\"" << cvar << "\") = " << ret << "\n";
 
-	return ret;
+    return ret;
 }
 
 
@@ -455,21 +455,21 @@ static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], cons
 * @return Pointer to string value of cvar
 */
 static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], const char* cvar) {
-	static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
-	static int index = 0;
+    static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
+    static int index = 0;
 
-	const char* ret = "";
+    const char* ret = "";
 
-	if (cvar && *cvar) {
-		// cycle rotating buffer and store string
-		index = (index + 1) & ROTATING_BUFFER_MASK;
-		ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), cvar, str[index], (intptr_t)sizeof(str[index]));
-		ret = str[index];
-	}
+    if (cvar && *cvar) {
+        // cycle rotating buffer and store string
+        index = (index + 1) & ROTATING_BUFFER_MASK;
+        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), cvar, str[index], (intptr_t)sizeof(str[index]));
+        ret = str[index];
+    }
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetStrCvar(\"" << cvar << "\") = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetStrCvar(\"" << cvar << "\") = \"" << ret << "\"\n";
 
-	return ret;
+    return ret;
 }
 
 
@@ -480,11 +480,11 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
 * @return Pointer to string representing the active game engine
 */
 static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]] ) {
-	const char* ret = QMM::game->GameCode();
+    const char* ret = QMM::game->GameCode();
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetGameEngine() = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetGameEngine() = \"" << ret << "\"\n";
 
-	return ret;
+    return ret;
 }
 
 /**
@@ -498,10 +498,10 @@ static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]]
 * @param buflen Length of buf
 */ 
 static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn, char* buf, intptr_t buflen) {
-	if (buf && buflen)
-		QMM::ArgV(argn, buf, buflen);
+    if (buf && buflen)
+        QMM::ArgV(argn, buf, buflen);
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called Argv(" << argn << ") = \"" << buf << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called Argv(" << argn << ") = \"" << buf << "\"\n";
 }
 
 /**
@@ -513,38 +513,38 @@ static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn,
 * @return Pointer to string containing value ("" if not found)
 */
 static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused]], const char* userinfo, const char* key) {
-	static std::string value[ROTATING_BUFFER_NUM];
-	static int index = 0;
+    static std::string value[ROTATING_BUFFER_NUM];
+    static int index = 0;
 
-	const char* ret = "";
+    const char* ret = "";
 
-	if (userinfo && key) {
-		std::string s = userinfo;
+    if (userinfo && key) {
+        std::string s = userinfo;
 
-		// userinfo strings are "\key\value\key\value\"
-		// so search for "\key\" and then get everything up to the next "\"
-		std::string fkey = "\\" + std::string(key) + "\\";
-		size_t keypos = s.find(fkey);
-		if (keypos != std::string::npos) {    // key found
-			// find next "\"
-			size_t valpos = keypos + fkey.size();
-			size_t valend = s.find('\\', valpos);
-			if (valend == std::string::npos)    // handle case(?) where final value does not end with a "\"
-				valend = s.size();
+        // userinfo strings are "\key\value\key\value\"
+        // so search for "\key\" and then get everything up to the next "\"
+        std::string fkey = "\\" + std::string(key) + "\\";
+        size_t keypos = s.find(fkey);
+        if (keypos != std::string::npos) {    // key found
+            // find next "\"
+            size_t valpos = keypos + fkey.size();
+            size_t valend = s.find('\\', valpos);
+            if (valend == std::string::npos)    // handle case(?) where final value does not end with a "\"
+                valend = s.size();
 
-			// get everything between "\key\" and "\"
-			std::string fval = s.substr(valpos, valend - valpos);
+            // get everything between "\key\" and "\"
+            std::string fval = s.substr(valpos, valend - valpos);
 
-			// cycle rotating buffer and store string
-			index = (index + 1) & ROTATING_BUFFER_MASK;
-			value[index] = fval;
-			ret = value[index].c_str();
-		}
-	}
+            // cycle rotating buffer and store string
+            index = (index + 1) & ROTATING_BUFFER_MASK;
+            value[index] = fval;
+            ret = value[index].c_str();
+        }
+    }
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called InfoValueForKey(\"" << userinfo << "\", \"" << key << "\") = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called InfoValueForKey(\"" << userinfo << "\", \"" << key << "\") = \"" << ret << "\"\n";
 
-	return ret;
+    return ret;
 }
 
 
@@ -577,19 +577,19 @@ static nlohmann::json s_plugin_cfg_get_node(std::string key) {
 * @return Pointer to string representing the node (or "" if not found)
 */
 static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]], const char* key) {
-	static std::string value[ROTATING_BUFFER_NUM];
-	static int index = 0;
+    static std::string value[ROTATING_BUFFER_NUM];
+    static int index = 0;
 
-	nlohmann::json node = s_plugin_cfg_get_node(key);
+    nlohmann::json node = s_plugin_cfg_get_node(key);
 
-	// cycle rotating buffer and store string
-	index = (index + 1) & ROTATING_BUFFER_MASK;
-	value[index] = Config::cfg_get_string(node, Util::path_basename(key));
-	const char* ret = value[index].c_str();
+    // cycle rotating buffer and store string
+    index = (index + 1) & ROTATING_BUFFER_MASK;
+    value[index] = Config::cfg_get_string(node, Util::path_basename(key));
+    const char* ret = value[index].c_str();
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetStr(\"" << key << "\") = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetStr(\"" << key << "\") = \"" << ret << "\"\n";
 
-	return ret;
+    return ret;
 }
 
 
@@ -601,12 +601,12 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
 * @return Integer value of node (or -1 if not found)
 */
 static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const char* key) {
-	nlohmann::json node = s_plugin_cfg_get_node(key);
-	int ret = Config::cfg_get_int(node, Util::path_basename(key));
+    nlohmann::json node = s_plugin_cfg_get_node(key);
+    int ret = Config::cfg_get_int(node, Util::path_basename(key));
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetInt(\"" << key << "\") = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetInt(\"" << key << "\") = " << ret << "\n";
 
-	return ret;
+    return ret;
 }
 
 
@@ -618,12 +618,12 @@ static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const c
 * @return Boolean value of node (or false if not found)
 */
 static int s_plugin_helper_ConfigGetBool(plugin_id plid [[maybe_unused]], const char* key) {
-	nlohmann::json node = s_plugin_cfg_get_node(key);
-	int ret = (int)Config::cfg_get_bool(node, Util::path_basename(key));
+    nlohmann::json node = s_plugin_cfg_get_node(key);
+    int ret = (int)Config::cfg_get_bool(node, Util::path_basename(key));
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetBool(\"" << key << "\") = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetBool(\"" << key << "\") = " << ret << "\n";
 
-	return ret;
+    return ret;
 }
 
 
@@ -635,26 +635,26 @@ static int s_plugin_helper_ConfigGetBool(plugin_id plid [[maybe_unused]], const 
 * @return Pointer to a null-terminated array of strings representing the values of node
 */
 static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unused]], const char* key) {
-	static std::vector<std::string> value[ROTATING_BUFFER_NUM];
-	// plugin API needs to be C-compatible, so this vector stores the .c_str() of each string in the value vector
-	static std::vector<const char*> valuep[ROTATING_BUFFER_NUM];
-	static int index = 0;
+    static std::vector<std::string> value[ROTATING_BUFFER_NUM];
+    // plugin API needs to be C-compatible, so this vector stores the .c_str() of each string in the value vector
+    static std::vector<const char*> valuep[ROTATING_BUFFER_NUM];
+    static int index = 0;
 
-	nlohmann::json node = s_plugin_cfg_get_node(key);
+    nlohmann::json node = s_plugin_cfg_get_node(key);
 
-	// cycle rotating buffer and store array
-	index = (index + 1) & ROTATING_BUFFER_MASK;
-	value[index] = Config::cfg_get_array_str(node, Util::path_basename(key));
-	// fill valuep with const char*s from value
-	valuep[index].clear();
-	for (std::string& s : value[index]) {
-		valuep[index].push_back(s.c_str());
-	}
-	valuep[index].push_back(nullptr);    // null-terminate the array
+    // cycle rotating buffer and store array
+    index = (index + 1) & ROTATING_BUFFER_MASK;
+    value[index] = Config::cfg_get_array_str(node, Util::path_basename(key));
+    // fill valuep with const char*s from value
+    valuep[index].clear();
+    for (std::string& s : value[index]) {
+        valuep[index].push_back(s.c_str());
+    }
+    valuep[index].push_back(nullptr);    // null-terminate the array
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetArrayStr(\"" << key << "\") = [" << value[index].size() << " items]\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetArrayStr(\"" << key << "\") = [" << value[index].size() << " items]\n";
 
-	return valuep[index].data();
+    return valuep[index].data();
 }
 
 
@@ -666,20 +666,20 @@ static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unu
 * @return Pointer to an array of ints representing the values of node (the first index is the number of remaining indexes)
 */
 static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], const char* key) {
-	static std::vector<int> value[ROTATING_BUFFER_NUM];
-	static int index = 0;
+    static std::vector<int> value[ROTATING_BUFFER_NUM];
+    static int index = 0;
 
-	nlohmann::json node = s_plugin_cfg_get_node(key);
+    nlohmann::json node = s_plugin_cfg_get_node(key);
 
-	// cycle rotating buffer and store array
-	index = (index + 1) & ROTATING_BUFFER_MASK;
-	value[index] = Config::cfg_get_array_int(node, Util::path_basename(key));
-	// insert length of the array as the first element
-	value[index].insert(value[index].begin(), (int)value[index].size());
+    // cycle rotating buffer and store array
+    index = (index + 1) & ROTATING_BUFFER_MASK;
+    value[index] = Config::cfg_get_array_int(node, Util::path_basename(key));
+    // insert length of the array as the first element
+    value[index].insert(value[index].begin(), (int)value[index].size());
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetArrayInt(\"" << key << "\") = [" << value[index].size() - 1 << " items]\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetArrayInt(\"" << key << "\") = [" << value[index].size() - 1 << " items]\n";
 
-	return value[index].data();
+    return value[index].data();
 }
 
 
@@ -695,18 +695,18 @@ static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], c
 * @param buflen Length of buf
 */
 static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], intptr_t index, char* buf, intptr_t buflen) {
-	// char* (*getConfigstring)(int index);
-	// void trap_GetConfigstring(int num, char* buffer, int bufferSize);
-	// some games don't return pointers because of QVM interaction, so if this returns anything but null
-	// (or true?), we need to get the configstring from the return value
-	// instead
-	if (buf && buflen) {
-		intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), index, buf, buflen);
-		if (ret > 1)
-			Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
-	}
+    // char* (*getConfigstring)(int index);
+    // void trap_GetConfigstring(int num, char* buffer, int bufferSize);
+    // some games don't return pointers because of QVM interaction, so if this returns anything but null
+    // (or true?), we need to get the configstring from the return value
+    // instead
+    if (buf && buflen) {
+        intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), index, buf, buflen);
+        if (ret > 1)
+            Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
+    }
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetConfigString(" << index << ") = \"" << buf << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetConfigString(" << index << ") = \"" << buf << "\"\n";
 }
 
 
@@ -722,21 +722,21 @@ static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], int
 static int s_plugin_helper_PluginBroadcast(plugin_id plid, const char* message, void* buf, intptr_t buflen) {
     int total = 0;
 
-	// count how many plugins were called
-	for (Plugin& p : g_plugins) {
-		// skip the calling plugin
-		if (p.plugininfo == (plugin_info*)plid)
-			continue;
-		// skip if the plugin doesn't have the function
-		if (!p.QMM_PluginMessage)
-			continue;
-		p.QMM_PluginMessage(plid, message, buf, buflen, 1); // 1 = is_broadcast
-		total++;
-	}
+    // count how many plugins were called
+    for (Plugin& p : g_plugins) {
+        // skip the calling plugin
+        if (p.plugininfo == (plugin_info*)plid)
+            continue;
+        // skip if the plugin doesn't have the function
+        if (!p.QMM_PluginMessage)
+            continue;
+        p.QMM_PluginMessage(plid, message, buf, buflen, 1); // 1 = is_broadcast
+        total++;
+    }
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called PluginBroadcast(\"" << message << "\") = " << total << " plugins called\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called PluginBroadcast(\"" << message << "\") = " << total << " plugins called\n";
 
-	return total;
+    return total;
 }
 
 
@@ -751,24 +751,24 @@ static int s_plugin_helper_PluginBroadcast(plugin_id plid, const char* message, 
 * @return 0 if unsuccessful, !0 if successful
 */
 static int s_plugin_helper_PluginSend(plugin_id plid, plugin_id to_plid, const char* message, void* buf, intptr_t buflen) {
-	// don't let a plugin call itself
-	if (plid == to_plid)
-		return 0;
+    // don't let a plugin call itself
+    if (plid == to_plid)
+        return 0;
 
-	for (Plugin& p : g_plugins) {
-		// if this is the destination plugin
-		if (p.plugininfo == (plugin_info*)to_plid) {
-			// if the plugin doesn't have the message function
-			if (!p.QMM_PluginMessage)
-				return 0;
-			p.QMM_PluginMessage(plid, message, buf, buflen, 0); // 0 = is_broadcast
+    for (Plugin& p : g_plugins) {
+        // if this is the destination plugin
+        if (p.plugininfo == (plugin_info*)to_plid) {
+            // if the plugin doesn't have the message function
+            if (!p.QMM_PluginMessage)
+                return 0;
+            p.QMM_PluginMessage(plid, message, buf, buflen, 0); // 0 = is_broadcast
 
-			QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called PluginSend(\"" << message << "\")\n";
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called PluginSend(\"" << message << "\")\n";
 
-			return 1;
-		}
-	}
-	return 0;
+            return 1;
+        }
+    }
+    return 0;
 }
 
 
@@ -779,30 +779,30 @@ static int s_plugin_helper_PluginSend(plugin_id plid, plugin_id to_plid, const c
 * @return QVM function ID (0 if unsuccessful)
 */
 static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
-	int ret = 0;
+    int ret = 0;
 
-	// find the calling plugin
-	for (Plugin& p : g_plugins) {
-		// found it
-		if (p.plugininfo == (plugin_info*)plid) {
-			// make sure the plugin actually has a QVM handler func
-			if (!p.QMM_QVMHandler)
-				break;
+    // find the calling plugin
+    for (Plugin& p : g_plugins) {
+        // found it
+        if (p.plugininfo == (plugin_info*)plid) {
+            // make sure the plugin actually has a QVM handler func
+            if (!p.QMM_QVMHandler)
+                break;
 
-			// associate plugin with ID
-			g_registered_qvm_funcs[s_next_qvm_func] = &p;
+            // associate plugin with ID
+            g_registered_qvm_funcs[s_next_qvm_func] = &p;
 
-			// return negative-1 form of ID for storing in a QVM function pointer
-			ret = -s_next_qvm_func - 1;
+            // return negative-1 form of ID for storing in a QVM function pointer
+            ret = -s_next_qvm_func - 1;
 
-			s_next_qvm_func++;
-			break;
-		}
-	}
+            s_next_qvm_func++;
+            break;
+        }
+    }
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called QVMRegisterFunc() = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called QVMRegisterFunc() = " << ret << "\n";
 
-	return ret;
+    return ret;
 }
 
 
@@ -816,11 +816,11 @@ static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
 * @return Return value of QVM function
 */
 static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int instruction, int argc, int* argv) {
-	int ret = qvm_exec_ex(&g_mod.vm, (size_t)instruction, argc, argv);
+    int ret = qvm_exec_ex(&g_mod.vm, (size_t)instruction, argc, argv);
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called QVMExecFunc(" << instruction << ", " << argc << ") = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called QVMExecFunc(" << instruction << ", " << argc << ") = " << ret << "\n";
 
-	return ret;
+    return ret;
 }
 
 /**
@@ -833,17 +833,17 @@ static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int inst
 * @return Pointer to string with command argument
 */
 static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr_t argn) {
-	static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
-	static int index = 0;
+    static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
+    static int index = 0;
 
-	// cycle rotating buffer and store string
-	index = (index + 1) & ROTATING_BUFFER_MASK;
+    // cycle rotating buffer and store string
+    index = (index + 1) & ROTATING_BUFFER_MASK;
 
-	QMM::ArgV(argn, str[index], sizeof(str[index]));
+    QMM::ArgV(argn, str[index], sizeof(str[index]));
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called Argv2(" << argn << ") = \"" << str[index] << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called Argv2(" << argn << ") = \"" << str[index] << "\"\n";
 
-	return str[index];
+    return str[index];
 }
 
 /**
@@ -857,24 +857,24 @@ static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr
 * @return Pointer to string with configstring
 */
 static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unused]], intptr_t configindex) {
-	static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
-	static int index = 0;
+    static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
+    static int index = 0;
 
-	// cycle rotating buffer and store string
-	index = (index + 1) & ROTATING_BUFFER_MASK;
+    // cycle rotating buffer and store string
+    index = (index + 1) & ROTATING_BUFFER_MASK;
 
-	// char* (*getConfigstring)(int index);
-	// void trap_GetConfigstring(int num, char* buffer, int bufferSize);
-	// some games don't return pointers because of QVM interaction, so if this returns anything but null
-	// (or true?), we probably are in an api game, and need to get the configstring from the return value
-	// instead
-	intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), configindex, str[index], sizeof(str[index]));
-	if (ret > 1)
-		Util::strncpyz(str[index], (const char*)ret, sizeof(str[index]));
+    // char* (*getConfigstring)(int index);
+    // void trap_GetConfigstring(int num, char* buffer, int bufferSize);
+    // some games don't return pointers because of QVM interaction, so if this returns anything but null
+    // (or true?), we probably are in an api game, and need to get the configstring from the return value
+    // instead
+    intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), configindex, str[index], sizeof(str[index]));
+    if (ret > 1)
+        Util::strncpyz(str[index], (const char*)ret, sizeof(str[index]));
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetConfigString2(" << configindex << ") = \"" << str[index] << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetConfigString2(" << configindex << ") = \"" << str[index] << "\"\n";
 
-	return str[index];
+    return str[index];
 }
 
 /**
@@ -884,9 +884,9 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
 * @return Pointer to string with mod directory
 */
 static const char* s_plugin_helper_ModDir(plugin_id plid [[maybe_unused]] ) {
-	const char* ret = QMM::mod_dir.c_str();
+    const char* ret = QMM::mod_dir.c_str();
 
-	QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ModDir() = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ModDir() = \"" << ret << "\"\n";
 
-	return ret;
+    return ret;
 }

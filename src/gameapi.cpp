@@ -89,7 +89,7 @@ std::vector<GameSupport*> api_supportedgames = {
 
 const char* APIType_Name(APIType api) {
     switch (api) {
-        GEN_CASE(QMM_API_ERROR);
+        GEN_CASE(QMM_API_UNKNOWN);
 
         GEN_CASE(QMM_API_QVM);
 
@@ -106,8 +106,8 @@ const char* APIType_Name(APIType api) {
 
 const char* APIType_Function(APIType api) {
     switch (api) {
-    case QMM_API_ERROR:
-        return "(error)";
+    case QMM_API_UNKNOWN:
+        return "(unknown)";
 
     case QMM_API_QVM:
         return "QVM";

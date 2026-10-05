@@ -242,7 +242,7 @@ namespace QMM {
         // if QMM was loaded other than GetCGameAPI, try all APIs to load mod
         APIType try_api = api;
         if (try_api != QMM_API_GETCGAMEAPI)
-            try_api = QMM_API_ERROR;
+            try_api = QMM_API_UNKNOWN;
 
         QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to find mod using \"" << cfg_mod << "\"\n";
         // if "mod" config setting is an absolute path, just attempt to load it directly
@@ -457,166 +457,166 @@ namespace QMM {
 
 
     intptr_t vmMain_args(intptr_t cmd, intptr_t* args) {
-		QMMLOG(QMM_LOG_DEBUG, "QMM") << "vmMain(" << QMM::game->ModMsgName(cmd) << "(" << cmd << ")) called\n";
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "vmMain(" << QMM::game->ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
-		if (cmd == QMM::msg_GAME_INIT) {
-			// initialize our polyfill milliseconds tracker so that now is 0
-			(void)Util::util_get_milliseconds();
+        if (cmd == QMM::msg_GAME_INIT) {
+            // initialize our polyfill milliseconds tracker so that now is 0
+            (void)Util::util_get_milliseconds();
 
-			// add engine G_PRINT logger (info level and above)
-			Log::log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
-				ENG_SYSCALL(QMM::msg_G_PRINT, Log::log_format(metadata, message, false).c_str());
-				},
-				Log::CONSOLE_SEVERITY);
+            // add engine G_PRINT logger (info level and above)
+            Log::log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
+                ENG_SYSCALL(QMM::msg_G_PRINT, Log::log_format(metadata, message, false).c_str());
+                },
+                Log::CONSOLE_SEVERITY);
 
-			QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")] initializing\n";
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "QMM v" QMM_VERSION " [" QMM_OS " " QMM_ARCH " (" QMM_BUILD ")] initializing\n";
 
-			// get mod dir from engine
-			char moddir[256] = "";
-			ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), QMM::game->ModCvar(), moddir, sizeof(moddir));
-			moddir[sizeof(moddir) - 1] = '\0';
-			QMM::mod_dir = moddir;
-			// the default mod (including all singleplayer games) returns "" for the fs_game, so grab the default mod dir from game info instead
-			if (QMM::mod_dir.empty())
-				QMM::mod_dir = QMM::game->DefaultModDir();
+            // get mod dir from engine
+            char moddir[256] = "";
+            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), QMM::game->ModCvar(), moddir, sizeof(moddir));
+            moddir[sizeof(moddir) - 1] = '\0';
+            QMM::mod_dir = moddir;
+            // the default mod (including all singleplayer games) returns "" for the fs_game, so grab the default mod dir from game info instead
+            if (QMM::mod_dir.empty())
+                QMM::mod_dir = QMM::game->DefaultModDir();
 
-			QMMLOG(QMM_LOG_INFO, "QMM") << "Game: " << QMM::game->GameCode() << "/\"" << QMM::game->GameName() << "\" (Source: " << (QMM::is_auto_detected ? "Auto-detected" : "Config file") << ")\n";
-			QMMLOG(QMM_LOG_INFO, "QMM") << "ModDir: " << QMM::mod_dir << "\n";
-			QMMLOG(QMM_LOG_INFO, "QMM") << "Config file: \"" << QMM::cfg_path << "\" " << (g_cfg.is_discarded() ? "(error)" : "") << "\n";
+            QMMLOG(QMM_LOG_INFO, "QMM") << "Game: " << QMM::game->GameCode() << "/\"" << QMM::game->GameName() << "\" (Source: " << (QMM::is_auto_detected ? "Auto-detected" : "Config file") << ")\n";
+            QMMLOG(QMM_LOG_INFO, "QMM") << "ModDir: " << QMM::mod_dir << "\n";
+            QMMLOG(QMM_LOG_INFO, "QMM") << "Config file: \"" << QMM::cfg_path << "\" " << (g_cfg.is_discarded() ? "(error)" : "") << "\n";
 
-			QMMLOG(QMM_LOG_INFO, "QMM") << "Built: " QMM_COMPILE " by " QMM_BUILDER "\n";
-			QMMLOG(QMM_LOG_INFO, "QMM") << "URL: " QMM_URL "\n";
+            QMMLOG(QMM_LOG_INFO, "QMM") << "Built: " QMM_COMPILE " by " QMM_BUILDER "\n";
+            QMMLOG(QMM_LOG_INFO, "QMM") << "URL: " QMM_URL "\n";
 
-			// create qmm_version cvar
-			if (!game->IsHidden()) {
-				ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
-			}
+            // create qmm_version cvar
+            if (!game->IsHidden()) {
+                ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
+            }
 
-			// load mod
-			std::string cfg_mod = Config::cfg_get_string(g_cfg, "mod", "auto");
-			// check command line arguments for a mod filename
-			cfg_mod = Util::util_get_cmdline_arg("--qmm_mod", cfg_mod);
-			if (!QMM::LoadMod(cfg_mod)) {
-				if (!QMM::is_shutdown) {
-					QMM::is_shutdown = true;
-					std::string error_msg = fmt::format("QMM was unable to load the mod file using \"{}\". Please set the \"mod\" option in qmm2.json. Refer to the documentation for more information.\n", cfg_mod);
-					QMMLOG(QMM_LOG_FATAL, "QMM") << error_msg;
-					ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ERROR), error_msg.c_str());
-				}
-				return 0;
-			}
-			QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << APIType_Function(g_mod.api) << " mod \"" << g_mod.path << "\"\n";
+            // load mod
+            std::string cfg_mod = Config::cfg_get_string(g_cfg, "mod", "auto");
+            // check command line arguments for a mod filename
+            cfg_mod = Util::util_get_cmdline_arg("--qmm_mod", cfg_mod);
+            if (!QMM::LoadMod(cfg_mod)) {
+                if (!QMM::is_shutdown) {
+                    QMM::is_shutdown = true;
+                    std::string error_msg = fmt::format("QMM was unable to load the mod file using \"{}\". Please set the \"mod\" option in qmm2.json. Refer to the documentation for more information.\n", cfg_mod);
+                    QMMLOG(QMM_LOG_FATAL, "QMM") << error_msg;
+                    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ERROR), error_msg.c_str());
+                }
+                return 0;
+            }
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << APIType_Function(g_mod.api) << " mod \"" << g_mod.path << "\"\n";
 
-			// cgame passthrough hack:
-			// mod DLL is loaded, so find the vmMain and dllEntry functions and call dllEntry.
-			// JASP+JK2SP's cgame dllEntry functions actually call into the syscall almost immediately,
-			// so make sure we store vmMain first in case there's some re-entrancy
-			if (QMM::CGame::syscall) {
-				QMM::CGame::vmMain = (mod_vmMain)Util::dll_symbol(g_mod.dll, "vmMain");
-				QMMLOG(QMM_LOG_DEBUG, "QMM") << "Storing cgame vmMain = " << QMM::CGame::vmMain << "\n";
+            // cgame passthrough hack:
+            // mod DLL is loaded, so find the vmMain and dllEntry functions and call dllEntry.
+            // JASP+JK2SP's cgame dllEntry functions actually call into the syscall almost immediately,
+            // so make sure we store vmMain first in case there's some re-entrancy
+            if (QMM::CGame::syscall) {
+                QMM::CGame::vmMain = (mod_vmMain)Util::dll_symbol(g_mod.dll, "vmMain");
+                QMMLOG(QMM_LOG_DEBUG, "QMM") << "Storing cgame vmMain = " << QMM::CGame::vmMain << "\n";
 
-				// pass original cgame syscall to dllEntry in mod
-				mod_dllEntry pfndllEntry = (mod_dllEntry)Util::dll_symbol(g_mod.dll, "dllEntry");
-				QMMLOG(QMM_LOG_DEBUG, "QMM") << "Passing cgame syscall to dllEntry = " << pfndllEntry << "\n";
-				if (pfndllEntry)
-					pfndllEntry(QMM::CGame::syscall);
-			}
+                // pass original cgame syscall to dllEntry in mod
+                mod_dllEntry pfndllEntry = (mod_dllEntry)Util::dll_symbol(g_mod.dll, "dllEntry");
+                QMMLOG(QMM_LOG_DEBUG, "QMM") << "Passing cgame syscall to dllEntry = " << pfndllEntry << "\n";
+                if (pfndllEntry)
+                    pfndllEntry(QMM::CGame::syscall);
+            }
 
-			// load plugins
-			if (!game->IsHidden()) {
-				QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
-				for (std::string& plugin_path : Config::cfg_get_array_str(g_cfg, "plugins")) {
-					QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
-					if (QMM::LoadPlugin(plugin_path)) {
-						QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" loaded\n";
-					}
-					else {
-						QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" not loaded\n";
-					}
-				}
-				QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << g_plugins.size() << " plugin(s)\n";
+            // load plugins
+            if (!game->IsHidden()) {
+                QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
+                for (std::string& plugin_path : Config::cfg_get_array_str(g_cfg, "plugins")) {
+                    QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
+                    if (QMM::LoadPlugin(plugin_path)) {
+                        QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" loaded\n";
+                    }
+                    else {
+                        QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" not loaded\n";
+                    }
+                }
+                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << g_plugins.size() << " plugin(s)\n";
 
-				// exec the qmmexec cfg
-				std::string cfg_execcfg = Config::cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
-				if (!cfg_execcfg.empty()) {
-					QMMLOG(QMM_LOG_NOTICE, "QMM") << "Executing config file \"" << cfg_execcfg << "\"\n";
-					ENG_SYSCALL(QMM_ENG_MSG(QMM_G_SEND_CONSOLE_COMMAND), QMM_ENG_MSG(QMM_EXEC_APPEND), fmt::format("exec {}\n", cfg_execcfg).c_str());
-				}
-			}
+                // exec the qmmexec cfg
+                std::string cfg_execcfg = Config::cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
+                if (!cfg_execcfg.empty()) {
+                    QMMLOG(QMM_LOG_NOTICE, "QMM") << "Executing config file \"" << cfg_execcfg << "\"\n";
+                    ENG_SYSCALL(QMM_ENG_MSG(QMM_G_SEND_CONSOLE_COMMAND), QMM_ENG_MSG(QMM_EXEC_APPEND), fmt::format("exec {}\n", cfg_execcfg).c_str());
+                }
+            }
 
-			// we're done!
-			QMMLOG(QMM_LOG_NOTICE, "QMM") << "Startup successful!\n";
-		}
+            // we're done!
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Startup successful!\n";
+        }
 
-		// listen for "qmm" console command
-		else if (cmd == QMM::msg_GAME_CONSOLE_COMMAND && !game->IsHidden()) {
-			char arg_cmd[10];
-			int argn = 0;
-			// get command
-			QMM::ArgV(argn, arg_cmd, sizeof(arg_cmd));
+        // listen for "qmm" console command
+        else if (cmd == QMM::msg_GAME_CONSOLE_COMMAND && !game->IsHidden()) {
+            char arg_cmd[10];
+            int argn = 0;
+            // get command
+            QMM::ArgV(argn, arg_cmd, sizeof(arg_cmd));
 
-			// if command is "sv", then get the next arg
-			// idTech2 games use "sv" to run a gamedll command
-			if (Util::str_striequal("sv", arg_cmd)) {
-				argn++;
-				QMM::ArgV(argn, arg_cmd, sizeof(arg_cmd));
-			}
-			// check for "qmm" command
-			for (auto qmm_cmd : qmm_commands) {
-				if (Util::str_striequal(qmm_cmd, arg_cmd)) {
-					// because of "sv", pass 0 or 1 which gets added to argn in the handler function
-					HandleQMMCommand(arg_cmd, argn);
-					return 1;
-				}
-			}
-		}
+            // if command is "sv", then get the next arg
+            // idTech2 games use "sv" to run a gamedll command
+            if (Util::str_striequal("sv", arg_cmd)) {
+                argn++;
+                QMM::ArgV(argn, arg_cmd, sizeof(arg_cmd));
+            }
+            // check for "qmm" command
+            for (auto qmm_cmd : qmm_commands) {
+                if (Util::str_striequal(qmm_cmd, arg_cmd)) {
+                    // because of "sv", pass 0 or 1 which gets added to argn in the handler function
+                    HandleQMMCommand(arg_cmd, argn);
+                    return 1;
+                }
+            }
+        }
 
-		// route call to plugins and mod
-		intptr_t ret = QMM::Route(false, cmd, args); // true = is_syscall
+        // route call to plugins and mod
+        intptr_t ret = QMM::Route(false, cmd, args); // true = is_syscall
 
-		// handle shut down (this is after the plugins and mod get called with GAME_SHUTDOWN)
-		if (cmd == QMM::msg_GAME_SHUTDOWN) {
-			QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutdown initiated!\n";
+        // handle shut down (this is after the plugins and mod get called with GAME_SHUTDOWN)
+        if (cmd == QMM::msg_GAME_SHUTDOWN) {
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutdown initiated!\n";
 
-			// cgame passthrough hack:
-			// hack to keep single player games shutting down correctly between levels/cutscenes/etc
-			if (QMM::CGame::syscall) {
-				QMM::CGame::is_shutdown = true;
-				QMMLOG(QMM_LOG_NOTICE, "QMM") << "Delaying shutting down mod so cgame shutdown can run\n";
-			}
-			else {
-				// unload mod
-				QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
-				g_mod.Unload();
-			}
+            // cgame passthrough hack:
+            // hack to keep single player games shutting down correctly between levels/cutscenes/etc
+            if (QMM::CGame::syscall) {
+                QMM::CGame::is_shutdown = true;
+                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Delaying shutting down mod so cgame shutdown can run\n";
+            }
+            else {
+                // unload mod
+                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
+                g_mod.Unload();
+            }
 
-			if (!game->IsHidden()) {
-				// unload each plugin (call QMM_Detach, and then dlclose)
-				QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
-				for (Plugin& p : g_plugins) {
-					p.Unload();
-				}
-				g_plugins.clear();
-			}
+            if (!game->IsHidden()) {
+                // unload each plugin (call QMM_Detach, and then dlclose)
+                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down plugins\n";
+                for (Plugin& p : g_plugins) {
+                    p.Unload();
+                }
+                g_plugins.clear();
+            }
 
-			QMMLOG(QMM_LOG_NOTICE, "QMM") << "Finished shutting down\n";
-		}
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Finished shutting down\n";
+        }
 
-		QMMLOG(QMM_LOG_TRACE, "QMM") << "vmMain(" << QMM::game->ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "vmMain(" << QMM::game->ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
-		return ret;
+        return ret;
     }
 
 
     intptr_t syscall_args(intptr_t cmd, intptr_t* args) {
-		QMMLOG(QMM_LOG_DEBUG, "QMM") << "syscall(" << QMM::game->EngMsgName(cmd) << "(" << cmd << ")) called\n";
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "syscall(" << QMM::game->EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
-		// route call to plugins and mod
-		intptr_t ret = QMM::Route(true, cmd, args); // true = is_syscall
+        // route call to plugins and mod
+        intptr_t ret = QMM::Route(true, cmd, args); // true = is_syscall
 
-		QMMLOG(QMM_LOG_DEBUG, "QMM") << "syscall(" << QMM::game->EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "syscall(" << QMM::game->EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
-		return ret;
+        return ret;
     }
 
 

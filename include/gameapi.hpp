@@ -91,7 +91,7 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 
 // API type for engine/mod
 enum APIType {
-    QMM_API_ERROR,          // Error/unknown
+    QMM_API_UNKNOWN,          // Error/unknown
 
     QMM_API_QVM,            // Mod-only
 
