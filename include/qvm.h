@@ -35,7 +35,7 @@ Created By:
 // Round "var" up to next power of 2: https://stackoverflow.com/a/1322548/809900
 #define QVM_NEXT_POW_2(var) var--; var |= var >> 1; var |= var >> 2; var |= var >> 4; var |= var >> 8; var |= var >> 16; var++
 
-// Add "size" bytes to program stack frame
+// Add "size" bytes to program stack
 #define QVM_STACKFRAME(size) programstack = (int*)((uint8_t*)programstack - (size))
 
 // Pop "n" values from opstack
@@ -74,67 +74,69 @@ Created By:
 typedef int (*qvm_syscall)(uint8_t* membase, int cmd, int* args);
 
 // QVM instructions
+// o0 = top of opstack (opstack[0])
+// o1 = just below top of opstack (opstack[1])
 typedef enum {
     QVM_OP_UNDEF,       // Undefined (error)
     QVM_OP_NOP,         // No-op
     QVM_OP_BREAK,       // Break to debugger (unused, treated as no-op)
     QVM_OP_ENTER,       // Enter a function, increase program stack by param bytes
     QVM_OP_LEAVE,       // Leave a function, decrease program stack by param bytes
-    QVM_OP_CALL,        // Store IP in program stack, jump to o1
+    QVM_OP_CALL,        // Store IP in program stack, jump to o0
     QVM_OP_PUSH,        // Push 0 onto opstack
-    QVM_OP_POP,         // Pop o1 from opstack
+    QVM_OP_POP,         // Pop o0 from opstack
     QVM_OP_CONST,       // Push param onto opstack
     QVM_OP_LOCAL,       // Push address of paramth value of program stack onto opstack
-    QVM_OP_JUMP,        // Jump to o1
-    QVM_OP_EQ,          // Conditional jump to param, if o1 == o2
-    QVM_OP_NE,          // Conditional jump to param, if o1 != o2
-    QVM_OP_LTI,         // Conditional jump to param, if o1 < o2
-    QVM_OP_LEI,         // Conditional jump to param, if o1 <= o2
-    QVM_OP_GTI,         // Conditional jump to param, if o1 > o2
-    QVM_OP_GEI,         // Conditional jump to param, if o1 >= o2
-    QVM_OP_LTU,         // Conditional jump to param, if o1 < o2 (unsigned)
-    QVM_OP_LEU,         // Conditional jump to param, if o1 <= o2 (unsigned)
-    QVM_OP_GTU,         // Conditional jump to param, if o1 > o2 (unsigned)
-    QVM_OP_GEU,         // Conditional jump to param, if o1 >= o2 (unsigned)
-    QVM_OP_EQF,         // Conditional jump to param, if o1 == o2 (float)
-    QVM_OP_NEF,         // Conditional jump to param, if o1 != o2 (float)
-    QVM_OP_LTF,         // Conditional jump to param, if o1 < o2 (float)
-    QVM_OP_LEF,         // Conditional jump to param, if o1 <= o2 (float)
-    QVM_OP_GTF,         // Conditional jump to param, if o1 > o2 (float)
-    QVM_OP_GEF,         // Conditional jump to param, if o1 >= o2 (float)
-    QVM_OP_LOAD1,       // Load 1-byte value at address o1, store in o1
-    QVM_OP_LOAD2,       // Load 2-byte value at address o1, store in o1
-    QVM_OP_LOAD4,       // Load 4-byte value at address o1, store in o1
-    QVM_OP_STORE1,      // Store 1-byte value in o1 into address o2 
-    QVM_OP_STORE2,      // Store 2-byte value in o1 into address o2
-    QVM_OP_STORE4,      // Store 4-byte value in o1 into address o2
-    QVM_OP_ARG,         // Store o1 in paramth value of program stack
-    QVM_OP_BLOCK_COPY,  // Copy param bytes from address o1 to address o2
-    QVM_OP_SEX8,        // Sign extension of 8-bit value in o1
-    QVM_OP_SEX16,       // Sign extension of 16-bit value in o2
-    QVM_OP_NEGI,        // Math operation, o1 = -o1
-    QVM_OP_ADD,         // Math operation, o2 += o1
-    QVM_OP_SUB,         // Math operation, o2 -= o1
-    QVM_OP_DIVI,        // Math operation, o2 /= o1
-    QVM_OP_DIVU,        // Math operation, o2 /= o1 (unsigned)
-    QVM_OP_MODI,        // Math operation, o2 %= o1
-    QVM_OP_MODU,        // Math operation, o2 %= o1 (unsigned)
-    QVM_OP_MULI,        // Math operation, o2 *= o1
-    QVM_OP_MULU,        // Math operation, o2 *= o1 (unsigned)
-    QVM_OP_BAND,        // Math operation, o2 &= o1
-    QVM_OP_BOR,         // Math operation, o2 |= o1
-    QVM_OP_BXOR,        // Math operation, o2 ^= o1
-    QVM_OP_BCOM,        // Math operation, o1 = ~o1
-    QVM_OP_LSH,         // Math operation, o2 <<= o1 (unsigned)
-    QVM_OP_RSHI,        // Math operation, o2 >>= o1
-    QVM_OP_RSHU,        // Math operation, o2 >>= o1 (unsigned)
-    QVM_OP_NEGF,        // Math operation, o1 = -o1 (float)
-    QVM_OP_ADDF,        // Math operation, o2 += o1 (float)
-    QVM_OP_SUBF,        // Math operation, o2 -= o1 (float)
-    QVM_OP_DIVF,        // Math operation, o2 /= o1 (float)
-    QVM_OP_MULF,        // Math operation, o2 *= o1 (float)
-    QVM_OP_CVIF,        // Math operation, convert int o1 to float
-    QVM_OP_CVFI,        // Math operation, convert float o1 to int
+    QVM_OP_JUMP,        // Jump to o0
+    QVM_OP_EQ,          // Conditional jump to param, if o0 == o1
+    QVM_OP_NE,          // Conditional jump to param, if o0 != o1
+    QVM_OP_LTI,         // Conditional jump to param, if o0 < o1
+    QVM_OP_LEI,         // Conditional jump to param, if o0 <= o1
+    QVM_OP_GTI,         // Conditional jump to param, if o0 > o1
+    QVM_OP_GEI,         // Conditional jump to param, if o0 >= o1
+    QVM_OP_LTU,         // Conditional jump to param, if o0 < o1 (unsigned)
+    QVM_OP_LEU,         // Conditional jump to param, if o0 <= o1 (unsigned)
+    QVM_OP_GTU,         // Conditional jump to param, if o0 > o1 (unsigned)
+    QVM_OP_GEU,         // Conditional jump to param, if o0 >= o1 (unsigned)
+    QVM_OP_EQF,         // Conditional jump to param, if o0 == o1 (float)
+    QVM_OP_NEF,         // Conditional jump to param, if o0 != o1 (float)
+    QVM_OP_LTF,         // Conditional jump to param, if o0 < o1 (float)
+    QVM_OP_LEF,         // Conditional jump to param, if o0 <= o1 (float)
+    QVM_OP_GTF,         // Conditional jump to param, if o0 > o1 (float)
+    QVM_OP_GEF,         // Conditional jump to param, if o0 >= o1 (float)
+    QVM_OP_LOAD1,       // Load 1-byte value at address o0, store in o0
+    QVM_OP_LOAD2,       // Load 2-byte value at address o0, store in o0
+    QVM_OP_LOAD4,       // Load 4-byte value at address o0, store in o0
+    QVM_OP_STORE1,      // Store 1-byte value in o0 into address o1 
+    QVM_OP_STORE2,      // Store 2-byte value in o0 into address o1
+    QVM_OP_STORE4,      // Store 4-byte value in o0 into address o1
+    QVM_OP_ARG,         // Store o0 in paramth value of program stack
+    QVM_OP_BLOCK_COPY,  // Copy param bytes from address o0 to address o1
+    QVM_OP_SEX8,        // Sign extension of 8-bit value in o0
+    QVM_OP_SEX16,       // Sign extension of 16-bit value in o1
+    QVM_OP_NEGI,        // Math operation, o0 = -o0
+    QVM_OP_ADD,         // Math operation, o1 += o0
+    QVM_OP_SUB,         // Math operation, o1 -= o0
+    QVM_OP_DIVI,        // Math operation, o1 /= o0
+    QVM_OP_DIVU,        // Math operation, o1 /= o0 (unsigned)
+    QVM_OP_MODI,        // Math operation, o1 %= o0
+    QVM_OP_MODU,        // Math operation, o1 %= o0 (unsigned)
+    QVM_OP_MULI,        // Math operation, o1 *= o0
+    QVM_OP_MULU,        // Math operation, o1 *= o0 (unsigned)
+    QVM_OP_BAND,        // Math operation, o1 &= o0
+    QVM_OP_BOR,         // Math operation, o1 |= o0
+    QVM_OP_BXOR,        // Math operation, o1 ^= o0
+    QVM_OP_BCOM,        // Math operation, o0 = ~o0
+    QVM_OP_LSH,         // Math operation, o1 <<= o0 (unsigned)
+    QVM_OP_RSHI,        // Math operation, o1 >>= o0
+    QVM_OP_RSHU,        // Math operation, o1 >>= o0 (unsigned)
+    QVM_OP_NEGF,        // Math operation, o0 = -o0 (float)
+    QVM_OP_ADDF,        // Math operation, o1 += o0 (float)
+    QVM_OP_SUBF,        // Math operation, o1 -= o0 (float)
+    QVM_OP_DIVF,        // Math operation, o1 /= o0 (float)
+    QVM_OP_MULF,        // Math operation, o1 *= o0 (float)
+    QVM_OP_CVIF,        // Math operation, convert int o0 to float
+    QVM_OP_CVFI,        // Math operation, convert float o0 to int
 
     QVM_OP_NUM_OPS,     // Number of QVM opcodes
 } qvm_opcode;
