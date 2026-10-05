@@ -609,14 +609,14 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
 
         case QVM_OP_LOAD1:
             // get 1-byte value at address stored in opstack[0] and store back in opstack[0]
-            memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 4);
-            opstack[0] &= 0x000000FF;
+            memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 1);
+            opstack[0] &= 0x000000FF;   // clear other bytes in opstack[0]
             break;
 
         case QVM_OP_LOAD2:
             // get 2-byte value at address stored in opstack[0] and store back in opstack[0]
-            memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 4);
-            opstack[0] &= 0x0000FFFF;
+            memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 2);
+            opstack[0] &= 0x0000FFFF;   // clear other bytes in opstack[0]
             break;
 
         case QVM_OP_LOAD4:
@@ -626,15 +626,13 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
 
         case QVM_OP_STORE1:
             // store 1-byte value from opstack[0] into address stored in opstack[1]
-            opstack[0] &= 0x000000FF;
-            memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 4);
+            memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 1);
             QVM_POPN(2);
             break;
 
         case QVM_OP_STORE2:
             // store 2-byte value from opstack[0] into address stored in opstack[1] 
-            opstack[0] &= 0x0000FFFF;
-            memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 4);
+            memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 2);
             QVM_POPN(2);
             break;
 
