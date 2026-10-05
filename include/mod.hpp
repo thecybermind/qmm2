@@ -44,7 +44,7 @@ struct Mod {
     */
     void Unload();
 private:
-    // Entry point into QVM mods. Passed to GameSupport::ModLoad
+    // Entry point into QVM mods. Passed to GameSupport::ModLoad as if it were a DLL's vmMain function
     static intptr_t QVM_vmMain(intptr_t cmd, ...);
 
     // Exit point from QVM mods. Handle syscalls from the QVM.
