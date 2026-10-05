@@ -44,53 +44,6 @@ namespace QMM {
     void* HandleEntry(void* import, void* extra, APIType engine);
 
     /**
-    * @brief Populate path/module/binary/environment/etc information.
-    */
-    void DetectEnv();
-
-    /**
-    * @brief Load config file into g_cfg.
-    *
-    * @param config_filename Filename of config file to load
-    */
-    void LoadConfig(std::string config_filename);
-
-    /**
-    * @brief Detect game engine that loaded QMM.
-    *
-    * @param cfg_game Value of "game" config option
-    * @param engine APIType of engine API that loaded QMM
-    * @return true if game was detected, false otherwise
-    */
-    bool DetectGame(std::string cfg_game, APIType engine);
-
-    /**
-    * @brief Load mod file.
-    *
-    * @param cfg_mod Value of "mod" config option
-    * @return true if mod was loaded, false otherwise
-    */
-    bool LoadMod(std::string cfg_mod);
-
-    /**
-    * @brief Load plugin file.
-    *
-    * @param plugin_path Plugin filename from config file
-    * @return true if plugin was loaded, false otherwise
-    */
-    bool LoadPlugin(std::string plugin_path);
-
-    /**
-    * @brief Route syscall or vmMain calls to plugins and destination.
-    *
-    * @param is_syscall true if the call is for syscall, false for vmMain
-    * @param cmd Function value to send
-    * @param args Function arguments to send
-    * @return return value of call
-    */
-    intptr_t Route(bool is_syscall, intptr_t cmd, intptr_t* args);
-
-    /**
     * @brief Fill "buf" with a given argument.
     *
     * This will use G_ARGV, but supports either type: fill buffer, or return string
@@ -118,13 +71,6 @@ namespace QMM {
     * @return Return value of engine call
     */
     intptr_t syscall_args(intptr_t cmd, intptr_t* args);
-
-    /**
-    * @brief Handle parsing of "qmm" command in vmMain(GAME_CONSOLE_COMMAND)
-    *
-    * @param arg_start ArgV index of "qmm" argument (all other arguments are relative to this)
-    */
-    void HandleQMMCommand(const char* cmd, intptr_t arg_start);
 
     extern intptr_t msg_G_PRINT;                // Value of G_PRINT for the detected game
     extern intptr_t msg_GAME_INIT;              // Value of GAME_INIT for the detected game

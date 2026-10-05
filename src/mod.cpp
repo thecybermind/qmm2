@@ -29,10 +29,10 @@ namespace Mod {
     std::string path;
     APIType api = QMM_API_UNKNOWN;
 
-    intptr_t QVM_vmMain(intptr_t cmd, ...);
-    int QVM_syscall(uint8_t* membase, int cmd, int* args);
-    bool LoadQVM(std::string file);
-    bool InitDLL(std::string file, void* handle, APIType dll_api);
+    static intptr_t QVM_vmMain(intptr_t cmd, ...);
+    static int QVM_syscall(uint8_t* membase, int cmd, int* args);
+    static bool LoadQVM(std::string file);
+    static bool InitDLL(std::string file, void* handle, APIType dll_api);
 
 
     bool Load(std::string file, APIType mod_api) {
@@ -102,7 +102,7 @@ namespace Mod {
 
 
     // Entry point into QVM mods. Passed to GameSupport::ModLoad as if it were a DLL's vmMain function
-    intptr_t QVM_vmMain(intptr_t cmd, ...) {
+    static intptr_t QVM_vmMain(intptr_t cmd, ...) {
         // if qvm isn't loaded, we need to error
         if (!vm.memory) {
             if (!QMM::is_shutdown) {
@@ -138,7 +138,7 @@ namespace Mod {
 
 
     // Exit point from QVM mods. Handle syscalls from the QVM.
-    int QVM_syscall(uint8_t* membase, int cmd, int* args) {
+    static int QVM_syscall(uint8_t* membase, int cmd, int* args) {
         // check for plugin qvm function registration
         if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
             Plugin* p = g_registered_qvm_funcs[cmd];
@@ -162,7 +162,7 @@ namespace Mod {
     * @param file Path to QVM mod file
     * @return true if mod load was successful, false otherwise
     */
-    bool LoadQVM(std::string file) {
+    static bool LoadQVM(std::string file) {
         QMM::EngineFileRead f;       // read QVM file using engine functions to see into .pk3s
         bool verify_data;
         size_t hunk_size;
@@ -210,61 +210,61 @@ namespace Mod {
     * @param dll_api API type to load the mod
     * @return true if mod load was successful, false otherwise
     */
-    bool InitDLL(std::string file, void* handle, APIType dll_api) {
+    static bool InitDLL(std::string file, void* handle, APIType dll_api) {
         switch (dll_api) {
-        case QMM_API_GETGAMEAPI:
-        case QMM_API_GETMODULEAPI:
-        case QMM_API_GETCGAMEAPI: {
-            // these are together because they work the same, just with a different function name
+            case QMM_API_GETGAMEAPI:
+            case QMM_API_GETMODULEAPI:
+            case QMM_API_GETCGAMEAPI: {
+                // these are together because they work the same, just with a different function name
 
-            // look for GetGameAPI/GetModuleAPI/GetCGameAPI function
-            mod_GetGameAPI pfnGGA = (mod_GetGameAPI)Util::dll_symbol(handle, APIType_Function(dll_api));
-            if (!pfnGGA) {
-                QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): Could not locate mod entry point \"" << APIType_Function(dll_api) << "\"\n";
-                return false;
+                // look for GetGameAPI/GetModuleAPI/GetCGameAPI function
+                mod_GetGameAPI pfnGGA = (mod_GetGameAPI)Util::dll_symbol(handle, APIType_Function(dll_api));
+                if (!pfnGGA) {
+                    QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): Could not locate mod entry point \"" << APIType_Function(dll_api) << "\"\n";
+                    return false;
+                }
+
+                // pass GGA/GMA function to game-specific mod load handler
+                if (!QMM::game->ModLoad((void*)pfnGGA, dll_api)) {
+                    // if it failed, call ModUnload to allow game support code to reset
+                    QMM::game->ModUnload(dll_api);
+
+                    QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): " << QMM::game->GameCode() << "_GameSupport::ModLoad returned false\n";
+
+                    return false;
+                }
+
+                break;
             }
+            case QMM_API_DLLENTRY: {
+                mod_dllEntry pfndllEntry = (mod_dllEntry)Util::dll_symbol(handle, "dllEntry");
+                if (!pfndllEntry) {
+                    QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): Could not locate mod entry point \"dllEntry\"\n";
+                    return false;
+                }
 
-            // pass GGA/GMA function to game-specific mod load handler
-            if (!QMM::game->ModLoad((void*)pfnGGA, dll_api)) {
-                // if it failed, call ModUnload to allow game support code to reset
-                QMM::game->ModUnload(dll_api);
+                mod_vmMain pfnvmMain = (mod_vmMain)Util::dll_symbol(handle, "vmMain");
+                if (!pfnvmMain) {
+                    QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): Could not locate mod entry point \"vmMain\"\n";
+                    return false;
+                }
 
-                QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): " << QMM::game->GameCode() << "_GameSupport::ModLoad returned false\n";
+                // pass vmMain to game-specific mod load handler
+                if (!QMM::game->ModLoad((void*)pfnvmMain, dll_api)) {
+                    // if it failed, call ModUnload to allow game support code to reset
+                    QMM::game->ModUnload(dll_api);
 
-                return false;
+                    QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): " << QMM::game->GameCode() << "_GameSupport::ModLoad returned false\n";
+
+                    return false;
+                }
+
+                // we need to pass qmm_syscall to mod's dllEntry function
+                pfndllEntry(qmm_syscall);
+                break;
             }
-
-            break;
-        }
-        case QMM_API_DLLENTRY: {
-            mod_dllEntry pfndllEntry = (mod_dllEntry)Util::dll_symbol(handle, "dllEntry");
-            if (!pfndllEntry) {
-                QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): Could not locate mod entry point \"dllEntry\"\n";
+            default:
                 return false;
-            }
-
-            mod_vmMain pfnvmMain = (mod_vmMain)Util::dll_symbol(handle, "vmMain");
-            if (!pfnvmMain) {
-                QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): Could not locate mod entry point \"vmMain\"\n";
-                return false;
-            }
-
-            // pass vmMain to game-specific mod load handler
-            if (!QMM::game->ModLoad((void*)pfnvmMain, dll_api)) {
-                // if it failed, call ModUnload to allow game support code to reset
-                QMM::game->ModUnload(dll_api);
-
-                QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitDLL(\"" << Util::path_basename(file) << "\", " << APIType_Name(dll_api) << "): " << QMM::game->GameCode() << "_GameSupport::ModLoad returned false\n";
-
-                return false;
-            }
-
-            // we need to pass qmm_syscall to mod's dllEntry function
-            pfndllEntry(qmm_syscall);
-            break;
-        }
-        default:
-            return false;
         };
 
         // mod load handler was successful

@@ -313,8 +313,8 @@ const char* Plugin::plugin_result_to_str(plugin_res res) {
         GEN_CASE(QMM_IGNORED);
         GEN_CASE(QMM_OVERRIDE);
         GEN_CASE(QMM_SUPERCEDE);
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     };
 }
 
