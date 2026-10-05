@@ -415,408 +415,408 @@ int qvm_exec_ex(qvm* vm, size_t instruction, int argc, int* argv) {
         opptr++;
 
         switch (op) {
-        // miscellaneous opcodes
+            // miscellaneous opcodes
 
-        case QVM_OP_UNDEF:
-            // undefined - used as alignment padding at end of codesegment. treat as error
-            // explicit fallthrough
-        default:
-            // anything else
-            log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: unhandled opcode %d\n", instruction, opptr - 1 - codesegment, op);
-            goto fail;
-
-        case QVM_OP_NOP:
-            // no op
-            break;
-
-        case QVM_OP_BREAK:
-            // break to debugger, dump qvm info
-            vm->stackptr = programstack;
-            qvm_dump(vm, opstack, opstackhigh, opptr - 1);
-            break;
-
-        // functions
-
-        case QVM_OP_ENTER:
-            // enter a function:
-            // prepare new stack frame on program stack (size=param).
-            // store param in programstack[1]. this gets verified to match in QVM_OP_LEAVE.
-            QVM_STACKFRAME(param);
-            programstack[0] = 0; // leave blank. an QVM_OP_CALL within this function will place RII here
-            programstack[1] = param;
-            break;
-
-        case QVM_OP_LEAVE:
-            // leave a function:
-            // verify the value saved in programstack[1] matches param, then remove stack frame (size=param).
-            // then, grab RII from top of previous stack frame and then jump to it
-            if (programstack[1] != param) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: QVM_OP_LEAVE param (%d) does not match QVM_OP_ENTER param (%d)\n", instruction, opptr - 1 - codesegment, param, programstack[1]);
+            case QVM_OP_UNDEF:
+                // undefined - used as alignment padding at end of codesegment. treat as error
+                // explicit fallthrough
+            default:
+                // anything else
+                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: unhandled opcode %d\n", instruction, opptr - 1 - codesegment, op);
                 goto fail;
-            }
-            // clean up stack frame
-            QVM_STACKFRAME(-param);
-            // if RII from previous frame is our negative sentinel, signal end of instruction loop
-            if (programstack[0] < 0)
-                opptr = NULL;
-            else
-                QVM_JUMP(programstack[0]);
-            break;
 
-        case QVM_OP_CALL: {
-            // call a function:
-            // address in opstack[0]
-            int jump_to = opstack[0];
-            QVM_POP();
+            case QVM_OP_NOP:
+                // no op
+                break;
 
-            // negative address means an engine trap
-            if (jump_to < 0) {
-                // store local program stack pointer in qvm object for re-entrancy
+            case QVM_OP_BREAK:
+                // break to debugger, dump qvm info
                 vm->stackptr = programstack;
+                qvm_dump(vm, opstack, opstackhigh, opptr - 1);
+                break;
 
-                // pass call to game-specific syscall handler which will adjust pointer arguments
-                // and then call the normal QMM syscall entry point so it can be routed to plugins
-                int ret = vm->syscall(datasegment, -jump_to - 1, &programstack[2]);
+            // functions
 
-                // program stack pointer in qvm object may have changed if re-entrant
-                programstack = vm->stackptr;
+            case QVM_OP_ENTER:
+                // enter a function:
+                // prepare new stack frame on program stack (size=param).
+                // store param in programstack[1]. this gets verified to match in QVM_OP_LEAVE.
+                QVM_STACKFRAME(param);
+                programstack[0] = 0; // leave blank. an QVM_OP_CALL within this function will place RII here
+                programstack[1] = param;
+                break;
 
-                // place return value on top of opstack like a VM function return value
-                QVM_PUSH(ret);
+            case QVM_OP_LEAVE:
+                // leave a function:
+                // verify the value saved in programstack[1] matches param, then remove stack frame (size=param).
+                // then, grab RII from top of previous stack frame and then jump to it
+                if (programstack[1] != param) {
+                    log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: QVM_OP_LEAVE param (%d) does not match QVM_OP_ENTER param (%d)\n", instruction, opptr - 1 - codesegment, param, programstack[1]);
+                    goto fail;
+                }
+                // clean up stack frame
+                QVM_STACKFRAME(-param);
+                // if RII from previous frame is our negative sentinel, signal end of instruction loop
+                if (programstack[0] < 0)
+                    opptr = NULL;
+                else
+                    QVM_JUMP(programstack[0]);
+                break;
+
+            case QVM_OP_CALL: {
+                // call a function:
+                // address in opstack[0]
+                int jump_to = opstack[0];
+                QVM_POP();
+
+                // negative address means an engine trap
+                if (jump_to < 0) {
+                    // store local program stack pointer in qvm object for re-entrancy
+                    vm->stackptr = programstack;
+
+                    // pass call to game-specific syscall handler which will adjust pointer arguments
+                    // and then call the normal QMM syscall entry point so it can be routed to plugins
+                    int ret = vm->syscall(datasegment, -jump_to - 1, &programstack[2]);
+
+                    // program stack pointer in qvm object may have changed if re-entrant
+                    programstack = vm->stackptr;
+
+                    // place return value on top of opstack like a VM function return value
+                    QVM_PUSH(ret);
+                    break;
+                }
+                // otherwise, normal VM function call
+
+                // place RII in top slot of program stack
+                programstack[0] = (int)(opptr - codesegment);
+
+                // jump to VM function at address
+                QVM_JUMP(jump_to);
                 break;
             }
-            // otherwise, normal VM function call
 
-            // place RII in top slot of program stack
-            programstack[0] = (int)(opptr - codesegment);
+            // stack opcodes
 
-            // jump to VM function at address
-            QVM_JUMP(jump_to);
-            break;
-        }
-
-        // stack opcodes
-
-        case QVM_OP_PUSH:
-            // pushes an unused value onto the opstack (mostly for unused return values)
-            QVM_PUSH(0);
-            break;
-
-        case QVM_OP_POP:
-            // pops the top value off the opstack (mostly for unused return values)
-            QVM_POP();
-            break;
-
-        case QVM_OP_CONST:
-            // pushes a hardcoded value onto the opstack
-            QVM_PUSH(param);
-            break;
-
-        case QVM_OP_LOCAL:
-            // pushes a specified local variable address (relative to start of data segment) onto the opstack
-            QVM_PUSH( (int)((uint8_t*)programstack + param - datasegment) );
-            break;
-
-        // branching
-
-        case QVM_OP_JUMP:
-            // jump to address in opstack[0]
-            QVM_JUMP(opstack[0]);
-            QVM_POP();
-            break;
-
-        case QVM_OP_EQ:
-            // if opstack[1] == opstack[0], goto address in param
-            QVM_JUMP_SIF( == );
-            break;
-
-        case QVM_OP_NE:
-            // if opstack[1] != opstack[0], goto address in param
-            QVM_JUMP_SIF( != );
-            break;
-
-        case QVM_OP_LTI:
-            // if opstack[1] < opstack[0], goto address in param
-            QVM_JUMP_SIF( < );
-            break;
-
-        case QVM_OP_LEI:
-            // if opstack[1] <= opstack[0], goto address in param
-            QVM_JUMP_SIF( <= );
-            break;
-
-        case QVM_OP_GTI:
-            // if opstack[1] > opstack[0], goto address in param
-            QVM_JUMP_SIF( > );
-            break;
-
-        case QVM_OP_GEI:
-            // if opstack[1] >= opstack[0], goto address in param
-            QVM_JUMP_SIF( >= );
-            break;
-
-        case QVM_OP_LTU:
-            // if opstack[1] < opstack[0] (unsigned), goto address in param
-            QVM_JUMP_UIF( < );
-            break;
-
-        case QVM_OP_LEU:
-            // if opstack[1] <= opstack[0] (unsigned), goto address in param
-            QVM_JUMP_UIF( <= );
-            break;
-
-        case QVM_OP_GTU:
-            // if opstack[1] > opstack[0] (unsigned), goto address in param
-            QVM_JUMP_UIF( > );
-            break;
-
-        case QVM_OP_GEU:
-            // if opstack[1] >= opstack[0] (unsigned), goto address in param
-            QVM_JUMP_UIF( >= );
-            break;
-
-        case QVM_OP_EQF:
-            // if opstack[1] == opstack[0] (float), goto address in param
-            QVM_JUMP_FIF( == );
-            break;
-
-        case QVM_OP_NEF:
-            // if opstack[1] != opstack[0] (float), goto address in param
-            QVM_JUMP_FIF( != );
-            break;
-
-        case QVM_OP_LTF:
-            // if opstack[1] < opstack[0] (float), goto address in param
-            QVM_JUMP_FIF( < );
-            break;
-
-        case QVM_OP_LEF:
-            // if opstack[1] <= opstack[0] (float), goto address in param
-            QVM_JUMP_FIF( <= );
-            break;
-
-        case QVM_OP_GTF:
-            // if opstack[1] > opstack[0] (float), goto address in param
-            QVM_JUMP_FIF( > );
-            break;
-
-        case QVM_OP_GEF:
-            // if opstack[1] >= opstack[0] (float), goto address in param
-            QVM_JUMP_FIF( >= );
-            break;
-
-        // memory/pointer management
-
-        case QVM_OP_LOAD1:
-            // get 1-byte value at address stored in opstack[0] and store back in opstack[0]
-            memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 1);
-            opstack[0] &= 0x000000FF;   // clear other bytes in opstack[0]
-            break;
-
-        case QVM_OP_LOAD2:
-            // get 2-byte value at address stored in opstack[0] and store back in opstack[0]
-            memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 2);
-            opstack[0] &= 0x0000FFFF;   // clear other bytes in opstack[0]
-            break;
-
-        case QVM_OP_LOAD4:
-            // get 4-byte value at address stored in opstack[0] and store back in opstack[0]
-            memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 4);
-            break;
-
-        case QVM_OP_STORE1:
-            // store 1-byte value from opstack[0] into address stored in opstack[1]
-            memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 1);
-            QVM_POPN(2);
-            break;
-
-        case QVM_OP_STORE2:
-            // store 2-byte value from opstack[0] into address stored in opstack[1] 
-            memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 2);
-            QVM_POPN(2);
-            break;
-
-        case QVM_OP_STORE4:
-            // store 4-byte value from opstack[0] into address stored in opstack[1]
-            memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 4);
-            QVM_POPN(2);
-            break;
-
-        case QVM_OP_ARG:
-            // set a function-call arg (offset = param) to the value on top of opstack
-            memcpy((uint8_t*)programstack + param, &opstack[0], 4);
-            QVM_POP();
-            break;
-
-        case QVM_OP_BLOCK_COPY: {
-            // copy mem from address in opstack[0] to address in opstack[1] for 'param' number of bytes
-            unsigned int src = (opstack[0] & datamask);
-            unsigned int dst = (opstack[1] & datamask);
-
-            QVM_POPN(2);
-
-            // skip if src/dst are the same
-            if (src == dst)
+            case QVM_OP_PUSH:
+                // pushes an unused value onto the opstack (mostly for unused return values)
+                QVM_PUSH(0);
                 break;
 
-            // make sure the src and dst ranges don't go out of memory bounds
-            unsigned int count = param;
-            count = ((src + count) & datamask) - src;
-            count = ((dst + count) & datamask) - dst;
+            case QVM_OP_POP:
+                // pops the top value off the opstack (mostly for unused return values)
+                QVM_POP();
+                break;
+
+            case QVM_OP_CONST:
+                // pushes a hardcoded value onto the opstack
+                QVM_PUSH(param);
+                break;
+
+            case QVM_OP_LOCAL:
+                // pushes a specified local variable address (relative to start of data segment) onto the opstack
+                QVM_PUSH( (int)((uint8_t*)programstack + param - datasegment) );
+                break;
+
+            // branching
+
+            case QVM_OP_JUMP:
+                // jump to address in opstack[0]
+                QVM_JUMP(opstack[0]);
+                QVM_POP();
+                break;
+
+            case QVM_OP_EQ:
+                // if opstack[1] == opstack[0], goto address in param
+                QVM_JUMP_SIF( == );
+                break;
+
+            case QVM_OP_NE:
+                // if opstack[1] != opstack[0], goto address in param
+                QVM_JUMP_SIF( != );
+                break;
+
+            case QVM_OP_LTI:
+                // if opstack[1] < opstack[0], goto address in param
+                QVM_JUMP_SIF( < );
+                break;
+
+            case QVM_OP_LEI:
+                // if opstack[1] <= opstack[0], goto address in param
+                QVM_JUMP_SIF( <= );
+                break;
+
+            case QVM_OP_GTI:
+                // if opstack[1] > opstack[0], goto address in param
+                QVM_JUMP_SIF( > );
+                break;
+
+            case QVM_OP_GEI:
+                // if opstack[1] >= opstack[0], goto address in param
+                QVM_JUMP_SIF( >= );
+                break;
+
+            case QVM_OP_LTU:
+                // if opstack[1] < opstack[0] (unsigned), goto address in param
+                QVM_JUMP_UIF( < );
+                break;
+
+            case QVM_OP_LEU:
+                // if opstack[1] <= opstack[0] (unsigned), goto address in param
+                QVM_JUMP_UIF( <= );
+                break;
+
+            case QVM_OP_GTU:
+                // if opstack[1] > opstack[0] (unsigned), goto address in param
+                QVM_JUMP_UIF( > );
+                break;
+
+            case QVM_OP_GEU:
+                // if opstack[1] >= opstack[0] (unsigned), goto address in param
+                QVM_JUMP_UIF( >= );
+                break;
+
+            case QVM_OP_EQF:
+                // if opstack[1] == opstack[0] (float), goto address in param
+                QVM_JUMP_FIF( == );
+                break;
+
+            case QVM_OP_NEF:
+                // if opstack[1] != opstack[0] (float), goto address in param
+                QVM_JUMP_FIF( != );
+                break;
+
+            case QVM_OP_LTF:
+                // if opstack[1] < opstack[0] (float), goto address in param
+                QVM_JUMP_FIF( < );
+                break;
+
+            case QVM_OP_LEF:
+                // if opstack[1] <= opstack[0] (float), goto address in param
+                QVM_JUMP_FIF( <= );
+                break;
+
+            case QVM_OP_GTF:
+                // if opstack[1] > opstack[0] (float), goto address in param
+                QVM_JUMP_FIF( > );
+                break;
+
+            case QVM_OP_GEF:
+                // if opstack[1] >= opstack[0] (float), goto address in param
+                QVM_JUMP_FIF( >= );
+                break;
+
+            // memory/pointer management
+
+            case QVM_OP_LOAD1:
+                // get 1-byte value at address stored in opstack[0] and store back in opstack[0]
+                memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 1);
+                opstack[0] &= 0x000000FF;   // clear other bytes in opstack[0]
+                break;
+
+            case QVM_OP_LOAD2:
+                // get 2-byte value at address stored in opstack[0] and store back in opstack[0]
+                memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 2);
+                opstack[0] &= 0x0000FFFF;   // clear other bytes in opstack[0]
+                break;
+
+            case QVM_OP_LOAD4:
+                // get 4-byte value at address stored in opstack[0] and store back in opstack[0]
+                memcpy(&opstack[0], datasegment + (opstack[0] & datamask), 4);
+                break;
+
+            case QVM_OP_STORE1:
+                // store 1-byte value from opstack[0] into address stored in opstack[1]
+                memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 1);
+                QVM_POPN(2);
+                break;
+
+            case QVM_OP_STORE2:
+                // store 2-byte value from opstack[0] into address stored in opstack[1] 
+                memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 2);
+                QVM_POPN(2);
+                break;
+
+            case QVM_OP_STORE4:
+                // store 4-byte value from opstack[0] into address stored in opstack[1]
+                memcpy(datasegment + (opstack[1] & datamask), &opstack[0], 4);
+                QVM_POPN(2);
+                break;
+
+            case QVM_OP_ARG:
+                // set a function-call arg (offset = param) to the value on top of opstack
+                memcpy((uint8_t*)programstack + param, &opstack[0], 4);
+                QVM_POP();
+                break;
+
+            case QVM_OP_BLOCK_COPY: {
+                // copy mem from address in opstack[0] to address in opstack[1] for 'param' number of bytes
+                unsigned int src = (opstack[0] & datamask);
+                unsigned int dst = (opstack[1] & datamask);
+
+                QVM_POPN(2);
+
+                // skip if src/dst are the same
+                if (src == dst)
+                    break;
+
+                // make sure the src and dst ranges don't go out of memory bounds
+                unsigned int count = param;
+                count = ((src + count) & datamask) - src;
+                count = ((dst + count) & datamask) - dst;
             
-            memcpy(datasegment + dst, datasegment + src, count);
+                memcpy(datasegment + dst, datasegment + src, count);
 
-            break;
-        }
-
-        // sign extensions
-
-        case QVM_OP_SEX8:
-            // 8-bit
-            if (opstack[0] & 0x80)
-                opstack[0] |= 0xFFFFFF00;
-            break;
-
-        case QVM_OP_SEX16:
-            // 16-bit
-            if (opstack[0] & 0x8000)
-                opstack[0] |= 0xFFFF0000;
-            break;
-
-        // arithmetic/operators
-
-        case QVM_OP_NEGI:
-            // negation
-            QVM_SSOP( - );
-            break;
-
-        case QVM_OP_ADD:
-            // addition
-            QVM_SOP( += );
-            break;
-
-        case QVM_OP_SUB:
-            // subtraction
-            QVM_SOP( -= );
-            break;
-
-        case QVM_OP_DIVI:
-            // division
-            if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
-                goto fail;
+                break;
             }
-            QVM_SOP( /= );
-            break;
 
-        case QVM_OP_DIVU:
-            // unsigned division
-            if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
-                goto fail;
-            }
-            QVM_UOP( /= );
-            break;
+            // sign extensions
 
-        case QVM_OP_MODI:
-            // modulus
-            if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
-                goto fail;
-            }
-            QVM_SOP( %= );
-            break;
+            case QVM_OP_SEX8:
+                // 8-bit
+                if (opstack[0] & 0x80)
+                    opstack[0] |= 0xFFFFFF00;
+                break;
 
-        case QVM_OP_MODU:
-            // unsigned modulus
-            if (opstack[0] == 0) {
-                log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
-                goto fail;
-            }
-            QVM_UOP( %= );
-            break;
+            case QVM_OP_SEX16:
+                // 16-bit
+                if (opstack[0] & 0x8000)
+                    opstack[0] |= 0xFFFF0000;
+                break;
 
-        case QVM_OP_MULI:
-            // multiplication
-            QVM_SOP( *= );
-            break;
+            // arithmetic/operators
 
-        case QVM_OP_MULU:
-            // unsigned multiplication
-            QVM_UOP( *= );
-            break;
+            case QVM_OP_NEGI:
+                // negation
+                QVM_SSOP( - );
+                break;
 
-        case QVM_OP_BAND:
-            // bitwise AND
-            QVM_SOP( &= );
-            break;
+            case QVM_OP_ADD:
+                // addition
+                QVM_SOP( += );
+                break;
 
-        case QVM_OP_BOR:
-            // bitwise OR
-            QVM_SOP( |= );
-            break;
+            case QVM_OP_SUB:
+                // subtraction
+                QVM_SOP( -= );
+                break;
 
-        case QVM_OP_BXOR:
-            // bitwise XOR
-            QVM_SOP( ^= );
-            break;
+            case QVM_OP_DIVI:
+                // division
+                if (opstack[0] == 0) {
+                    log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
+                    goto fail;
+                }
+                QVM_SOP( /= );
+                break;
 
-        case QVM_OP_BCOM:
-            // bitwise one's compliment
-            QVM_SSOP( ~ );
-            break;
+            case QVM_OP_DIVU:
+                // unsigned division
+                if (opstack[0] == 0) {
+                    log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
+                    goto fail;
+                }
+                QVM_UOP( /= );
+                break;
 
-        case QVM_OP_LSH:
-            // unsigned bitwise LEFTSHIFT
-            QVM_UOP( <<= );
-            break;
+            case QVM_OP_MODI:
+                // modulus
+                if (opstack[0] == 0) {
+                    log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
+                    goto fail;
+                }
+                QVM_SOP( %= );
+                break;
 
-        case QVM_OP_RSHI:
-            // bitwise RIGHTSHIFT
-            QVM_SOP( >>= );
-            break;
+            case QVM_OP_MODU:
+                // unsigned modulus
+                if (opstack[0] == 0) {
+                    log_c(QMM_LOG_FATAL, QMM_LOGGING_TAG, "qvm_exec(%zu): Runtime error at %td: %s division by 0!\n", instruction, opptr - 1 - codesegment, qvm_opcodename[op]);
+                    goto fail;
+                }
+                QVM_UOP( %= );
+                break;
 
-        case QVM_OP_RSHU:
-            // unsigned bitwise RIGHTSHIFT
-            QVM_UOP( >>= );
-            break;
+            case QVM_OP_MULI:
+                // multiplication
+                QVM_SOP( *= );
+                break;
 
-        case QVM_OP_NEGF:
-            // float negation
-            QVM_SFOP( - );
-            break;
+            case QVM_OP_MULU:
+                // unsigned multiplication
+                QVM_UOP( *= );
+                break;
 
-        case QVM_OP_ADDF:
-            // float addition
-            QVM_FOP( += );
-            break;
+            case QVM_OP_BAND:
+                // bitwise AND
+                QVM_SOP( &= );
+                break;
 
-        case QVM_OP_SUBF:
-            // float subtraction
-            QVM_FOP( -= );
-            break;
+            case QVM_OP_BOR:
+                // bitwise OR
+                QVM_SOP( |= );
+                break;
 
-        case QVM_OP_DIVF:
-            // float division
-            QVM_FOP( /= );
-            break;
+            case QVM_OP_BXOR:
+                // bitwise XOR
+                QVM_SOP( ^= );
+                break;
 
-        case QVM_OP_MULF:
-            // float multiplication
-            QVM_FOP( *= );
-            break;
+            case QVM_OP_BCOM:
+                // bitwise one's compliment
+                QVM_SSOP( ~ );
+                break;
 
-        // format conversion
+            case QVM_OP_LSH:
+                // unsigned bitwise LEFTSHIFT
+                QVM_UOP( <<= );
+                break;
 
-        case QVM_OP_CVIF:
-            // convert opstack[0] int->float
-            *(float*)&opstack[0] = (float)opstack[0];
-            break;
+            case QVM_OP_RSHI:
+                // bitwise RIGHTSHIFT
+                QVM_SOP( >>= );
+                break;
 
-        case QVM_OP_CVFI:
-            // convert opstack[0] float->int
-            opstack[0] = (int)*(float*)&opstack[0];
-            break;
+            case QVM_OP_RSHU:
+                // unsigned bitwise RIGHTSHIFT
+                QVM_UOP( >>= );
+                break;
+
+            case QVM_OP_NEGF:
+                // float negation
+                QVM_SFOP( - );
+                break;
+
+            case QVM_OP_ADDF:
+                // float addition
+                QVM_FOP( += );
+                break;
+
+            case QVM_OP_SUBF:
+                // float subtraction
+                QVM_FOP( -= );
+                break;
+
+            case QVM_OP_DIVF:
+                // float division
+                QVM_FOP( /= );
+                break;
+
+            case QVM_OP_MULF:
+                // float multiplication
+                QVM_FOP( *= );
+                break;
+
+            // format conversion
+
+            case QVM_OP_CVIF:
+                // convert opstack[0] int->float
+                *(float*)&opstack[0] = (float)opstack[0];
+                break;
+
+            case QVM_OP_CVFI:
+                // convert opstack[0] float->int
+                opstack[0] = (int)*(float*)&opstack[0];
+                break;
         } // switch (op)
     } while (opptr);
 
