@@ -19,7 +19,7 @@ Created By:
 #include "game_jk2mp.h"
 #include "qmm.hpp"
 #include "main.hpp"     // qmm_syscall in GEN_IMPORT
-#include "mod.hpp"      // g_mod
+#include "mod.hpp"
 #include "util.hpp"
 
 struct JK2MP_GameSupport : public GameSupport {
@@ -129,12 +129,12 @@ intptr_t JK2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
         // one arg passed to this function is a string that lives in the engine. i don't think this
         // can ever actually be called, but it seems weird this was overlooked for QVM mods by the
         // original engine AND by OpenJK
-        if (cmd == GAME_ROFF_NOTETRACK_CALLBACK && g_mod.vm.memory && args[1]) {
+        if (cmd == GAME_ROFF_NOTETRACK_CALLBACK && Mod::vm.memory && args[1]) {
             // G_ROFF_NotetrackCallback( &g_entities[arg0], (const char *)arg1 );
             size_t arg1len = strlen((char*)args[1]) + 1;
-            int arg1 = qvm_hunk_alloc(&g_mod.vm, arg1len, (void*)args[1]);
+            int arg1 = qvm_hunk_alloc(&Mod::vm, arg1len, (void*)args[1]);
             ret = orig_vmMain(cmd, args[0], arg1);
-            qvm_hunk_free(&g_mod.vm, arg1, arg1len, (void*)args[1]);
+            qvm_hunk_free(&Mod::vm, arg1, arg1len, (void*)args[1]);
         }
         else {
             // all normal mod functions go to vmMain
@@ -142,8 +142,8 @@ intptr_t JK2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 
             // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
             // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
-            if (cmd == GAME_CLIENT_CONNECT && ret > 0 && g_mod.vm.memory) {
-                ret += (intptr_t)g_mod.vm.memory;
+            if (cmd == GAME_CLIENT_CONNECT && ret > 0 && Mod::vm.memory) {
+                ret += (intptr_t)Mod::vm.memory;
             }
         }
     }

@@ -22,7 +22,7 @@ Created By:
 #include "gameapi.hpp"
 #include "qmmapi.h"
 #include "plugin.hpp"   // g_plugins
-#include "mod.hpp"      // g_mod
+#include "mod.hpp"
 #include "util.hpp"
 
 
@@ -248,7 +248,7 @@ namespace QMM {
         // if "mod" config setting is an absolute path, just attempt to load it directly
         if (!Util::str_striequal(cfg_mod, "auto") && Util::path_is_absolute(cfg_mod)) {
             QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << cfg_mod << "\"\n";
-            return g_mod.Load(cfg_mod, try_api);
+            return Mod::Load(cfg_mod, try_api);
         }
         // if "mod" config setting is "auto", try the following locations in order:
         // "<qvmname>" (if the game engine supports it)
@@ -278,7 +278,7 @@ namespace QMM {
             if (try_path.empty() || !Util::path_is_allowed(try_path))
                 continue;
             QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load mod \"" << try_path << "\"\n";
-            if (g_mod.Load(try_path, try_api))
+            if (Mod::Load(try_path, try_api))
                 return true;
         }
 
@@ -505,18 +505,18 @@ namespace QMM {
                 }
                 return 0;
             }
-            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << APIType_Function(g_mod.api) << " mod \"" << g_mod.path << "\"\n";
+            QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << APIType_Function(Mod::api) << " mod \"" << Mod::path << "\"\n";
 
             // cgame passthrough hack:
             // mod DLL is loaded, so find the vmMain and dllEntry functions and call dllEntry.
             // JASP+JK2SP's cgame dllEntry functions actually call into the syscall almost immediately,
             // so make sure we store vmMain first in case there's some re-entrancy
             if (QMM::CGame::syscall) {
-                QMM::CGame::vmMain = (mod_vmMain)Util::dll_symbol(g_mod.dll, "vmMain");
+                QMM::CGame::vmMain = (mod_vmMain)Util::dll_symbol(Mod::dll, "vmMain");
                 QMMLOG(QMM_LOG_DEBUG, "QMM") << "Storing cgame vmMain = " << QMM::CGame::vmMain << "\n";
 
                 // pass original cgame syscall to dllEntry in mod
-                mod_dllEntry pfndllEntry = (mod_dllEntry)Util::dll_symbol(g_mod.dll, "dllEntry");
+                mod_dllEntry pfndllEntry = (mod_dllEntry)Util::dll_symbol(Mod::dll, "dllEntry");
                 QMMLOG(QMM_LOG_DEBUG, "QMM") << "Passing cgame syscall to dllEntry = " << pfndllEntry << "\n";
                 if (pfndllEntry)
                     pfndllEntry(QMM::CGame::syscall);
@@ -587,7 +587,7 @@ namespace QMM {
             else {
                 // unload mod
                 QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
-                g_mod.Unload();
+                Mod::Unload();
             }
 
             if (!game->IsHidden()) {
@@ -642,22 +642,22 @@ namespace QMM {
             CONSOLE_PRINT ("(QMM) URL        : " QMM_URL "\n");
             CONSOLE_PRINT ("(QMM) PIFV       : " STRINGIFY(QMM_PIFV_MAJOR) ":" STRINGIFY(QMM_PIFV_MINOR) "\n");
             CONSOLE_PRINTF("(QMM) Plugins    : {}\n", g_plugins.size());
-            CONSOLE_PRINTF("(QMM) Loaded mod : {} ({})\n", g_mod.path, APIType_Function(g_mod.api));
-            if (g_mod.vm.memory) {
+            CONSOLE_PRINTF("(QMM) Loaded mod : {} ({})\n", Mod::path, APIType_Function(Mod::api));
+            if (Mod::vm.memory) {
                 CONSOLE_PRINT ("(QMM)\n");
                 CONSOLE_PRINT ("(QMM) QVM mod information\n");
                 CONSOLE_PRINT ("(QMM) -------------------\n");
-                CONSOLE_PRINTF("(QMM) QVM magic number   : {:x} ({})\n", g_mod.vm.magic, g_mod.vm.magic == QVM_MAGIC ? "QVM_MAGIC" : "QVM_MAGIC_VER2");
-                CONSOLE_PRINTF("(QMM) QVM file size      : {}\n", g_mod.vm.filesize);
-                CONSOLE_PRINTF("(QMM) QVM memory base    : {}\n", fmt::ptr(g_mod.vm.memory));
-                CONSOLE_PRINTF("(QMM) QVM memory size    : {}\n", g_mod.vm.memorysize);
-                CONSOLE_PRINTF("(QMM) QVM instr count    : {}\n", g_mod.vm.instructioncount);
-                CONSOLE_PRINTF("(QMM) QVM codeseg size   : {}\n", g_mod.vm.codeseglen);
-                CONSOLE_PRINTF("(QMM) QVM dataseg size   : {}\n", g_mod.vm.dataseglen);
-                CONSOLE_PRINTF("(QMM) QVM stack size     : {}\n", g_mod.vm.stacksize);
-                CONSOLE_PRINTF("(QMM) QVM hunk size      : {}\n", g_mod.vm.hunksize);
-                CONSOLE_PRINTF("(QMM) QVM hunk usage     : {}\n", g_mod.vm.hunkhigh - g_mod.vm.hunkptr);
-                CONSOLE_PRINTF("(QMM) QVM data validation: {}\n", g_mod.vm.verify_data ? "on" : "off");
+                CONSOLE_PRINTF("(QMM) QVM magic number   : {:x} ({})\n", Mod::vm.magic, Mod::vm.magic == QVM_MAGIC ? "QVM_MAGIC" : "QVM_MAGIC_VER2");
+                CONSOLE_PRINTF("(QMM) QVM file size      : {}\n", Mod::vm.filesize);
+                CONSOLE_PRINTF("(QMM) QVM memory base    : {}\n", fmt::ptr(Mod::vm.memory));
+                CONSOLE_PRINTF("(QMM) QVM memory size    : {}\n", Mod::vm.memorysize);
+                CONSOLE_PRINTF("(QMM) QVM instr count    : {}\n", Mod::vm.instructioncount);
+                CONSOLE_PRINTF("(QMM) QVM codeseg size   : {}\n", Mod::vm.codeseglen);
+                CONSOLE_PRINTF("(QMM) QVM dataseg size   : {}\n", Mod::vm.dataseglen);
+                CONSOLE_PRINTF("(QMM) QVM stack size     : {}\n", Mod::vm.stacksize);
+                CONSOLE_PRINTF("(QMM) QVM hunk size      : {}\n", Mod::vm.hunksize);
+                CONSOLE_PRINTF("(QMM) QVM hunk usage     : {}\n", Mod::vm.hunkhigh - Mod::vm.hunkptr);
+                CONSOLE_PRINTF("(QMM) QVM data validation: {}\n", Mod::vm.verify_data ? "on" : "off");
             }
         }
         else if (Util::str_striequal("list", arg1) || Util::str_striequal("pluginlist", arg1)) {

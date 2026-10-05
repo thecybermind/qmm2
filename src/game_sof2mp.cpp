@@ -24,7 +24,7 @@ Created By:
 #include "game_sof2mp.h"
 #include "qmm.hpp"
 #include "main.hpp"     // qmm_syscall in QVMSyscall
-#include "mod.hpp"      // g_mod
+#include "mod.hpp"
 #include "util.hpp"
 
 struct SOF2MP_GameSupport : public GameSupport {
@@ -134,7 +134,7 @@ intptr_t SOF2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
         // some of the args passed to GAME_GAMETYPE_COMMAND are pointers from the gametype QVM. while both the SOF2MP engine
         // and the SOF2GT_QMM plugin will convert them from QVM pointers to real pointers on the way in from the gametype QVM,
         // these are going back into the game QVM, so we need to copy the strings/objects to the qvm hunk
-        if (cmd == GAME_GAMETYPE_COMMAND && g_mod.vm.memory) {
+        if (cmd == GAME_GAMETYPE_COMMAND && Mod::vm.memory) {
             switch (args[0]) {
                 // arg1 is a string
                 case GTCMD_REGISTERSOUND:       // int ( const char* soundFile );
@@ -146,19 +146,19 @@ intptr_t SOF2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
                         break;
                     }
                     int arg1len = strlen((char*)args[1]) + 1;
-                    int arg1 = qvm_hunk_alloc(&g_mod.vm, arg1len, (void*)args[1]);
+                    int arg1 = qvm_hunk_alloc(&Mod::vm, arg1len, (void*)args[1]);
                     ret = orig_vmMain(cmd, args[0], arg1);
-                    qvm_hunk_free(&g_mod.vm, arg1, arg1len, (void*)args[1]);
+                    qvm_hunk_free(&Mod::vm, arg1, arg1len, (void*)args[1]);
                     break;
                 }
                 // arg2 and arg3 are vec3_ts
                 case GTCMD_SPAWNITEM:           // void ( int itemid, vec3_t origin, vec3_t angles );
                 case GTCMD_PLAYEFFECT: {        // void ( int effect, vec3_t origin, vec3_t angles );
-                    int arg2 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[2]);
-                    int arg3 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[3]);
+                    int arg2 = qvm_hunk_alloc(&Mod::vm, sizeof(vec3_t), (void*)args[2]);
+                    int arg3 = qvm_hunk_alloc(&Mod::vm, sizeof(vec3_t), (void*)args[3]);
                     ret = orig_vmMain(cmd, args[0], args[1], arg2, arg3);
-                    qvm_hunk_free(&g_mod.vm, arg3, sizeof(vec3_t), (void*)args[3]);
-                    qvm_hunk_free(&g_mod.vm, arg2, sizeof(vec3_t), (void*)args[2]);
+                    qvm_hunk_free(&Mod::vm, arg3, sizeof(vec3_t), (void*)args[3]);
+                    qvm_hunk_free(&Mod::vm, arg2, sizeof(vec3_t), (void*)args[2]);
                     break;
                 }
                 // arg2 is a string and arg3 is an object (gtItemDef_t and gtTriggerDef_t are the same size)
@@ -169,11 +169,11 @@ intptr_t SOF2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
                         break;
                     }
                     int arg2len = strlen((char*)args[2]) + 1;
-                    int arg2 = qvm_hunk_alloc(&g_mod.vm, arg2len, (void*)args[2]);
-                    int arg3 = qvm_hunk_alloc(&g_mod.vm, sizeof(gtItemDef_t), (void*)args[3]);
+                    int arg2 = qvm_hunk_alloc(&Mod::vm, arg2len, (void*)args[2]);
+                    int arg3 = qvm_hunk_alloc(&Mod::vm, sizeof(gtItemDef_t), (void*)args[3]);
                     ret = orig_vmMain(cmd, args[0], args[1], arg2, arg3);
-                    qvm_hunk_free(&g_mod.vm, arg3, sizeof(gtItemDef_t), (void*)args[3]);
-                    qvm_hunk_free(&g_mod.vm, arg2, arg2len, (void*)args[2]);
+                    qvm_hunk_free(&Mod::vm, arg3, sizeof(gtItemDef_t), (void*)args[3]);
+                    qvm_hunk_free(&Mod::vm, arg2, arg2len, (void*)args[2]);
                     break;
                 }
                  // arg2 is a string
@@ -184,17 +184,17 @@ intptr_t SOF2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
                         break;
                     }
                     int arg2len = strlen((char*)args[2]) + 1;
-                    int arg2 = qvm_hunk_alloc(&g_mod.vm, arg2len, (void*)args[2]);
+                    int arg2 = qvm_hunk_alloc(&Mod::vm, arg2len, (void*)args[2]);
                     ret = orig_vmMain(cmd, args[0], args[1], arg2);
-                    qvm_hunk_free(&g_mod.vm, arg2, arg2len, (void*)args[2]);
+                    qvm_hunk_free(&Mod::vm, arg2, arg2len, (void*)args[2]);
                     break;
                 }
                  // arg2 is a vec3_t
                 case GTCMD_STARTSOUND:          // void ( int soundid, vec3_t origin );
                 case GTCMD_GETCLIENTORIGIN: {   // void ( int clientid, vec3_t origin );
-                    int arg2 = qvm_hunk_alloc(&g_mod.vm, sizeof(vec3_t), (void*)args[2]);
+                    int arg2 = qvm_hunk_alloc(&Mod::vm, sizeof(vec3_t), (void*)args[2]);
                     ret = orig_vmMain(cmd, args[0], arg2);
-                    qvm_hunk_free(&g_mod.vm, arg2, sizeof(vec3_t), (void*)args[2]);
+                    qvm_hunk_free(&Mod::vm, arg2, sizeof(vec3_t), (void*)args[2]);
                     break;
                 }
                 // arg2 is a char* buffer to write to, sized arg3
@@ -204,9 +204,9 @@ intptr_t SOF2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
                         ret = orig_vmMain(cmd, args[0], args[1], args[2]);
                         break;
                     }
-                    int arg2 = qvm_hunk_alloc(&g_mod.vm, args[3], (void*)args[2]);
+                    int arg2 = qvm_hunk_alloc(&Mod::vm, args[3], (void*)args[2]);
                     ret = orig_vmMain(cmd, args[0], args[1], arg2, args[3]);
-                    qvm_hunk_free(&g_mod.vm, arg2, args[3], (void*)args[2]);
+                    qvm_hunk_free(&Mod::vm, arg2, args[3], (void*)args[2]);
                     break;
                 }
                 // arg2 is an int* buffer to write in, sized arg3
@@ -215,9 +215,9 @@ intptr_t SOF2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
                         ret = orig_vmMain(cmd, args[0], args[1], args[2]);
                         break;
                     }
-                    int arg2 = qvm_hunk_alloc(&g_mod.vm, args[3] * sizeof(int), (void*)args[2]);
+                    int arg2 = qvm_hunk_alloc(&Mod::vm, args[3] * sizeof(int), (void*)args[2]);
                     ret = orig_vmMain(cmd, args[0], args[1], arg2, args[3]);
-                    qvm_hunk_free(&g_mod.vm, arg2, args[3] * sizeof(int), (void*)args[2]);
+                    qvm_hunk_free(&Mod::vm, arg2, args[3] * sizeof(int), (void*)args[2]);
                     break;
                 }
                 default:
@@ -231,8 +231,8 @@ intptr_t SOF2MP_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 
             // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
             // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
-            if (cmd == GAME_CLIENT_CONNECT && ret > 0 && g_mod.vm.memory) {
-                ret += (intptr_t)g_mod.vm.memory;
+            if (cmd == GAME_CLIENT_CONNECT && ret > 0 && Mod::vm.memory) {
+                ret += (intptr_t)Mod::vm.memory;
             }
         }
     }
@@ -626,7 +626,7 @@ int SOF2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
             // this returns a pointer into the engine, so we copy the data into the qvm hunk
             intptr_t ptr = qmm_syscall(cmd, VMPTR(0));
             if (ptr)
-                ret = qvm_hunk_alloc(&g_mod.vm, strlen((char*)ptr)+1, (void*)ptr);
+                ret = qvm_hunk_alloc(&Mod::vm, strlen((char*)ptr)+1, (void*)ptr);
             break;
         }
         case G_FS_FCLOSE_FILE:            // (fileHandle_t f);
@@ -709,7 +709,7 @@ int SOF2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
             // these return pointers into the engine, so we copy the data into the qvm hunk
             intptr_t ptr = qmm_syscall(cmd, VMARG(0));
             if (ptr)
-                ret = qvm_hunk_alloc(&g_mod.vm, args[0] ? args[0] : 1, nullptr);
+                ret = qvm_hunk_alloc(&Mod::vm, args[0] ? args[0] : 1, nullptr);
             break;
         }
         case G_CVAR_SET:            // (const char* var_name, const char* value);
@@ -745,7 +745,7 @@ int SOF2MP_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
             // this returns a pointer into the engine, so we copy the data into the qvm hunk
             intptr_t ptr = qmm_syscall(cmd, VMARG(0), VMARG(1));
             if (ptr)
-                ret = qvm_hunk_alloc(&g_mod.vm, strlen((char*)ptr) + 1, (void*)ptr);
+                ret = qvm_hunk_alloc(&Mod::vm, strlen((char*)ptr) + 1, (void*)ptr);
             break;
         }
         case G_SEND_CONSOLE_COMMAND:        // (int exec_when, const char* text)

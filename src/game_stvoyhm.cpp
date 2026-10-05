@@ -22,7 +22,7 @@ Created By:
 // QMM-specific STVOYHM header
 #include "game_stvoyhm.h"
 #include "qmm.hpp"
-#include "mod.hpp"      // g_mod
+#include "mod.hpp"
 #include "main.hpp"     // qmm_syscall in QVMSyscall
 #include "util.hpp"
 
@@ -135,8 +135,8 @@ intptr_t STVOYHM_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
 
         // the return value for GAME_CLIENT_CONNECT is a char* so we have to modify the pointer value for QVMs
         // the char* is a string to print if the client should not be allowed to connect, so only change if it's not NULL
-        if (cmd == GAME_CLIENT_CONNECT && ret > 0 && g_mod.vm.memory) {
-            ret += (intptr_t)g_mod.vm.memory;
+        if (cmd == GAME_CLIENT_CONNECT && ret > 0 && Mod::vm.memory) {
+            ret += (intptr_t)Mod::vm.memory;
         }
     }
 

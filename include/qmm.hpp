@@ -176,7 +176,7 @@ namespace QMM {
         std::vector<uint8_t> file;
     };
 
-};   // namespace QMM
+}   // namespace QMM
 
 
 // Convert from QMM_G_ message to actual G_ message
