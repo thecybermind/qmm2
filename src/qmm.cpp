@@ -82,11 +82,10 @@ namespace QMM {
     bool is_shutdown;
     APIType api;
 
-    intptr_t msg_G_PRINT;
-    intptr_t msg_GAME_INIT;
-    intptr_t msg_GAME_CONSOLE_COMMAND;
-    intptr_t msg_GAME_SHUTDOWN;
-
+    intptr_t msg_G_PRINT;                // Value of G_PRINT for the detected game
+    intptr_t msg_GAME_INIT;              // Value of GAME_INIT for the detected game
+    intptr_t msg_GAME_CONSOLE_COMMAND;   // Value of GAME_CONSOLE_COMMAND for the detected game
+    intptr_t msg_GAME_SHUTDOWN;          // Value of GAME_SHUTDOWN for the detected game
 
     static void DetectEnv();
     static void LoadConfig(std::string config_filename);

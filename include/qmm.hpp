@@ -72,11 +72,6 @@ namespace QMM {
     */
     intptr_t syscall_args(intptr_t cmd, intptr_t* args);
 
-    extern intptr_t msg_G_PRINT;                // Value of G_PRINT for the detected game
-    extern intptr_t msg_GAME_INIT;              // Value of GAME_INIT for the detected game
-    extern intptr_t msg_GAME_CONSOLE_COMMAND;   // Value of GAME_CONSOLE_COMMAND for the detected game
-    extern intptr_t msg_GAME_SHUTDOWN;          // Value of GAME_SHUTDOWN for the detected game
-
     /* This is used if we couldn't determine a game engine and we have to fail.
      * G_ERROR appears to be 1 in all supported dllEntry games.
      * They are different in some GetGameAPI games, but for those we just return nullptr from GetGameAPI.
