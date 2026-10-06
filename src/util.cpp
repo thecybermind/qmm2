@@ -19,8 +19,7 @@ Created By:
 #include <chrono>
 #include <filesystem>
 #include "qmm.hpp"
-#include "util.hpp"     // str_striequal
-#include "log.hpp"
+#include "util.hpp"
 #include "format.hpp"
 
 #if defined(QMM_OS_WINDOWS)
