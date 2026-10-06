@@ -666,7 +666,7 @@ void SIN_GameSupport::update_exports() {
         // this will trigger this message to be fired to plugins, and then it will be handled
         // by the empty "case G_LOCATE_GAME_DATA" in syscall
         intptr_t args[] = { (intptr_t)qmm_export.edicts, qmm_export.num_edicts, qmm_export.edict_size, (intptr_t)nullptr, 0 };
-        QMM::syscall_args(G_LOCATE_GAME_DATA, args);
+        (void)QMM::syscall_args(G_LOCATE_GAME_DATA, args);
     }
 }
 
@@ -684,7 +684,7 @@ void SIN_GameSupport::configstring(int num, const char* configstring) {
     else
         configstrings[num] = configstring;
     intptr_t args[] = { num, (intptr_t)configstring };
-    QMM::syscall_args(G_CONFIGSTRING, args);
+    (void)QMM::syscall_args(G_CONFIGSTRING, args);
 }
 
 
