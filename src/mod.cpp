@@ -163,12 +163,11 @@ namespace Mod {
     * @return true if mod load was successful, false otherwise
     */
     static bool LoadQVM(std::string file) {
-        QMM::EngineFileRead f;       // read QVM file using engine functions to see into .pk3s
+        QMM::EngineFileRead f(file);       // read QVM file using engine functions to see into .pk3s
         bool verify_data;
         size_t hunk_size;
 
-        // load file using engine functions to read into pk3s if necessary
-        uint8_t* filedata = f.Open(file);
+        uint8_t* filedata = f.Data();
         if (!filedata) {
             QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << file << "\"): Could not open QVM for reading\n";
             return false;

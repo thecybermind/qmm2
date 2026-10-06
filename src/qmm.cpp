@@ -790,19 +790,16 @@ namespace QMM {
     }
 
 
-    EngineFileRead::EngineFileRead() : handle(0) {
-    }
-
-
-    uint8_t* EngineFileRead::Open(std::string path) {
+    EngineFileRead::EngineFileRead(std::string path) : handle(0) {
         intptr_t filelen = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FOPEN_FILE), path.c_str(), &this->handle, QMM_ENG_MSG(QMM_FS_READ));
         if (filelen <= 0 || !this->handle) {
-            this->Close();
-            return nullptr;
+            this->~EngineFileRead();
+            return;
         }
         this->file.resize((size_t)filelen);
         ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_READ), this->file.data(), this->file.size(), this->handle);
-        return this->file.data();
+        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), this->handle);
+        this->handle = 0;
     }
 
 
@@ -811,16 +808,16 @@ namespace QMM {
     }
 
 
-    void EngineFileRead::Close() {
-        this->file.clear();
-        if (this->handle)
-            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), this->handle);
-        this->handle = 0;
+    uint8_t* EngineFileRead::Data() {
+        return this->file.size() ? this->file.data() : nullptr;
     }
 
 
     EngineFileRead::~EngineFileRead() {
-        this->Close();
+        this->file.clear();
+        if (this->handle)
+            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), this->handle);
+        this->handle = 0;
     }
 
 }   // namespace QMM
