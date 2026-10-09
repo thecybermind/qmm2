@@ -38,6 +38,7 @@ GEN_GAME_EXTS(Q2R);
 GEN_GAME_EXTS(Q2RC);
 GEN_GAME_EXTS(QUAKE2);
 GEN_GAME_EXTS(SIN);
+GEN_GAME_EXTS(SOF);
 GEN_GAME_EXTS(SOF2SP);
 GEN_GAME_EXTS(STEF2);
 GEN_GAME_EXTS(STVOYSP);
@@ -77,6 +78,7 @@ std::vector<GameSupport*> api_supportedgames = {
     GET_GAME_OBJ(SOF2SP),
     GET_GAME_OBJ(STVOYSP),
     GET_GAME_OBJ(SIN),
+    GET_GAME_OBJ(SOF),
 #endif
 
 // Q2R only exists for 64-bit Windows
