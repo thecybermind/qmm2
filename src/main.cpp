@@ -15,7 +15,7 @@ Created By:
 #include "log.hpp"
 #include "qmm.hpp"
 #include "qmmapi.h"
-#include "mod.hpp"      // g_mod
+#include "mod.hpp"
 #include "util.hpp"     // used in 64-bit GetCGameAPI only
 
 
@@ -54,12 +54,12 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
     // is loaded, or when hosting a listen server, so just get the return value from the mod's GetCGameAPI() function directly
     if (QMM::game) {
         // ??
-        if (!g_mod.dll) {
+        if (!Mod::dll) {
             QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Mod DLL not loaded?\n";
             return nullptr;
         }
         QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Passing on call to mod DLL.\n";
-        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(g_mod.dll, "GetCGameAPI");
+        mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(Mod::dll, "GetCGameAPI");
         return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
     }
 
@@ -87,7 +87,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         if (QMM::CGame::is_shutdown) {
             // unload mod (dlclose)
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
-            g_mod.Unload();
+            Mod::Unload();
         }
 
         return ret;

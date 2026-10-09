@@ -98,31 +98,31 @@ const char* APIType_Name(APIType api) {
         GEN_CASE(QMM_API_GETMODULEAPI);
 
         GEN_CASE(QMM_API_GETCGAMEAPI);
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     };
 }
 
 
 const char* APIType_Function(APIType api) {
     switch (api) {
-    case QMM_API_UNKNOWN:
-        return "(unknown)";
+        case QMM_API_UNKNOWN:
+            return "(unknown)";
 
-    case QMM_API_QVM:
-        return "QVM";
+        case QMM_API_QVM:
+            return "QVM";
 
-    case QMM_API_DLLENTRY:
-        return "dllEntry";
-    case QMM_API_GETGAMEAPI:
-        return "GetGameAPI";
-    case QMM_API_GETMODULEAPI:
-        return "GetModuleAPI";
+        case QMM_API_DLLENTRY:
+            return "dllEntry";
+        case QMM_API_GETGAMEAPI:
+            return "GetGameAPI";
+        case QMM_API_GETMODULEAPI:
+            return "GetModuleAPI";
 
-    case QMM_API_GETCGAMEAPI:
-        return "GetCGameAPI";
+        case QMM_API_GETCGAMEAPI:
+            return "GetCGameAPI";
 
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     };
 }

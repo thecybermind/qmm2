@@ -23,7 +23,7 @@ Created By:
 #include "config.hpp"
 #include "qmm.hpp"
 #include "plugin.hpp"   // g_plugins
-#include "mod.hpp"      // g_mod
+#include "mod.hpp"
 #include "qvm.h"
 #include "util.hpp"
 
@@ -267,7 +267,7 @@ int Plugin::Load(std::string file) {
     }
 
     // set some pluginvars only available at run-time (this will get repeated for every plugin, but that's ok)
-    s_pluginvars.vmbase = (intptr_t)g_mod.vm.memory;
+    s_pluginvars.vmbase = (intptr_t)Mod::vm.memory;
 
     // call QMM_Attach. if it fails (returns 0), destructor will call QMM_Detach and unload DLL
     // QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
@@ -313,8 +313,8 @@ const char* Plugin::plugin_result_to_str(plugin_res res) {
         GEN_CASE(QMM_IGNORED);
         GEN_CASE(QMM_OVERRIDE);
         GEN_CASE(QMM_SUPERCEDE);
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     };
 }
 
@@ -391,7 +391,7 @@ static const char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], cons
 * @return 0 if the mod is not a QVM, !0 otherwise
 */
 static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]] ) {
-    int ret = !!g_mod.vm.memory;
+    int ret = !!Mod::vm.memory;
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called IsQVM() = " << ret << "\n";
 
@@ -816,7 +816,7 @@ static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
 * @return Return value of QVM function
 */
 static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int instruction, int argc, int* argv) {
-    int ret = qvm_exec_ex(&g_mod.vm, (size_t)instruction, argc, argv);
+    int ret = qvm_exec_ex(&Mod::vm, (size_t)instruction, argc, argv);
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called QVMExecFunc(" << instruction << ", " << argc << ") = " << ret << "\n";
 

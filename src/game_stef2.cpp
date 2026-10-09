@@ -1017,7 +1017,7 @@ void STEF2_GameSupport::update_exports() {
         // this will trigger this message to be fired to plugins, and then it will be handled
         // by the empty "case G_LOCATE_GAME_DATA" in syscall
         intptr_t args[] = { (intptr_t)qmm_export.gentities, qmm_export.num_entities, qmm_export.gentitySize, (intptr_t)nullptr, 0 };
-        QMM::syscall_args(G_LOCATE_GAME_DATA, args);
+        (void)QMM::syscall_args(G_LOCATE_GAME_DATA, args);
     }
 }
 

@@ -99,7 +99,6 @@ intptr_t JAMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "JAMP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
-
     // store return value since we do some stuff after the function call is over
     intptr_t ret = 0;
 
@@ -561,7 +560,6 @@ void* JAMP_GameSupport::Entry(void* arg0, void* arg1, APIType engine_api) {
         orig_import = *gi;
 
         // fill in variables of our hooked import struct to pass to the mod
-
 
         // struct full of export lambdas to QMM's vmMain
         // this gets returned to the game engine, but we haven't loaded the mod yet.
