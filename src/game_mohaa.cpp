@@ -538,6 +538,8 @@ bool MOHAA_GameSupport::ModLoad(void* entry, APIType mod_api) {
 
 void MOHAA_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
+    entity_tokens.clear();
+    token_counter = 0;
 }
 
 

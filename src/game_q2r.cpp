@@ -452,6 +452,9 @@ bool Q2R_GameSupport::ModLoad(void* entry, APIType mod_api) {
 
 void Q2R_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
+    entity_tokens.clear();
+    token_counter = 0;
+    userinfos.clear();
 }
 
 

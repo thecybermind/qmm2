@@ -417,6 +417,10 @@ bool QUAKE2_GameSupport::ModLoad(void* entry, APIType mod_api) {
 
 void QUAKE2_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
+    configstrings.clear();
+    entity_tokens.clear();
+    token_counter = 0;
+    userinfos.clear();
 }
 
 

@@ -409,6 +409,9 @@ bool JASP_GameSupport::ModLoad(void* entry, APIType mod_api) {
 
 void JASP_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
+    subbsp_entity_tokens.clear();
+    active_subbsp = 0;
+    token_counter.clear();
 }
 
 
