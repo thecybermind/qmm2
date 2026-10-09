@@ -185,8 +185,6 @@ typedef edict_t gentity_t;
 
 // other values
 enum {
-    // not used with SOF
-    EXEC_APPEND,
     // file flags
     FS_READ,
     FS_WRITE,
