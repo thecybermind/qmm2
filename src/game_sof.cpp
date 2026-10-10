@@ -780,7 +780,6 @@ void SOF_GameSupport::cvar_cmd_callback(cvar_t* cvar) {
     store_args(cvar->name, cvar->string);
     (void)QMM::vmMain_args(GAME_CONSOLE_COMMAND, nullptr);
     command_args.clear();
-    orig_import.cvar_set(cvar->name, "");
 }
 
 
