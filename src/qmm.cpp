@@ -679,7 +679,7 @@ namespace QMM {
 
         int argc = (int)ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ARGC));
         QMM::ArgV(arg_start + 1, arg1, sizeof(arg1));
-        if (argc > arg_start + 2)
+        if (argc >= arg_start + 2)
             QMM::ArgV(arg_start + 2, arg2, sizeof(arg2));
 
         if (Util::str_striequal("status", arg1) || Util::str_striequal("info", arg1)) {
@@ -773,7 +773,7 @@ namespace QMM {
             CONSOLE_PRINT("(QMM)  - fmtlib - https://github.com/fmtlib/fmt\n");
         }
         else {
-            if (!Util::str_striequal("help", arg1)) {
+            if (argc > 1 && !Util::str_striequal("help", arg1)) {
                 CONSOLE_PRINTF("(QMM) Unknown command: {}\n", arg1);
                 CONSOLE_PRINT ("(QMM)\n");
             }

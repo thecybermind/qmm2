@@ -357,6 +357,8 @@ bool JK2SP_GameSupport::ModLoad(void* entry, APIType mod_api) {
 
 void JK2SP_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
+    entity_tokens.clear();
+    token_counter = 0;
 }
 
 
