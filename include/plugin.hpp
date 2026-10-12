@@ -22,11 +22,11 @@ struct Plugin {
     // QMM_Query signature
     using plugin_query = void (*)(plugin_info** pinfo);
     // QMM_Attach signature
-    using plugin_attach = int (*)(eng_syscall engfunc, mod_vmMain modfunc, plugin_res* presult, plugin_funcs* pluginfuncs, plugin_vars* pluginvars);
+    using plugin_attach = int (*)(eng_syscall engfunc, eng_syscall_args engfunc_args, mod_vmMain modfunc, mod_vmMain_args modfunc_args, plugin_funcs* pluginfuncs, plugin_vars* pluginvars);
     // QMM_Detach signature
     using plugin_detach = void (*)();
     // QMM_vmMain(_Post) + QMM_syscall(_Post) signatures
-    using plugin_callback = intptr_t(*)(intptr_t cmd, intptr_t* args);
+    using plugin_callback = intptr_t(*)(result_vars* results, intptr_t cmd, intptr_t* args);
     // QMM_PluginMessage signature
     using plugin_pluginmessage = void (*)(plugin_id from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
     // QMM_QVMHandler signature
@@ -75,17 +75,6 @@ struct Plugin {
     */
     static const char* plugin_result_to_str(plugin_res res);
 };
-
-// This holds global variables that are available to plugins via helper functions.
-struct plugin_globals {
-    intptr_t final_return = 0;
-    intptr_t orig_return = 0;
-    plugin_res high_result = QMM_UNUSED;
-    plugin_res plugin_result = QMM_UNUSED;
-};
-
-// This holds global variables that are available to plugins via helper functions.
-extern plugin_globals g_plugin_globals;
 
 // List of QMM plugins
 extern std::vector<Plugin> g_plugins;

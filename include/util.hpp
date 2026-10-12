@@ -246,38 +246,6 @@ namespace Util {
     */
     std::vector<std::string> util_parse_entstring(std::string entstring);
 
-    /**
-    * @brief Returns whichever value is lesser - a typical "min" function.
-    *
-    * This was created to avoid any overlap with a "min" function from stdlib or game SDKs.
-    *
-    * @param T any type
-    * @param U any type
-    * @param a an object of type T
-    * @param b an object of type U
-    * @return whichever of a or b compares lesser
-    */
-    template<typename T, typename U>
-    T util_min(T a, U b) {
-        return (a < b ? a : b);
-    }
-
-    /**
-    * @brief Returns whichever value is greater - a typical "max" function.
-    *
-    * This was created to avoid any overlap with a "max" function from stdlib or game SDKs.
-    *
-    * @param T any type
-    * @param U any type
-    * @param a an object of type T
-    * @param b an object of type U
-    * @return whichever of a or b compares greater
-    */
-    template<typename T, typename U>
-    T util_max(T a, U b) {
-        return (a > b ? a : b);
-    }
-
     // Helper type for horrible_cast
     template <class OutputClass, class InputClass>
     union horrible_union {

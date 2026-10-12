@@ -118,11 +118,11 @@ intptr_t SOF_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
         QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     // update export vars before calling into the engine
-    update_exports();
+    if (cmd != G_PRINT)
+        update_exports();
 
     intptr_t ret = 0;
 
-    float fret; // used to get float return values
     if (orig_import.modelindex) {
         switch (cmd) {
             ROUTE_IMPORT(modelindex, G_MODELINDEX);
@@ -261,11 +261,14 @@ intptr_t SOF_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
                 ret = (intptr_t)s.c_str();
                 break;
             }
-            case G_QMM_REGISTER_CONSOLE_COMMAND:
+            case G_QMM_REGISTER_CONSOLE_COMMAND: {
                 // void (const char *cmd)
                 // create the given cvar name with its command callback sending a GAME_CONSOLE_COMMAND signal
-                (void)orig_import.cvar((const char*)args[0], "", 0, cvar_cmd_callback);
+                cvar_t* cv = orig_import.cvar((const char*)args[0], "", 0, nullptr);
+                if (cv)
+                    cv->command = cvar_cmd_callback;
                 break;
+            }
             // handle special cmds which QMM uses but SOF doesn't have an analogue for
             case G_CVAR_REGISTER: {
                 // sof: cvar_t *(*cvar) (char *var_name, char *value, int flags);
@@ -469,7 +472,6 @@ intptr_t SOF_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
     if (cmd != G_PRINT)
         QMMLOG(QMM_LOG_TRACE, "QMM") << "SOF_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
-
     return ret;
 }
 
@@ -514,13 +516,16 @@ intptr_t SOF_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
             ROUTE_EXPORT_VAR(edict_size, GAMEV_EDICT_SIZE);
             ROUTE_EXPORT_VAR(num_edicts, GAMEV_NUM_EDICTS);
             ROUTE_EXPORT_VAR(max_edicts, GAMEV_MAX_EDICTS);
-            
+
             // register "qmm" cvar with a command callback to fake GAME_CONSOLE_COMMAND
-            case GAME_INIT:
+            case GAME_INIT: {
                 orig_export->Init();
                 // create a "qmm" cvar with its command callback sending a GAME_CONSOLE_COMMAND signal
-                (void)orig_import.cvar("qmm", "", 0, cvar_cmd_callback);
+                cvar_t* cv = orig_import.cvar("qmm", "", 0, nullptr);
+                if (cv)
+                    cv->command = cvar_cmd_callback;
                 break;
+            }
             // handle special cmds which QMM uses but SOF doesn't have an analogue for
             case GAME_CONSOLE_COMMAND:
                 // empty handler after plugins pre hooks called, don't send to game
@@ -779,6 +784,10 @@ void SOF_GameSupport::update_exports() {
 void SOF_GameSupport::cvar_cmd_callback(cvar_t* cvar) {
     store_args(cvar->name, cvar->string);
     (void)QMM::vmMain_args(GAME_CONSOLE_COMMAND, nullptr);
+    cvarcommand_t cmd = cvar->command;
+    cvar->command = nullptr;
+    orig_import.cvar_set(cvar->name, "");
+    cvar->command = cmd;
     command_args.clear();
 }
 

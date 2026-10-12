@@ -35,14 +35,16 @@ Created By:
 
 // various function pointer types
 typedef intptr_t (*eng_syscall)(intptr_t, ...);
+typedef intptr_t (*eng_syscall_args)(intptr_t, intptr_t*);
 typedef intptr_t (*mod_vmMain)(intptr_t, ...);
+typedef intptr_t (*mod_vmMain_args)(intptr_t, intptr_t*);
 typedef void (*mod_dllEntry)(eng_syscall);
 typedef void* (*mod_GetGameAPI)(void*, void*);
 
 // major interface version increases with change to the signature of QMM_Query, QMM_Attach, QMM_Detach, plugin_func, or plugin_info
-#define QMM_PIFV_MAJOR  4
+#define QMM_PIFV_MAJOR  5
 // minor interface version increases with trailing addition to plugin_func or plugin_info structs
-#define QMM_PIFV_MINOR  4
+#define QMM_PIFV_MINOR  0
 // 2:0
 // - removed canpause, loadcmd, unloadcmd from plugininfo_t
 // - renamed old pause/cmd args to QMM_ functions (iscmd, etc) to "reserved"
@@ -74,6 +76,9 @@ typedef void* (*mod_GetGameAPI)(void*, void*);
 // 4:4
 // - swapped order of severity and text in QMM_WRITEQMMLOG and also made it vararg. string construction is ignored if log won't write
 // - changed QMM_VARARGS return to const char*. this will require change to code, but existing compiled plugins will continue to work with no issue
+// 5:0
+// - pass result vars to each callback function
+// - add syscall_args and vmMain_args function pointers to QMM_Attach
 
 // holds plugin info to pass back to QMM
 typedef struct {
@@ -103,23 +108,6 @@ enum {
     QMMLOG_ERROR,
     QMMLOG_FATAL
 };
-
-// only set QMM_ERROR, QMM_IGNORED, QMM_OVERRIDE, and QMM_SUPERCEDE
-typedef enum {
-    QMM_UNUSED = -2,        // default value, output a warning message in logs, do not use, but otherwise functions like QMM_IGNORED
-    QMM_ERROR = -1,         // output an error message in logs, but otherwise functions like QMM_IGNORED
-    QMM_IGNORED = 0,        // this plugin doesn't need special handling
-    QMM_OVERRIDE,           // this plugin has overridden the return value
-    QMM_SUPERCEDE           // this plugin has overridden the return value AND wants the original function to not be called
-} plugin_res;
-
-// macros to help set the plugin result value
-#define QMM_SET_RESULT(res)     *g_result = (plugin_res)(res)           // set result flag to "res"
-#define QMM_RETURN(res, ret)    return (QMM_SET_RESULT(res), (ret))     // set result flag to "res" and return "ret"
-#define QMM_RET_ERROR(ret)      QMM_RETURN(QMM_ERROR, (ret))            // output an error message in logs, but otherwise functions like QMM_IGNORED, and return "ret"
-#define QMM_RET_IGNORED(ret)    QMM_RETURN(QMM_IGNORED, (ret))          // this plugin doesn't need special handling, and return "ret"
-#define QMM_RET_OVERRIDE(ret)   QMM_RETURN(QMM_OVERRIDE, (ret))         // this plugin has overridden the return value, and return "ret"
-#define QMM_RET_SUPERCEDE(ret)  QMM_RETURN(QMM_SUPERCEDE, (ret))        // this plugin has overridden the return value AND wants the original function to not be called, and return "ret"
 
 // prototype struct for QMM plugin util funcs
 typedef struct {
@@ -173,18 +161,42 @@ typedef struct {
 #define QMM_GETCONFIGSTRING2(index)             (g_pluginfuncs->pfnGetConfigString2)(PLID, index)               // same as QMM_GETCONFIGSTRING except returns value
 #define QMM_MODDIR(index)                       (g_pluginfuncs->pfnModDir)(PLID)                                // return loaded mod directory
 
+/* */
+
 // struct of vars for QMM plugin utils
 typedef struct {
-    intptr_t vmbase;                // base address of the QVM memory block (automatically added to pointer args in syscalls)
-    intptr_t* preturn;              // pointer to an int that holds the current value to be returned from a function call (updated by QMM_OVERRIDE/QMM_SUPERCEDE in all hooks)
-    intptr_t* porigreturn;          // pointer to an int that holds the real mod/engine return value (if called, only available in _Post hooks)
-    plugin_res* phighresult;        // highest result so far (only tracks results from Pre hooks)
+    intptr_t vmbase;        // base address of the QVM memory block (automatically added to pointer args in syscalls)
 } plugin_vars;
 
-// macros for QMM plugin vars
-#define QMM_VAR_RETURN(cast)        ((cast)*(g_pluginvars->preturn))        // get the value to be passed to the caller (from override/supercede or original call), with given cast
-#define QMM_VAR_ORIG_RETURN(cast)   ((cast)*(g_pluginvars->porigreturn))    // get the actual return value of a real call while inside a QMM_x_Post call, with given cast
-#define QMM_VAR_HIGH_RES()          (*(g_pluginvars->phighresult))          // get the current highest QMM result value while inside a QMM_x (pre) call
+// only set QMM_ERROR, QMM_IGNORED, QMM_OVERRIDE, and QMM_SUPERCEDE
+typedef enum {
+    QMM_UNUSED = -2,        // default value, output a warning message in logs, do not use, but otherwise functions like QMM_IGNORED
+    QMM_ERROR = -1,         // output an error message in logs, but otherwise functions like QMM_IGNORED
+    QMM_IGNORED = 0,        // this plugin doesn't need special handling
+    QMM_OVERRIDE,           // this plugin has overridden the return value
+    QMM_SUPERCEDE           // this plugin has overridden the return value AND wants the original function to not be called
+} plugin_res;
+
+// struct of vars for QMM plugin results
+typedef struct {
+    plugin_res result;              // result variable that this callback sets
+    plugin_res high_result;         // highest result so far (only tracks results from Pre hooks)
+    intptr_t final_return;          // int that holds the current value to be returned from a function call (updated by QMM_OVERRIDE/QMM_SUPERCEDE in all hooks)
+    intptr_t real_return;           // int that holds the real mod/engine return value (if called, only available in _Post hooks)
+} result_vars;
+
+// macros to help set the plugin result value
+#define QMM_SET_RESULT(res)         results->result = (plugin_res)(res) // set result flag to "res"
+#define QMM_RETURN(res, ret)        return (QMM_SET_RESULT(res), (ret)) // set result flag to "res" and return "ret"
+#define QMM_RET_ERROR(ret)          QMM_RETURN(QMM_ERROR, (ret))        // output an error message in logs, but otherwise functions like QMM_IGNORED, and return "ret"
+#define QMM_RET_IGNORED(ret)        QMM_RETURN(QMM_IGNORED, (ret))      // this plugin doesn't need special handling, and return "ret"
+#define QMM_RET_OVERRIDE(ret)       QMM_RETURN(QMM_OVERRIDE, (ret))     // this plugin has overridden the return value, and return "ret"
+#define QMM_RET_SUPERCEDE(ret)      QMM_RETURN(QMM_SUPERCEDE, (ret))    // this plugin has overridden the return value AND wants the original function to not be called, and return "ret"
+
+// macros for QMM plugin results
+#define QMM_VAR_HIGH_RES()          (results->highresult)               // get the current highest QMM result value while inside a QMM_x (pre) call
+#define QMM_VAR_FINAL_RETURN(cast)  ((cast)(results->final_return))     // get the value to be passed to the caller (from override/supercede or original call), with given cast
+#define QMM_VAR_REAL_RETURN(cast)   ((cast)(results->real_return))      // get the actual return value of a real call while inside a QMM_x_Post call, with given cast
 
 // GETPTR and SETPTR are macros to convert between VM pointers and real pointers.
 // These are generally only needed for pointers inside objects, like gent->client,
@@ -195,30 +207,32 @@ typedef struct {
 #define SETPTR(ptr, cast)     ((ptr) ? (cast)((intptr_t)(ptr) - g_pluginvars->vmbase) : NULL)   // convert "ptr" from a real pointer to a QVM pointer, and cast to "cast" type
 
 // plugin use only
-extern plugin_info g_plugininfo;       // set '*pinfo' to &g_plugininfo in QMM_Query
-extern eng_syscall g_syscall;          // set to 'engfunc' in QMM_Attach
-extern mod_vmMain g_vmMain;            // set to 'modfunc' in QMM_Attach
-extern plugin_res* g_result;           // set to 'presult' in QMM_Attach
-extern plugin_funcs* g_pluginfuncs;    // set to 'pluginfuncs' in QMM_Attach
-extern plugin_vars* g_pluginvars;      // set to 'pluginvars' in QMM_Attach
+extern plugin_info g_plugininfo;        // Set '*pinfo' to &g_plugininfo in QMM_Query
+extern eng_syscall g_syscall;           // Call engine syscall with varargs. Set to 'engfunc' in QMM_Attach
+extern eng_syscall_args g_syscall_args; // Call engine syscall with arg array. Set to 'engfunc_args' in QMM_Attach
+extern mod_vmMain g_vmMain;             // Call mod vmMain with varargs. Set to 'modfunc' in QMM_Attach
+extern mod_vmMain_args g_vmMain_args;   // Call mod vmMain with arg array. Set to 'modfunc_args' in QMM_Attach
+extern plugin_funcs* g_pluginfuncs;     // Set to 'pluginfuncs' in QMM_Attach
+extern plugin_vars* g_pluginvars;       // Set to 'pluginvars' in QMM_Attach
 
 #define QMM_GIVE_PINFO() *pinfo = &g_plugininfo
 #define QMM_SAVE_VARS() do { \
             g_syscall = engfunc; \
+            g_syscall_args = engfunc_args; \
             g_vmMain = modfunc; \
-            g_result = presult; \
+            g_vmMain_args = modfunc_args; \
             g_pluginfuncs = pluginfuncs; \
             g_pluginvars = pluginvars; \
         } while(0)
 
 // prototypes for entry points in the plugin
 C_DLLEXPORT void QMM_Query(plugin_info** pinfo);
-C_DLLEXPORT int QMM_Attach(eng_syscall engfunc, mod_vmMain modfunc, plugin_res* presult, plugin_funcs* pluginfuncs, plugin_vars* pluginvars);
+C_DLLEXPORT int QMM_Attach(eng_syscall engfunc, eng_syscall_args engfunc_args, mod_vmMain modfunc, mod_vmMain_args modfunc_args, plugin_funcs* pluginfuncs, plugin_vars* pluginvars);
 C_DLLEXPORT void QMM_Detach();
-C_DLLEXPORT intptr_t QMM_vmMain(intptr_t cmd, intptr_t* args);
-C_DLLEXPORT intptr_t QMM_vmMain_Post(intptr_t cmd, intptr_t* args);
-C_DLLEXPORT intptr_t QMM_syscall(intptr_t cmd, intptr_t* args);
-C_DLLEXPORT intptr_t QMM_syscall_Post(intptr_t cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_vmMain(result_vars* results, intptr_t cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_vmMain_Post(result_vars* results, intptr_t cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_syscall(result_vars* results, intptr_t cmd, intptr_t* args);
+C_DLLEXPORT intptr_t QMM_syscall_Post(result_vars* results, intptr_t cmd, intptr_t* args);
 C_DLLEXPORT void QMM_PluginMessage(plugin_id from_plid, const char* message, void* buf, intptr_t buflen, int is_broadcast);
 C_DLLEXPORT int QMM_QVMHandler(int func, int* args);
 

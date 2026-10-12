@@ -100,6 +100,7 @@ const char* APIType_Name(APIType api) {
         GEN_CASE(QMM_API_GETMODULEAPI);
 
         GEN_CASE(QMM_API_GETCGAMEAPI);
+
         default:
             return "unknown";
     };

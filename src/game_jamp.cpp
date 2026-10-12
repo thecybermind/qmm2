@@ -112,7 +112,9 @@ intptr_t JAMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
                 static char buf[MAX_STRING_CHARS];
                 s = "";
                 int i = 1;
-                int argc = Util::util_min(orig_syscall(G_ARGC), 200);
+                int argc = orig_syscall(G_ARGC);
+                if (argc > 200)
+                    argc = 200;
                 while (i < argc) {
                     orig_syscall(G_ARGV, i, buf, sizeof(buf));
                     buf[sizeof(buf) - 1] = '\0';
@@ -452,7 +454,9 @@ intptr_t JAMP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
                 static char buf[MAX_STRING_CHARS];
                 s = "";
                 int i = 1;
-                int argc = Util::util_min(orig_import.Argc(), 200);
+                int argc = orig_syscall(G_ARGC);
+                if (argc > 200)
+                    argc = 200;
                 while (i < argc) {
                     orig_import.Argv(i, buf, sizeof(buf));
                     buf[sizeof(buf) - 1] = '\0';
