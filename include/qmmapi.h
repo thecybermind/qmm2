@@ -249,7 +249,9 @@ extern plugin_funcs* g_pluginfuncs;
 extern plugin_vars* g_pluginvars;
 
 
+// Pass plugininfo to QMM in QMM_Query
 #define QMM_GIVE_PINFO() *pinfo = &g_plugininfo
+// Save variables from QMM in QMM_Attach
 #define QMM_SAVE_VARS() do { \
             g_syscall = engfunc; \
             g_syscall_args = engfunc_args; \
@@ -282,8 +284,10 @@ C_DLLEXPORT int QMM_QVMHandler(int func, int* args);
 #define NUM_FROM_CLIENT(client) ((int)((unsigned char*)(client) - (unsigned char*)g_clients) / g_clientsize)
 
 #ifdef QMM_USE_DEPRECATED_TYPES
+// Allow old "_t" types to be used.
 #define DEPRECATE_TYPE(new_type, old_type) typedef new_type old_type
 #else
+// Flag old "_t" types as deprecated.
 #define DEPRECATE_TYPE(new_type, old_type) [[deprecated("Use '" #new_type "' instead, or #define QMM_USE_DEPRECATED_TYPES")]] typedef new_type old_type
 #endif
 
