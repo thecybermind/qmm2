@@ -194,7 +194,7 @@ typedef struct {
 #define QMM_RET_SUPERCEDE(ret)      QMM_RETURN(QMM_SUPERCEDE, (ret))    // this plugin has overridden the return value AND wants the original function to not be called, and return "ret"
 
 // macros for QMM plugin results
-#define QMM_VAR_HIGH_RES()          (results->highresult)               // get the current highest QMM result value while inside a QMM_x (pre) call
+#define QMM_VAR_HIGH_RES()          (results->high_result)              // get the current highest QMM result value while inside a QMM_x (pre) call
 #define QMM_VAR_FINAL_RETURN(cast)  ((cast)(results->final_return))     // get the value to be passed to the caller (from override/supercede or original call), with given cast
 #define QMM_VAR_REAL_RETURN(cast)   ((cast)(results->real_return))      // get the actual return value of a real call while inside a QMM_x_Post call, with given cast
 
