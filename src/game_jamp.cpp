@@ -83,11 +83,15 @@ bool JAMP_GameSupport::AutoDetect(APIType engine_api) {
     }
 
     if (!Util::str_stristr(QMM::exe_file, "jamp")
-        && !Util::str_stristr(QMM::exe_file, "openjk.") // do not match openjk_sp
+        && !Util::str_stristr(QMM::exe_file, "openjk")
         && !Util::str_stristr(QMM::exe_file, "openjkded"))
     {
         return false;
     }
+
+    // do not match openjk_sp
+    if (Util::str_stristr(QMM::exe_file, "openjk_sp"))
+        return false;
 
     return true;
 }

@@ -81,7 +81,7 @@ bool STEF2_GameSupport::AutoDetect(APIType engine_api) {
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!Util::str_stristr(QMM::exe_file, "ef"))
+    if (!Util::str_stristr(QMM::exe_file, "ef2"))
         return false;
 
     return true;

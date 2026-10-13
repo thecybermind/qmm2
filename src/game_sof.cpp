@@ -107,6 +107,10 @@ bool SOF_GameSupport::AutoDetect(APIType engine_api) {
     if (!Util::str_stristr(QMM::exe_file, "sof"))
         return false;
 
+    // do not match with "sof2.exe"
+    if (Util::str_stristr(QMM::exe_file, "sof2"))
+        return false;
+
     return true;
 }
 
