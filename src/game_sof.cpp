@@ -247,23 +247,18 @@ intptr_t SOF_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
                 }
                 static std::string s;
                 s = "";
-                bool first = true;
-                for (std::string& a : command_args) {
-                    // skip first arg since G_ARGS doesn't include it
-                    if (first) {
-                        first = false;
-                        continue;
-                    }
+                for (auto a = command_args.begin() + 1; a != command_args.end(); ++a) {
                     if (!s.empty())
-                        s += "";
-                    s += a;
+                        s += " ";
+                    s += *a;
                 }
                 ret = (intptr_t)s.c_str();
                 break;
             }
             case G_QMM_REGISTER_CONSOLE_COMMAND: {
-                // void (const char *cmd)
+                // void (const char *cmd) - SOF doesn't have gamedll command handling, so we fake it with cvar cmd callbacks
                 // create the given cvar name with its command callback sending a GAME_CONSOLE_COMMAND signal
+                // we don't set the callback immediately so it doesn't run on cvar creation
                 cvar_t* cv = orig_import.cvar((const char*)args[0], "", 0, nullptr);
                 if (cv)
                     cv->command = cvar_cmd_callback;
@@ -521,6 +516,7 @@ intptr_t SOF_GameSupport::vmMain_args(intptr_t cmd, intptr_t* args) {
             case GAME_INIT: {
                 orig_export->Init();
                 // create a "qmm" cvar with its command callback sending a GAME_CONSOLE_COMMAND signal
+                // we don't set the callback immediately so it doesn't run on cvar creation
                 cvar_t* cv = orig_import.cvar("qmm", "", 0, nullptr);
                 if (cv)
                     cv->command = cvar_cmd_callback;
@@ -782,13 +778,23 @@ void SOF_GameSupport::update_exports() {
 
 
 void SOF_GameSupport::cvar_cmd_callback(cvar_t* cvar) {
+    // generate the G_ARGC/G_ARGV/G_ARGS buffers
     store_args(cvar->name, cvar->string);
+    
+    // execute standard GAME_CONSOLE_COMMAND handler
     (void)QMM::vmMain_args(GAME_CONSOLE_COMMAND, nullptr);
-    cvarcommand_t cmd = cvar->command;
+
+    // wipe the G_ARGC/G_ARGV/G_ARGS buffers
+    command_args.clear();
+
+    // this callback is run whenever we set the cvar in the console, but we want to keep the cvar clean so we will wipe the value
+    // after the callback runs. however, wiping the value will call the callback again, so we store and wipe the callback pointer
+    // before clearing the variable, then restore the callback pointer
+    cvarcommand_t old_cmd = cvar->command;
     cvar->command = nullptr;
     orig_import.cvar_set(cvar->name, "");
-    cvar->command = cmd;
-    command_args.clear();
+    // restore callback
+    cvar->command = old_cmd;
 }
 
 

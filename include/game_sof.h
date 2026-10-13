@@ -158,7 +158,7 @@ enum {
     G_CVAR_VARIABLE_INTEGER_VALUE,    // int (const char* var_name)
     G_SEND_CONSOLE_COMMAND,           // void (int ignored_exec_when, const char *text)
     G_PRINT,                          // void (const char *fmt)
-    G_QMM_REGISTER_CONSOLE_COMMAND,   // void (const char *cmd)
+    G_QMM_REGISTER_CONSOLE_COMMAND,   // void (const char *cmd) - SOF doesn't have gamedll command handling, so we fake it with cvar cmd callbacks
     // file loading
     G_FS_FOPEN_FILE,                  // int (const char *qpath, fileHandle_t *f, fsMode_t mode)
     G_FS_READ,                        // void (void* buffer, int len, fileHandle_t f)
