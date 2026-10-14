@@ -107,11 +107,11 @@ intptr_t SIN_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
         QMMLOG(QMM_LOG_TRACE, "QMM") << "SIN_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     // update export vars before calling into the engine
-    update_exports();
+    if (cmd != G_PRINT)
+        update_exports();
 
     intptr_t ret = 0;
 
-    float fret; // used to get float return values
     if (orig_import.printf) {
         switch (cmd) {
             ROUTE_IMPORT(bprintf, G_BPRINTF);
@@ -474,6 +474,10 @@ bool SIN_GameSupport::ModLoad(void* entry, APIType mod_api) {
 
 void SIN_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
+    configstrings.clear();
+    entity_tokens.clear();
+    token_counter = 0;
+    userinfos.clear();
 }
 
 

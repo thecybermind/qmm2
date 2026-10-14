@@ -89,7 +89,8 @@ intptr_t JK2SP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
         QMMLOG(QMM_LOG_TRACE, "QMM") << "JK2SP_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     // update export vars before calling into the engine
-    update_exports();
+    if (cmd != G_PRINT)
+        update_exports();
 
     intptr_t ret = 0;
 
@@ -251,7 +252,9 @@ intptr_t JK2SP_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
                 static std::string s;
                 s = "";
                 int i = 1;
-                int argc = Util::util_min(orig_import.argc(), 200);
+                int argc = orig_import.argc();
+                if (argc > 200)
+                    argc = 200;
                 while (i < argc) {
                     if (i != 1)
                         s += " ";
@@ -357,6 +360,8 @@ bool JK2SP_GameSupport::ModLoad(void* entry, APIType mod_api) {
 
 void JK2SP_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
+    entity_tokens.clear();
+    token_counter = 0;
 }
 
 

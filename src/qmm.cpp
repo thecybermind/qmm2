@@ -205,6 +205,21 @@ namespace QMM {
                 ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_REGISTER), nullptr, "qmm_version", "v" QMM_VERSION, QMM_ENG_MSG(QMM_CVAR_ROM) | QMM_ENG_MSG(QMM_CVAR_SERVERINFO));
             }
 
+            // load plugins
+            if (!game->IsHidden()) {
+                QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
+                for (std::string& plugin_path : Config::cfg_get_array_str(g_cfg, "plugins")) {
+                    QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
+                    if (QMM::LoadPlugin(plugin_path)) {
+                        QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" loaded\n";
+                    }
+                    else {
+                        QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" not loaded\n";
+                    }
+                }
+                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << g_plugins.size() << " plugin(s)\n";
+            }
+
             // load mod
             std::string cfg_mod = Config::cfg_get_string(g_cfg, "mod", "auto");
             // check command line arguments for a mod filename
@@ -235,21 +250,8 @@ namespace QMM {
                     pfndllEntry(QMM::CGame::syscall);
             }
 
-            // load plugins
+            // exec the qmmexec cfg
             if (!game->IsHidden()) {
-                QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugins\n";
-                for (std::string& plugin_path : Config::cfg_get_array_str(g_cfg, "plugins")) {
-                    QMMLOG(QMM_LOG_INFO, "QMM") << "Attempting to load plugin \"" << plugin_path << "\"...\n";
-                    if (QMM::LoadPlugin(plugin_path)) {
-                        QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" loaded\n";
-                    }
-                    else {
-                        QMMLOG(QMM_LOG_INFO, "QMM") << "Plugin \"" << plugin_path << "\" not loaded\n";
-                    }
-                }
-                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << g_plugins.size() << " plugin(s)\n";
-
-                // exec the qmmexec cfg
                 std::string cfg_execcfg = Config::cfg_get_string(g_cfg, "execcfg", "qmmexec.cfg");
                 if (!cfg_execcfg.empty()) {
                     QMMLOG(QMM_LOG_NOTICE, "QMM") << "Executing config file \"" << cfg_execcfg << "\"\n";
@@ -285,7 +287,7 @@ namespace QMM {
         }
 
         // route call to plugins and mod
-        intptr_t ret = QMM::Route(false, cmd, args); // true = is_syscall
+        intptr_t ret = QMM::Route(false, cmd, args); // false = !is_syscall
 
         // handle shut down (this is after the plugins and mod get called with GAME_SHUTDOWN)
         if (cmd == QMM::msg_GAME_SHUTDOWN) {
@@ -563,8 +565,8 @@ namespace QMM {
             func_name = "vmMain";
         }
 
-        // store max result
-        plugin_res max_result = QMM_UNUSED;
+        // store high result
+        plugin_res high_res = QMM_UNUSED;
         // return values from a plugin call
         intptr_t plugin_ret = 0;
         // return value from real call
@@ -572,44 +574,57 @@ namespace QMM {
         // return value to pass back to the caller (either real_ret, or a plugin_ret from QMM_OVERRIDE/QMM_SUPERCEDE result)
         intptr_t final_ret = 0;
 
-        // store previous globals (in case of re-entrancy)
-        plugin_globals old_globals = g_plugin_globals;
-
         // begin passing calls to plugins' pre-hook functions
         for (Plugin& p : g_plugins) {
-            g_plugin_globals.plugin_result = QMM_UNUSED;
-            // allow plugins to see the current final_ret value
-            g_plugin_globals.final_return = final_ret;
+            result_vars results = {
+                QMM_UNUSED,         // result
+                high_res,           // high_result
+                final_ret,          // final_return
+                real_ret,           // real_return
+            };
 
-            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "( " << msg_name << "(" << cmd << ")) called\n";
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "high_result " << high_res << "\n";
+
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "(" << msg_name << "(" << cmd << ")) called\n";
 
             // call plugin's pre-hook and store return value
             if (is_syscall)
-                plugin_ret = p.QMM_syscall(cmd, args);
+                plugin_ret = p.QMM_syscall(&results, cmd, args);
             else
-                plugin_ret = p.QMM_vmMain(cmd, args);
+                plugin_ret = p.QMM_vmMain(&results, cmd, args);
 
-            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "( " << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << Plugin::plugin_result_to_str(g_plugin_globals.plugin_result) << "\n";
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "(" << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << Plugin::plugin_result_to_str(results.result) << "\n";
+
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "high_result2 " << high_res << "\n";
 
             // set new max result
-            max_result = Util::util_max(g_plugin_globals.plugin_result, max_result);
-            // store current max result in global for plugins
-            g_plugin_globals.high_result = max_result;
+            if (results.result > high_res)
+                high_res = results.result;
+
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "high_result3 " << high_res << "\n";
+
             // invalid/error result values
-            if (g_plugin_globals.plugin_result == QMM_UNUSED) {
+            if (results.result < QMM_UNUSED || results.result > QMM_SUPERCEDE) {
+                QMMLOG(QMM_LOG_WARNING, "QMM") << func_name << "(" << msg_name << "): Plugin \"" << p.plugininfo->name << "\" set invalid result flag " << results.result << "\n";
+            }
+            else if (results.result == QMM_UNUSED) {
                 QMMLOG(QMM_LOG_WARNING, "QMM") << func_name << "(" << msg_name << "): Plugin \"" << p.plugininfo->name << "\" did not set result flag\n";
             }
-            else if (g_plugin_globals.plugin_result == QMM_ERROR) {
+            else if (results.result == QMM_ERROR) {
                 QMMLOG(QMM_LOG_ERROR, "QMM") << func_name << "(" << msg_name << "): Plugin \"" << p.plugininfo->name << "\" set result flag QMM_ERROR\n";
             }
             // if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
-            else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE) {
+            else if (results.result >= QMM_OVERRIDE) {
                 final_ret = plugin_ret;
             }
+
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "high_result4 " << high_res << "\n";
         }
 
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "high_result5 " << high_res << "\n";
+
         // call real function (unless a plugin resulted in QMM_SUPERCEDE)
-        if (max_result < QMM_SUPERCEDE) {
+        if (high_res != QMM_SUPERCEDE) {
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) called\n";
 
             if (is_syscall)
@@ -623,41 +638,44 @@ namespace QMM {
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Real " << func_name << "(" << msg_name << "(" << cmd << ")) superceded\n";
         }
 
-        // store real_ret in global for plugins
-        g_plugin_globals.orig_return = real_ret;
-
         // if no plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, return the real return value back to the mod
-        if (max_result < QMM_OVERRIDE)
+        if (high_res < QMM_OVERRIDE)
             final_ret = real_ret;
 
         // pass calls to plugins' post-hook functions (QMM_OVERRIDE or QMM_SUPERCEDE can still change final_ret)
         for (Plugin& p : g_plugins) {
-            g_plugin_globals.plugin_result = QMM_UNUSED;
-            // allow plugins to see the current final_ret value
-            g_plugin_globals.final_return = final_ret;
+            result_vars results = {
+                QMM_UNUSED,         // result
+                high_res,           // high_result
+                final_ret,          // final_return
+                real_ret,           // real_return
+            };
 
-            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "_Post( " << msg_name << "(" << cmd << ")) called\n";
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "_Post(" << msg_name << "(" << cmd << ")) called\n";
 
             // call plugin's post-hook and store return value
             if (is_syscall)
-                plugin_ret = p.QMM_syscall_Post(cmd, args);
+                plugin_ret = p.QMM_syscall_Post(&results, cmd, args);
             else
-                plugin_ret = p.QMM_vmMain_Post(cmd, args);
+                plugin_ret = p.QMM_vmMain_Post(&results, cmd, args);
 
-            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "_Post( " << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << Plugin::plugin_result_to_str(g_plugin_globals.plugin_result) << "\n";
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "_Post(" << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << Plugin::plugin_result_to_str(results.result) << "\n";
 
-            // ignore QMM_UNUSED so plugins can just use return, but still show a message for QMM_ERROR
-            if (g_plugin_globals.plugin_result == QMM_ERROR) {
+            // invalid/error result values
+            if (results.result < QMM_UNUSED || results.result > QMM_SUPERCEDE) {
+                QMMLOG(QMM_LOG_WARNING, "QMM") << func_name << "(" << msg_name << "): Plugin \"" << p.plugininfo->name << "\" set invalid result flag " << results.result << "\n";
+            }
+            else if (results.result == QMM_UNUSED) {
+                QMMLOG(QMM_LOG_WARNING, "QMM") << func_name << "(" << msg_name << "): Plugin \"" << p.plugininfo->name << "\" did not set result flag\n";
+            }
+            else if (results.result == QMM_ERROR) {
                 QMMLOG(QMM_LOG_ERROR, "QMM") << func_name << "(" << msg_name << "): Plugin \"" << p.plugininfo->name << "\" set result flag QMM_ERROR\n";
             }
             // if plugin resulted in QMM_OVERRIDE or QMM_SUPERCEDE, set final_ret to this return value
-            else if (g_plugin_globals.plugin_result >= QMM_OVERRIDE) {
+            else if (results.result == QMM_OVERRIDE || results.result == QMM_SUPERCEDE) {
                 final_ret = plugin_ret;
             }
         }
-
-        // restore previous globals (stored in case of re-entrancy)
-        g_plugin_globals = old_globals;
 
         return final_ret;
     }
@@ -679,7 +697,7 @@ namespace QMM {
 
         int argc = (int)ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ARGC));
         QMM::ArgV(arg_start + 1, arg1, sizeof(arg1));
-        if (argc > arg_start + 2)
+        if (argc >= arg_start + 2)
             QMM::ArgV(arg_start + 2, arg2, sizeof(arg2));
 
         if (Util::str_striequal("status", arg1) || Util::str_striequal("info", arg1)) {
@@ -773,7 +791,7 @@ namespace QMM {
             CONSOLE_PRINT("(QMM)  - fmtlib - https://github.com/fmtlib/fmt\n");
         }
         else {
-            if (!Util::str_striequal("help", arg1)) {
+            if (argc > 1 && !Util::str_striequal("help", arg1)) {
                 CONSOLE_PRINTF("(QMM) Unknown command: {}\n", arg1);
                 CONSOLE_PRINT ("(QMM)\n");
             }

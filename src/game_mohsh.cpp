@@ -84,7 +84,7 @@ bool MOHSH_GameSupport::AutoDetect(APIType engine_api) {
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!Util::str_stristr(QMM::exe_file, "break"))
+    if (!Util::str_stristr(QMM::exe_file, "spear"))
         return false;
 
     return true;
@@ -98,11 +98,10 @@ intptr_t MOHSH_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
         QMMLOG(QMM_LOG_TRACE, "QMM") << "MOHSH_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     // update export vars before calling into the engine
-    update_exports();
+    if (cmd != G_PRINT)
+        update_exports();
 
     intptr_t ret = 0;
-
-    float fret; // used to get float return values
 
     if (orig_import.Printf) {
         switch (cmd) {
@@ -568,6 +567,8 @@ bool MOHSH_GameSupport::ModLoad(void* entry, APIType mod_api) {
 
 void MOHSH_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
+    entity_tokens.clear();
+    token_counter = 0;
 }
 
 

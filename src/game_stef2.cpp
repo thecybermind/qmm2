@@ -81,7 +81,7 @@ bool STEF2_GameSupport::AutoDetect(APIType engine_api) {
     if (!Util::str_striequal(QMM::qmm_file, DefaultDLLName()))
         return false;
 
-    if (!Util::str_stristr(QMM::exe_file, "ef"))
+    if (!Util::str_stristr(QMM::exe_file, "ef2"))
         return false;
 
     return true;
@@ -95,11 +95,10 @@ intptr_t STEF2_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
         QMMLOG(QMM_LOG_TRACE, "QMM") << "STEF2_GameSupport::syscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
     // update export vars before calling into the engine
-    update_exports();
+    if (cmd != G_PRINT)
+        update_exports();
 
     intptr_t ret = 0;
-
-    float fret; // used to get float return values
 
     if (orig_import.Printf) {
         switch (cmd) {
@@ -591,6 +590,9 @@ bool STEF2_GameSupport::ModLoad(void* entry, APIType mod_api) {
 
 void STEF2_GameSupport::ModUnload(APIType) {
     orig_export = nullptr;
+    entity_tokens.clear();
+    token_counter = 0;
+
 }
 
 

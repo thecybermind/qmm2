@@ -82,14 +82,6 @@ static plugin_funcs s_pluginfuncs = {
     s_plugin_helper_ModDir,
 };
 
-// This holds global variables that are available to plugins via helper functions.
-plugin_globals g_plugin_globals = {
-    0,            // final_return
-    0,            // orig_return
-    QMM_UNUSED,   // high_result
-    QMM_UNUSED,   // plugin_result
-};
-
 // List of QMM plugins
 std::vector<Plugin> g_plugins;
 
@@ -103,9 +95,6 @@ static int s_next_qvm_func = QMM_QVM_FUNC_STARTING_ID;
 // Struct of variables to pass to plugins' QMM_Attach
 static plugin_vars s_pluginvars = {
     0,    // vmbase, set in plugin_load
-    &g_plugin_globals.final_return,
-    &g_plugin_globals.orig_return,
-    &g_plugin_globals.high_result,
 };
 
 
@@ -116,9 +105,21 @@ static intptr_t s_plugin_game_syscall(intptr_t cmd, ...) {
 }
 
 
+// Wrapper syscall_args function to pass to plugins
+static intptr_t s_plugin_game_syscall_args(intptr_t cmd, intptr_t* args) {
+    return QMM::game->syscall_args(cmd, args);
+}
+
+
 // Wrapper vmMain function to pass to plugins
 static intptr_t s_plugin_game_vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
+    return QMM::game->vmMain_args(cmd, args);
+}
+
+
+// Wrapper vmMain_args function to pass to plugins
+static intptr_t s_plugin_game_vmMain_args(intptr_t cmd, intptr_t* args) {
     return QMM::game->vmMain_args(cmd, args);
 }
 
@@ -270,8 +271,8 @@ int Plugin::Load(std::string file) {
     s_pluginvars.vmbase = (intptr_t)Mod::vm.memory;
 
     // call QMM_Attach. if it fails (returns 0), destructor will call QMM_Detach and unload DLL
-    // QMM_Attach(engine syscall, mod vmmain, pointer to plugin result int, table of plugin helper functions, table of plugin variables)
-    if (!(this->QMM_Attach(s_plugin_game_syscall, s_plugin_game_vmMain, &g_plugin_globals.plugin_result, &s_pluginfuncs, &s_pluginvars))) {
+    // QMM_Attach(engine syscall, engine syscall_args, mod vmmain, mod vmmain_args, table of plugin helper functions, table of plugin variables)
+    if (!(this->QMM_Attach(s_plugin_game_syscall, s_plugin_game_syscall_args, s_plugin_game_vmMain, s_plugin_game_vmMain_args, &s_pluginfuncs, &s_pluginvars))) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Attach() returned 0\n";
         this->Unload();
         // treat this failure specially. this is a valid plugin, but it decided on its own that it shouldn't be loaded
@@ -329,7 +330,7 @@ const char* Plugin::plugin_result_to_str(plugin_res res) {
 */
 static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char* fmt, ...) {
     if (!fmt) {
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called WriteQMMLog() with null fmt\n";
+        QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called WriteQMMLog() with null fmt\n";
         return;
     }
 
@@ -354,7 +355,7 @@ static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char
     va_end(argptr);
 
     // not QMMLOG since we already checked log_level_match()
-    LOG(severity, Util::str_toupper(logtag)) << buf;
+    LOG(severity, Util::str_toupper(logtag)) << buf << std::flush;
 }
 
 
@@ -380,7 +381,7 @@ static const char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], cons
 
     char* ret = str[index];
 
-    // QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called VarArgs(\"" << format << "\") = \"" << ret << "\"\n";
+    // QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called VarArgs(\"" << format << "\") = \"" << ret << "\"\n";
     return ret;
 }
 
@@ -393,7 +394,7 @@ static const char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], cons
 static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]] ) {
     int ret = !!Mod::vm.memory;
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called IsQVM() = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called IsQVM() = " << ret << "\n";
 
     return ret;
 }
@@ -409,7 +410,7 @@ static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]] ) {
 static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
     const char* ret = QMM::game->EngMsgName(msg);
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called EngMsgName(" << msg << ") = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called EngMsgName(" << msg << ") = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -424,7 +425,7 @@ static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], i
 static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
     const char* ret = QMM::game->ModMsgName(msg);
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ModMsgName(" << msg << ") = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called ModMsgName(" << msg << ") = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -441,7 +442,7 @@ static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], cons
     if (cvar && *cvar)
         ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_INTEGER_VALUE), cvar);
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetIntCvar(\"" << cvar << "\") = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called GetIntCvar(\"" << cvar << "\") = " << ret << "\n";
 
     return ret;
 }
@@ -467,7 +468,7 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
         ret = str[index];
     }
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetStrCvar(\"" << cvar << "\") = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called GetStrCvar(\"" << cvar << "\") = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -482,7 +483,7 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
 static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]] ) {
     const char* ret = QMM::game->GameCode();
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetGameEngine() = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called GetGameEngine() = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -501,7 +502,7 @@ static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn,
     if (buf && buflen)
         QMM::ArgV(argn, buf, buflen);
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called Argv(" << argn << ") = \"" << buf << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called Argv(" << argn << ") = \"" << buf << "\"\n";
 }
 
 /**
@@ -542,7 +543,7 @@ static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused
         }
     }
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called InfoValueForKey(\"" << userinfo << "\", \"" << key << "\") = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called InfoValueForKey(\"" << userinfo << "\", \"" << key << "\") = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -587,7 +588,7 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
     value[index] = Config::cfg_get_string(node, Util::path_basename(key));
     const char* ret = value[index].c_str();
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetStr(\"" << key << "\") = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called ConfigGetStr(\"" << key << "\") = \"" << ret << "\"\n";
 
     return ret;
 }
@@ -604,7 +605,7 @@ static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const c
     nlohmann::json node = s_plugin_cfg_get_node(key);
     int ret = Config::cfg_get_int(node, Util::path_basename(key));
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetInt(\"" << key << "\") = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called ConfigGetInt(\"" << key << "\") = " << ret << "\n";
 
     return ret;
 }
@@ -621,7 +622,7 @@ static int s_plugin_helper_ConfigGetBool(plugin_id plid [[maybe_unused]], const 
     nlohmann::json node = s_plugin_cfg_get_node(key);
     int ret = (int)Config::cfg_get_bool(node, Util::path_basename(key));
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetBool(\"" << key << "\") = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called ConfigGetBool(\"" << key << "\") = " << ret << "\n";
 
     return ret;
 }
@@ -652,7 +653,7 @@ static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unu
     }
     valuep[index].push_back(nullptr);    // null-terminate the array
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetArrayStr(\"" << key << "\") = [" << value[index].size() << " items]\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called ConfigGetArrayStr(\"" << key << "\") = [" << value[index].size() << " items]\n";
 
     return valuep[index].data();
 }
@@ -677,7 +678,7 @@ static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], c
     // insert length of the array as the first element
     value[index].insert(value[index].begin(), (int)value[index].size());
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ConfigGetArrayInt(\"" << key << "\") = [" << value[index].size() - 1 << " items]\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called ConfigGetArrayInt(\"" << key << "\") = [" << value[index].size() - 1 << " items]\n";
 
     return value[index].data();
 }
@@ -706,7 +707,7 @@ static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], int
             Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetConfigString(" << index << ") = \"" << buf << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called GetConfigString(" << index << ") = \"" << buf << "\"\n";
 }
 
 
@@ -734,7 +735,7 @@ static int s_plugin_helper_PluginBroadcast(plugin_id plid, const char* message, 
         total++;
     }
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called PluginBroadcast(\"" << message << "\") = " << total << " plugins called\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called PluginBroadcast(\"" << message << "\") = " << total << " plugins called\n";
 
     return total;
 }
@@ -763,7 +764,7 @@ static int s_plugin_helper_PluginSend(plugin_id plid, plugin_id to_plid, const c
                 return 0;
             p.QMM_PluginMessage(plid, message, buf, buflen, 0); // 0 = is_broadcast
 
-            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called PluginSend(\"" << message << "\")\n";
+            QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called PluginSend(\"" << message << "\")\n";
 
             return 1;
         }
@@ -800,7 +801,7 @@ static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
         }
     }
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called QVMRegisterFunc() = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called QVMRegisterFunc() = " << ret << "\n";
 
     return ret;
 }
@@ -818,7 +819,7 @@ static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
 static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int instruction, int argc, int* argv) {
     int ret = qvm_exec_ex(&Mod::vm, (size_t)instruction, argc, argv);
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called QVMExecFunc(" << instruction << ", " << argc << ") = " << ret << "\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called QVMExecFunc(" << instruction << ", " << argc << ") = " << ret << "\n";
 
     return ret;
 }
@@ -841,7 +842,7 @@ static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr
 
     QMM::ArgV(argn, str[index], sizeof(str[index]));
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called Argv2(" << argn << ") = \"" << str[index] << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called Argv2(" << argn << ") = \"" << str[index] << "\"\n";
 
     return str[index];
 }
@@ -872,7 +873,7 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
     if (ret > 1)
         Util::strncpyz(str[index], (const char*)ret, sizeof(str[index]));
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called GetConfigString2(" << configindex << ") = \"" << str[index] << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called GetConfigString2(" << configindex << ") = \"" << str[index] << "\"\n";
 
     return str[index];
 }
@@ -886,7 +887,7 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
 static const char* s_plugin_helper_ModDir(plugin_id plid [[maybe_unused]] ) {
     const char* ret = QMM::mod_dir.c_str();
 
-    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << " called ModDir() = \"" << ret << "\"\n";
+    QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called ModDir() = \"" << ret << "\"\n";
 
     return ret;
 }

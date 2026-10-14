@@ -115,11 +115,6 @@ namespace QMM {
         * @return File data
         */
         uint8_t* Data();
-
-        /**
-        * @brief Close file.
-        */
-        void Close();
     private:
         intptr_t handle;
         std::vector<uint8_t> file;
