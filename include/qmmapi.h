@@ -283,7 +283,7 @@ C_DLLEXPORT int QMM_QVMHandler(int func, int* args);
 // Get a client number by gclient_t* (check g_clients for NULL and g_clientsize for 0 first)
 #define NUM_FROM_CLIENT(client) ((int)((unsigned char*)(client) - (unsigned char*)g_clients) / g_clientsize)
 
-#ifdef QMM_USE_DEPRECATED_TYPES
+#if defined(QMM_USE_DEPRECATED_TYPES) || (defined(_WIN32) && !defined(__cplusplus))
 // Allow old "_t" types to be used.
 #define DEPRECATE_TYPE(new_type, old_type) typedef new_type old_type
 #else
