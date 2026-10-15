@@ -163,7 +163,7 @@ namespace QMM {
         // void trap_Argv(int argn, char* buffer, int bufferSize);
         // some games don't return pointers because of QVM interaction, so if this returns anything but null
         // (or true?), we probably are in an api game, and need to get the arg from the return value instead
-        intptr_t ret = ENG_SYSCALL(QMM::game->QMMEngMsg(QMM_G_ARGV), argn, buf, buflen);
+        intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ARGV), argn, buf, buflen);
         if (ret > 1)
             Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
