@@ -56,7 +56,7 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
 static const char* s_plugin_helper_ModDir(plugin_id plid [[maybe_unused]]);
 
 // Struct of plugin helper functions
-static plugin_funcs s_pluginfuncs = {
+static plugin_funcs s_plugin_funcs = {
     s_plugin_helper_WriteQMMLog,
     s_plugin_helper_VarArgs,
     s_plugin_helper_IsQVM,
@@ -85,18 +85,17 @@ static plugin_funcs s_pluginfuncs = {
 // List of QMM plugins
 std::vector<Plugin> g_plugins;
 
+// Struct of variables to pass to plugins' QMM_Attach
+plugin_vars g_plugin_vars = {
+    0,    // vmbase, set after Mod::Load
+};
+
 // This holds pseudo-syscall IDs. They are registered to a given plugin, and when the QVM interpreter executes the
 // syscall ID, the plugin's QMM_QVMHandler function is called.
 std::map<int, Plugin*> g_registered_qvm_funcs;
 
 // This is the next pseudo-syscall ID to return to plugins.
 static int s_next_qvm_func = QMM_QVM_FUNC_STARTING_ID;
-
-// Struct of variables to pass to plugins' QMM_Attach
-static plugin_vars s_pluginvars = {
-    0,    // vmbase, set in plugin_load
-};
-
 
 // Wrapper syscall function to pass to plugins
 static intptr_t s_plugin_game_syscall(intptr_t cmd, ...) {
@@ -267,12 +266,11 @@ int Plugin::Load(std::string file) {
         return 0;
     }
 
-    // set some pluginvars only available at run-time (this will get repeated for every plugin, but that's ok)
-    s_pluginvars.vmbase = (intptr_t)Mod::vm.memory;
+    // set g_pluginvars here if applicable    
 
     // call QMM_Attach. if it fails (returns 0), destructor will call QMM_Detach and unload DLL
     // QMM_Attach(engine syscall, engine syscall_args, mod vmmain, mod vmmain_args, table of plugin helper functions, table of plugin variables)
-    if (!(this->QMM_Attach(s_plugin_game_syscall, s_plugin_game_syscall_args, s_plugin_game_vmMain, s_plugin_game_vmMain_args, &s_pluginfuncs, &s_pluginvars))) {
+    if (!(this->QMM_Attach(s_plugin_game_syscall, s_plugin_game_syscall_args, s_plugin_game_vmMain, s_plugin_game_vmMain_args, &s_plugin_funcs, &g_plugin_vars))) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Attach() returned 0\n";
         this->Unload();
         // treat this failure specially. this is a valid plugin, but it decided on its own that it shouldn't be loaded
