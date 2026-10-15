@@ -233,6 +233,8 @@ namespace QMM {
                 }
                 return 0;
             }
+            // update g_pluginvars.vmbase with QVM memory base
+            g_plugin_vars.vmbase = (intptr_t)Mod::vm.memory;
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "Successfully loaded " << APIType_Function(Mod::api) << " mod \"" << Mod::path << "\"\n";
 
             // cgame passthrough hack:

@@ -79,6 +79,9 @@ struct Plugin {
 // List of QMM plugins
 extern std::vector<Plugin> g_plugins;
 
+// Struct of variables to pass to plugins' QMM_Attach
+extern plugin_vars g_plugin_vars;
+
 constexpr int QMM_QVM_FUNC_STARTING_ID = 10000; // this will be negated when given as a QVM pointer to be treated as a syscall
 constexpr int QMM_QVM_FUNC_MAX_ID = 20000;      // arbitrary limit, 10k QVM functions is probably fine
 
