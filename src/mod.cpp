@@ -65,6 +65,8 @@ namespace Mod {
             if (mod_api == QMM_API_UNKNOWN) {
                 if (InitDLL(file, handle, QMM_API_GETGAMEAPI))
                     return true;
+                if (InitDLL(file, handle, QMM_API_GETGAMEAPI_LC))
+                    return true;
                 if (InitDLL(file, handle, QMM_API_GETMODULEAPI))
                     return true;
                 if (InitDLL(file, handle, QMM_API_DLLENTRY))
