@@ -60,10 +60,10 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
     if (QMM::game) {
         // ??
         if (!Mod::dll) {
-            QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Mod DLL not loaded?\n";
+            QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called after QMM load, but mod DLL not loaded?\n";
             return nullptr;
         }
-        QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called! Passing on call to mod DLL.\n";
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "GetCGameAPI() called after QMM load! Passing on call directly to mod DLL.\n";
         mod_GetGameAPI pfnGCGA = (mod_GetGameAPI)Util::dll_symbol(Mod::dll, "GetCGameAPI");
         return pfnGCGA ? pfnGCGA(import, nullptr) : nullptr;
     }
@@ -103,13 +103,19 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         if (!QMM::is_shutdown) {
             QMM::is_shutdown = true;
             QMMLOG(QMM_LOG_FATAL, "QMM") << "QMM was unable to determine the game engine. Please set the \"game\" option in qmm2.json. Refer to the documentation for more information.\n";
+
+            // error msg with multiple lines (not suitable for QMMLOG)
+            const char* error_msg = "\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n";
+
             // if syscall passed to dllEntry was null, revert to std::exit because *shrug*
             if (!QMM::syscall) {
-                puts("\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
-                fputs("\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n", stderr);
+                // print to stdout and stderr
+                puts(error_msg);
+                fputs(error_msg, stderr);
                 std::exit(-1);
             }
-            QMM::syscall(QMM::FAIL_G_ERROR, "\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n");
+            // signal exit with proper engine method
+            QMM::syscall(QMM::FAIL_G_ERROR, error_msg);
         }
         return 0;
     }
