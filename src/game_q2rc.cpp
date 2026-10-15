@@ -47,6 +47,8 @@ struct Q2RC_GameSupport : public GameSupport {
     virtual const char* ModCvar() { return "game"; }
     virtual const char* GameName() { return "Quake 2 Remastered (SP)"; }
     virtual const char* GameCode() { return "Q2RC"; }
+    
+    // A hidden game cannot be chosen in the config file, will not load plugins, register cvars, or listen for commands.
     virtual bool IsHidden() { return true; }
 
 private:
