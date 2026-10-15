@@ -91,12 +91,13 @@ constexpr int QMM_MAX_SYSCALL_ARGS = 18;
 
 // API type for engine/mod
 enum APIType {
-    QMM_API_UNKNOWN,          // Error/unknown
+    QMM_API_UNKNOWN,        // Error/unknown
 
     QMM_API_QVM,            // Mod-only
 
     QMM_API_DLLENTRY,       // dllEntry()
     QMM_API_GETGAMEAPI,     // GetGameAPI()
+    QMM_API_GETGAMEAPI_LC,  // GetGameApi()
     QMM_API_GETMODULEAPI,   // GetModuleAPI()
 
     QMM_API_GETCGAMEAPI,    // GetCGameAPI()

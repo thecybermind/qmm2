@@ -21,9 +21,9 @@ Created By:
 // Major semver component
 #define QMM_VERSION_MAJOR   2
 // Minor semver component
-#define QMM_VERSION_MINOR   6
+#define QMM_VERSION_MINOR   7
 // Revision semver component
-#define QMM_VERSION_REV     3
+#define QMM_VERSION_REV     0
 
 // String of dotted version number
 #define QMM_VERSION     STRINGIFY(QMM_VERSION_MAJOR) "." STRINGIFY(QMM_VERSION_MINOR) "." STRINGIFY(QMM_VERSION_REV)
