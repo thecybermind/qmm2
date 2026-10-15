@@ -79,7 +79,9 @@ struct Plugin {
 // List of QMM plugins
 extern std::vector<Plugin> g_plugins;
 
-constexpr int QMM_QVM_FUNC_STARTING_ID = 10000;
+constexpr int QMM_QVM_FUNC_STARTING_ID = 10000; // this will be negated when given as a QVM pointer to be treated as a syscall
+constexpr int QMM_QVM_FUNC_MAX_ID = 20000;      // arbitrary limit, 10k QVM functions is probably fine
+
 // This holds pseudo-syscall IDs. They are registered to a given plugin, and when the QVM interpreter executes the
 // syscall ID, the plugin's QMM_QVMHandler function is called.
 extern std::map<int, Plugin*> g_registered_qvm_funcs;
