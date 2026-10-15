@@ -51,9 +51,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD, LPVOID) {
 
 namespace Util {
 
-    std::string path_normalize(std::string path) {
-        std::filesystem::path fspath = path;
-        fspath = fspath.lexically_normal();
+    std::string path_normalize(const std::string& path) {
+        auto fspath = std::filesystem::path(path).lexically_normal();
         // check for empty or starting with ".." just in case
         if (fspath.empty() || *fspath.begin() == "..")
             return "";
@@ -61,16 +60,16 @@ namespace Util {
     }
 
 
-    bool path_is_allowed(std::string path) {
+    bool path_is_allowed(const std::string& path) {
         // if QVM, let the engine's file functions handle path validation
         if (path_baseext(path) == EXT_QVM)
             return true;
 
-        path = path_normalize(path);
+        std::string norm_path = path_normalize(path);
         try {
             // get portions of the path that match the exe and QMM DLL paths
-            auto rel_qmm = std::filesystem::relative(path, QMM::qmm_dir);
-            auto rel_exe = std::filesystem::relative(path, QMM::exe_dir);
+            auto rel_qmm = std::filesystem::relative(norm_path, QMM::qmm_dir);
+            auto rel_exe = std::filesystem::relative(norm_path, QMM::exe_dir);
             // if there is no relative path, the return is ""
             // if the relative path requires going back up, it starts with ".."
             // otherwise it should be the relative path from qmm_dir or exe_dir 
@@ -85,41 +84,36 @@ namespace Util {
     }
 
 
-    std::string path_dirname(std::string path) {
-        std::filesystem::path fspath = path;
-        return fspath.parent_path().lexically_normal().generic_u8string();
+    std::string path_dirname(const std::string& path) {
+        return std::filesystem::path(path).parent_path().lexically_normal().generic_u8string();
     }
 
 
-    std::string path_basename(std::string path) {
-        std::filesystem::path fspath = path;
-        return fspath.filename().u8string();
+    std::string path_basename(const std::string& path) {
+        return std::filesystem::path(path).filename().u8string();
     }
 
 
-    std::string path_baseext(std::string path) {
-        std::filesystem::path fspath = path;
-        return fspath.extension().u8string();
+    std::string path_baseext(const std::string& path) {
+        return std::filesystem::path(path).extension().u8string();
     }
 
 
-    bool path_is_absolute(std::string path) {
+    bool path_is_absolute(const std::string& path) {
         if (path.empty())
             return false;
-        std::filesystem::path fspath = path;
-        return fspath.is_absolute();
+        return std::filesystem::path(path).is_absolute();
     }
 
 
-    bool path_is_relative(std::string path) {
+    bool path_is_relative(const std::string& path) {
         if (path.empty())
             return false;
-        std::filesystem::path fspath = path;
-        return fspath.is_relative();
+        return std::filesystem::path(path).is_relative();
     }
 
 
-    void path_mkdir(std::string path) {
+    void path_mkdir(const std::string& path) {
         if (path.empty())
             return;
 
@@ -154,7 +148,7 @@ namespace Util {
     }
 
 
-    std::string util_get_cmdline_arg(std::string arg, std::string def) {
+    std::string util_get_cmdline_arg(const std::string& arg, const std::string& def) {
         std::vector<std::string> argv = util_get_proc_cmdline();
         if (argv.size() <= 1)
             return def;
@@ -323,17 +317,17 @@ namespace Util {
     }
 
 
-    bool str_stristr(std::string haystack, std::string needle) {
+    bool str_stristr(const std::string& haystack, const std::string& needle) {
         return str_tolower(haystack).find(str_tolower(needle)) != std::string::npos;
     }
 
 
-    int str_stricmp(std::string s1, std::string s2) {
+    int str_stricmp(const std::string& s1, const std::string& s2) {
         return str_tolower(s1).compare(str_tolower(s2));
     }
 
 
-    bool str_striequal(std::string s1, std::string s2) {
+    bool str_striequal(const std::string& s1, const std::string& s2) {
         return str_stricmp(s1, s2) == 0;
     }
 
@@ -345,7 +339,10 @@ namespace Util {
         // strncpy may not null-terminate if it writes a full buffer
         char* ret = strncpy(dest, src, count);
         // so we null-terminate manually
-        dest[count - 1] = '\0';
+        if (count)
+            dest[count - 1] = '\0';
+        else
+            dest[0] = '\0';
         return ret;
     }
 

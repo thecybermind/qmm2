@@ -30,7 +30,7 @@ namespace Util {
     * @param path Path
     * @return Normalized path
     */
-    std::string path_normalize(std::string path);
+    std::string path_normalize(const std::string& path);
 
     /**
     * @brief Is the path allowed?
@@ -40,7 +40,7 @@ namespace Util {
     * @param path Path
     * @return true if path is allowed, false otherwise
     */
-    bool path_is_allowed(std::string path);
+    bool path_is_allowed(const std::string& path);
 
     /**
     * @brief Gets the directory name component of a path.
@@ -48,7 +48,7 @@ namespace Util {
     * @param path Path
     * @return Directory name component of path
     */
-    std::string path_dirname(std::string path);
+    std::string path_dirname(const std::string& path);
 
     /**
     * @brief Gets the filename (or topmost) component of a path.
@@ -56,7 +56,7 @@ namespace Util {
     * @param path Path
     * @return Filename component of path
     */
-    std::string path_basename(std::string path);
+    std::string path_basename(const std::string& path);
 
     /**
     * @brief Gets the file extension component of a path.
@@ -64,7 +64,7 @@ namespace Util {
     * @param path Path
     * @return File extension component of path
     */
-    std::string path_baseext(std::string path);
+    std::string path_baseext(const std::string& path);
 
     /**
     * @brief Is the path absolute?
@@ -72,7 +72,7 @@ namespace Util {
     * @param path Path
     * @return true if path is absolute, false otherwise
     */
-    bool path_is_absolute(std::string path);
+    bool path_is_absolute(const std::string& path);
 
     /**
     * @brief Is the path relative?
@@ -80,14 +80,14 @@ namespace Util {
     * @param path Path
     * @return true if path is relative, false otherwise
     */
-    bool path_is_relative(std::string path);
+    bool path_is_relative(const std::string& path);
 
     /**
     * @brief Creates a directory including all missing parent directories.
     *
     * @param path Path
     */
-    void path_mkdir(std::string path);
+    void path_mkdir(const std::string& path);
 
     /**
     * @brief Look for the given argument in the command line, and return the next argv.
@@ -104,7 +104,7 @@ namespace Util {
     * @param def Default return if arg is not found
     * @return argv following the found arg, or def
     */
-    std::string util_get_cmdline_arg(std::string arg, std::string def = "");
+    std::string util_get_cmdline_arg(const std::string& arg, const std::string& def = "");
 
     /**
     * @brief Gets the path of the process' executable.
@@ -208,7 +208,7 @@ namespace Util {
     * @param needle String to search for
     * @return true if needle is in haystack, false otherwise
     */
-    bool str_stristr(std::string haystack, std::string needle);
+    bool str_stristr(const std::string& haystack, const std::string& needle);
 
     /**
     * @brief Case-insensitive string comparison.
@@ -217,7 +217,7 @@ namespace Util {
     * @param s2 String to compare
     * @return 0 if s1 and s2 compare equal, less-than-zero if s1 compares less than s2, or greater-than-zero if s1 compares greater than s2
     */
-    int str_stricmp(std::string s1, std::string s2);
+    int str_stricmp(const std::string& s1, const std::string& s2);
 
     /**
     * @brief Case-insensitive string comparison.
@@ -226,7 +226,7 @@ namespace Util {
     * @param s2 String to compare
     * @return true if s1 compares equal to s2, false otherwise
     */
-    bool str_striequal(std::string s1, std::string s2);
+    bool str_striequal(const std::string& s1, const std::string& s2);
 
     /**
     * @brief A "safe" strncpy that always null-terminates.
