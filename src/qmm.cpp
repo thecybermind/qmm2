@@ -44,7 +44,7 @@ namespace QMM {
            variable is used to store the syscall pointer if dllEntry is called after QMM was already loaded from
            GetGameAPI. Then, dllEntry exits.
 
-           Next, since all real game calls come through QMM::vmMain_args, we know that any call to vmMain while
+           Next, since all real GetGameAPI calls route through QMM::vmMain_args, we know that any call to vmMain while
            "QMM::CGame::syscall" is set means it should be passed to the cgame.
 
            Next, when the GAME_INIT event comes through, and we load the actual mod DLL, we also check to see if
@@ -297,7 +297,7 @@ namespace QMM {
             // hack to keep single player games shutting down correctly between levels/cutscenes/etc
             if (QMM::CGame::syscall) {
                 QMM::CGame::is_shutdown = true;
-                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Delaying shutting down mod so cgame shutdown can run\n";
+                QMMLOG(QMM_LOG_NOTICE, "QMM") << "Delaying shutting down mod DLL so CGAME_SHUTDOWN can run\n";
             }
             else {
                 // unload mod
@@ -683,7 +683,7 @@ namespace QMM {
     }
 
 
-    // Print string to game console
+// Print string to game console
 #define CONSOLE_PRINT(str)          ENG_SYSCALL(msg_G_PRINT, str)
 // Print formatted string to game console
 #define CONSOLE_PRINTF(str, ...)    ENG_SYSCALL(msg_G_PRINT, fmt::format(str, ## __VA_ARGS__).c_str())

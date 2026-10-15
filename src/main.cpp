@@ -88,8 +88,13 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 
         QMMLOG(QMM_LOG_TRACE, "QMM") << "Passthrough vmMain(" << cmd << ") returning " << ret << "\n";
 
-        // next call into combined mod DLL after GAME_SHUTDOWN should be CGAME_SHUTDOWN so unload mod now
+        // if the last game call was GAME_SHUTDOWN, then the CGame call that was just made above should be
+        // CGAME_SHUTDOWN, so it should be safe to unload the mod DLL now
         if (QMM::CGame::is_shutdown) {
+            QMM::CGame::syscall = nullptr;
+            QMM::CGame::vmMain = nullptr;
+            QMM::CGame::is_shutdown = false;
+
             // unload mod (dlclose)
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
             Mod::Unload();
