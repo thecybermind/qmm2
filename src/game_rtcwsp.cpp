@@ -198,8 +198,8 @@ void RTCWSP_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* RTCWSP_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* RTCWSP_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
         GEN_CASE(G_ENDGAME);
@@ -410,8 +410,8 @@ const char* RTCWSP_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* RTCWSP_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* RTCWSP_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
         GEN_CASE(GAME_CLIENT_CONNECT);

@@ -201,8 +201,8 @@ void Q2RC_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* Q2RC_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* Q2RC_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(CG_PRINT);
         GEN_CASE(CG_ERROR);
         GEN_CASE(CG_ARGV);
@@ -223,8 +223,8 @@ const char* Q2RC_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* Q2RC_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* Q2RC_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(CGAME_INIT);
         GEN_CASE(CGAME_SHUTDOWN);
 

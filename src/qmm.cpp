@@ -422,7 +422,9 @@ namespace QMM {
                 game = gamesupport;
                 is_auto_detected = false;
                 // call the game's auto-detect function, since it may do some logic
-                (void)gamesupport->AutoDetect(engine);
+                // log if it returns false, but continue
+                if (!gamesupport->AutoDetect(engine))
+                    QMMLOG(QMM_LOG_WARNING, "QMM") << "Auto-detection function for \"" << gamesupport->GameCode() << "\" returned failure, you may experience errors or crashes.\n";
                 return true;
             }
             // otherwise, if auto, call the game's auto-detect function

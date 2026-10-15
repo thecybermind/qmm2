@@ -589,8 +589,8 @@ void SOF_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* SOF_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* SOF_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(G_MODELINDEX);
         GEN_CASE(G_SOUNDINDEX);
         GEN_CASE(G_EFFECTINDEX);
@@ -716,8 +716,8 @@ const char* SOF_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* SOF_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* SOF_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

@@ -177,8 +177,8 @@ void STVOYHM_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* STVOYHM_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* STVOYHM_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(G_PRINT);
         GEN_CASE(G_ERROR);
         GEN_CASE(G_MILLISECONDS);
@@ -377,8 +377,8 @@ const char* STVOYHM_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* STVOYHM_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* STVOYHM_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
         GEN_CASE(GAME_CLIENT_CONNECT);

@@ -572,8 +572,8 @@ void MOHSH_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* MOHSH_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* MOHSH_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
         GEN_CASE(G_DPRINTF2);
@@ -761,8 +761,8 @@ const char* MOHSH_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* MOHSH_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* MOHSH_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

@@ -542,8 +542,8 @@ void MOHAA_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* MOHAA_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* MOHAA_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
         GEN_CASE(G_DPRINTF2);
@@ -724,8 +724,8 @@ const char* MOHAA_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* MOHAA_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* MOHAA_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

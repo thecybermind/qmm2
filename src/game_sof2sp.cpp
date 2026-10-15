@@ -346,8 +346,8 @@ void SOF2SP_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* SOF2SP_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* SOF2SP_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_DPRINTF);
         GEN_CASE(G_DPRINTF2);
@@ -471,8 +471,8 @@ const char* SOF2SP_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* SOF2SP_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* SOF2SP_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);
         GEN_CASE(GAME_CLIENT_CONNECT);

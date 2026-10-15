@@ -459,8 +459,8 @@ void Q2R_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* Q2R_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* Q2R_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(G_BROADCAST_PRINT);
         GEN_CASE(G_COM_PRINT);
         GEN_CASE(G_CLIENT_PRINT);
@@ -554,8 +554,8 @@ const char* Q2R_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* Q2R_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* Q2R_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_PREINIT);
         GEN_CASE(GAME_INIT);

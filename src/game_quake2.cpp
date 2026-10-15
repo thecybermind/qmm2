@@ -425,8 +425,8 @@ void QUAKE2_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* QUAKE2_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* QUAKE2_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(G_BPRINTF);
         GEN_CASE(G_DPRINTF);
         GEN_CASE(G_CPRINTF);
@@ -496,8 +496,8 @@ const char* QUAKE2_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* QUAKE2_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* QUAKE2_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

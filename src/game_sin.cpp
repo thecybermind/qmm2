@@ -481,8 +481,8 @@ void SIN_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* SIN_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* SIN_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(G_BPRINTF);
         GEN_CASE(G_DPRINTF);
         GEN_CASE(G_PRINTF);
@@ -597,8 +597,8 @@ const char* SIN_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* SIN_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* SIN_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(GAMEV_APIVERSION);
         GEN_CASE(GAME_INIT);
         GEN_CASE(GAME_SHUTDOWN);

@@ -166,8 +166,8 @@ void CODMP_GameSupport::ModUnload(APIType) {
 }
 
 
-const char* CODMP_GameSupport::EngMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* CODMP_GameSupport::EngMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(G_PRINTF);
         GEN_CASE(G_ERROR);
         GEN_CASE(G_ERROR_LOCALIZED);
@@ -318,8 +318,8 @@ const char* CODMP_GameSupport::EngMsgName(intptr_t cmd) {
 }
 
 
-const char* CODMP_GameSupport::ModMsgName(intptr_t cmd) {
-    switch (cmd) {
+const char* CODMP_GameSupport::ModMsgName(intptr_t msg) {
+    switch (msg) {
         GEN_CASE(GAME_DEFAULT_0);
         GEN_CASE(GAME_GET_APIVERSION);
         GEN_CASE(GAME_INIT);
