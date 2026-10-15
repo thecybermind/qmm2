@@ -42,6 +42,11 @@ C_DLLEXPORT void* GetGameAPI(void* import, void* extra) {
 }
 
 
+C_DLLEXPORT void* GetGameApi(void* import) {
+    return QMM::HandleEntry(import, nullptr, QMM_API_GETGAMEAPI_LC);
+}
+
+
 C_DLLEXPORT void* GetModuleAPI(int apiversion, void* import) {
     return QMM::HandleEntry((void*)(intptr_t)apiversion, import, QMM_API_GETMODULEAPI);
 }

@@ -97,6 +97,7 @@ const char* APIType_Name(APIType api) {
 
         GEN_CASE(QMM_API_DLLENTRY);
         GEN_CASE(QMM_API_GETGAMEAPI);
+        GEN_CASE(QMM_API_GETGAMEAPI_LC);
         GEN_CASE(QMM_API_GETMODULEAPI);
 
         GEN_CASE(QMM_API_GETCGAMEAPI);
@@ -119,6 +120,8 @@ const char* APIType_Function(APIType api) {
             return "dllEntry";
         case QMM_API_GETGAMEAPI:
             return "GetGameAPI";
+        case QMM_API_GETGAMEAPI_LC:
+            return "GetGameApi";
         case QMM_API_GETMODULEAPI:
             return "GetModuleAPI";
 

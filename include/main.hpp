@@ -43,6 +43,16 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall);
 C_DLLEXPORT void* GetGameAPI(void* import, void* extra);
 
 /**
+* @brief Engine->Mod entrypoint for GetGameApi games.
+* 
+* This is a duplicate of the single-argument GetGameAPI except some older engines spell it with "Api".
+*
+* @param import Pointer to engine's import function table
+* @return Pointer to hooked export function table
+*/
+C_DLLEXPORT void* GetGameApi(void* import);
+
+/**
 * @brief Engine->Mod entrypoint for OpenJK engine.
 * 
 * This functions the same as the 2-arg GetGameAPI used by SOF2SP but OpenJK renamed it.

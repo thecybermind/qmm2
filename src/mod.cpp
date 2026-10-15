@@ -212,6 +212,7 @@ namespace Mod {
     static bool InitDLL(std::string file, void* handle, APIType dll_api) {
         switch (dll_api) {
             case QMM_API_GETGAMEAPI:
+            case QMM_API_GETGAMEAPI_LC:
             case QMM_API_GETMODULEAPI:
             case QMM_API_GETCGAMEAPI: {
                 // these are together because they work the same, just with a different function name
