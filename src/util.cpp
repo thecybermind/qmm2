@@ -256,22 +256,24 @@ namespace Util {
 
 
     void* dll_symbol(void* dll, const char* symbol) {
-#if defined(QMM_OS_WINDOWS)
-        return (void*)GetProcAddress((HMODULE)dll, symbol);
-#elif defined(QMM_OS_LINUX)
         if (!dll || !symbol)
             return nullptr;
+#if defined(QMM_OS_WINDOWS)
+        // symbol could technically be an ordinal and not a string, but the ordinal can't be 0
+        // so a null check works. null dll handle seems to be a no-op.
+        return (void*)GetProcAddress((HMODULE)dll, symbol);
+#elif defined(QMM_OS_LINUX)
         return dlsym(dll, symbol);
 #endif
     }
 
 
     bool dll_close(void* dll) {
+        if (!dll)
+            return false;
 #if defined(QMM_OS_WINDOWS)
         return (bool)FreeLibrary((HMODULE)dll);
 #elif defined(QMM_OS_LINUX)
-        if (!dll)
-            return false;
         // dlclose returns 0 on success, non-zero otherwise
         return !dlclose(dll);
 #endif
@@ -383,6 +385,10 @@ namespace Util {
             else
                 build.push_back(c);
         }
+
+        // explicitly drop unquoted string tokens (except for "{" and "}"), or if the string terminates on a
+        // token without an end quote. this only parses strings coming from the engine, which should be
+        // well-formed. if not, that's the engine's problem and would likely crash the mod dll anyway.
 
         return ret;
     }
