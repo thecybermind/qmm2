@@ -348,13 +348,13 @@ namespace Util {
 
 
     // tokenize an entstring into a vector of strings 
-    std::vector<std::string> util_parse_entstring(std::string entstring) {
+    std::vector<std::string> util_parse_entstring(const std::string& entstring) {
         std::vector<std::string> ret;
 
         std::string build;
         bool buildstr = false;
 
-        for (const char& c : entstring) {
+        for (const char c : entstring) {
             // end if null (shouldn't happen)
             if (!c)
                 break;

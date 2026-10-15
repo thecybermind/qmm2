@@ -244,7 +244,7 @@ namespace Util {
     * @param entstring Entity string from engine
     * @return vector of strings where each element is an entity token from entstring
     */
-    std::vector<std::string> util_parse_entstring(std::string entstring);
+    std::vector<std::string> util_parse_entstring(const std::string& entstring);
 
     // Helper type for horrible_cast
     template <class OutputClass, class InputClass>
