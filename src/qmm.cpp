@@ -287,9 +287,9 @@ namespace QMM {
         }
 
         // route call to plugins and mod
-        intptr_t ret = QMM::Route(false, cmd, args); // false = !is_syscall
+        intptr_t ret = Route(false, cmd, args); // false = !is_syscall
 
-        // handle shut down (this is after the plugins and mod get called with GAME_SHUTDOWN)
+        // handle shut down (this is after the plugins and mod get called with GAME_SHUTDOWN by Route)
         if (cmd == QMM::msg_GAME_SHUTDOWN) {
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutdown initiated!\n";
 
@@ -317,7 +317,7 @@ namespace QMM {
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "Finished shutting down\n";
         }
 
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "vmMain(" << QMM::game->ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "vmMain(" << QMM::game->ModMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
         return ret;
     }
@@ -327,7 +327,7 @@ namespace QMM {
         QMMLOG(QMM_LOG_DEBUG, "QMM") << "syscall(" << QMM::game->EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
         // route call to plugins and mod
-        intptr_t ret = QMM::Route(true, cmd, args); // true = is_syscall
+        intptr_t ret = Route(true, cmd, args); // true = is_syscall
 
         QMMLOG(QMM_LOG_DEBUG, "QMM") << "syscall(" << QMM::game->EngMsgName(cmd) << "(" << cmd << ")) returning " << ret << "\n";
 
@@ -585,8 +585,6 @@ namespace QMM {
                 real_ret,           // real_return
             };
 
-            QMMLOG(QMM_LOG_TRACE, "QMM") << "high_result " << high_res << "\n";
-
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "(" << msg_name << "(" << cmd << ")) called\n";
 
             // call plugin's pre-hook and store return value
@@ -597,13 +595,9 @@ namespace QMM {
 
             QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << p.plugininfo->name << "\" QMM_" << func_name << "(" << msg_name << "(" << cmd << ")) returning " << plugin_ret << " with result " << Plugin::plugin_result_to_str(results.result) << "\n";
 
-            QMMLOG(QMM_LOG_TRACE, "QMM") << "high_result2 " << high_res << "\n";
-
             // set new max result
             if (results.result > high_res)
                 high_res = results.result;
-
-            QMMLOG(QMM_LOG_TRACE, "QMM") << "high_result3 " << high_res << "\n";
 
             // invalid/error result values
             if (results.result < QMM_UNUSED || results.result > QMM_SUPERCEDE) {
@@ -619,11 +613,7 @@ namespace QMM {
             else if (results.result >= QMM_OVERRIDE) {
                 final_ret = plugin_ret;
             }
-
-            QMMLOG(QMM_LOG_TRACE, "QMM") << "high_result4 " << high_res << "\n";
         }
-
-        QMMLOG(QMM_LOG_TRACE, "QMM") << "high_result5 " << high_res << "\n";
 
         // call real function (unless a plugin resulted in QMM_SUPERCEDE)
         if (high_res != QMM_SUPERCEDE) {
