@@ -76,7 +76,7 @@ namespace QMM {
     std::string mod_dir;
     std::string cfg_path;
     GameSupport* game;
-    eng_syscall syscall;
+    eng_syscall syscall_backup;
     void* qmm_module_ptr;
     bool is_auto_detected;
     bool is_shutdown;
@@ -163,7 +163,8 @@ namespace QMM {
         // void trap_Argv(int argn, char* buffer, int bufferSize);
         // some games don't return pointers because of QVM interaction, so if this returns anything but null
         // (or true?), we probably are in an api game, and need to get the arg from the return value instead
-        intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_ARGV), argn, buf, buflen);
+        intptr_t args[] = { argn, (intptr_t)buf, buflen };
+        intptr_t ret = ENG_SYSCALL_ARGS(QMM_ENG_MSG(QMM_G_ARGV), args);
         if (ret > 1)
             Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
@@ -178,7 +179,8 @@ namespace QMM {
 
             // add engine G_PRINT logger (info level and above)
             Log::log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
-                ENG_SYSCALL(QMM::msg_G_PRINT, Log::log_format(metadata, message, false).c_str());
+                    intptr_t args[] = { (intptr_t)Log::log_format(metadata, message, false).c_str() };
+                    ENG_SYSCALL_ARGS(QMM::msg_G_PRINT, args);
                 },
                 Log::CONSOLE_SEVERITY);
 

@@ -31,7 +31,7 @@ C_DLLEXPORT void dllEntry(eng_syscall syscall) {
 
     // store the given syscall pointer as a backup.
     // this is used in case we couldn't detect a game and have to call syscall(G_ERROR) to shutdown in vmMain
-    QMM::syscall = syscall;
+    QMM::syscall_backup = syscall;
 
     (void)QMM::HandleEntry((void*)syscall, nullptr, QMM_API_DLLENTRY);
 }
@@ -113,14 +113,14 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
             const char* error_msg = "\nFatal QMM Error:\nQMM was unable to determine the game engine.\nPlease set the \"game\" option in qmm2.json.\nRefer to the documentation for more information.\n";
 
             // if syscall passed to dllEntry was null, revert to std::exit because *shrug*
-            if (!QMM::syscall) {
+            if (!QMM::syscall_backup) {
                 // print to stdout and stderr
                 puts(error_msg);
                 fputs(error_msg, stderr);
                 std::exit(-1);
             }
             // signal exit with proper engine method
-            QMM::syscall(QMM::FAIL_G_ERROR, error_msg);
+            QMM::syscall_backup(QMM::FAIL_G_ERROR, error_msg);
         }
         return 0;
     }

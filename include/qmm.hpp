@@ -27,7 +27,7 @@ namespace QMM {
     extern std::string mod_dir;             // Active mod dir
     extern std::string cfg_path;            // QMM config file path
     extern GameSupport* game;               // loaded engine from supported games table from game_api.cpp
-    extern eng_syscall syscall;             // syscall from dllEntry (if applicable) to call G_ERROR if needed
+    extern eng_syscall syscall_backup;      // syscall from dllEntry (if applicable) to call G_ERROR if needed
     extern void* qmm_module_ptr;            // QMM module pointer
     extern bool is_auto_detected;           // Was this engine auto-detected?
     extern bool is_shutdown;                // Is the game shutting down due to G_ERROR? Used to avoid calling G_ERROR again from GAME_SHUTDOWN
@@ -76,7 +76,7 @@ namespace QMM {
      * G_ERROR appears to be 1 in all supported dllEntry games.
      * They are different in some GetGameAPI games, but for those we just return nullptr from GetGameAPI.
      */
-    constexpr int FAIL_G_ERROR = 1;
+    constexpr intptr_t FAIL_G_ERROR = 1;
 
     // Store cgame passthrough stuff
     namespace CGame {
@@ -124,11 +124,12 @@ namespace QMM {
 
 
 // Convert from QMM_G_ message to actual G_ message
-#define QMM_ENG_MSG    (QMM::game->QMMEngMsg)
+#define QMM_ENG_MSG         (QMM::game->QMMEngMsg)
 // Convert from QMM_GAME_ message to actual GAME_ message
-#define QMM_MOD_MSG    (QMM::game->QMMModMsg)
+#define QMM_MOD_MSG         (QMM::game->QMMModMsg)
 
 // Call game-specific syscall handler
-#define ENG_SYSCALL    (QMM::game->syscall)
+#define ENG_SYSCALL         (QMM::game->syscall)
+#define ENG_SYSCALL_ARGS    (QMM::game->syscall_args)
 
 #endif // QMM2_QMM_HPP

@@ -217,7 +217,7 @@ struct GameSupport {
     * @param msg QMM message flag
     * @return Game-specific engine message value
     */
-    virtual int QMMEngMsg(int msg) = 0;
+    virtual intptr_t QMMEngMsg(intptr_t msg) = 0;
 
     /**
     * @brief Gets game-specific mod message value (GAME_x) for a specific message that QMM uses internally.
@@ -225,7 +225,7 @@ struct GameSupport {
     * @param msg QMM message flag
     * @return Game-specific mod message value
     */
-    virtual int QMMModMsg(int msg) = 0;
+    virtual intptr_t QMMModMsg(intptr_t msg) = 0;
 
     /**
     * @brief Game-specific code to call into the engine with given cmd and arguments.
@@ -317,14 +317,14 @@ struct GameSupport {
     /**
     * @brief Handler for syscalls out of the QVM.
     * 
-    * This function should route the call to qmm_syscall while modifying pointer arguments using the VMPTR(x) macro.
+    * This function should route the call to QMM::syscall_args while modifying pointer arguments using the VMPTR(n) macro.
     *
-    * @param membase Starting address of the QVM datasegment
+    * @param membase Starting address of the QVM datasegment (used by the VMPTR macro)
     * @param cmd Engine message
     * @param args Engine arguments
     * @return Engine function return value
     */
-    virtual int QVMSyscall(uint8_t* membase, int cmd, int* args) { (void)membase; (void)cmd; (void)args; return 0; }
+    virtual intptr_t QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_t* args) { (void)membase; (void)cmd; (void)args; return 0; }
 };
 
 // Table of pointers to GameSupport objects
@@ -451,15 +451,8 @@ extern std::vector<GameSupport*> api_supportedgames;
 // ----- QVM stuff -----
 // ---------------------
 
-// These macros handle qvm syscall arguments in GAME_QVMSyscall functions in game_*.cpp
-
-// This gets the n'th argument value (evaluate to an intptr_t)
-#define VMARG(n)    (intptr_t)args[n]
-
-// This adds the base VM address pointer to the n'th argument value (evaluate to a pointer)
-#define VMPTR(n)    (args[n] ? membase + args[n] : nullptr)
-
-// This subtracts the base VM address pointer from given pointer value (for returning a pointer from syscall, evaluate to an int)
-#define VMRET(ptr)  (int)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
+// This adds the base VM address pointer to the n'th argument value (if not null)
+// Used in the GAME_GameSupport::QVMSyscall function in game_*.cpp
+#define VMPTR(n) args[n] = (intptr_t)(args[n] ? membase + args[n] : nullptr)
 
 #endif // QMM2_GAMEAPI_HPP

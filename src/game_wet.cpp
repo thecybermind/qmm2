@@ -27,8 +27,8 @@ struct WET_GameSupport : public GameSupport {
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
     virtual void ModUnload(APIType mod_api);
-    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
-    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
+    virtual intptr_t QMMEngMsg(intptr_t msg) { return qmm_eng_msgs[msg]; }
+    virtual intptr_t QMMModMsg(intptr_t msg) { return qmm_mod_msgs[msg]; }
 
     virtual intptr_t syscall_args(intptr_t, intptr_t* args);
     virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
@@ -45,8 +45,8 @@ private:
     // a copy of the vmMain function from the mod
     mod_vmMain orig_vmMain = nullptr;
 
-    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
-    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
+    const intptr_t qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    const intptr_t qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
 };
 
 GEN_GAME_OBJ(WET);

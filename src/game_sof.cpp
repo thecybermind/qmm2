@@ -36,8 +36,8 @@ struct SOF_GameSupport : public GameSupport {
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
     virtual void ModUnload(APIType mod_api);
-    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
-    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
+    virtual intptr_t QMMEngMsg(intptr_t msg) { return qmm_eng_msgs[msg]; }
+    virtual intptr_t QMMModMsg(intptr_t msg) { return qmm_mod_msgs[msg]; }
 
     virtual intptr_t syscall_args(intptr_t, intptr_t* args);
     virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
@@ -89,8 +89,8 @@ private:
     // struct with lambdas that call QMM's vmMain function. this is given to the game engine
     static game_export_t qmm_export;
 
-    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
-    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
+    const intptr_t qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    const intptr_t qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
 };
 
 GEN_GAME_OBJ(SOF);
@@ -786,7 +786,7 @@ void SOF_GameSupport::cvar_cmd_callback(cvar_t* cvar) {
     store_args(cvar->name, cvar->string);
     
     // execute standard GAME_CONSOLE_COMMAND handler
-	intptr_t args[] = { 0 };
+    intptr_t args[] = { 0 };
     (void)QMM::vmMain_args(GAME_CONSOLE_COMMAND, args);
 
     // wipe the G_ARGC/G_ARGV/G_ARGS buffers
