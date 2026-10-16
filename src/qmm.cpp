@@ -365,8 +365,8 @@ namespace QMM {
             mod_dir = Util::path_basename(qmm_dir);
         }
 
-        // hack for OpenJK if the DLL is loaded from a pak file
-        if (Util::str_striequal(mod_dir, "temp")) {
+        // hack for OpenJK if the DLL is loaded from a pak file into a temp file
+        if (Util::str_striequal(qmm_file.substr(0, 3), "ojk") && Util::str_striequal(Util::path_baseext(qmm_file), ".tmp")) {
             mod_dir = "base";
         }
     }
