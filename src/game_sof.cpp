@@ -786,7 +786,7 @@ void SOF_GameSupport::cvar_cmd_callback(cvar_t* cvar) {
     store_args(cvar->name, cvar->string);
     
     // execute standard GAME_CONSOLE_COMMAND handler
-	intptr_t args[] = { 0 };
+    intptr_t args[] = { 0 };
     (void)QMM::vmMain_args(GAME_CONSOLE_COMMAND, args);
 
     // wipe the G_ARGC/G_ARGV/G_ARGS buffers

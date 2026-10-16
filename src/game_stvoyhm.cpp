@@ -402,7 +402,7 @@ const char* STVOYHM_GameSupport::ModMsgName(intptr_t msg) {
    then the call is passed to the normal syscall function handler.
 */
 // vec3_t are arrays, so convert them as pointers
-// for double pointers (gentity_t** and vec3_t*), convert them once with VMPTR()
+// for double pointers (gentity_t** and vec3_t*), convert them once with VMPTR(n)
 intptr_t STVOYHM_GameSupport::QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "STVOYHM_GameSupport::QVMSyscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
@@ -508,14 +508,14 @@ intptr_t STVOYHM_GameSupport::QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_
         case G_TESTPRINTFLOAT:            // (char*, float)
         case G_FS_READ:                // (void* buffer, int len, fileHandle_t f);
         case G_FS_WRITE:            // (const void* buffer, int len, fileHandle_t f);
-            VMPTRARG(0);
+            VMPTR(0);
             ret = QMM::syscall_args(cmd, args);
             break;
-        // this function returns its own first pointer argument
         case G_MEMSET:                // void*(void* dest, int c, size_t count)
-            VMPTRARG(0);
-            ret = QMM::syscall_args(cmd, args);
-            VMPTRRET();
+            // this function returns its own first pointer argument
+            ret = args[0];
+            VMPTR(0);
+            (void)QMM::syscall_args(cmd, args);
             break;
         case G_SEND_CONSOLE_COMMAND:        // (int exec_when, const char* text)
         case G_DROP_CLIENT:            // (int clientNum, const char* reason);
@@ -555,7 +555,7 @@ intptr_t STVOYHM_GameSupport::QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_
         case BOTLIB_AI_GOAL_NAME:        // (int number, char* name, int size)
         case BOTLIB_AAS_AREA_TRAVEL_TIME_TO_GOAL_AREA:    // (int areanum, vec3_t origin, int goalareanum, int travelflags)
         case BOTLIB_AI_MOVE_IN_DIRECTION:    // (int movestate, vec3_t dir, float speed, int type)
-            VMPTRARG(1);
+            VMPTR(1);
             ret = QMM::syscall_args(cmd, args);
             break;
         case G_CVAR_SET:            // (const char* var_name, const char* value);
@@ -571,30 +571,30 @@ intptr_t STVOYHM_GameSupport::QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_
         case BOTLIB_LIBVAR_GET:            // (char* var_name, char* value, int size)
         case BOTLIB_AI_STRING_CONTAINS:        // (char* str1, char* str2, int casesensitive)
         case BOTLIB_AI_FIND_MATCH:        // (char* str, void /* struct bot_match_s*/* match, unsigned long int context)
-            VMPTRARG(0);
-            VMPTRARG(1);
+            VMPTR(0);
+            VMPTR(1);
             ret = QMM::syscall_args(cmd, args);
             break;
-        // these functions return their own first pointer argument
         case G_MEMCPY:                // void*(void* dest, const void* src, size_t count)
         case G_STRNCPY:                // char*(char* strDest, const char* strSource, size_t count)
-            VMPTRARG(0);
-            VMPTRARG(1);
-            ret = QMM::syscall_args(cmd, args);
-            ret = VMRET(ret);
+            // these functions return their own first pointer argument
+			ret = args[0];
+            VMPTR(0);
+            VMPTR(1);
+            (void)QMM::syscall_args(cmd, args);
             break;
         case G_DEBUG_POLYGON_CREATE:        // (int color, int numPoints, vec3_t* points)
         case BOTLIB_EA_GET_INPUT:        // (int client, float thinktime, void /* struct bot_input_s*/* input)
         case BOTLIB_AI_QUEUE_CONSOLE_MESSAGE:    // (int chatstate, int type, char* message)
         case BOTLIB_AI_GET_WEAPON_INFO:        // (int weaponstate, int weapon, void /* struct weaponinfo_s*/* weaponinfo)
         case BOTLIB_AI_CHARACTERISTIC_STRING:    // (int character, int index, char* buf, int size)
-            VMPTRARG(2);
+            VMPTR(2);
             ret = QMM::syscall_args(cmd, args);
             break;
         case BOTLIB_AI_MATCH_VARIABLE:        // (void /* struct bot_match_s*/* match, int variable, char* buf, int size)
         case BOTLIB_AI_MOVE_TO_GOAL:        // (void /* struct bot_moveresult_s*/* result, int movestate, void /* struct bot_goal_s*/* goal, int travelflags)
-            VMPTRARG(0);
-            VMPTRARG(2);
+            VMPTR(0);
+            VMPTR(2);
             ret = QMM::syscall_args(cmd, args);
             break;
         case BOTLIB_AAS_PRESENCE_TYPE_BOUNDING_BOX:    // (int presencetype, vec3_t mins, vec3_t maxs)
@@ -605,8 +605,8 @@ intptr_t STVOYHM_GameSupport::QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_
         case BOTLIB_AI_GET_LEVEL_ITEM_GOAL:    // (int index, char* classname, void /* struct bot_goal_s*/* goal)
         case BOTLIB_AAS_VALUE_FOR_BSP_EPAIR_KEY:    // (int ent, char* key, char* value, int size)
         case BOTLIB_AI_CHOOSE_LTG_ITEM:        // (int goalstate, vec3_t origin, int* inventory, int travelflags)
-            VMPTRARG(1);
-            VMPTRARG(2);
+            VMPTR(1);
+            VMPTR(2);
             ret = QMM::syscall_args(cmd, args);
             break;
         case G_ENTITY_CONTACT:            // (const vec3_t mins, const vec3_t maxs, const gentity_t* ent);
@@ -614,92 +614,92 @@ intptr_t STVOYHM_GameSupport::QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_
         case G_CVAR_REGISTER:            // (vmCvar_t* vmCvar, const char* varName, const char* defaultValue, int flags);
         case G_ENTITIES_IN_BOX:            // (const vec3_t mins, const vec3_t maxs, gentity_t* *list, int maxcount);
         case G_FS_GETFILELIST:            // ( const char* path, const char* extension, char* listbuf, int bufsize) {
-            VMPTRARG(0);
-            VMPTRARG(1);
-            VMPTRARG(2);
+            VMPTR(0);
+            VMPTR(1);
+            VMPTR(2);
             ret = QMM::syscall_args(cmd, args);
             break;
         case BOTLIB_TEST:            // (int parm0, char* parm1, vec3_t parm2, vec3_t parm3)
         case BOTLIB_AI_ITEM_GOAL_IN_VIS_BUT_NOT_VISIBLE:    // (int viewer, vec3_t eye, vec3_t viewangles, void /* struct bot_goal_s*/* goal)
-            VMPTRARG(1);
-            VMPTRARG(2);
-            VMPTRARG(3);
+            VMPTR(1);
+            VMPTR(2);
+            VMPTR(3);
             ret = QMM::syscall_args(cmd, args);
             break;
         case G_LOCATE_GAME_DATA:        // (gentity_t* gEnts, int numGEntities, int sizeofGEntity_t, playerState_t* clients, int sizeofGameClient);
-            VMPTRARG(0);
-            VMPTRARG(3);
+            VMPTR(0);
+            VMPTR(3);
             ret = QMM::syscall_args(cmd, args);
             break;
         case G_ANGLEVECTORS:            // (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
         case BOTLIB_AAS_TRACE_AREAS:        // (vec3_t start, vec3_t end, int* areas, vec3_t* points, int maxareas)
-            VMPTRARG(0);
-            VMPTRARG(1);
-            VMPTRARG(2);
-            VMPTRARG(3);
+            VMPTR(0);
+            VMPTR(1);
+            VMPTR(2);
+            VMPTR(3);
             ret = QMM::syscall_args(cmd, args);
             break;
         case BOTLIB_AI_MOVEMENT_VIEW_TARGET:    // (int movestate, void /* struct bot_goal_s*/* goal, int travelflags, float lookahead, vec3_t tvmarget)
-            VMPTRARG(1);
-            VMPTRARG(4);
+            VMPTR(1);
+            VMPTR(4);
             ret = QMM::syscall_args(cmd, args);
             break;
         case BOTLIB_AI_PREDICT_VISIBLE_POSITION:    // (vec3_t origin, int areanum, void /* struct bot_goal_s*/* goal, int travelflags, vec3_t tvmarget)
-            VMPTRARG(0);
-            VMPTRARG(2);
-            VMPTRARG(4);
+            VMPTR(0);
+            VMPTR(2);
+            VMPTR(4);
             ret = QMM::syscall_args(cmd, args);
             break;
         case BOTLIB_AI_GENETIC_PARENTS_AND_CHILD_SELECTION:    // (int numranks, float* ranks, int* parent1, int* parent2, int* child)
-            VMPTRARG(1);
-            VMPTRARG(2);
-            VMPTRARG(3);
-            VMPTRARG(4);
+            VMPTR(1);
+            VMPTR(2);
+            VMPTR(3);
+            VMPTR(4);
             ret = QMM::syscall_args(cmd, args);
             break;
         case BOTLIB_AI_CHOOSE_NBG_ITEM:        // (int goalstate, vec3_t origin, int* inventory, int travelflags, void /* struct bot_goal_s*/* ltg, float maxtime)
-            VMPTRARG(1);
-            VMPTRARG(2);
-            VMPTRARG(4);
+            VMPTR(1);
+            VMPTR(2);
+            VMPTR(4);
             ret = QMM::syscall_args(cmd, args);
             break;
         case G_TRACE:                // (trace_t* results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask);
-            VMPTRARG(0);
-            VMPTRARG(1);
-            VMPTRARG(2);
-            VMPTRARG(3);
-            VMPTRARG(4);
+            VMPTR(0);
+            VMPTR(1);
+            VMPTR(2);
+            VMPTR(3);
+            VMPTR(4);
             ret = QMM::syscall_args(cmd, args);
             break;
         case BOTLIB_AAS_PREDICT_CLIENT_MOVEMENT:    // (void /* struct aas_clientmove_s*/* move, int entnum, vec3_t origin, int presencetype, int onground, vec3_t velocity, vec3_t cmdmove, int cmdframes, int maxframes, float frametime, int stopevent, int stopareanum, int visualize)
-            VMPTRARG(0);
-            VMPTRARG(2);
-            VMPTRARG(5);
-            VMPTRARG(6);
+            VMPTR(0);
+            VMPTR(2);
+            VMPTR(5);
+            VMPTR(6);
             ret = QMM::syscall_args(cmd, args);
             break;
         case BOTLIB_AI_INITIAL_CHAT:        // (int chatstate, char* type, int mcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7)
-            VMPTRARG(1);
-            VMPTRARG(3);
-            VMPTRARG(4);
-            VMPTRARG(5);
-            VMPTRARG(6);
-            VMPTRARG(7);
-            VMPTRARG(8);
-            VMPTRARG(9);
-            VMPTRARG(10);
+            VMPTR(1);
+            VMPTR(3);
+            VMPTR(4);
+            VMPTR(5);
+            VMPTR(6);
+            VMPTR(7);
+            VMPTR(8);
+            VMPTR(9);
+            VMPTR(10);
             ret = QMM::syscall_args(cmd, args);
             break;
         case BOTLIB_AI_REPLY_CHAT:        // (int chatstate, char* message, int mcontext, int vcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7)
-            VMPTRARG(1);
-            VMPTRARG(4);
-            VMPTRARG(5);
-            VMPTRARG(6);
-            VMPTRARG(7);
-            VMPTRARG(8);
-            VMPTRARG(9);
-            VMPTRARG(10);
-            VMPTRARG(11);
+            VMPTR(1);
+            VMPTR(4);
+            VMPTR(5);
+            VMPTR(6);
+            VMPTR(7);
+            VMPTR(8);
+            VMPTR(9);
+            VMPTR(10);
+            VMPTR(11);
             ret = QMM::syscall_args(cmd, args);
             break;
 
