@@ -471,9 +471,11 @@ static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], cons
         plid = (plugin_id)&s_invalid_pinfo;
 
     intptr_t ret = 0;
-    if (cvar && *cvar)
-        ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_INTEGER_VALUE), cvar);
-
+    if (cvar && *cvar) {
+		intptr_t args[] = { (intptr_t)cvar };
+        ret = ENG_SYSCALL_ARGS(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_INTEGER_VALUE), args);
+    }
+	
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called GetIntCvar(\"" << cvar << "\") = " << ret << "\n";
 
     return ret;
@@ -499,7 +501,8 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
     if (cvar && *cvar) {
         // cycle rotating buffer and store string
         index = (index + 1) & ROTATING_BUFFER_MASK;
-        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), cvar, str[index], (intptr_t)sizeof(str[index]));
+	    intptr_t args[] = { (intptr_t)cvar, (intptr_t)str[index], (intptr_t)sizeof(str[index]) };
+        ENG_SYSCALL_ARGS(QMM_ENG_MSG(QMM_G_CVAR_VARIABLE_STRING_BUFFER), args);
         ret = str[index];
     }
 
@@ -782,7 +785,8 @@ static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], int
     // (or true?), we need to get the configstring from the return value
     // instead
     if (buf && buflen) {
-        intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), index, buf, buflen);
+		intptr_t args[] = { index, (intptr_t)buf, buflen };
+		intptr_t ret = ENG_SYSCALL_ARGS(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), args);
         if (ret > 1)
             Util::strncpyz(buf, (const char*)ret, (size_t)buflen);
     }
@@ -969,7 +973,8 @@ static const char* s_plugin_helper_GetConfigString2(plugin_id plid [[maybe_unuse
     // some games don't return pointers because of QVM interaction, so if this returns anything but null
     // (or true?), we probably are in an api game, and need to get the configstring from the return value
     // instead
-    intptr_t ret = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), configindex, str[index], sizeof(str[index]));
+	intptr_t args[] = { configindex, (intptr_t)str[index], (intptr_t)sizeof(str[index]) };
+    intptr_t ret = ENG_SYSCALL_ARGS(QMM_ENG_MSG(QMM_G_GET_CONFIGSTRING), args);
     if (ret > 1)
         Util::strncpyz(str[index], (const char*)ret, sizeof(str[index]));
 

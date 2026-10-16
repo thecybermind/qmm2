@@ -124,11 +124,12 @@ namespace QMM {
 
 
 // Convert from QMM_G_ message to actual G_ message
-#define QMM_ENG_MSG    (QMM::game->QMMEngMsg)
+#define QMM_ENG_MSG         (QMM::game->QMMEngMsg)
 // Convert from QMM_GAME_ message to actual GAME_ message
-#define QMM_MOD_MSG    (QMM::game->QMMModMsg)
+#define QMM_MOD_MSG         (QMM::game->QMMModMsg)
 
 // Call game-specific syscall handler
-#define ENG_SYSCALL    (QMM::game->syscall)
+#define ENG_SYSCALL         (QMM::game->syscall)
+#define ENG_SYSCALL_ARGS    (QMM::game->syscall_args)
 
 #endif // QMM2_QMM_HPP
