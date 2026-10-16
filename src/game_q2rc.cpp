@@ -246,8 +246,8 @@ cgame_export_t* Q2RC_GameSupport::orig_export = nullptr;
 // this is given to the game engine
 cgame_export_t Q2RC_GameSupport::qmm_export = {
     CGAME_API_VERSION,    // apiversion
-    +[]() { (void)QMM::vmMain_args(CGAME_INIT, nullptr); },
-    +[]() { (void)QMM::vmMain_args(CGAME_SHUTDOWN, nullptr); },
+    +[]() { intptr_t args[] = { 0 }; (void)QMM::vmMain_args(CGAME_INIT, args); },
+    +[]() { intptr_t args[] = { 0 }; (void)QMM::vmMain_args(CGAME_SHUTDOWN, args); },
     +[](int32_t isplit, const cg_server_data_t* data, vrect_t hud_vrect, vrect_t hud_safe, int32_t scale, int32_t playernum, const player_state_t* ps)
         { orig_export->DrawHUD(isplit, data, hud_vrect, hud_safe, scale, playernum, ps); },
     +[]() { orig_export->TouchPics(); },

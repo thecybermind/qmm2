@@ -436,7 +436,7 @@ extern std::vector<GameSupport*> api_supportedgames;
 // Handle calls from engine into QMM
 #define  GEN_EXPORT(field, cmd) (decltype(qmm_export. field)) +[](intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8) { intptr_t args[] = { arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 }; return QMM::vmMain_args(cmd, args); }
 // Handle specific arg types (for passing float args in the right registers)
-#define  GEN_EXPORT_0(field, cmd, typeret) +[]() -> typeret { intptr_t args[] = { 0 }; return (typeret)QMM::vmMain_args(cmd, nullptr); }
+#define  GEN_EXPORT_0(field, cmd, typeret) +[]() -> typeret { intptr_t args[] = { 0 }; return (typeret)QMM::vmMain_args(cmd, args); }
 #define  GEN_EXPORT_1(field, cmd, typeret, type0) +[](type0 arg0) -> typeret { intptr_t args[] = { INT_CAST(arg0) }; return (typeret)::vmMain(cmd, args); }
 #define  GEN_EXPORT_2(field, cmd, typeret, type0, type1) +[](type0 arg0, type1 arg1) -> typeret { intptr_t args[] = { INT_CAST(arg0), INT_CAST(arg1) }; return (typeret)QMM::vmMain_args(cmd, args); }
 #define  GEN_EXPORT_3(field, cmd, typeret, type0, type1, type2) +[](type0 arg0, type1 arg1, type2 arg2) -> typeret { intptr_t args[] = { INT_CAST(arg0), INT_CAST(arg1), INT_CAST(arg2) }; return (typeret)QMM::vmMain_args(cmd, args); }
