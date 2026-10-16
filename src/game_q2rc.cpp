@@ -36,8 +36,8 @@ struct Q2RC_GameSupport : public GameSupport {
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
     virtual void ModUnload(APIType mod_api);
-    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
-    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
+    virtual intptr_t QMMEngMsg(intptr_t msg) { return qmm_eng_msgs[msg]; }
+    virtual intptr_t QMMModMsg(intptr_t msg) { return qmm_mod_msgs[msg]; }
 
     virtual intptr_t syscall_args(intptr_t, intptr_t* args);
     virtual intptr_t vmMain_args(intptr_t, intptr_t* args);
@@ -61,8 +61,8 @@ private:
     // struct with lambdas that call QMM's vmMain function. this is given to the game engine
     static cgame_export_t qmm_export;
 
-    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = { CG_PRINT, CG_ERROR, CG_ARGV, CG_ARGC, CG_SEND_CONSOLE_COMMAND, CG_GET_CONFIGSTRING, CG_CVAR_REGISTER, CG_CVAR_VARIABLE_STRING_BUFFER, CG_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, CG_FS_FOPEN_FILE, CG_FS_READ, CG_FS_WRITE, CG_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, };
-    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = { CGAME_INIT, CGAME_SHUTDOWN, CGAME_CONSOLE_COMMAND, };
+    const intptr_t qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = { CG_PRINT, CG_ERROR, CG_ARGV, CG_ARGC, CG_SEND_CONSOLE_COMMAND, CG_GET_CONFIGSTRING, CG_CVAR_REGISTER, CG_CVAR_VARIABLE_STRING_BUFFER, CG_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, CG_FS_FOPEN_FILE, CG_FS_READ, CG_FS_WRITE, CG_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, };
+    const intptr_t qmm_mod_msgs[QMM_MOD_MSG_COUNT] = { CGAME_INIT, CGAME_SHUTDOWN, CGAME_CONSOLE_COMMAND, };
 };
 
 GEN_GAME_OBJ(Q2RC);

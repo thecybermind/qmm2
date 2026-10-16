@@ -76,7 +76,7 @@ namespace QMM {
      * G_ERROR appears to be 1 in all supported dllEntry games.
      * They are different in some GetGameAPI games, but for those we just return nullptr from GetGameAPI.
      */
-    constexpr int FAIL_G_ERROR = 1;
+    constexpr intptr_t FAIL_G_ERROR = 1;
 
     // Store cgame passthrough stuff
     namespace CGame {

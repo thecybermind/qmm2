@@ -29,8 +29,8 @@ struct JK2MP_GameSupport : public GameSupport {
     virtual void* Entry(void* syscall, void*, APIType engine_api);
     virtual bool ModLoad(void* entry, APIType mod_api);
     virtual void ModUnload(APIType mod_api);
-    virtual int QMMEngMsg(int msg) { return qmm_eng_msgs[msg]; }
-    virtual int QMMModMsg(int msg) { return qmm_mod_msgs[msg]; }
+    virtual intptr_t QMMEngMsg(intptr_t msg) { return qmm_eng_msgs[msg]; }
+    virtual intptr_t QMMModMsg(intptr_t msg) { return qmm_mod_msgs[msg]; }
 
     virtual intptr_t syscall_args(intptr_t, intptr_t* args);
     virtual intptr_t vmMain_args(intptr_t, intptr_t* args);

@@ -217,7 +217,7 @@ struct GameSupport {
     * @param msg QMM message flag
     * @return Game-specific engine message value
     */
-    virtual int QMMEngMsg(int msg) = 0;
+    virtual intptr_t QMMEngMsg(intptr_t msg) = 0;
 
     /**
     * @brief Gets game-specific mod message value (GAME_x) for a specific message that QMM uses internally.
@@ -225,7 +225,7 @@ struct GameSupport {
     * @param msg QMM message flag
     * @return Game-specific mod message value
     */
-    virtual int QMMModMsg(int msg) = 0;
+    virtual intptr_t QMMModMsg(intptr_t msg) = 0;
 
     /**
     * @brief Game-specific code to call into the engine with given cmd and arguments.
