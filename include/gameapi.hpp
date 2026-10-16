@@ -317,9 +317,9 @@ struct GameSupport {
     /**
     * @brief Handler for syscalls out of the QVM.
     * 
-    * This function should route the call to qmm_syscall while modifying pointer arguments using the VMPTR(x) macro.
+    * This function should route the call to QMM::syscall_args while modifying pointer arguments using the VMPTRARG(n) macro.
     *
-    * @param membase Starting address of the QVM datasegment
+    * @param membase Starting address of the QVM datasegment (used by VMPTRARG and VMPTRRET macros)
     * @param cmd Engine message
     * @param args Engine arguments
     * @return Engine function return value
@@ -453,11 +453,12 @@ extern std::vector<GameSupport*> api_supportedgames;
 
 // These macros handle qvm pointer adjustments in GAME_QVMSyscall functions in game_*.cpp
 
-// This adds the base VM address pointer to the n'th argument value
 #define VMPTR(n)    (intptr_t)(args[n] ? membase + args[n] : nullptr)
 
-// This subtracts the base VM address pointer from given pointer value
-// (for returning a pointer from syscall)
-#define VMRET(ptr)  (intptr_t)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
+// This adds the base VM address pointer to the n'th argument value (if not null)
+#define VMPTRARG(n) args[n] = (intptr_t)(args[n] ? membase + args[n] : nullptr)
+
+// This subtracts the base VM address pointer from the return value (if not null) 
+#define VMPTRRET()  ret = (intptr_t)(ret ? (intptr_t)ret - (intptr_t)membase : 0)
 
 #endif // QMM2_GAMEAPI_HPP

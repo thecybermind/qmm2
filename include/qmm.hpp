@@ -27,7 +27,7 @@ namespace QMM {
     extern std::string mod_dir;             // Active mod dir
     extern std::string cfg_path;            // QMM config file path
     extern GameSupport* game;               // loaded engine from supported games table from game_api.cpp
-    extern eng_syscall syscall;             // syscall from dllEntry (if applicable) to call G_ERROR if needed
+    extern eng_syscall syscall_backup;      // syscall from dllEntry (if applicable) to call G_ERROR if needed
     extern void* qmm_module_ptr;            // QMM module pointer
     extern bool is_auto_detected;           // Was this engine auto-detected?
     extern bool is_shutdown;                // Is the game shutting down due to G_ERROR? Used to avoid calling G_ERROR again from GAME_SHUTDOWN

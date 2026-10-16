@@ -76,7 +76,7 @@ namespace QMM {
     std::string mod_dir;
     std::string cfg_path;
     GameSupport* game;
-    eng_syscall syscall;
+    eng_syscall syscall_backup;
     void* qmm_module_ptr;
     bool is_auto_detected;
     bool is_shutdown;
