@@ -31,7 +31,7 @@ namespace Mod {
 
     static intptr_t QVM_vmMain(intptr_t cmd, ...);
     static int QVM_syscall(uint8_t* membase, int cmd, int* args);
-    static bool LoadQVM(std::string file);
+    static bool InitQVM(std::string file);
     static bool InitDLL(std::string file, void* handle, APIType dll_api);
 
 
@@ -44,7 +44,7 @@ namespace Mod {
 
         // only allow qvm mods if the game engine supports it
         if (Util::str_striequal(ext, EXT_QVM) && QMM::game->DefaultQVMName()) {
-            return LoadQVM(file);
+            return InitQVM(file);
         }
         // if DLL
         else if (Util::str_striequal(ext, EXT_DLL)) {
@@ -100,7 +100,7 @@ namespace Mod {
         qvm_unload(&vm);
         qvm_init(&vm);
         api = QMM_API_UNKNOWN;
-        // update g_pluginvars.vmbase
+        // update g_plugin_vars.vmbase
         g_plugin_vars.vmbase = 0;
     }
 
@@ -166,14 +166,14 @@ namespace Mod {
     * @param file Path to QVM mod file
     * @return true if mod load was successful, false otherwise
     */
-    static bool LoadQVM(std::string file) {
+    static bool InitQVM(std::string file) {
         QMM::EngineFileRead f(file);       // read QVM file using engine functions to see into .pk3s
         bool verify_data;
         size_t hunk_size;
 
         uint8_t* filedata = f.Data();
         if (!filedata) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << file << "\"): Could not open QVM for reading\n";
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitQVM(\"" << file << "\"): Could not open QVM for reading\n";
             return false;
         }
 
@@ -184,24 +184,24 @@ namespace Mod {
 
         // attempt to load mod
         if (!qvm_load(&vm, filedata, f.Size(), Mod::QVM_syscall, verify_data, hunk_size, nullptr)) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << file << "\"): QVM load failed\n";
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitQVM(\"" << file << "\"): QVM load failed\n";
             return false;
         }
 
         // pass the qvm vmMain function pointer to the game-specific mod load handler
         if (!QMM::game->ModLoad((void*)Mod::QVM_vmMain, QMM_API_QVM)) {
-            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::LoadQVM(\"" << Util::path_basename(file) << "\"): Mod load failed?\n";
+            QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitQVM(\"" << Util::path_basename(file) << "\"): Mod load failed?\n";
             // call ModUnload to allow game support code to reset
             QMM::game->ModUnload(QMM_API_QVM);
             return false;
         }
 
-        QMMLOG(QMM_LOG_DEBUG, "QMM") << "Mod::LoadQVM(\"" << Util::path_basename(file) << "\"): QVM loaded successfully with verify_data " << (vm.verify_data ? "on" : "off") << " and hunk size " << vm.hunksize << "\n";
+        QMMLOG(QMM_LOG_DEBUG, "QMM") << "Mod::InitQVM(\"" << Util::path_basename(file) << "\"): QVM loaded successfully with verify_data " << (vm.verify_data ? "on" : "off") << " and hunk size " << vm.hunksize << "\n";
 
         api = QMM_API_QVM;
         path = file;
 
-        // update g_pluginvars.vmbase with QVM memory base
+        // update g_plugin_vars.vmbase with QVM memory base
         g_plugin_vars.vmbase = (intptr_t)Mod::vm.memory;
 
         return true;

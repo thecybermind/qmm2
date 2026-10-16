@@ -87,7 +87,7 @@ std::vector<Plugin> g_plugins;
 
 // Struct of variables to pass to plugins' QMM_Attach
 plugin_vars g_plugin_vars = {
-    0,    // vmbase, set after Mod::Load
+    0,    // vmbase, set in Mod::InitQVM and Mod::Unload
 };
 
 // This holds pseudo-syscall IDs. They are registered to a given plugin, and when the QVM interpreter executes the
