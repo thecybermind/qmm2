@@ -45,7 +45,7 @@ struct STVOYHM_GameSupport : public GameSupport {
     virtual const char* GameName() { return "Star Trek Voyager: Elite Force (Holomatch)"; }
     virtual const char* GameCode() { return "STVOYHM"; }
 
-    virtual int QVMSyscall(uint8_t* membase, int cmd, int* args);
+    virtual intptr_t QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_t* args);
 
 private:
     // a copy of the original syscall from the engine
@@ -54,8 +54,8 @@ private:
     // a copy of the vmMain function from the mod
     mod_vmMain orig_vmMain = nullptr;
 
-    const int qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
-    const int qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
+    const intptr_t qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
+    const intptr_t qmm_mod_msgs[QMM_MOD_MSG_COUNT] = GEN_GAME_QMM_MOD_MSGS();
 };
 
 GEN_GAME_OBJ(STVOYHM);
@@ -400,14 +400,14 @@ const char* STVOYHM_GameSupport::ModMsgName(intptr_t msg) {
 /* Entry point: qvm mod->qmm
    This is the syscall function called by a QVM mod as a way to pass info to or get info from the engine.
    It modifies pointer arguments (if they are not NULL, the QVM data segment base address is added), and
-   then the call is passed to the normal syscall() function that DLL mods call.
+   then the call is passed to the normal syscall function handler.
 */
 // vec3_t are arrays, so convert them as pointers
-// for double pointers (gentity_t** and vec3_t*), convert them once with vmptr()
-int STVOYHM_GameSupport::QVMSyscall(uint8_t* membase, int cmd, int* args) {
+// for double pointers (gentity_t** and vec3_t*), convert them once with VMPTR()
+intptr_t STVOYHM_GameSupport::QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_t* args) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "STVOYHM_GameSupport::QVMSyscall(" << EngMsgName(cmd) << "(" << cmd << ")) called\n";
 
-    int ret = 0;
+    intptr_t ret = 0;
 
     switch (cmd) {
         case G_MILLISECONDS:            // (void)

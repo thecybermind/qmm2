@@ -123,6 +123,7 @@ namespace Mod {
         QMM_GET_VMMAIN_ARGS();
 
         // generate new 32-bit int array from the intptr_t args, and also include cmd at the front
+        // this gets copied directly into a new QVM stack frame
         int qvmargs[QVM_MAX_VMMAIN_ARGS + 1] = { (int)cmd };
         for (int i = 0; i < QVM_MAX_VMMAIN_ARGS; i++) {
             qvmargs[i + 1] = (int)args[i];
@@ -145,7 +146,7 @@ namespace Mod {
 
 
     // Exit point from QVM mods. Handle syscalls from the QVM.
-    static int QVM_syscall(uint8_t* membase, int cmd, int* args) {
+    static int QVM_syscall(uint8_t* membase, int cmd, int* qvmargs) {
         // check for plugin qvm function registration
         if (cmd >= QMM_QVM_FUNC_STARTING_ID && g_registered_qvm_funcs.count(cmd)) {
             Plugin* p = g_registered_qvm_funcs[cmd];
@@ -155,11 +156,17 @@ namespace Mod {
                 return 0;
 
             // pass the negative-1 form since that's the number the plugin probably stored and expects
-            return p->QMM_QVMHandler(-cmd - 1, args);
+            return p->QMM_QVMHandler(-cmd - 1, qvmargs);
         }
 
-        // call the game-specific QVM syscall handler
-        return QMM::game->QVMSyscall(membase, cmd, args);
+        // generate new intptr_t array from the int args
+        intptr_t args[QMM_MAX_SYSCALL_ARGS];
+        for (int i = 0; i < QMM_MAX_SYSCALL_ARGS; i++) {
+            args[i] = qvmargs[i];
+        }
+
+        // call the game-specific QVM syscall handler (cast back to int for returning to QVM)
+        return (int)QMM::game->QVMSyscall(membase, cmd, args);
     }
 
 

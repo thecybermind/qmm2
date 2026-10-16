@@ -324,7 +324,7 @@ struct GameSupport {
     * @param args Engine arguments
     * @return Engine function return value
     */
-    virtual int QVMSyscall(uint8_t* membase, int cmd, int* args) { (void)membase; (void)cmd; (void)args; return 0; }
+    virtual intptr_t QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_t* args) { (void)membase; (void)cmd; (void)args; return 0; }
 };
 
 // Table of pointers to GameSupport objects
@@ -451,15 +451,13 @@ extern std::vector<GameSupport*> api_supportedgames;
 // ----- QVM stuff -----
 // ---------------------
 
-// These macros handle qvm syscall arguments in GAME_QVMSyscall functions in game_*.cpp
+// These macros handle qvm pointer adjustments in GAME_QVMSyscall functions in game_*.cpp
 
-// This gets the n'th argument value (evaluate to an intptr_t)
-#define VMARG(n)    (intptr_t)args[n]
+// This adds the base VM address pointer to the n'th argument value
+#define VMPTR(n)    (intptr_t)(args[n] ? membase + args[n] : nullptr)
 
-// This adds the base VM address pointer to the n'th argument value (evaluate to a pointer)
-#define VMPTR(n)    (args[n] ? membase + args[n] : nullptr)
-
-// This subtracts the base VM address pointer from given pointer value (for returning a pointer from syscall, evaluate to an int)
-#define VMRET(ptr)  (int)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
+// This subtracts the base VM address pointer from given pointer value
+// (for returning a pointer from syscall)
+#define VMRET(ptr)  (intptr_t)(ptr ? (intptr_t)ptr - (intptr_t)membase : 0)
 
 #endif // QMM2_GAMEAPI_HPP
