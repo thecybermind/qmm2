@@ -590,7 +590,7 @@ intptr_t Q3A_GameSupport::QVMSyscall(uint8_t* membase, intptr_t cmd, intptr_t* a
         case G_MEMCPY:                // void*(void* dest, const void* src, size_t count)
         case G_STRNCPY:                // char*(char* strDest, const char* strSource, size_t count)
             // these functions return their own first pointer argument
-			ret = args[0];
+            ret = args[0];
             VMPTR(0);
             VMPTR(1);
             (void)QMM::syscall_args(cmd, args);

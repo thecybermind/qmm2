@@ -451,9 +451,8 @@ extern std::vector<GameSupport*> api_supportedgames;
 // ----- QVM stuff -----
 // ---------------------
 
-// These macros handle qvm pointer adjustments in GAME_QVMSyscall functions in game_*.cpp
-
 // This adds the base VM address pointer to the n'th argument value (if not null)
+// Used in the GAME_GameSupport::QVMSyscall function in game_*.cpp
 #define VMPTR(n) args[n] = (intptr_t)(args[n] ? membase + args[n] : nullptr)
 
 #endif // QMM2_GAMEAPI_HPP
