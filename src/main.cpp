@@ -16,7 +16,7 @@ Created By:
 #include "qmm.hpp"
 #include "qmmapi.h"
 #include "mod.hpp"
-#include "util.hpp"     // used in 64-bit GetCGameAPI only
+#include "util.hpp"     // dll_symbol in 64-bit GetCGameAPI only
 
 
 C_DLLEXPORT void dllEntry(eng_syscall syscall) {
@@ -95,7 +95,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
             QMM::CGame::vmMain = nullptr;
             QMM::CGame::is_shutdown = false;
 
-            // unload mod (dlclose)
+            // unload mod
             QMMLOG(QMM_LOG_NOTICE, "QMM") << "Shutting down mod\n";
             Mod::Unload();
         }
