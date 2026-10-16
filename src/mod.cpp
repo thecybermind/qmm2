@@ -42,8 +42,9 @@ namespace Mod {
 
         std::string ext = Util::path_baseext(file);
 
-        // only allow qvm mods if the game engine supports it
-        if (Util::str_striequal(ext, EXT_QVM) && QMM::game->DefaultQVMName()) {
+        // if file extension is .qvm or the requested mod API type is QVM, try to load QVM
+        // (only allow QVM mods if the game engine supports it)
+        if (QMM::game->DefaultQVMName() && (mod_api == QMM_API_QVM || Util::str_striequal(ext, EXT_QVM))) {
             return InitQVM(file);
         }
         // if DLL
@@ -62,6 +63,7 @@ namespace Mod {
                 return false;
             }
 
+            // if no specific mod API type given, try all the DLL ones
             if (mod_api == QMM_API_UNKNOWN) {
                 if (InitDLL(file, handle, QMM_API_GETGAMEAPI))
                     return true;
@@ -75,6 +77,7 @@ namespace Mod {
                 Util::dll_close(handle);
                 return false;
             }
+            // otherwise, try the specific mod API type
             else if (InitDLL(file, handle, mod_api)) {
                 return true;
             }
@@ -128,7 +131,7 @@ namespace Mod {
         // pass array and size to qvm
         int ret = qvm_exec(&vm, sizeof(qvmargs) / sizeof(qvmargs[0]), qvmargs);
 
-        // if qvm isn't loaded, we need to error
+        // if qvm isn't loaded anymore after execution, we need to error
         if (!vm.memory) {
             if (!QMM::is_shutdown) {
                 QMM::is_shutdown = true;
