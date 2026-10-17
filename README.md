@@ -43,6 +43,7 @@ QMM supports the following games:
   - Return to Castle Wolfenstein (MP)
   - Return to Castle Wolfenstein (SP)
   - SiN
+  - Soldier of Fortune
   - Soldier of Fortune II: Double Helix (MP)
   - Soldier of Fortune II: Double Helix (SP)
   - Star Trek Voyager: Elite Force (SP)
