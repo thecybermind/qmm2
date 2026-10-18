@@ -738,8 +738,8 @@ C_DLLEXPORT void NPServer_Vid_Change() {
 }
 
 
-// generate stub functions (these may need to also pass-through depending on how the game stores the pointers
-// if they get re-read then the GetProcAddress hook should take care of this
+// generate stub functions (these may need to also pass-through depending on how the game stores the pointers.
+// if they get re-read (unlikely) then the GetProcAddress hook should take care of this.
 #define STUB_FUNC(func) C_DLLEXPORT void func() { }
 STUB_FUNC(GAME_GetContext)
 STUB_FUNC(GAME_SearchContext_va)
