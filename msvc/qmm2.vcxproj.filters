@@ -238,7 +238,10 @@
     </ClCompile>
     <ClCompile Include="..\src\game_kingpin.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>    <ClCompile Include="..\src\game_ana.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
+
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="qmm2.rc">
