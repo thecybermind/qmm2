@@ -43,6 +43,8 @@ GEN_GAME_EXTS(SOF2SP);
 GEN_GAME_EXTS(STEF2);
 GEN_GAME_EXTS(STVOYSP);
 
+GEN_GAME_EXTS(ANA);
+
 // Table of pointers to GameSupport objects
 std::vector<GameSupport*> api_supportedgames = {
     // vmMain games
@@ -71,6 +73,7 @@ std::vector<GameSupport*> api_supportedgames = {
 // OpenMOHAA adds 64-bit MoH support but the API is very different, so disable it for now
 // the rest of the games don't appear to have an official 64-bit version or source port
 #if defined(QMM_ARCH_32)
+    GET_GAME_OBJ(ANA),
     GET_GAME_OBJ(MOHAA),
     GET_GAME_OBJ(MOHSH),
     GET_GAME_OBJ(MOHBT),
