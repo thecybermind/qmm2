@@ -90,12 +90,14 @@ namespace QMM {
 
     // RAII class to read a file using engine functions
     struct EngineFileRead {
+        EngineFileRead();
+
         /**
         * @brief Open file and read contents.
         *
         * @param path Filename to open
         */
-        EngineFileRead(std::string path);
+        void Open(std::string path);
 
         /**
         * @brief Clean up resources.

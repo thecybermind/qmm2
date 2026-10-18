@@ -802,14 +802,17 @@ namespace QMM {
     }
 
 
-    EngineFileRead::EngineFileRead(std::string path) : handle(0) {
+    EngineFileRead::EngineFileRead() : handle(0), file() {}
+
+
+    void EngineFileRead::Open(std::string path) {
         intptr_t filelen = ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FOPEN_FILE), path.c_str(), &this->handle, QMM_ENG_MSG(QMM_FS_READ));
-        if (filelen <= 0 || !this->handle) {
-            this->~EngineFileRead();
+        if (!this->handle)
             return;
+        if (filelen > 0) {
+            this->file.resize((size_t)filelen);
+            ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_READ), this->file.data(), this->file.size(), this->handle);
         }
-        this->file.resize((size_t)filelen);
-        ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_READ), this->file.data(), this->file.size(), this->handle);
         ENG_SYSCALL(QMM_ENG_MSG(QMM_G_FS_FCLOSE_FILE), this->handle);
         this->handle = 0;
     }

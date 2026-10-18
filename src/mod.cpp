@@ -177,9 +177,11 @@ namespace Mod {
     * @return true if mod load was successful, false otherwise
     */
     static bool InitQVM(std::string file) {
-        QMM::EngineFileRead f(file);       // read QVM file using engine functions to see into .pk3s
+        QMM::EngineFileRead f;       // read QVM file using engine functions to see into .pk3s
         bool verify_data;
         size_t hunk_size;
+
+        f.Open(file);
 
         uint8_t* filedata = f.Data();
         if (!filedata) {
