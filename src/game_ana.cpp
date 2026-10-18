@@ -733,6 +733,9 @@ game_export_t ANA_GameSupport::qmm_export = {
 };
 #endif
 
+
+// This is the initial function called by the ANA engine. It just sets up the GetProcAddress hook for routing the
+// various entity function lookups to the mod DLL.
 C_DLLEXPORT void NPServer_Vid_Change() {
     old_GetProcAddress = (pfnGPA)install_hook(GetModuleHandle(NULL), "kernel32.dll", "GetProcAddress", GetProcAddress_Hook);
 }
@@ -846,7 +849,7 @@ STUB_FUNC(USE_trigger_relay_use)
 STUB_FUNC(USE_wall_use)
 */
 
-// This should redirect unknown QMM functions towards the mod DLL
+// This GetProcAddress hook routes unknown function lookups directed at the QMM DLL towards the mod DLL.
 FARPROC WINAPI GetProcAddress_Hook(HMODULE hModule, LPCSTR lpProcName) {
     FARPROC old_ret = old_GetProcAddress(hModule, lpProcName);
 
