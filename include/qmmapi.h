@@ -175,6 +175,14 @@ typedef struct {
 typedef struct {
     // Base address of the QVM memory block (automatically added to pointer args in syscalls). See GETPTR and SETPTR macros.
     intptr_t vmbase;
+    // This is the function pointer used to call into the engine with a given G_ value and optional arguments. 
+    eng_syscall engfunc;
+    // This is the function pointer used to call into the engine with a given G_ value and optional arguments packed in an intptr_t array.
+    eng_syscall_args engfunc_args;
+    // This is the function pointer used to call into the mod with a given GAME_ value and optional arguments.
+    mod_vmMain modfunc;
+    // This is the function pointer used to call into the mod with a given GAME_ value and optional arguments packed in an intptr_t array.
+    mod_vmMain_args modfunc_args;
 } plugin_vars;
 
 /* Result flags a plugin can give to QMM */
@@ -253,10 +261,10 @@ extern plugin_vars* g_pluginvars;
 #define QMM_GIVE_PINFO() *pinfo = &g_plugininfo
 // Save variables from QMM in QMM_Attach
 #define QMM_SAVE_VARS() do { \
-            g_syscall = engfunc; \
-            g_syscall_args = engfunc_args; \
-            g_vmMain = modfunc; \
-            g_vmMain_args = modfunc_args; \
+            g_syscall = pluginvars->engfunc; \
+            g_syscall_args = pluginvars->engfunc_args; \
+            g_vmMain = pluginvars->modfunc; \
+            g_vmMain_args = pluginvars->modfunc_args; \
             g_pluginfuncs = pluginfuncs; \
             g_pluginvars = pluginvars; \
         } while(0)

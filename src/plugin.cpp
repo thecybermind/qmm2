@@ -85,11 +85,6 @@ static plugin_funcs s_plugin_funcs = {
 // List of QMM plugins
 std::vector<Plugin> g_plugins;
 
-// Struct of variables to pass to plugins' QMM_Attach
-plugin_vars g_plugin_vars = {
-    0,    // vmbase, set in Mod::InitQVM and Mod::Unload
-};
-
 // This holds pseudo-syscall IDs. They are registered to a given plugin, and when the QVM interpreter executes the
 // syscall ID, the plugin's QMM_QVMHandler function is called.
 std::map<int, Plugin*> g_registered_qvm_funcs;
@@ -121,6 +116,17 @@ static intptr_t s_plugin_game_vmMain(intptr_t cmd, ...) {
 static intptr_t s_plugin_game_vmMain_args(intptr_t cmd, intptr_t* args) {
     return QMM::game->vmMain_args(cmd, args);
 }
+
+
+// Struct of variables to pass to plugins' QMM_Attach
+// todo: make this local to Plugin, along with a helper function to update a Plugin's vmbase value?
+plugin_vars g_plugin_vars = {
+    0,                              // vmbase, set in Mod::InitQVM and Mod::Unload
+    s_plugin_game_syscall,          // engfunc
+    s_plugin_game_syscall_args,     // engfunc_args
+    s_plugin_game_vmMain,           // modfunc
+    s_plugin_game_vmMain_args,      // modfunc_args
+};
 
 
 Plugin::Plugin() : dll(nullptr), QMM_Query(nullptr), QMM_Attach(nullptr), QMM_Detach(nullptr),
