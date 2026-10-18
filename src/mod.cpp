@@ -126,6 +126,9 @@ namespace Mod {
         // this gets copied directly into a new QVM stack frame
         int qvmargs[QVM_MAX_VMMAIN_ARGS + 1] = { (int)cmd };
         for (int i = 0; i < QVM_MAX_VMMAIN_ARGS; i++) {
+            // not much to do about this except log a warning, but it shouldn't really be happening anyway
+            if (args[i] > INT_MAX)
+                QMMLOG(QMM_LOG_WARNING, "QMM") << "Mod::QVM_vmMain(" << QMM::game->ModMsgName(cmd) << "(" << cmd << ")): argument " << i << " is oversized: " << args[i] << "\n";
             qvmargs[i + 1] = (int)args[i];
         }
 
