@@ -207,6 +207,8 @@ namespace Mod {
             QMMLOG(QMM_LOG_ERROR, "QMM") << "Mod::InitQVM(\"" << Util::path_basename(file) << "\"): Mod load failed?\n";
             // call ModUnload to allow game support code to reset
             QMM::game->ModUnload(QMM_API_QVM);
+            // unload qvm
+            qvm_unload(&vm);
             return false;
         }
 
