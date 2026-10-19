@@ -88,7 +88,7 @@ static intptr_t s_plugin_wrapper_vmMain(intptr_t cmd, ...);
 static intptr_t s_plugin_wrapper_vmMain_args(intptr_t cmd, intptr_t* args);
 
 // Variables made available to plugins in QMM_Attach
-plugin_vars g_plugin_vars = {
+plugin_vars s_plugin_vars = {
     0, // vmbase
     s_plugin_wrapper_syscall,
     s_plugin_wrapper_syscall_args,
@@ -109,7 +109,8 @@ static int s_next_qvm_func = QMM_QVM_FUNC_STARTING_ID;
 
 Plugin::Plugin() : dll(nullptr), QMM_Query(nullptr), QMM_Attach(nullptr), QMM_Detach(nullptr),
     QMM_vmMain(nullptr), QMM_vmMain_Post(nullptr), QMM_syscall(nullptr), QMM_syscall_Post(nullptr),
-    QMM_PluginMessage(nullptr), QMM_QVMHandler(nullptr), plugininfo(nullptr)
+    QMM_PluginMessage(nullptr), QMM_QVMHandler(nullptr),
+    plugininfo(nullptr), pluginfuncs(nullptr), pluginvars(nullptr)
 {
 }
 
@@ -145,6 +146,8 @@ Plugin& Plugin::operator=(Plugin&& other) noexcept {
     this->QMM_PluginMessage = other.QMM_PluginMessage;
     this->QMM_QVMHandler = other.QMM_QVMHandler;
     this->plugininfo = other.plugininfo;
+    this->pluginfuncs = other.pluginfuncs;
+    this->pluginvars = other.pluginvars;
 
     return *this;
 }
@@ -186,10 +189,10 @@ int Plugin::Load(std::string file) {
         return 0;
     }
 
-    // call initial plugin entry point, get interface version
-    this->QMM_Query(&this->plugininfo);
+    // call initial plugin entry point, get interface version and struct pointers
+    this->QMM_Query(&this->plugininfo, &this->pluginfuncs, &this->pluginvars);
     if (!this->plugininfo) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Query() returned NULL Plugininfo\n";
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Query() returned NULL plugininfo\n";
         this->Unload();
         return 0;
     }
@@ -214,7 +217,22 @@ int Plugin::Load(std::string file) {
         this->Unload();
         return 0;
     }
-    // at this point, major versions match and the plugin's minor version is less than or equal to QMM's
+
+    // at this point, major versions match and the plugin's minor version is less than or equal to QMM's.
+    // make sure the plugin gave us the funcs and vars struct pointers
+    if (!this->pluginfuncs) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Query() returned NULL pluginfuncs\n";
+        this->Unload();
+        return 0;
+    }
+    if (!this->pluginvars) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Query() returned NULL pluginvars\n";
+        this->Unload();
+        return 0;
+    }
+    // now give the plugin the function and variable pointers
+    *this->pluginfuncs = s_plugin_funcs;
+    *this->pluginvars = s_plugin_vars;
 
     // find remaining QMM api functions or fail
     if (!(this->QMM_Attach = (Plugin::plugin_attach)Util::dll_symbol(this->dll, "QMM_Attach"))) {
@@ -251,8 +269,7 @@ int Plugin::Load(std::string file) {
     }
 
     // call QMM_Attach. if it fails (returns 0), destructor will call QMM_Detach and unload DLL
-    // QMM_Attach(engine syscall, engine syscall_args, mod vmmain, mod vmmain_args, table of plugin helper functions, table of plugin variables)
-    if (!(this->QMM_Attach(g_plugin_vars.engfunc, g_plugin_vars.engfunc_args, g_plugin_vars.modfunc, g_plugin_vars.modfunc_args, &s_plugin_funcs, &g_plugin_vars))) {
+    if (!(this->QMM_Attach())) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Attach() returned 0\n";
         this->Unload();
         // treat this failure specially. this is a valid plugin, but it decided on its own that it shouldn't be loaded
@@ -284,6 +301,14 @@ void Plugin::Unload() {
     this->QMM_PluginMessage = nullptr;
     this->QMM_QVMHandler = nullptr;
     this->plugininfo = nullptr;
+    this->pluginfuncs = nullptr;
+    this->pluginvars = nullptr;
+}
+
+
+void Plugin::UpdateVars(intptr_t vmbase) {
+    if (this->pluginvars)
+        this->pluginvars->vmbase = vmbase;
 }
 
 

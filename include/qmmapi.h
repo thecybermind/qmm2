@@ -49,7 +49,7 @@ typedef void (*mod_dllEntry)(eng_syscall);
 typedef void* (*mod_GetGameAPI)(void*, void*);
 
 // Major interface version increases with breaking changes to signatures, types, etc
-#define QMM_PIFV_MAJOR  5
+#define QMM_PIFV_MAJOR  6
 // Minor interface version increases with trailing addition to plugin_func or plugin_info structs
 #define QMM_PIFV_MINOR  0
 
@@ -88,6 +88,8 @@ typedef void* (*mod_GetGameAPI)(void*, void*);
 5:0
 - pass result vars to each callback function
 - add syscall_args and vmMain_args function pointers to QMM_Attach
+6:0
+- pluginvars are now stored in the plugin, and a pointer is given to QMM
 */
 
 // Plugin info to pass back to QMM
@@ -147,42 +149,42 @@ typedef struct {
     const char* (*pfnModDir)(plugin_id plid);                                                                 // Return loaded mod directory
 } plugin_funcs;
 
-#define QMM_WRITEQMMLOG(sev, fmt, ...)          (g_pluginfuncs->pfnWriteQMMLog)(PLID, sev, fmt, ## __VA_ARGS__) // Write to the QMM log
-#define QMM_VARARGS(fmt, ...)                   (g_pluginfuncs->pfnVarArgs)(PLID, fmt, __VA_ARGS__)             // Simple vsprintf helper
-#define QMM_ISQVM()                             (g_pluginfuncs->pfnIsQVM)(PLID)                                 // Returns 1 if the mod is QVM
-#define QMM_ENGMSGNAME(cmd)                     (g_pluginfuncs->pfnEngMsgName)(PLID, cmd)                       // Get the string name of a syscall code
-#define QMM_MODMSGNAME(cmd)                     (g_pluginfuncs->pfnModMsgName)(PLID, cmd)                       // Get the string name of a vmMain code
-#define QMM_GETINTCVAR(cvar)                    (g_pluginfuncs->pfnGetIntCvar)(PLID, cvar)                      // Get the int value of a cvar
-#define QMM_GETSTRCVAR(cvar)                    (g_pluginfuncs->pfnGetStrCvar)(PLID, cvar)                      // Get the str value of a cvar
-#define QMM_GETGAMEENGINE()                     (g_pluginfuncs->pfnGetGameEngine)(PLID)                         // Return the QMM short code for the game engine
-#define QMM_ARGV(argn, buf, buflen)             (g_pluginfuncs->pfnArgv)(PLID, argn, buf, buflen)               // Call G_ARGV, but can handle both engine styles
-#define QMM_INFOVALUEFORKEY(userinfo, key)      (g_pluginfuncs->pfnInfoValueForKey)(PLID, userinfo, key)        // Same as SDK's Info_ValueForKey
-#define QMM_CFG_GETSTR(key)                     (g_pluginfuncs->pfnConfigGetStr)(PLID, key)                     // Get a string config entry
-#define QMM_CFG_GETINT(key)                     (g_pluginfuncs->pfnConfigGetInt)(PLID, key)                     // Get an int config entry
-#define QMM_CFG_GETBOOL(key)                    (g_pluginfuncs->pfnConfigGetBool)(PLID, key)                    // Get a bool config entry
-#define QMM_CFG_GETARRAYSTR(key)                (g_pluginfuncs->pfnConfigGetArrayStr)(PLID, key)                // Get an array-of-strings config entry (array terminated with a null pointer)
-#define QMM_CFG_GETARRAYINT(key)                (g_pluginfuncs->pfnConfigGetArrayInt)(PLID, key)                // Get an array-of-ints config entry (array starts with remaining length)
-#define QMM_GETCONFIGSTRING(index, buf, buflen) (g_pluginfuncs->pfnGetConfigString)(PLID, index, buf, buflen)   // Call G_GET_CONFIGSTRING, but can handle both engine styles
-#define QMM_PLUGIN_BROADCAST(msg, buf, buflen)  (g_pluginfuncs->pfnPluginBroadcast)(PLID, msg, buf, buflen)     // Broadcast a message to plugins' QMM_PluginMessage functions
-#define QMM_PLUGIN_SEND(to, msg, buf, buflen)   (g_pluginfuncs->pfnPluginSend)(PLID, to, msg, buf, buflen)      // Send a message to a specific plugin's QMM_PluginMessage function
-#define QMM_QVM_REGISTER_FUNC()                 (g_pluginfuncs->pfnQVMRegisterFunc)(PLID)                       // Register a new QVM function ID to the calling plugin (0 if unsuccessful)
-#define QMM_QVM_EXEC_FUNC(funcid, argc, argv)   (g_pluginfuncs->pfnQVMExecFunc)(PLID, funcid, argc, argv)       // Exec a given QVM function function ID
-#define QMM_ARGV2(argn)                         (g_pluginfuncs->pfnArgv2)(PLID, argn)                           // Same as QMM_ARGV except returns value
-#define QMM_GETCONFIGSTRING2(index)             (g_pluginfuncs->pfnGetConfigString2)(PLID, index)               // Same as QMM_GETCONFIGSTRING except returns value
-#define QMM_MODDIR()                            (g_pluginfuncs->pfnModDir)(PLID)                                // Return loaded mod directory
+#define QMM_WRITEQMMLOG(sev, fmt, ...)          (g_pluginfuncs.pfnWriteQMMLog)(PLID, sev, fmt, ## __VA_ARGS__) // Write to the QMM log
+#define QMM_VARARGS(fmt, ...)                   (g_pluginfuncs.pfnVarArgs)(PLID, fmt, __VA_ARGS__)             // Simple vsprintf helper
+#define QMM_ISQVM()                             (g_pluginfuncs.pfnIsQVM)(PLID)                                 // Returns 1 if the mod is QVM
+#define QMM_ENGMSGNAME(cmd)                     (g_pluginfuncs.pfnEngMsgName)(PLID, cmd)                       // Get the string name of a syscall code
+#define QMM_MODMSGNAME(cmd)                     (g_pluginfuncs.pfnModMsgName)(PLID, cmd)                       // Get the string name of a vmMain code
+#define QMM_GETINTCVAR(cvar)                    (g_pluginfuncs.pfnGetIntCvar)(PLID, cvar)                      // Get the int value of a cvar
+#define QMM_GETSTRCVAR(cvar)                    (g_pluginfuncs.pfnGetStrCvar)(PLID, cvar)                      // Get the str value of a cvar
+#define QMM_GETGAMEENGINE()                     (g_pluginfuncs.pfnGetGameEngine)(PLID)                         // Return the QMM short code for the game engine
+#define QMM_ARGV(argn, buf, buflen)             (g_pluginfuncs.pfnArgv)(PLID, argn, buf, buflen)               // Call G_ARGV, but can handle both engine styles
+#define QMM_INFOVALUEFORKEY(userinfo, key)      (g_pluginfuncs.pfnInfoValueForKey)(PLID, userinfo, key)        // Same as SDK's Info_ValueForKey
+#define QMM_CFG_GETSTR(key)                     (g_pluginfuncs.pfnConfigGetStr)(PLID, key)                     // Get a string config entry
+#define QMM_CFG_GETINT(key)                     (g_pluginfuncs.pfnConfigGetInt)(PLID, key)                     // Get an int config entry
+#define QMM_CFG_GETBOOL(key)                    (g_pluginfuncs.pfnConfigGetBool)(PLID, key)                    // Get a bool config entry
+#define QMM_CFG_GETARRAYSTR(key)                (g_pluginfuncs.pfnConfigGetArrayStr)(PLID, key)                // Get an array-of-strings config entry (array terminated with a null pointer)
+#define QMM_CFG_GETARRAYINT(key)                (g_pluginfuncs.pfnConfigGetArrayInt)(PLID, key)                // Get an array-of-ints config entry (array starts with remaining length)
+#define QMM_GETCONFIGSTRING(index, buf, buflen) (g_pluginfuncs.pfnGetConfigString)(PLID, index, buf, buflen)   // Call G_GET_CONFIGSTRING, but can handle both engine styles
+#define QMM_PLUGIN_BROADCAST(msg, buf, buflen)  (g_pluginfuncs.pfnPluginBroadcast)(PLID, msg, buf, buflen)     // Broadcast a message to plugins' QMM_PluginMessage functions
+#define QMM_PLUGIN_SEND(to, msg, buf, buflen)   (g_pluginfuncs.pfnPluginSend)(PLID, to, msg, buf, buflen)      // Send a message to a specific plugin's QMM_PluginMessage function
+#define QMM_QVM_REGISTER_FUNC()                 (g_pluginfuncs.pfnQVMRegisterFunc)(PLID)                       // Register a new QVM function ID to the calling plugin (0 if unsuccessful)
+#define QMM_QVM_EXEC_FUNC(funcid, argc, argv)   (g_pluginfuncs.pfnQVMExecFunc)(PLID, funcid, argc, argv)       // Exec a given QVM function function ID
+#define QMM_ARGV2(argn)                         (g_pluginfuncs.pfnArgv2)(PLID, argn)                           // Same as QMM_ARGV except returns value
+#define QMM_GETCONFIGSTRING2(index)             (g_pluginfuncs.pfnGetConfigString2)(PLID, index)               // Same as QMM_GETCONFIGSTRING except returns value
+#define QMM_MODDIR()                            (g_pluginfuncs.pfnModDir)(PLID)                                // Return loaded mod directory
 
 /* Struct of vars for QMM plugins */
 typedef struct {
     // Base address of the QVM memory block (automatically added to pointer args in syscalls). See GETPTR and SETPTR macros.
     intptr_t vmbase;
     // This is the function pointer used to call into the engine with a given G_ value and optional arguments. 
-    eng_syscall engfunc;
+    eng_syscall syscall;
     // This is the function pointer used to call into the engine with a given G_ value and optional arguments packed in an intptr_t array.
-    eng_syscall_args engfunc_args;
+    eng_syscall_args syscall_args;
     // This is the function pointer used to call into the mod with a given GAME_ value and optional arguments.
-    mod_vmMain modfunc;
+    mod_vmMain vMmain;
     // This is the function pointer used to call into the mod with a given GAME_ value and optional arguments packed in an intptr_t array.
-    mod_vmMain_args modfunc_args;
+    mod_vmMain_args vmMain_args;
 } plugin_vars;
 
 /* Result flags a plugin can give to QMM */
@@ -233,45 +235,40 @@ typedef struct {
 
 // Convert "ptr" from a QVM pointer to a real pointer, and cast to "cast" type. Generally only needed for pointers inside objects,
 // like gent->client, as the pointers passed directly as syscall arguments (e.g. ent) are already converted by QMM.
-#define GETPTR(ptr, cast)     ((ptr) ? (cast)((intptr_t)(ptr) + g_pluginvars->vmbase) : NULL)
+#define GETPTR(ptr, cast)     ((ptr) ? (cast)((intptr_t)(ptr) + g_pluginvars.vmbase) : NULL)
 // Convert "ptr" from a real pointer to a QVM pointer, and cast to "cast" type. This should only be used to refer to an object
 // that already exists within the QVM, but you have a real pointer to (e.g. from GETPTR()). Giving the address of a real object
 // to the QVM will likely result in a QVM run-time error due to access protection.
-#define SETPTR(ptr, cast)     ((ptr) ? (cast)((intptr_t)(ptr) - g_pluginvars->vmbase) : NULL)
+#define SETPTR(ptr, cast)     ((ptr) ? (cast)((intptr_t)(ptr) - g_pluginvars.vmbase) : NULL)
+
+// Call the engine with varargs
+#define QMM_SYSCALL         (g_pluginvars.syscall)
+// Call the engine with intptr_t array of args
+#define QMM_SYSCALL_ARGS    (g_pluginvars.syscall_args)
+// Call the mod with varargs
+#define QMM_VMMAIN          (g_pluginvars.vmMain)
+// Call the mod with intptr_t array of args
+#define QMM_VMMAIN_ARGS     (g_pluginvars.vmMain_args)
 
 /* Plugin use only */
 
-// Set '*pinfo' to &g_plugininfo in QMM_Query
+// Set '*plugininfo' to &g_plugininfo in QMM_Query
 extern plugin_info g_plugininfo;
-// Call engine syscall with varargs. Set to 'engfunc' in QMM_Attach
-extern eng_syscall g_syscall;
-// Call engine syscall with arg array. Set to 'engfunc_args' in QMM_Attach
-extern eng_syscall_args g_syscall_args;
-// Call mod vmMain with varargs. Set to 'modfunc' in QMM_Attach
-extern mod_vmMain g_vmMain;
-// Call mod vmMain with arg array. Set to 'modfunc_args' in QMM_Attach
-extern mod_vmMain_args g_vmMain_args;
-// Set to 'pluginfuncs' in QMM_Attach
-extern plugin_funcs* g_pluginfuncs;
-// Set to 'pluginvars' in QMM_Attach
-extern plugin_vars* g_pluginvars;
+// Set '*pluginfuncs` to &g_pluginfuncs in QMM_Query
+extern plugin_funcs g_pluginfuncs;
+// Set '*pluginvars` to &g_pluginvars in QMM_Query
+extern plugin_vars g_pluginvars;
 
-
-// Pass plugininfo to QMM in QMM_Query
-#define QMM_GIVE_PINFO() *pinfo = &g_plugininfo
-// Save variables from QMM in QMM_Attach
-#define QMM_SAVE_VARS() do { \
-            g_syscall = pluginvars->engfunc; \
-            g_syscall_args = pluginvars->engfunc_args; \
-            g_vmMain = pluginvars->modfunc; \
-            g_vmMain_args = pluginvars->modfunc_args; \
-            g_pluginfuncs = pluginfuncs; \
-            g_pluginvars = pluginvars; \
-        } while(0)
+// Pass pointers to QMM in QMM_Query
+#define QMM_GIVE_PINFO() do { \
+            *plugininfo = &g_plugininfo; \
+            *pluginfuncs = &g_pluginfuncs; \
+            *pluginvars = &g_pluginvars; \
+        } while (0)
 
 /* Prototypes for entry points in the plugin */
-C_DLLEXPORT void QMM_Query(plugin_info** pinfo);
-C_DLLEXPORT int QMM_Attach(eng_syscall engfunc, eng_syscall_args engfunc_args, mod_vmMain modfunc, mod_vmMain_args modfunc_args, plugin_funcs* pluginfuncs, plugin_vars* pluginvars);
+C_DLLEXPORT void QMM_Query(plugin_info** plugininfo, plugin_funcs** pluginfuncs, plugin_vars** pluginvars);
+C_DLLEXPORT int QMM_Attach();
 C_DLLEXPORT void QMM_Detach();
 C_DLLEXPORT intptr_t QMM_vmMain(result_vars* results, intptr_t cmd, intptr_t* args);
 C_DLLEXPORT intptr_t QMM_vmMain_Post(result_vars* results, intptr_t cmd, intptr_t* args);
