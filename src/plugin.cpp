@@ -87,7 +87,7 @@ static intptr_t s_plugin_wrapper_syscall_args(intptr_t cmd, intptr_t* args);
 static intptr_t s_plugin_wrapper_vmMain(intptr_t cmd, ...);
 static intptr_t s_plugin_wrapper_vmMain_args(intptr_t cmd, intptr_t* args);
 
-// Variables made available to plugins in QMM_Attach
+// Variables made available to plugins
 plugin_vars s_plugin_vars = {
     0, // vmbase
     s_plugin_wrapper_syscall,
@@ -132,22 +132,22 @@ Plugin& Plugin::operator=(Plugin&& other) noexcept {
     if (this == &other)
         return *this;
 
-    // swap since a Plugin "owns" the dll handle
+    // QMM_Detach is called for unloading plugins by Unload/destructor, so we should swap as much as possible
+    // in case some plugin wants to do stupid stuff in QMM_Detach
     std::swap(this->dll, other.dll);
-    this->path = other.path;
-    this->QMM_Query = other.QMM_Query;
-    this->QMM_Attach = other.QMM_Attach;
-    // swap since QMM_Detach is called for an unloading plugin in Unload/destructor
+    std::swap(this->path, other.path);
+    std::swap(this->QMM_Query, other.QMM_Query);
+    std::swap(this->QMM_Attach, other.QMM_Attach);
     std::swap(this->QMM_Detach, other.QMM_Detach);
-    this->QMM_vmMain = other.QMM_vmMain;
-    this->QMM_vmMain_Post = other.QMM_vmMain_Post;
-    this->QMM_syscall = other.QMM_syscall;
-    this->QMM_syscall_Post = other.QMM_syscall_Post;
-    this->QMM_PluginMessage = other.QMM_PluginMessage;
-    this->QMM_QVMHandler = other.QMM_QVMHandler;
-    this->plugininfo = other.plugininfo;
-    this->pluginfuncs = other.pluginfuncs;
-    this->pluginvars = other.pluginvars;
+    std::swap(this->QMM_vmMain, other.QMM_vmMain);
+    std::swap(this->QMM_vmMain_Post, other.QMM_vmMain_Post);
+    std::swap(this->QMM_syscall, other.QMM_syscall);
+    std::swap(this->QMM_syscall_Post, other.QMM_syscall_Post);
+    std::swap(this->QMM_PluginMessage, other.QMM_PluginMessage);
+    std::swap(this->QMM_QVMHandler, other.QMM_QVMHandler);
+    std::swap(this->plugininfo, other.plugininfo);
+    std::swap(this->pluginfuncs, other.pluginfuncs);
+    std::swap(this->pluginvars, other.pluginvars);
 
     return *this;
 }
@@ -219,6 +219,7 @@ int Plugin::Load(std::string file) {
     }
 
     // at this point, major versions match and the plugin's minor version is less than or equal to QMM's.
+
     // make sure the plugin gave us the funcs and vars struct pointers
     if (!this->pluginfuncs) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Query() returned NULL pluginfuncs\n";
@@ -230,7 +231,8 @@ int Plugin::Load(std::string file) {
         this->Unload();
         return 0;
     }
-    // now give the plugin the function and variable pointers
+
+    // now fill the plugin's function and variable tables
     *this->pluginfuncs = s_plugin_funcs;
     *this->pluginvars = s_plugin_vars;
 
