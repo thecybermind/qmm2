@@ -171,7 +171,7 @@ typedef struct {
 #define QMM_GETCONFIGSTRING2(index)             (g_pluginfuncs->pfnGetConfigString2)(PLID, index)               // Same as QMM_GETCONFIGSTRING except returns value
 #define QMM_MODDIR()                            (g_pluginfuncs->pfnModDir)(PLID)                                // Return loaded mod directory
 
-/* Struct of vars for QMM plugin utils */
+/* Struct of vars for QMM plugins */
 typedef struct {
     // Base address of the QVM memory block (automatically added to pointer args in syscalls). See GETPTR and SETPTR macros.
     intptr_t vmbase;
