@@ -288,22 +288,4 @@ C_DLLEXPORT int QMM_QVMHandler(int func, int* args);
 // Get a client number by gclient_t* (check g_clients for NULL and g_clientsize for 0 first)
 #define NUM_FROM_CLIENT(client) ((int)((unsigned char*)(client) - (unsigned char*)g_clients) / g_clientsize)
 
-#if defined(QMM_USE_DEPRECATED_TYPES) || (defined(_WIN32) && !defined(__cplusplus))
-// Allow old "_t" types to be used.
-#define DEPRECATE_TYPE(new_type, old_type) typedef new_type old_type
-#else
-// Flag old "_t" types as deprecated.
-#define DEPRECATE_TYPE(new_type, old_type) [[deprecated("Use '" #new_type "' instead, or #define QMM_USE_DEPRECATED_TYPES")]] typedef new_type old_type
-#endif
-
-DEPRECATE_TYPE(eng_syscall, eng_syscall_t);
-DEPRECATE_TYPE(mod_vmMain, mod_vmMain_t);
-DEPRECATE_TYPE(mod_dllEntry, mod_dllEntry_t);
-DEPRECATE_TYPE(mod_GetGameAPI, mod_GetGameAPI_t);
-DEPRECATE_TYPE(plugin_info, plugininfo_t);
-DEPRECATE_TYPE(plugin_id, plid_t);
-DEPRECATE_TYPE(plugin_res, pluginres_t);
-DEPRECATE_TYPE(plugin_funcs, pluginfuncs_t);
-DEPRECATE_TYPE(plugin_vars, pluginvars_t);
-
 #endif // QMM2_QMMAPI_H
