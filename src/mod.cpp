@@ -103,8 +103,10 @@ namespace Mod {
         qvm_unload(&vm);
         qvm_init(&vm);
         api = QMM_API_UNKNOWN;
-        // update g_plugin_vars.vmbase
-        g_plugin_vars.vmbase = 0;
+        // clear plugins' vmbase variable
+        for (Plugin& p : g_plugins) {
+            p.UpdateVars(0);
+        }
     }
 
 
@@ -213,8 +215,10 @@ namespace Mod {
         api = QMM_API_QVM;
         path = file;
 
-        // update g_plugin_vars.vmbase with QVM memory base
-        g_plugin_vars.vmbase = (intptr_t)Mod::vm.memory;
+        // update plugins' vmbase variable with QVM memory base
+        for (Plugin& p : g_plugins) {
+            p.UpdateVars((intptr_t)Mod::vm.memory);
+        }
 
         return true;
     }

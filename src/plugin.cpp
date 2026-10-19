@@ -82,13 +82,22 @@ static plugin_funcs s_plugin_funcs = {
     s_plugin_helper_ModDir,
 };
 
+static intptr_t s_plugin_wrapper_syscall(intptr_t cmd, ...);
+static intptr_t s_plugin_wrapper_syscall_args(intptr_t cmd, intptr_t* args);
+static intptr_t s_plugin_wrapper_vmMain(intptr_t cmd, ...);
+static intptr_t s_plugin_wrapper_vmMain_args(intptr_t cmd, intptr_t* args);
+
+// Variables made available to plugins
+plugin_vars s_plugin_vars = {
+    0, // vmbase
+    s_plugin_wrapper_syscall,
+    s_plugin_wrapper_syscall_args,
+    s_plugin_wrapper_vmMain,
+    s_plugin_wrapper_vmMain_args,
+};
+
 // List of QMM plugins
 std::vector<Plugin> g_plugins;
-
-// Struct of variables to pass to plugins' QMM_Attach
-plugin_vars g_plugin_vars = {
-    0,    // vmbase, set in Mod::InitQVM and Mod::Unload
-};
 
 // This holds pseudo-syscall IDs. They are registered to a given plugin, and when the QVM interpreter executes the
 // syscall ID, the plugin's QMM_QVMHandler function is called.
@@ -97,35 +106,11 @@ std::map<int, Plugin*> g_registered_qvm_funcs;
 // This is the next pseudo-syscall ID to return to plugins.
 static int s_next_qvm_func = QMM_QVM_FUNC_STARTING_ID;
 
-// Wrapper syscall function to pass to plugins
-static intptr_t s_plugin_game_syscall(intptr_t cmd, ...) {
-    QMM_GET_SYSCALL_ARGS();
-    return QMM::game->syscall_args(cmd, args);
-}
-
-
-// Wrapper syscall_args function to pass to plugins
-static intptr_t s_plugin_game_syscall_args(intptr_t cmd, intptr_t* args) {
-    return QMM::game->syscall_args(cmd, args);
-}
-
-
-// Wrapper vmMain function to pass to plugins
-static intptr_t s_plugin_game_vmMain(intptr_t cmd, ...) {
-    QMM_GET_VMMAIN_ARGS();
-    return QMM::game->vmMain_args(cmd, args);
-}
-
-
-// Wrapper vmMain_args function to pass to plugins
-static intptr_t s_plugin_game_vmMain_args(intptr_t cmd, intptr_t* args) {
-    return QMM::game->vmMain_args(cmd, args);
-}
-
 
 Plugin::Plugin() : dll(nullptr), QMM_Query(nullptr), QMM_Attach(nullptr), QMM_Detach(nullptr),
     QMM_vmMain(nullptr), QMM_vmMain_Post(nullptr), QMM_syscall(nullptr), QMM_syscall_Post(nullptr),
-    QMM_PluginMessage(nullptr), QMM_QVMHandler(nullptr), plugininfo(nullptr)
+    QMM_PluginMessage(nullptr), QMM_QVMHandler(nullptr),
+    plugininfo(nullptr), pluginfuncs(nullptr), pluginvars(nullptr)
 {
 }
 
@@ -147,20 +132,22 @@ Plugin& Plugin::operator=(Plugin&& other) noexcept {
     if (this == &other)
         return *this;
 
-    // swap since a Plugin "owns" the dll handle
+    // QMM_Detach is called for unloading plugins by Unload/destructor, so we should swap as much as possible
+    // in case some plugin wants to do stupid stuff in QMM_Detach
     std::swap(this->dll, other.dll);
-    this->path = other.path;
-    this->QMM_Query = other.QMM_Query;
-    this->QMM_Attach = other.QMM_Attach;
-    // swap since QMM_Detach is called for an unloading plugin in Unload/destructor
+    std::swap(this->path, other.path);
+    std::swap(this->QMM_Query, other.QMM_Query);
+    std::swap(this->QMM_Attach, other.QMM_Attach);
     std::swap(this->QMM_Detach, other.QMM_Detach);
-    this->QMM_vmMain = other.QMM_vmMain;
-    this->QMM_vmMain_Post = other.QMM_vmMain_Post;
-    this->QMM_syscall = other.QMM_syscall;
-    this->QMM_syscall_Post = other.QMM_syscall_Post;
-    this->QMM_PluginMessage = other.QMM_PluginMessage;
-    this->QMM_QVMHandler = other.QMM_QVMHandler;
-    this->plugininfo = other.plugininfo;
+    std::swap(this->QMM_vmMain, other.QMM_vmMain);
+    std::swap(this->QMM_vmMain_Post, other.QMM_vmMain_Post);
+    std::swap(this->QMM_syscall, other.QMM_syscall);
+    std::swap(this->QMM_syscall_Post, other.QMM_syscall_Post);
+    std::swap(this->QMM_PluginMessage, other.QMM_PluginMessage);
+    std::swap(this->QMM_QVMHandler, other.QMM_QVMHandler);
+    std::swap(this->plugininfo, other.plugininfo);
+    std::swap(this->pluginfuncs, other.pluginfuncs);
+    std::swap(this->pluginvars, other.pluginvars);
 
     return *this;
 }
@@ -202,10 +189,10 @@ int Plugin::Load(std::string file) {
         return 0;
     }
 
-    // call initial plugin entry point, get interface version
-    this->QMM_Query(&this->plugininfo);
+    // call initial plugin entry point, get interface version and struct pointers
+    this->QMM_Query(&this->plugininfo, &this->pluginfuncs, &this->pluginvars);
     if (!this->plugininfo) {
-        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Query() returned NULL Plugininfo\n";
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Query() returned NULL plugininfo\n";
         this->Unload();
         return 0;
     }
@@ -230,7 +217,24 @@ int Plugin::Load(std::string file) {
         this->Unload();
         return 0;
     }
-    // at this point, major versions match and the plugin's minor version is less than or equal to QMM's
+
+    // at this point, major versions match and the plugin's minor version is less than or equal to QMM's.
+
+    // make sure the plugin gave us the funcs and vars struct pointers
+    if (!this->pluginfuncs) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Query() returned NULL pluginfuncs\n";
+        this->Unload();
+        return 0;
+    }
+    if (!this->pluginvars) {
+        QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Query() returned NULL pluginvars\n";
+        this->Unload();
+        return 0;
+    }
+
+    // now fill the plugin's function and variable tables
+    *this->pluginfuncs = s_plugin_funcs;
+    *this->pluginvars = s_plugin_vars;
 
     // find remaining QMM api functions or fail
     if (!(this->QMM_Attach = (Plugin::plugin_attach)Util::dll_symbol(this->dll, "QMM_Attach"))) {
@@ -266,11 +270,8 @@ int Plugin::Load(std::string file) {
         return 0;
     }
 
-    // set g_pluginvars here if applicable    
-
     // call QMM_Attach. if it fails (returns 0), destructor will call QMM_Detach and unload DLL
-    // QMM_Attach(engine syscall, engine syscall_args, mod vmmain, mod vmmain_args, table of plugin helper functions, table of plugin variables)
-    if (!(this->QMM_Attach(s_plugin_game_syscall, s_plugin_game_syscall_args, s_plugin_game_vmMain, s_plugin_game_vmMain_args, &s_plugin_funcs, &g_plugin_vars))) {
+    if (!(this->QMM_Attach())) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Attach() returned 0\n";
         this->Unload();
         // treat this failure specially. this is a valid plugin, but it decided on its own that it shouldn't be loaded
@@ -302,6 +303,14 @@ void Plugin::Unload() {
     this->QMM_PluginMessage = nullptr;
     this->QMM_QVMHandler = nullptr;
     this->plugininfo = nullptr;
+    this->pluginfuncs = nullptr;
+    this->pluginvars = nullptr;
+}
+
+
+void Plugin::UpdateVars(intptr_t vmbase) {
+    if (this->pluginvars)
+        this->pluginvars->vmbase = vmbase;
 }
 
 
@@ -318,17 +327,30 @@ const char* Plugin::plugin_result_to_str(plugin_res res) {
 }
 
 
-// Used when plid is null in plugin funcs
-static plugin_info s_invalid_pinfo = {
-    QMM_PIFV_MAJOR,
-    QMM_PIFV_MINOR,
-    "Unknown",
-    "v0.0.0",
-    "Unknown",
-    "Unknown",
-    "Unknown",
-    "UNKNOWN",
-};
+// Wrapper syscall function to pass to plugins
+static intptr_t s_plugin_wrapper_syscall(intptr_t cmd, ...) {
+    QMM_GET_SYSCALL_ARGS();
+    return QMM::game->syscall_args(cmd, args);
+}
+
+
+// Wrapper syscall_args function to pass to plugins
+static intptr_t s_plugin_wrapper_syscall_args(intptr_t cmd, intptr_t* args) {
+    return QMM::game->syscall_args(cmd, args);
+}
+
+
+// Wrapper vmMain function to pass to plugins
+static intptr_t s_plugin_wrapper_vmMain(intptr_t cmd, ...) {
+    QMM_GET_VMMAIN_ARGS();
+    return QMM::game->vmMain_args(cmd, args);
+}
+
+
+// Wrapper vmMain_args function to pass to plugins
+static intptr_t s_plugin_wrapper_vmMain_args(intptr_t cmd, intptr_t* args) {
+    return QMM::game->vmMain_args(cmd, args);
+}
 
 
 /**
@@ -340,9 +362,6 @@ static plugin_info s_invalid_pinfo = {
 * @param ... Format arguments
 */
 static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char* fmt, ...) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     if (!fmt) {
         QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called WriteQMMLog() with null fmt\n";
         return;
@@ -382,9 +401,6 @@ static void s_plugin_helper_WriteQMMLog(plugin_id plid, int severity, const char
 * @return Pointer to the constructed string
 */
 static const char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], const char* fmt, ...) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     if (!fmt)
         fmt = "";
 
@@ -412,9 +428,6 @@ static const char* s_plugin_helper_VarArgs(plugin_id plid [[maybe_unused]], cons
 * @return 0 if the mod is not a QVM, !0 otherwise
 */
 static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]] ) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     int ret = !!Mod::vm.memory;
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called IsQVM() = " << ret << "\n";
@@ -431,9 +444,6 @@ static int s_plugin_helper_IsQVM(plugin_id plid [[maybe_unused]] ) {
 * @return String name of engine message
 */
 static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     const char* ret = QMM::game->EngMsgName(msg);
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called EngMsgName(" << msg << ") = \"" << ret << "\"\n";
@@ -449,9 +459,6 @@ static const char* s_plugin_helper_EngMsgName(plugin_id plid [[maybe_unused]], i
 * @return String name of mod message
 */
 static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], intptr_t msg) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     const char* ret = QMM::game->ModMsgName(msg);
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called ModMsgName(" << msg << ") = \"" << ret << "\"\n";
@@ -467,9 +474,6 @@ static const char* s_plugin_helper_ModMsgName(plugin_id plid [[maybe_unused]], i
 * @return Integer value of cvar
 */
 static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], const char* cvar) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     intptr_t ret = 0;
     if (cvar && *cvar) {
         intptr_t args[] = { (intptr_t)cvar };
@@ -490,9 +494,6 @@ static intptr_t s_plugin_helper_GetIntCvar(plugin_id plid [[maybe_unused]], cons
 * @return Pointer to string value of cvar
 */
 static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], const char* cvar) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
 
@@ -519,9 +520,6 @@ static const char* s_plugin_helper_GetStrCvar(plugin_id plid [[maybe_unused]], c
 * @return Pointer to string representing the active game engine
 */
 static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]] ) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     const char* ret = QMM::game->GameCode();
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called GetGameEngine() = \"" << ret << "\"\n";
@@ -540,9 +538,6 @@ static const char* s_plugin_helper_GetGameEngine(plugin_id plid [[maybe_unused]]
 * @param buflen Length of buf
 */ 
 static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn, char* buf, intptr_t buflen) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     if (buf && buflen)
         QMM::ArgV(argn, buf, buflen);
 
@@ -558,9 +553,6 @@ static void s_plugin_helper_Argv(plugin_id plid [[maybe_unused]], intptr_t argn,
 * @return Pointer to string containing value ("" if not found)
 */
 static const char* s_plugin_helper_InfoValueForKey(plugin_id plid [[maybe_unused]], const char* userinfo, const char* key) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     static std::string value[ROTATING_BUFFER_NUM];
     static int index = 0;
 
@@ -631,9 +623,6 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
     static std::string value[ROTATING_BUFFER_NUM];
     static int index = 0;
 
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     if (!key)
         return nullptr;
 
@@ -658,9 +647,6 @@ static const char* s_plugin_helper_ConfigGetStr(plugin_id plid [[maybe_unused]],
 * @return Integer value of node (or -1 if not found)
 */
 static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const char* key) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     if (!key)
         return 0;
 
@@ -681,9 +667,6 @@ static int s_plugin_helper_ConfigGetInt(plugin_id plid [[maybe_unused]], const c
 * @return Boolean value of node (or false if not found)
 */
 static int s_plugin_helper_ConfigGetBool(plugin_id plid [[maybe_unused]], const char* key) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     if (!key)
         return 0;
 
@@ -708,9 +691,6 @@ static const char** s_plugin_helper_ConfigGetArrayStr(plugin_id plid [[maybe_unu
     // plugin API needs to be C-compatible, so this vector stores the .c_str() of each string in the value vector
     static std::vector<const char*> valuep[ROTATING_BUFFER_NUM];
     static int index = 0;
-
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
 
     if (!key)
         return nullptr;
@@ -744,9 +724,6 @@ static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], c
     static std::vector<int> value[ROTATING_BUFFER_NUM];
     static int index = 0;
 
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     if (!key)
         return nullptr;
 
@@ -776,9 +753,6 @@ static int* s_plugin_helper_ConfigGetArrayInt(plugin_id plid [[maybe_unused]], c
 * @param buflen Length of buf
 */
 static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], intptr_t index, char* buf, intptr_t buflen) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     // char* (*getConfigstring)(int index);
     // void trap_GetConfigstring(int num, char* buffer, int bufferSize);
     // some games don't return pointers because of QVM interaction, so if this returns anything but null
@@ -805,9 +779,6 @@ static void s_plugin_helper_GetConfigString(plugin_id plid [[maybe_unused]], int
 * @return Number of plugins that received the message
 */
 static int s_plugin_helper_PluginBroadcast(plugin_id plid, const char* message, void* buf, intptr_t buflen) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     int total = 0;
 
     // count how many plugins were called
@@ -870,9 +841,6 @@ static int s_plugin_helper_PluginSend(plugin_id plid, plugin_id to_plid, const c
 * @return QVM function ID (0 if unsuccessful)
 */
 static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     if (s_next_qvm_func > QMM_QVM_FUNC_MAX_ID)
         return 0;
 
@@ -915,9 +883,6 @@ static int s_plugin_helper_QVMRegisterFunc(plugin_id plid) {
 * @return Return value of QVM function
 */
 static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int instruction, int argc, int* argv) {
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
-
     int ret = qvm_exec_ex(&Mod::vm, (size_t)instruction, argc, argv);
 
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Plugin \"" << ((plugin_info*)plid)->name << "\" called QVMExecFunc(" << instruction << ", " << argc << ") = " << ret << "\n";
@@ -937,9 +902,6 @@ static int s_plugin_helper_QVMExecFunc(plugin_id plid [[maybe_unused]], int inst
 static const char* s_plugin_helper_Argv2(plugin_id plid [[maybe_unused]], intptr_t argn) {
     static char str[ROTATING_BUFFER_NUM][ROTATING_BUFFER_SIZE];
     static int index = 0;
-
-    if (!plid)
-        plid = (plugin_id)&s_invalid_pinfo;
 
     // cycle rotating buffer and store string
     index = (index + 1) & ROTATING_BUFFER_MASK;

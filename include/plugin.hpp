@@ -20,9 +20,9 @@ Created By:
 // A QMM plugin
 struct Plugin {
     // QMM_Query signature
-    using plugin_query = void (*)(plugin_info** pinfo);
+    using plugin_query = void (*)(plugin_info** pinfo, plugin_funcs** pluginfuncs, plugin_vars** pluginvars);
     // QMM_Attach signature
-    using plugin_attach = int (*)(eng_syscall engfunc, eng_syscall_args engfunc_args, mod_vmMain modfunc, mod_vmMain_args modfunc_args, plugin_funcs* pluginfuncs, plugin_vars* pluginvars);
+    using plugin_attach = int (*)();
     // QMM_Detach signature
     using plugin_detach = void (*)();
     // QMM_vmMain(_Post) + QMM_syscall(_Post) signatures
@@ -44,6 +44,8 @@ struct Plugin {
     plugin_pluginmessage QMM_PluginMessage = nullptr;   // QMM_PluginMessage function pointer (optional)
     plugin_qvmhandler QMM_QVMHandler = nullptr;         // QMM_QVMHandler function pointer (optional)
     plugin_info* plugininfo = nullptr;                  // Plugin-provided info
+    plugin_funcs* pluginfuncs = nullptr;                // Plugin-provided function structure
+    plugin_vars* pluginvars = nullptr;                  // Plugin-provided var structure
 
     Plugin();
     ~Plugin();
@@ -68,6 +70,13 @@ struct Plugin {
     void Unload();
 
     /**
+    * @brief Update a plugin's pluginvars
+    *
+    * @param vmbase New vmbase value
+    */
+    void UpdateVars(intptr_t vmbase);
+
+    /**
     * @brief Convert a plugin result flag to string
     *
     * @param res Plugin result to convert
@@ -78,9 +87,6 @@ struct Plugin {
 
 // List of QMM plugins
 extern std::vector<Plugin> g_plugins;
-
-// Struct of variables to pass to plugins' QMM_Attach
-extern plugin_vars g_plugin_vars;
 
 constexpr int QMM_QVM_FUNC_STARTING_ID = 10000; // this will be negated when given as a QVM pointer to be treated as a syscall
 constexpr int QMM_QVM_FUNC_MAX_ID = 20000;      // arbitrary limit, 10k QVM functions is probably fine
