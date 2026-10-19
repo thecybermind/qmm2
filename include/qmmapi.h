@@ -89,7 +89,10 @@ typedef void* (*mod_GetGameAPI)(void*, void*);
 - pass result vars to each callback function
 - add syscall_args and vmMain_args function pointers to QMM_Attach
 6:0
-- pluginvars are now stored in the plugin, and a pointer is given to QMM
+- pluginvars + pluginfuncs are now stored in the plugin, and pointers are given to QMM in QMM_Query with QMM_GIVE_PTRS()
+- syscall/vmmain pointers are given in pluginvars
+- removed arguments from QMM_Attach
+- removed deprecated types/warnings
 */
 
 // Plugin info to pass back to QMM
@@ -252,15 +255,15 @@ typedef struct {
 
 /* Plugin use only */
 
-// Set '*plugininfo' to &g_plugininfo in QMM_Query
+// Set '*plugininfo' to &g_plugininfo in QMM_Query (or just use QMM_GIVE_PTRS())
 extern plugin_info g_plugininfo;
-// Set '*pluginfuncs` to &g_pluginfuncs in QMM_Query
+// Set '*pluginfuncs` to &g_pluginfuncs in QMM_Query (or just use QMM_GIVE_PTRS())
 extern plugin_funcs g_pluginfuncs;
-// Set '*pluginvars` to &g_pluginvars in QMM_Query
+// Set '*pluginvars` to &g_pluginvars in QMM_Query (or just use QMM_GIVE_PTRS())
 extern plugin_vars g_pluginvars;
 
 // Pass pointers to QMM in QMM_Query
-#define QMM_GIVE_PINFO() do { \
+#define QMM_GIVE_PTRS() do { \
             *plugininfo = &g_plugininfo; \
             *pluginfuncs = &g_pluginfuncs; \
             *pluginvars = &g_pluginvars; \
