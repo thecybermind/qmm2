@@ -509,7 +509,7 @@ namespace QMM {
         // absolute path, just attempt to load it directly
         if (Util::path_is_absolute(plugin_path)) {
             Plugin p;
-            // plugin_load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
+            // Plugin::Load returns 0 if no plugin file was found, 1 if success, and -1 if file was found but failure
             if (p.Load(plugin_path) > 0) {
                 g_plugins.push_back(std::move(p));
                 return true;
