@@ -19,6 +19,11 @@ Created By:
 #include "util.hpp"     // dll_symbol in 64-bit GetCGameAPI only
 
 
+/*
+This file contains all the primary entrypoints for QMM.
+*/
+
+
 C_DLLEXPORT void dllEntry(eng_syscall syscall) {
     // cgame passthrough hack:
     // QMM is already loaded, so this is a cgame passthrough situation. since the mod DLL isn't loaded yet, we can
@@ -76,7 +81,7 @@ C_DLLEXPORT void* GetCGameAPI(void* import) {
 C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
     QMM_GET_VMMAIN_ARGS();
 
-    // if this is a call from cgame and we need to pass this call onto the mod
+    // if this is a call for cgame, we need to pass this call onto the mod
     if (QMM::CGame::syscall) {
         // cancel if cgame portion of mod isn't actually loaded yet
         if (!QMM::CGame::vmMain)
@@ -103,7 +108,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         return ret;
     }
 
-    // couldn't load engine info, so we will just call syscall(G_ERROR) to exit
+    // couldn't load engine info in dllEntry, so we will just call syscall(G_ERROR) to exit
     if (!QMM::game) {
         if (!QMM::is_shutdown) {
             QMM::is_shutdown = true;
@@ -125,6 +130,7 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
         return 0;
     }
 
+    // pass everything to vmMain_args for routing
     return QMM::vmMain_args(cmd, args);
 }
 
@@ -132,5 +138,6 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...) {
 intptr_t qmm_syscall(intptr_t cmd, ...) {
     QMM_GET_SYSCALL_ARGS();
 
+    // pass everything to syscall_args for routing
     return QMM::syscall_args(cmd, args);
 }
