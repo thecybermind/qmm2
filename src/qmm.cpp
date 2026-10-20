@@ -97,14 +97,15 @@ namespace QMM {
 
 
     void* HandleEntry(void* import, void* extra, APIType engine) {
-        // return value is generally from the game-specific entry handler
+        // return value is generally from the game-specific Entry handler
 
         // in GetGameAPI+GetModuleAPI, the return value should be a pointer to QMM's export struct
         // in dllEntry, the return value is ignored by the engine
 
         // on returning nullptr:    
-        // if GetGameAPI+GetModuleAPI, returning nullptr causes the engine to error out, so InitGame/vmMain will never be called
-        // if dllEntry, QMM will check !QMM::game in vmMain(GAME_INIT) and call G_ERROR
+        // if GetGameAPI+GetModuleAPI fails, returning nullptr causes the engine to error out, so InitGame/vmMain will never be called
+        // if dllEntry fails, QMM will check !QMM::game in vmMain(GAME_INIT) and call syscall(G_ERROR).
+        // while calling syscall from dllEntry will usually crash immediately, we want it to be pretty with an error message. 
 
         DetectEnv();
 
