@@ -1,5 +1,5 @@
 /*
-QMM2 - Q3 MultiMod 2
+QMM - Q3 MultiMod
 Copyright 2025-2026
 https://github.com/thecybermind/qmm2/
 3-clause BSD license: https://opensource.org/license/bsd-3-clause
@@ -48,7 +48,7 @@ namespace Mod {
             return InitQVM(file);
         }
         // if DLL
-        else if (Util::str_striequal(ext, EXT_DLL)) {
+        else if (mod_api != QMM_API_QVM || Util::str_striequal(ext, EXT_DLL)) {
             // load DLL
             void* handle = Util::dll_load(file.c_str());
             if (!handle) {
@@ -98,19 +98,19 @@ namespace Mod {
         // call the game-specific mod unload callback only if a mod was actually loaded
         if (QMM::game && (dll || vm.memory))
             QMM::game->ModUnload(api);
-        Util::dll_close(dll);
-        dll = nullptr;
-        qvm_unload(&vm);
-        qvm_init(&vm);
-        api = QMM_API_UNKNOWN;
         // clear plugins' vmbase variable
         for (Plugin& p : g_plugins) {
             p.UpdateVars(0);
         }
+        Util::dll_close(dll);
+        dll = nullptr;
+        qvm_unload(&vm);
+        path.clear();
+        api = QMM_API_UNKNOWN;
     }
 
 
-    // Entry point into QVM mods. Passed to GameSupport::ModLoad as if it were a DLL's vmMain function
+    // Entry point into QVM mods. Passed to GameSupport::ModLoad as if it were a dllEntry DLL's vmMain function
     static intptr_t QVM_vmMain(intptr_t cmd, ...) {
         // if qvm isn't loaded, we need to error
         if (!vm.memory) {
