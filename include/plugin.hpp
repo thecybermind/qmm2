@@ -46,6 +46,7 @@ struct Plugin {
     plugin_info* plugininfo = nullptr;                  // Plugin-provided info
     plugin_funcs* pluginfuncs = nullptr;                // Plugin-provided function structure
     plugin_vars* pluginvars = nullptr;                  // Plugin-provided var structure
+    bool attach_called = false;                         // Was QMM_Attach called?
 
     Plugin();
     ~Plugin();

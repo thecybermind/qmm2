@@ -110,7 +110,7 @@ static int s_next_qvm_func = QMM_QVM_FUNC_STARTING_ID;
 Plugin::Plugin() : dll(nullptr), QMM_Query(nullptr), QMM_Attach(nullptr), QMM_Detach(nullptr),
     QMM_vmMain(nullptr), QMM_vmMain_Post(nullptr), QMM_syscall(nullptr), QMM_syscall_Post(nullptr),
     QMM_PluginMessage(nullptr), QMM_QVMHandler(nullptr),
-    plugininfo(nullptr), pluginfuncs(nullptr), pluginvars(nullptr)
+    plugininfo(nullptr), pluginfuncs(nullptr), pluginvars(nullptr), attach_called(false)
 {
 }
 
@@ -148,6 +148,7 @@ Plugin& Plugin::operator=(Plugin&& other) noexcept {
     std::swap(this->plugininfo, other.plugininfo);
     std::swap(this->pluginfuncs, other.pluginfuncs);
     std::swap(this->pluginvars, other.pluginvars);
+    std::swap(this->attach_called, other.attach_called);
 
     return *this;
 }
@@ -270,6 +271,9 @@ int Plugin::Load(std::string file) {
         return 0;
     }
 
+    // simple marker to know whether or not to call QMM_Detach on Unload now
+    this->attach_called = true;
+
     // call QMM_Attach. if it fails (returns 0), destructor will call QMM_Detach and unload DLL
     if (!(this->QMM_Attach())) {
         QMMLOG(QMM_LOG_ERROR, "QMM") << "plugin_load(\"" << Util::path_basename(file) << "\"): QMM_Attach() returned 0\n";
@@ -288,8 +292,9 @@ int Plugin::Load(std::string file) {
 
 
 void Plugin::Unload() {
-    if (this->dll && this->QMM_Detach)
+    if (this->dll && this->QMM_Detach && this->attach_called)
         this->QMM_Detach();
+    this->attach_called = false;
     Util::dll_close(this->dll);
     this->dll = nullptr;
     this->path.clear();
