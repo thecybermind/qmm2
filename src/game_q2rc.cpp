@@ -58,7 +58,7 @@ private:
     // a copy of the original export struct pointer that comes from the mod
     static cgame_export_t* orig_export;
 
-    // struct with lambdas that call QMM's vmMain function. this is given to the game engine
+    // struct with lambdas that call QMM's QMM::vmMain_args function. this is given to the game engine
     static cgame_export_t qmm_export;
 
     const intptr_t qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = { CG_PRINT, CG_ERROR, CG_ARGV, CG_ARGC, CG_SEND_CONSOLE_COMMAND, CG_GET_CONFIGSTRING, CG_CVAR_REGISTER, CG_CVAR_VARIABLE_STRING_BUFFER, CG_CVAR_VARIABLE_INTEGER_VALUE, CVAR_SERVERINFO, CVAR_ROM, CG_FS_FOPEN_FILE, CG_FS_READ, CG_FS_WRITE, CG_FS_FCLOSE_FILE, EXEC_APPEND, FS_READ, };
@@ -142,7 +142,7 @@ intptr_t Q2RC_GameSupport::syscall_args(intptr_t cmd, intptr_t* args) {
 
 
 // wrapper vmMain function that calls actual mod func from orig_export
-// this is how QMM and plugins will call into the mod
+// this is how QMM calls into the mod for init and shutdown
 intptr_t Q2RC_GameSupport::vmMain_args(intptr_t cmd, intptr_t*) {
     QMMLOG(QMM_LOG_TRACE, "QMM") << "Q2RC_GameSupport::vmMain(" << ModMsgName(cmd) << "(" << cmd << ")) called\n";
 
@@ -176,7 +176,7 @@ void* Q2RC_GameSupport::Entry(void* import, void*, APIType engine_api) {
         cgame_import_t* gi = (cgame_import_t*)import;
         orig_import = *gi;
 
-        // struct full of export lambdas to QMM's vmMain
+        // struct full of export lambdas to QMM's QMM::vmMain_args
         // this gets returned to the game engine, but we haven't loaded the mod yet.
         // the only thing in this struct the engine uses before calling Init is the apiversion
         ret = &qmm_export;
@@ -242,7 +242,8 @@ cgame_import_t Q2RC_GameSupport::orig_import;
 cgame_export_t* Q2RC_GameSupport::orig_export = nullptr;
 
 
-// struct with lambdas that call QMM's vmMain function or route directly to the mod's export struct.
+// struct with lambdas that call QMM's QMM::vmMain_args function or route directly to the mod's export struct.
+// for Q2RC, we only care about hooking CGAME_INIT/CGAME_SHUTDOWN.
 // this is given to the game engine
 cgame_export_t Q2RC_GameSupport::qmm_export = {
     CGAME_API_VERSION,    // apiversion

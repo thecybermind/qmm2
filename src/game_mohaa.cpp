@@ -64,10 +64,10 @@ private:
     // a copy of the original export struct pointer that comes from the mod
     static game_export_t* orig_export;
 
-    // struct with lambdas that call QMM's syscall function. this is given to the mod
+    // struct with lambdas that call QMM's QMM::syscall_args function. this is given to the mod
     static game_import_t qmm_import;
 
-    // struct with lambdas that call QMM's vmMain function. this is given to the game engine
+    // struct with lambdas that call QMM's QMM::vmMain_args function. this is given to the game engine
     static game_export_t qmm_export;
 
     const intptr_t qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
@@ -517,7 +517,7 @@ void* MOHAA_GameSupport::Entry(void* import, void*, APIType engine_api) {
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "MOHAA_GameSupport::Entry(" << import << ") returning " << &qmm_export << "\n";
 
-    // struct full of export lambdas to QMM's vmMain
+    // struct full of export lambdas to QMM's QMM::vmMain_args
     // this gets returned to the game engine, but we haven't loaded the mod yet.
     // the only thing in this struct the engine uses before calling Init is the apiversion
     return &qmm_export;
@@ -994,7 +994,7 @@ void MOHAA_GameSupport::SpawnEntities(char* entstring, int levelTime) {
 }
 
 
-// struct with lambdas that call QMM's vmMain function. this is given to the game engine
+// struct with lambdas that call QMM's QMM::vmMain_args function. this is given to the game engine
 game_export_t MOHAA_GameSupport::qmm_export = {
     GAME_API_VERSION,    // apiversion
     GEN_EXPORT(Init, GAME_INIT),

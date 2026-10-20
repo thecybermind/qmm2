@@ -59,10 +59,10 @@ private:
     // a copy of the original export struct pointer that comes from the mod
     static game_export_t* orig_export;
 
-    // struct with lambdas that call QMM's syscall function. this is given to the mod
+    // struct with lambdas that call QMM's QMM::syscall_args function. this is given to the mod
     static game_import_t qmm_import;
 
-    // struct with lambdas that call QMM's vmMain function. this is given to the game engine
+    // struct with lambdas that call QMM's QMM::vmMain_args function. this is given to the game engine
     static game_export_t qmm_export;
 };
 
@@ -569,7 +569,7 @@ void* JAMP_GameSupport::Entry(void* arg0, void* arg1, APIType engine_api) {
 
         // fill in variables of our hooked import struct to pass to the mod
 
-        // struct full of export lambdas to QMM's vmMain
+        // struct full of export lambdas to QMM's QMM::vmMain_args
         // this gets returned to the game engine, but we haven't loaded the mod yet.
         ret = &qmm_export;
     }

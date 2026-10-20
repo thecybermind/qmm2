@@ -96,6 +96,8 @@ C_DLLEXPORT intptr_t vmMain(intptr_t cmd, ...);
 * This just grabs varargs and then passes the call onto QMM::syscall_args which subsequently calls plugins and the mod.
 * 
 * Since this isn't an exported function, it is named qmm_syscall to avoid conflict with the POSIX syscall function.
+* 
+* The only place this gets used directly is passed to the dllEntry function of compatible mod DLLs.
 *
 * @param cmd Engine function to perform
 * @param ... cmd-specific arguments

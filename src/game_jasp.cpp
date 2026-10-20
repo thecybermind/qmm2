@@ -56,10 +56,10 @@ private:
     // a copy of the original export struct pointer that comes from the mod
     static game_export_t* orig_export;
 
-    // struct with lambdas that call QMM's syscall function. this is given to the mod
+    // struct with lambdas that call QMM's QMM::syscall_args function. this is given to the mod
     static game_import_t qmm_import;
 
-    // struct with lambdas that call QMM's vmMain function. this is given to the game engine
+    // struct with lambdas that call QMM's QMM::vmMain_args function. this is given to the game engine
     static game_export_t qmm_export;
 
     const intptr_t qmm_eng_msgs[QMM_ENGINE_MSG_COUNT] = GEN_GAME_QMM_ENG_MSGS();
@@ -390,7 +390,7 @@ void* JASP_GameSupport::Entry(void* import, void*, APIType engine_api) {
 
     QMMLOG(QMM_LOG_DEBUG, "QMM") << "JASP_GameSupport::Entry(" << import << ") returning " << &qmm_export << "\n";
 
-    // struct full of export lambdas to QMM's vmMain
+    // struct full of export lambdas to QMM's QMM::vmMain_args
     // this gets returned to the game engine, but we haven't loaded the mod yet.
     // the only thing in this struct the engine uses before calling Init is the apiversion
     return &qmm_export;
@@ -625,7 +625,7 @@ game_import_t JASP_GameSupport::orig_import = {};
 game_export_t* JASP_GameSupport::orig_export = nullptr;
 
 
-// struct with lambdas that call QMM's syscall function. this is given to the mod
+// struct with lambdas that call QMM's QMM::syscall_args function. this is given to the mod
 game_import_t JASP_GameSupport::qmm_import = {
         GEN_IMPORT(Printf, G_PRINTF),
         GEN_IMPORT(WriteCam, G_WRITECAM),
@@ -775,7 +775,7 @@ void JASP_GameSupport::Init(const char* mapname, const char* spawntarget, int ch
 }
 
 
-// struct with lambdas that call QMM's vmMain function. this is given to the game engine
+// struct with lambdas that call QMM's QMM::vmMain_args function. this is given to the game engine
 game_export_t JASP_GameSupport::qmm_export = {
     GAME_API_VERSION,    // apiversion
     JASP_GameSupport::Init,
