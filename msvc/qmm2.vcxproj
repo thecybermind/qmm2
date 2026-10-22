@@ -190,6 +190,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\config.cpp" />
     <ClCompile Include="..\src\gameapi.cpp" />
+    <ClCompile Include="..\src\game_kingpin.cpp" />
     <ClCompile Include="..\src\game_q2rc.cpp" />
     <ClCompile Include="..\src\game_sof.cpp" />
     <ClCompile Include="..\src\qmm.cpp" />
@@ -231,6 +232,7 @@
     <ClInclude Include="..\include\config.hpp" />
     <ClInclude Include="..\include\format.hpp" />
     <ClInclude Include="..\include\gameapi.hpp" />
+    <ClInclude Include="..\include\game_kingpin.h" />
     <ClInclude Include="..\include\game_q2rc.h" />
     <ClInclude Include="..\include\game_sof.h" />
     <ClInclude Include="..\include\osdef.h" />
