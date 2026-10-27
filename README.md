@@ -30,13 +30,14 @@ See the [How QMM Works](https://github.com/thecybermind/qmm2/wiki/How-QMM-works)
 
 QMM supports the following games:
 
-  - Call of Duty (MP)
+  - Call of Duty v1.5 (MP)
   - Call of Duty: United Offensive (MP)
   - Call of Duty v1.1 (MP)
+  - Kingpin: Life of Crime
   - Medal of Honor: Allied Assault
   - Medal of Honor: Breakthrough
   - Medal of Honor: Spearhead
-  - Quake 2
+  - Quake 2 (RTX)
   - Quake 2 Remastered
   - Quake 3 Arena
   - Return to Castle Wolfenstein (MP)
