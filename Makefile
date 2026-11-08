@@ -40,7 +40,7 @@ OBJ_REL_64 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_REL_64)/%.o) $(SRC_C:$(SRC_DI
 OBJ_DBG_32 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_32)/%.o) $(SRC_C:$(SRC_DIR)/%.c=$(OBJ_DIR_DBG_32)/%.o)
 OBJ_DBG_64 := $(SRC_CXX:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DBG_64)/%.o) $(SRC_C:$(SRC_DIR)/%.c=$(OBJ_DIR_DBG_64)/%.o)
 
-CPPFLAGS  := -MMD -MP -I ./include -isystem ../qmm_sdks
+CPPFLAGS := -MMD -MP -I ./include -isystem ../qmm_sdks
 CFLAGS   := -Wall -Werror -pipe -fPIC -std=gnu17
 CXXFLAGS := -Wall -Werror -pipe -fPIC -std=c++17
 LDFLAGS  := -shared -fPIC
@@ -92,51 +92,51 @@ debug32: $(BIN_DBG_32)
 debug64: $(BIN_DBG_64)
 
 $(BIN_REL_32): $(OBJ_REL_32)
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CXXC) $(REL_LDFLAGS_32) -o $@ $(LDLIBS) $^
 
 $(BIN_REL_64): $(OBJ_REL_64)
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CXXC) $(REL_LDFLAGS_64) -o $@ $(LDLIBS) $^
 
 $(BIN_DBG_32): $(OBJ_DBG_32)
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CXXC) $(DBG_LDFLAGS_32) -o $@ $(LDLIBS) $^
 
 $(BIN_DBG_64): $(OBJ_DBG_64)
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CXXC) $(DBG_LDFLAGS_64) -o $@ $(LDLIBS) $^
 
 $(OBJ_DIR_REL_32)/%.o: $(SRC_DIR)/%.c
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CC) $(REL_CPPFLAGS) $(REL_CFLAGS_32) -c $< -o $@
 
 $(OBJ_DIR_REL_32)/%.o: $(SRC_DIR)/%.cpp
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CXXC) $(REL_CPPFLAGS) $(REL_CXXFLAGS_32) -c $< -o $@
 
 $(OBJ_DIR_REL_64)/%.o: $(SRC_DIR)/%.c
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CC) $(REL_CPPFLAGS) $(REL_CFLAGS_64) -c $< -o $@
 
 $(OBJ_DIR_REL_64)/%.o: $(SRC_DIR)/%.cpp
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CXXC) $(REL_CPPFLAGS) $(REL_CXXFLAGS_64) -c $< -o $@
 
 $(OBJ_DIR_DBG_32)/%.o: $(SRC_DIR)/%.c
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CC) $(DBG_CPPFLAGS) $(DBG_CFLAGS_32) -c $< -o $@
 
 $(OBJ_DIR_DBG_32)/%.o: $(SRC_DIR)/%.cpp
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CXXC) $(DBG_CPPFLAGS) $(DBG_CXXFLAGS_32) -c $< -o $@
 
 $(OBJ_DIR_DBG_64)/%.o: $(SRC_DIR)/%.c
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CC) $(DBG_CPPFLAGS) $(DBG_CFLAGS_64) -c $< -o $@
 
 $(OBJ_DIR_DBG_64)/%.o: $(SRC_DIR)/%.cpp
-	mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CXXC) $(DBG_CPPFLAGS) $(DBG_CXXFLAGS_64) -c $< -o $@
 
 clean:
