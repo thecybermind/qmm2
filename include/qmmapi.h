@@ -9,6 +9,8 @@ Created By:
 
 */
 
+#pragma once
+
 #ifndef QMM2_QMMAPI_H
 #define QMM2_QMMAPI_H
 

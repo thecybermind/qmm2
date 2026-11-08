@@ -9,6 +9,8 @@ Created By:
 
 */
 
+#pragma once
+
 #ifndef QMM2_GAME_MOHSH_H
 #define QMM2_GAME_MOHSH_H
 

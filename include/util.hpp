@@ -9,6 +9,8 @@ Created By:
 
 */
 
+#pragma once
+
 #ifndef QMM2_UTIL_HPP
 #define QMM2_UTIL_HPP
 

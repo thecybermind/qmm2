@@ -9,6 +9,8 @@ Created By:
 
 */
 
+#pragma once
+
 #ifndef QMM2_OSDEF_H
 #define QMM2_OSDEF_H
 

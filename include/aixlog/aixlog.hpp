@@ -16,6 +16,8 @@
 /// inspired by "eater":
 /// https://stackoverflow.com/questions/2638654/redirect-c-stdclog-to-syslog-on-unix
 
+#pragma once
+
 #ifndef AIX_LOG_HPP
 #define AIX_LOG_HPP
 

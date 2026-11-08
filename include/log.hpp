@@ -9,6 +9,8 @@ Created By:
 
 */
 
+#pragma once
+
 #ifndef QMM2_LOG_HPP
 #define QMM2_LOG_HPP
 
