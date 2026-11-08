@@ -738,11 +738,16 @@ game_export_t ANA_GameSupport::qmm_export = {
 // various entity function lookups to the mod DLL.
 C_DLLEXPORT void NPServer_Vid_Change() {
     old_GetProcAddress = (pfnGPA)install_hook(GetModuleHandle(NULL), "kernel32.dll", "GetProcAddress", GetProcAddress_Hook);
+    // this probably also needs to forward on, but we haven't loaded the mod DLL yet.
+    // 
+    // so we probably need to store all the calls/args made to this (and below stubs) in a list until the mod DLL is loaded.
+    // after that point, the call should just forward normally.
+    // in ModLoad, all the stores calls should be made as usual before calling GetGameAPI
 }
 
 
-// generate stub functions (these may need to also pass-through depending on how the game stores the pointers.
-// if they get re-read (unlikely) then the GetProcAddress hook should take care of this.
+// generate stub functions just to satisfy all function exports needed before GetGameAPI is called.
+// these will also need to store calls to them until the mod DLL is loaded, after which they should forward normally.
 #define STUB_FUNC(func) C_DLLEXPORT void func() { }
 STUB_FUNC(GAME_GetContext)
 STUB_FUNC(GAME_SearchContext_va)
