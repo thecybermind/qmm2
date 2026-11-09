@@ -187,7 +187,7 @@ typedef struct {
     // This is the function pointer used to call into the engine with a given G_ value and optional arguments packed in an intptr_t array.
     eng_syscall_args syscall_args;
     // This is the function pointer used to call into the mod with a given GAME_ value and optional arguments.
-    mod_vmMain vMmain;
+    mod_vmMain vmMain;
     // This is the function pointer used to call into the mod with a given GAME_ value and optional arguments packed in an intptr_t array.
     mod_vmMain_args vmMain_args;
 } plugin_vars;
