@@ -180,7 +180,9 @@ namespace QMM {
 
             // add engine G_PRINT logger (info level and above)
             Log::log_add_sink([](const AixLog::Metadata& metadata, const std::string& message) {
-                    intptr_t args[] = { (intptr_t)Log::log_format(metadata, message, false).c_str() };
+                    // keep the formatted line alive until the engine has printed it
+                    const std::string line = Log::log_format(metadata, message, false);
+                    intptr_t args[] = { (intptr_t)line.c_str() };
                     ENG_SYSCALL_ARGS(QMM::msg_G_PRINT, args);
                 },
                 Log::CONSOLE_SEVERITY);
