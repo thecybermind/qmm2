@@ -39,7 +39,7 @@ struct CODUOMP_GameSupport : public GameSupport {
     virtual const char* DefaultDLLName() { return "" UO_DLL MOD_DLL; }
     virtual const char* DefaultModDir() { return "uo"; }
     virtual const char* GameName() { return "Call of Duty: United Offensive (MP)"; }
-    virtual const char* GameCode() { return "CODMP"; }
+    virtual const char* GameCode() { return "CODUOMP"; }
 
 private:
     // a copy of the original syscall from the engine
