@@ -337,7 +337,7 @@ namespace Util {
         if (!dest || !src || !count)
             return dest;
         // strncpy may not null-terminate if it writes a full buffer
-        char* ret = strncpy(dest, src, count);
+        char* ret = (char*)memcpy(dest, src, count);
         // so we null-terminate manually
         if (count)
             dest[count - 1] = '\0';
